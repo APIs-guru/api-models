@@ -1,0 +1,6256 @@
+swagger: "2.0"
+schemes:
+  - https
+host: app.apacta.com
+basePath: /api/v1
+info:
+  description: |-
+    API for a tool to craftsmen used to register working hours, material usage and quality assurance.    
+    # Endpoint
+    The endpoint `https://app.apacta.com/api/v1` should be used to communicate with the API. API access is only allowed with SSL encrypted connection (https).
+    # Authentication
+    URL query authentication with an API key is used, so appending `?api_key={api_key}` to the URL where `{api_key}` is found within Apacta settings is used for authentication
+    # Pagination
+    If the endpoint returns a `pagination` object it means the endpoint supports pagination - currently it's only possible to change pages with `?page={page_number}` but implementing custom page sizes are on the road map.
+
+
+    # Search/filter
+    Is experimental but implemented in some cases - see the individual endpoints' docs for further explanation.
+    # Ordering
+    Is currently experimental, but on some endpoints it's implemented on URL querys so eg. to order Invoices by `invoice_number` appending `?sort=Invoices.invoice_number&direction=desc` would sort the list descending by the value of `invoice_number`.
+    # Associations
+    Is currently implemented on an experimental basis where you can append eg. `?include=Contacts,Projects`  to the `/api/v1/invoices/` endpoint to embed `Contact` and `Project` objects directly.
+    # Project Files
+    Currently project files can be retrieved from two endpoints. `/projects/{project_id}/files` handles files uploaded from wall posts or forms. `/projects/{project_id}/project_files` allows uploading and showing files, not belonging to specific form or wall post.
+    # Errors/Exceptions
+    ## 422 (Validation)
+    Write something about how the `errors` object contains keys with the properties that failes validation like:
+    ```
+      {
+          "success": false,
+          "data": {
+              "code": 422,
+              "url": "/api/v1/contacts?api_key=5523be3b-30ef-425d-8203-04df7caaa93a",
+              "message": "A validation error occurred",
+              "errorCount": 1,
+              "errors": {
+                  "contact_types": [ ## Property name that failed validation
+                      "Contacts must have at least one contact type" ## Message with further explanation
+                  ]
+              }
+          }
+      }
+    ```
+    ## Code examples
+    Running examples of how to retrieve the 5 most recent forms registered and embed the details of the User that made the form, and eventual products contained in the form
+    ### Swift
+    ```
+      
+    ```
+    ### Java
+    #### OkHttp
+    ```
+      OkHttpClient client = new OkHttpClient();
+      
+      Request request = new Request.Builder()
+        .url("https://app.apacta.com/api/v1/forms?extended=true&sort=Forms.created&direction=DESC&include=Products%2CCreatedBy&limit=5")
+        .get()
+        .addHeader("x-auth-token", "{INSERT_YOUR_TOKEN}")
+        .addHeader("accept", "application/json")
+        .build();
+      
+      Response response = client.newCall(request).execute();
+    ```
+    #### Unirest
+    ```
+      HttpResponse<String> response = Unirest.get("https://app.apacta.com/api/v1/forms?extended=true&sort=Forms.created&direction=DESC&include=Products%2CCreatedBy&limit=5")
+        .header("x-auth-token", "{INSERT_YOUR_TOKEN}")
+        .header("accept", "application/json")
+        .asString();
+    ```
+    ### Javascript
+    #### Native
+    ```
+      var data = null;
+      
+      var xhr = new XMLHttpRequest();
+      xhr.withCredentials = true;
+      
+      xhr.addEventListener("readystatechange", function () {
+        if (this.readyState === 4) {
+          console.log(this.responseText);
+        }
+      });
+      
+      xhr.open("GET", "https://app.apacta.com/api/v1/forms?extended=true&sort=Forms.created&direction=DESC&include=Products%2CCreatedBy&limit=5");
+      xhr.setRequestHeader("x-auth-token", "{INSERT_YOUR_TOKEN}");
+      xhr.setRequestHeader("accept", "application/json");
+      
+      xhr.send(data);
+    ```
+    #### jQuery
+    ```
+      var settings = {
+        "async": true,
+        "crossDomain": true,
+        "url": "https://app.apacta.com/api/v1/forms?extended=true&sort=Forms.created&direction=DESC&include=Products%2CCreatedBy&limit=5",
+        "method": "GET",
+        "headers": {
+          "x-auth-token": "{INSERT_YOUR_TOKEN}",
+          "accept": "application/json",
+        }
+      }
+      
+      $.ajax(settings).done(function (response) {
+        console.log(response);
+      });
+    ```
+    #### NodeJS (Request)
+    ```
+      var request = require("request");
+
+      var options = { method: 'GET',
+        url: 'https://app.apacta.com/api/v1/forms',
+        qs: 
+         { extended: 'true',
+           sort: 'Forms.created',
+           direction: 'DESC',
+           include: 'Products,CreatedBy',
+           limit: '5' },
+        headers: 
+         { accept: 'application/json',
+           'x-auth-token': '{INSERT_YOUR_TOKEN}' } };
+      
+      request(options, function (error, response, body) {
+        if (error) throw new Error(error);
+      
+        console.log(body);
+      });
+
+    ```
+    ### Python 3
+    ```
+      import http.client
+      
+      conn = http.client.HTTPSConnection("app.apacta.com")
+      
+      payload = ""
+      
+      headers = {
+          'x-auth-token': "{INSERT_YOUR_TOKEN}",
+          'accept': "application/json",
+          }
+      
+      conn.request("GET", "/api/v1/forms?extended=true&sort=Forms.created&direction=DESC&include=Products%2CCreatedBy&limit=5", payload, headers)
+      
+      res = conn.getresponse()
+      data = res.read()
+      
+      print(data.decode("utf-8"))
+    ```
+    ### C#
+    #### RestSharp
+    ```
+      var client = new RestClient("https://app.apacta.com/api/v1/forms?extended=true&sort=Forms.created&direction=DESC&include=Products%2CCreatedBy&limit=5");
+      var request = new RestRequest(Method.GET);
+      request.AddHeader("accept", "application/json");
+      request.AddHeader("x-auth-token", "{INSERT_YOUR_TOKEN}");
+      IRestResponse response = client.Execute(request);    
+    ```
+    ### Ruby
+    ```
+      require 'uri'
+      require 'net/http'
+      
+      url = URI("https://app.apacta.com/api/v1/forms?extended=true&sort=Forms.created&direction=DESC&include=Products%2CCreatedBy&limit=5")
+      
+      http = Net::HTTP.new(url.host, url.port)
+      http.use_ssl = true
+      http.verify_mode = OpenSSL::SSL::VERIFY_NONE
+      
+      request = Net::HTTP::Get.new(url)
+      request["x-auth-token"] = '{INSERT_YOUR_TOKEN}'
+      request["accept"] = 'application/json'
+      
+      response = http.request(request)
+      puts response.read_body
+    ```
+    ### PHP (HttpRequest)
+    ```
+      <?php
+
+      $request = new HttpRequest();
+      $request->setUrl('https://app.apacta.com/api/v1/forms');
+      $request->setMethod(HTTP_METH_GET);
+      
+      $request->setQueryData(array(
+        'extended' => 'true',
+        'sort' => 'Forms.created',
+        'direction' => 'DESC',
+        'include' => 'Products,CreatedBy',
+        'limit' => '5'
+      ));
+      
+      $request->setHeaders(array(
+        'accept' => 'application/json',
+        'x-auth-token' => '{INSERT_YOUR_TOKEN}'
+      ));
+      
+      try {
+        $response = $request->send();
+      
+        echo $response->getBody();
+      } catch (HttpException $ex) {
+        echo $ex;
+      }
+    ```
+    ### Shell (cURL)
+    ```
+
+      $ curl --request GET --url 'https://app.apacta.com/api/v1/forms?extended=true&sort=Forms.created&direction=DESC&include=Products%2CCreatedBy&limit=5' --header 'accept: application/json' --header 'x-auth-token: {INSERT_YOUR_TOKEN}'
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+      
+    ```
+  title: Apacta
+  version: 0.0.1
+  x-apisguru-categories:
+    - time_management
+    - project_management
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_apactadk_profile_image.png
+  x-origin:
+    - format: swagger
+      url: http://apidoc.apacta.com/swagger.yaml
+      version: "2.0"
+  x-providerName: apacta.com
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  X-Auth-Token:
+    in: header
+    name: X-Auth-Token
+    type: apiKey
+  api_key:
+    description: Uses the user's API token found from within the control panel in "settings" -> "additional settings"
+    in: query
+    name: api_token
+    type: apiKey
+tags:
+  - description: Experimental
+    name: TimeEntries
+  - description: Experimental
+    name: TimeEntryIntervals
+  - description: Experimental
+    name: TimeEntryTypes
+  - description: Experimental
+    name: TimeEntryUnitTypes
+  - description: Experimental
+    name: TimeEntryValueTypes
+paths:
+  /cities:
+    get:
+      parameters:
+        - description: Used to search for a city with specific zip code
+          in: query
+          name: zip_code
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/City"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get list of cities supported in Apacta
+      tags:
+        - Cities
+  "/cities/{city_id}":
+    get:
+      parameters:
+        - in: path
+          name: city_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/City"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get details about one city
+      tags:
+        - Cities
+  /clocking_records:
+    get:
+      parameters:
+        - description: Used to search for active clocking records
+          in: query
+          name: active
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/ClockingRecord"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get a list of clocking records
+      tags:
+        - ClockingRecords
+    post:
+      parameters:
+        - in: body
+          name: clocking_record
+          required: true
+          schema:
+            properties:
+              checkin_latitude:
+                type: string
+              checkin_longitude:
+                type: string
+              checkout_latitude:
+                type: string
+              checkout_longitude:
+                type: string
+              project_id:
+                format: uuid
+                type: string
+            type: object
+      responses:
+        "201":
+          description: Successfully added clocking record
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Create clocking record for authenticated user
+      tags:
+        - ClockingRecords
+  /clocking_records/checkout:
+    post:
+      responses:
+        "201":
+          description: Successfully checked out
+          schema:
+            properties:
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Checkout active clocking record for authenticated user
+      tags:
+        - ClockingRecords
+  "/clocking_records/{clocking_record_id}":
+    delete:
+      parameters:
+        - in: path
+          name: clocking_record_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: string
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete a clocking record
+      tags:
+        - ClockingRecords
+    get:
+      parameters:
+        - in: path
+          name: clocking_record_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/ClockingRecord"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Clocking record not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Details of 1 clocking_record
+      tags:
+        - ClockingRecords
+    put:
+      parameters:
+        - in: path
+          name: clocking_record_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit a clocking record
+      tags:
+        - ClockingRecords
+  /companies:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Company"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get a list of companies
+      tags:
+        - Companies
+  "/companies/{company_id}":
+    get:
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Company object
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Company"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Company not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Details of 1 company
+      tags:
+        - Companies
+  "/companies/{company_id}/integration_feature_settings":
+    get:
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/IntegrationFeatureSetting"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get a list of integration feature settings
+      tags:
+        - Companies
+  "/companies/{company_id}/integration_feature_settings/{integration_feature_setting_id}":
+    get:
+      parameters:
+        - in: path
+          name: company_id
+          required: true
+          type: string
+        - in: path
+          name: integration_feature_setting_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/IntegrationFeatureSetting"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: IntegrationFeatureSetting not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show details of 1 integration feature setting
+      tags:
+        - Companies
+  /contact_types:
+    get:
+      parameters:
+        - description: Search for specific identifier value
+          in: query
+          name: identifier
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/ContactType"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get list of contact types supported in Apacta
+      tags:
+        - ContactTypes
+  "/contact_types/{contact_type_id}":
+    get:
+      parameters:
+        - in: path
+          name: contact_type_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/ContactType"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get details about one contact type
+      tags:
+        - ContactTypes
+  /contacts:
+    get:
+      parameters:
+        - description: Used to search for a contact with a specific name
+          in: query
+          name: name
+          required: false
+          type: string
+        - description: Search for values in CVR field
+          in: query
+          name: cvr
+          type: string
+        - description: Search for values in EAN field
+          in: query
+          name: ean
+          type: string
+        - description: Search for values in ERP id field
+          in: query
+          name: erp_id
+          type: string
+        - description: Used to show only contacts with with one specific `ContactType`
+          format: uuid
+          in: query
+          name: contact_type
+          type: string
+        - description: Used to show only contacts with with one specific `City`
+          in: query
+          name: city
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Contact"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get a list of contacts
+      tags:
+        - Contacts
+    post:
+      parameters:
+        - in: body
+          name: contact
+          schema:
+            properties:
+              address:
+                description: Street address
+                maxLength: 255
+                type: string
+              city_id:
+                format: uuid
+                type: string
+              contact_types:
+                properties:
+                  _ids:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              cvr:
+                maxLength: 255
+                type: string
+              description:
+                maxLength: 8192
+                type: string
+              email:
+                maxLength: 255
+                type: string
+              erp_id:
+                description: If company has integration to an ERP system, and the contacts are synchronized, this will be the ERP-systems ID of this contact
+                maxLength: 255
+                type: string
+              name:
+                maxLength: 255
+                type: string
+              phone:
+                description: Format like eg. `28680133` or `046158971404`
+                maxLength: 32
+                type: string
+              website:
+                maxLength: 255
+                type: string
+            type: object
+      responses:
+        "201":
+          description: Successfully added contact
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add a new contact
+      tags:
+        - Contacts
+  "/contacts/{contact_id}":
+    delete:
+      parameters:
+        - in: path
+          name: contact_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: string
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete a contact
+      tags:
+        - Contacts
+    get:
+      parameters:
+        - in: path
+          name: contact_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Contact"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Contact not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Details of 1 contact
+      tags:
+        - Contacts
+    put:
+      parameters:
+        - in: path
+          name: contact_id
+          required: true
+          type: string
+        - in: body
+          name: contact
+          schema:
+            properties:
+              address:
+                description: Street address
+                maxLength: 255
+                type: string
+              city_id:
+                format: uuid
+                type: string
+              contact_types:
+                properties:
+                  _ids:
+                    items:
+                      type: string
+                    type: array
+                type: object
+              cvr:
+                maxLength: 255
+                type: string
+              description:
+                maxLength: 8192
+                type: string
+              email:
+                maxLength: 255
+                type: string
+              erp_id:
+                description: If company has integration to an ERP system, and the contacts are synchronized, this will be the ERP-systems ID of this contact
+                maxLength: 255
+                type: string
+              name:
+                maxLength: 255
+                type: string
+              phone:
+                description: Format like eg. `28680133` or `046158971404`
+                maxLength: 32
+                type: string
+              website:
+                maxLength: 255
+                type: string
+            type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit a contact
+      tags:
+        - Contacts
+  /currencies:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Currency"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get list of currencies supported in Apacta
+      tags:
+        - Currencies
+  "/currencies/{currency_id}":
+    get:
+      parameters:
+        - in: path
+          name: currency_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Currency"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get details about one currency
+      tags:
+        - Currencies
+  /employee_hours:
+    get:
+      parameters:
+        - description: Date formatted as Y-m-d (2016-06-28)
+          in: query
+          name: date_from
+          required: true
+          type: string
+        - description: Date formatted as Y-m-d (2016-06-28)
+          in: query
+          name: date_to
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                description: One element per form in the period
+                items:
+                  properties:
+                    form_date:
+                      description: Y-m-d formatted
+                      format: date
+                      type: string
+                    form_id:
+                      format: uuid
+                      type: string
+                    project_name:
+                      type: string
+                    total_hours:
+                      description: The amount of hours in seconds
+                      format: int32
+                      type: integer
+                    working_description:
+                      description: Trimmed at 50 characters
+                      type: string
+                    working_description_full:
+                      description: Full work description (if available)
+                      type: string
+                  type: object
+                type: array
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Used to retrieve details about the logged in user's hours
+      tags:
+        - EmployeeHours
+  /expense_files:
+    get:
+      parameters:
+        - format: uuid
+          in: query
+          name: created_by_id
+          type: string
+        - format: uuid
+          in: query
+          name: expense_id
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/ExpenseFile"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show list of expense files
+      tags:
+        - ExpenseFiles
+    post:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - in: formData
+          name: file
+          required: true
+          type: file
+        - in: formData
+          name: description
+          required: false
+          type: string
+      responses:
+        "201":
+          description: Successfully added file
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add file to expense
+      tags:
+        - ExpenseFiles
+  "/expense_files/{expense_file_id}":
+    delete:
+      parameters:
+        - in: path
+          name: expense_file_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: string
+                type: array
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete file
+      tags:
+        - ExpenseFiles
+    get:
+      parameters:
+        - in: path
+          name: expense_file_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: string
+                type: array
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show file
+      tags:
+        - ExpenseFiles
+    put:
+      parameters:
+        - format: uuid
+          in: path
+          name: expense_file_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit file
+      tags:
+        - ExpenseFiles
+  /expense_lines:
+    get:
+      parameters:
+        - format: uuid
+          in: query
+          name: created_by_id
+          type: string
+        - format: uuid
+          in: query
+          name: currency_id
+          type: string
+        - format: uuid
+          in: query
+          name: expense_id
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/ExpenseLine"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show list of expense lines
+      tags:
+        - ExpenseLines
+    post:
+      parameters:
+        - in: body
+          name: expense_line
+          schema:
+            properties:
+              buying_price:
+                format: float
+                type: number
+              currency_id:
+                format: uuid
+                type: string
+              expense_id:
+                format: uuid
+                type: string
+              quantity:
+                format: int32
+                type: integer
+              selling_price:
+                format: float
+                type: number
+              text:
+                maxLength: 255
+                type: string
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add line to expense
+      tags:
+        - ExpenseLines
+  "/expense_lines/{expense_line_id}":
+    delete:
+      parameters:
+        - in: path
+          name: expense_line_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/ExpenseLine"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete expense line
+      tags:
+        - ExpenseLines
+    get:
+      parameters:
+        - in: path
+          name: expense_line_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/ExpenseLine"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show expense line
+      tags:
+        - ExpenseLines
+    put:
+      parameters:
+        - in: path
+          name: expense_line_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/ExpenseLine"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit expense line
+      tags:
+        - ExpenseLines
+  /expenses:
+    get:
+      parameters:
+        - format: uuid
+          in: query
+          name: created_by_id
+          type: string
+        - format: uuid
+          in: query
+          name: company_id
+          type: string
+        - format: uuid
+          in: query
+          name: contact_id
+          type: string
+        - format: uuid
+          in: query
+          name: project_id
+          type: string
+        - description: Created after date
+          format: date
+          in: query
+          name: gt_created
+          type: string
+        - description: Created before date
+          format: date
+          in: query
+          name: lt_created
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Expense"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show list of expenses
+      tags:
+        - Expenses
+    post:
+      parameters:
+        - in: body
+          name: expense_line
+          schema:
+            properties:
+              contact_id:
+                format: uuid
+                type: string
+              currency_id:
+                format: uuid
+                type: string
+              delivery_date:
+                format: date
+                type: string
+              description:
+                maxLength: 8192
+                type: string
+              project_id:
+                format: uuid
+                type: string
+              reference:
+                maxLength: 8192
+                type: string
+              short_text:
+                maxLength: 255
+                type: string
+              supplier_invoice_number:
+                maxLength: 255
+                type: string
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add line to expense
+      tags:
+        - Expenses
+  "/expenses/{expense_id}":
+    delete:
+      parameters:
+        - in: path
+          name: expense_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Expense"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete expense
+      tags:
+        - Expenses
+    get:
+      parameters:
+        - in: path
+          name: expense_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Expense"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show expense
+      tags:
+        - Expenses
+    put:
+      parameters:
+        - in: path
+          name: expense_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Expense"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit expense
+      tags:
+        - Expenses
+  "/expenses/{expense_id}/original_files":
+    get:
+      parameters:
+        - in: path
+          name: expense_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show list of all OIOUBL files for the expense
+      tags:
+        - Expense OIOUBL files
+  "/expenses/{expense_id}/original_files/{file_id}":
+    get:
+      parameters:
+        - in: path
+          name: expense_id
+          required: true
+          type: string
+        - in: path
+          name: file_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show OIOUBL file
+      tags:
+        - Expense OIOUBL files
+  /form_field_types:
+    get:
+      parameters:
+        - description: Used to filter on the `name` of the form_fields
+          in: query
+          name: name
+          required: false
+          type: string
+        - description: Used to filter on the `identifier` of the form_fields
+          in: query
+          name: identifier
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/FormFieldType"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get list of form field types
+      tags:
+        - FormFieldTypes
+  "/form_field_types/{form_field_type_id}":
+    get:
+      parameters:
+        - in: path
+          name: form_field_type_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/FormFieldType"
+              success:
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get details about single `FormField`
+      tags:
+        - FormFieldTypes
+  /form_fields:
+    post:
+      parameters:
+        - in: body
+          name: form_field
+          schema:
+            properties:
+              comment:
+                maxLength: 8192
+                type: string
+              content_value:
+                maxLength: 255
+                type: string
+              file_id:
+                format: uuid
+                type: string
+              form_field_type_id:
+                format: uuid
+                type: string
+              form_id:
+                format: uuid
+                type: string
+              form_template_field_id:
+                format: uuid
+                type: string
+              placement:
+                format: int32
+                type: integer
+            type: object
+      responses:
+        "201":
+          description: Successfully added field
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add a new field to a `Form`
+      tags:
+        - FormFields
+  "/form_fields/{form_field_id}":
+    get:
+      parameters:
+        - in: path
+          name: form_field_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/FormField"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get details about single `FormField`
+      tags:
+        - FormFields
+  /form_templates:
+    get:
+      parameters:
+        - description: Used to filter on the `name` of the form_templates
+          in: query
+          name: name
+          type: string
+        - description: Used to filter on the `identifier` of the form_templates
+          in: query
+          name: identifier
+          required: false
+          type: string
+        - description: Used to filter on the `pdf_template_identifier` of the form_templates
+          in: query
+          name: pdf_template_identifier
+          type: string
+        - description: Used to filter on the `description` of the form_templates
+          in: query
+          name: description
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/FormTemplate"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get array of form_templates for your company
+      tags:
+        - FormTemplates
+  "/form_templates/{form_template_id}":
+    get:
+      parameters:
+        - in: path
+          name: form_template_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/FormTemplate"
+              success:
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View one form template
+      tags:
+        - FormTemplates
+  /forms:
+    get:
+      parameters:
+        - description: Used to have extended details from the forms from the `Form`'s `FormFields`
+          enum:
+            - true
+            - false
+          in: query
+          name: extended
+          type: string
+        - description: Used in conjunction with `date_to` to only show forms within these dates - format like `2016-28-05`
+          format: Y-m-d
+          in: query
+          name: date_from
+          type: string
+        - description: Used in conjunction with `date_from` to only show forms within these dates - format like `2016-28-30`
+          format: Y-m-d
+          in: query
+          name: date_to
+          type: string
+        - description: Used to filter on the `project_id` of the forms
+          format: uuid
+          in: query
+          name: project_id
+          type: string
+        - description: Used to filter on the `created_by_id` of the forms
+          in: query
+          name: created_by_id
+          required: false
+          type: string
+        - description: Used to filter on the `form_template_id` of the forms
+          in: query
+          name: form_template_id
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Form"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Retrieve array of forms
+      tags:
+        - Forms
+    post:
+      description: Used to add a form into the system
+      parameters:
+        - in: body
+          name: form
+          schema:
+            properties:
+              form_template_id:
+                format: uuid
+                type: string
+              project_id:
+                format: uuid
+                type: string
+            required:
+              - project_id
+              - form_template_id
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add new form
+      tags:
+        - Forms
+  "/forms/{form_id}":
+    delete:
+      description: You can only delete the forms that you've submitted yourself
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete a form
+      tags:
+        - Forms
+    get:
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Form"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View form
+      tags:
+        - Forms
+    put:
+      parameters:
+        - in: path
+          name: form_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit a form
+      tags:
+        - Forms
+  /invoice_lines:
+    get:
+      parameters:
+        - format: uuid
+          in: query
+          name: invoice_id
+          type: string
+        - format: uuid
+          in: query
+          name: product_id
+          type: string
+        - format: uuid
+          in: query
+          name: user_id
+          type: string
+        - in: query
+          name: name
+          type: string
+        - in: query
+          name: discount_text
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/InvoiceLine"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View list of invoice lines
+      tags:
+        - InvoiceLines
+    post:
+      parameters:
+        - in: body
+          name: invoice_line
+          schema:
+            properties:
+              description:
+                maxLength: 8192
+                type: string
+              discount_percent:
+                format: int32
+                type: integer
+              discount_text:
+                maxLength: 255
+                type: string
+              invoice_id:
+                format: uuid
+                type: string
+              name:
+                maxLength: 2048
+                type: string
+              product_id:
+                format: uuid
+                type: string
+              quantity:
+                format: int32
+                type: integer
+              selling_price:
+                format: float
+                type: number
+              user_id:
+                format: uuid
+                type: string
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add invoice
+      tags:
+        - InvoiceLines
+  "/invoice_lines/{invoice_line_id}":
+    delete:
+      parameters:
+        - format: uuid
+          in: path
+          name: invoice_line_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete invoice line
+      tags:
+        - InvoiceLines
+    get:
+      parameters:
+        - format: uuid
+          in: path
+          name: invoice_line_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/InvoiceLine"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View invoice line
+      tags:
+        - InvoiceLines
+    put:
+      parameters:
+        - format: uuid
+          in: path
+          name: invoice_line_id
+          required: true
+          type: string
+        - in: body
+          name: invoice_line
+          schema:
+            properties:
+              description:
+                maxLength: 8192
+                type: string
+              discount_percent:
+                format: int32
+                type: integer
+              discount_text:
+                maxLength: 255
+                type: string
+              invoice_id:
+                format: uuid
+                type: string
+              name:
+                maxLength: 2048
+                type: string
+              product_id:
+                format: uuid
+                type: string
+              quantity:
+                format: int32
+                type: integer
+              selling_price:
+                format: float
+                type: number
+              user_id:
+                format: uuid
+                type: string
+            type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit invoice line
+      tags:
+        - InvoiceLines
+  /invoices:
+    get:
+      parameters:
+        - description: Used to filter on the `contact_id` of the invoices
+          format: uuid
+          in: query
+          name: contact_id
+          type: string
+        - description: Used to filter on the `project_id` of the invoices
+          format: uuid
+          in: query
+          name: project_id
+          required: false
+          type: string
+        - description: Used to filter on the `invoice_number` of the invoices
+          in: query
+          name: invoice_number
+          type: string
+        - in: query
+          name: offer_number
+          type: string
+        - enum:
+            - 0
+            - 1
+          in: query
+          name: is_draft
+          type: integer
+        - enum:
+            - 0
+            - 1
+          in: query
+          name: is_offer
+          type: integer
+        - enum:
+            - 0
+            - 1
+          in: query
+          name: is_locked
+          type: integer
+        - format: date
+          in: query
+          name: date_from
+          type: string
+        - format: date
+          in: query
+          name: date_to
+          type: string
+        - format: date
+          in: query
+          name: issued_date
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Invoice"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View list of invoices
+      tags:
+        - Invoices
+    post:
+      parameters:
+        - in: body
+          name: invoice
+          schema:
+            properties:
+              contact_id:
+                format: uuid
+                type: string
+              created_or_modified_gte:
+                format: date
+                type: string
+              date_from:
+                format: date
+                type: string
+              date_to:
+                format: date
+                type: string
+              erp_id:
+                maxLength: 255
+                type: string
+              erp_payment_term_id:
+                maxLength: 255
+                type: string
+              invoice_number:
+                format: int32
+                maxLength: 8
+                type: integer
+              is_draft:
+                type: boolean
+              is_locked:
+                type: boolean
+              is_offer:
+                type: boolean
+              issued_date:
+                format: date
+                type: string
+              message:
+                maxLength: 8192
+                type: string
+              offer_number:
+                format: int32
+                maxLength: 8
+                type: integer
+              payment_due_date:
+                format: date
+                type: string
+              payment_term_id:
+                format: uuid
+                type: string
+              project_id:
+                format: uuid
+                type: string
+              reference:
+                maxLength: 255
+                type: string
+              vat_percent:
+                format: int32
+                maxLength: 2
+                type: integer
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add invoice
+      tags:
+        - Invoices
+  "/invoices/{invoice_id}":
+    delete:
+      parameters:
+        - in: path
+          name: invoice_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete invoice
+      tags:
+        - Invoices
+    get:
+      parameters:
+        - in: path
+          name: invoice_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Invoice"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View invoice
+      tags:
+        - Invoices
+    put:
+      parameters:
+        - in: path
+          name: invoice_id
+          required: true
+          type: string
+        - in: body
+          name: invoice
+          schema:
+            properties:
+              contact_id:
+                format: uuid
+                type: string
+              date_from:
+                format: date
+                type: string
+              date_to:
+                format: date
+                type: string
+              erp_id:
+                maxLength: 255
+                type: string
+              erp_payment_term_id:
+                maxLength: 255
+                type: string
+              invoice_number:
+                format: int32
+                maxLength: 8
+                type: integer
+              is_draft:
+                type: boolean
+              is_locked:
+                type: boolean
+              is_offer:
+                type: boolean
+              issued_date:
+                format: date
+                type: string
+              message:
+                maxLength: 8192
+                type: string
+              offer_number:
+                format: int32
+                maxLength: 8
+                type: integer
+              payment_due_date:
+                format: date
+                type: string
+              payment_term_id:
+                format: uuid
+                type: string
+              project_id:
+                format: uuid
+                type: string
+              reference:
+                maxLength: 255
+                type: string
+              vat_percent:
+                format: int32
+                maxLength: 2
+                type: integer
+            type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit invoice
+      tags:
+        - Invoices
+  /mass_messages_users:
+    get:
+      parameters:
+        - description: Used to filter on the `is_read` of the mass messages
+          in: query
+          name: is_read
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/MassMessagesUser"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View list of mass messages for specific user
+      tags:
+        - MassMessagesUsers
+  "/mass_messages_users/{mass_messages_user_id}":
+    get:
+      parameters:
+        - in: path
+          name: mass_messages_user_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/MassMessagesUser"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View mass message
+      tags:
+        - MassMessagesUsers
+    put:
+      parameters:
+        - in: path
+          name: mass_messages_user_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit mass message
+      tags:
+        - MassMessagesUsers
+  /materials:
+    get:
+      parameters:
+        - description: Used to filter on the `barcode` of the materials
+          in: query
+          name: barcode
+          required: false
+          type: string
+        - description: Used to filter on the `name` of the materials
+          in: query
+          name: name
+          required: false
+          type: string
+        - description: Used to find materials used in specific project by `project_id`
+          format: uuid
+          in: query
+          name: project_id
+          required: false
+          type: string
+        - description: Used to find currently rented materials
+          in: query
+          name: currently_rented
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Material"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View list of all materials
+      tags:
+        - Materials
+  "/materials/{material_id}":
+    delete:
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete material
+      tags:
+        - Materials
+    get:
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Material"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View material
+      tags:
+        - Materials
+    put:
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit material
+      tags:
+        - Materials
+  "/materials/{material_id}/rentals/":
+    get:
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/MaterialRental"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show list of rentals for specific material
+      tags:
+        - MaterialRentals
+    post:
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          type: string
+        - in: body
+          name: material_rental
+          schema:
+            properties:
+              form_id:
+                format: uuid
+                type: string
+              from_date:
+                format: dateTime
+                type: string
+              is_invoiced:
+                format: dateTime
+                type: string
+              material_id:
+                format: uuid
+                type: string
+              project_id:
+                format: uuid
+                type: string
+              quantity:
+                format: float
+                type: number
+              to_date:
+                format: dateTime
+                type: string
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add material rental
+      tags:
+        - MaterialRentals
+  "/materials/{material_id}/rentals/checkout/":
+    post:
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          type: string
+        - in: body
+          name: material_rental
+          schema:
+            properties:
+              form_id:
+                format: uuid
+                type: string
+              material_rental_id:
+                format: uuid
+                type: string
+              to_date:
+                format: dateTime
+                type: string
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Checkout material rental
+      tags:
+        - MaterialRentals
+  "/materials/{material_id}/rentals/{material_rental_id}/":
+    delete:
+      description: Delete rental for material
+      parameters:
+        - format: uuid
+          in: path
+          name: material_id
+          required: true
+          type: string
+        - format: uuid
+          in: path
+          name: material_rental_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete material rental
+      tags:
+        - MaterialRentals
+    get:
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          type: string
+        - in: path
+          name: material_rental_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/MaterialRental"
+              success:
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show rental foor materi
+      tags:
+        - MaterialRentals
+    post:
+      parameters:
+        - in: path
+          name: material_id
+          required: true
+          type: string
+        - in: path
+          name: material_rental_id
+          required: true
+          type: string
+        - in: body
+          name: material
+          schema:
+            properties:
+              barcode:
+                type: string
+              billing_cysle:
+                enum:
+                  - hourly
+                  - daily
+                  - weekly
+                type: string
+              cost_price:
+                format: float
+                type: number
+              description:
+                type: string
+              is_single_usage:
+                type: boolean
+              name:
+                type: string
+              selling_price:
+                format: float
+                type: number
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add material
+      tags:
+        - Materials
+    put:
+      description: Edit material rental
+      parameters:
+        - format: uuid
+          in: path
+          name: material_id
+          required: true
+          type: string
+        - format: uuid
+          in: path
+          name: material_rental_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit material rental
+      tags:
+        - MaterialRentals
+  /payment_term_types:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/PaymentTermType"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get a list of payment term types
+      tags:
+        - PaymentTermTypes
+  "/payment_term_types/{payment_term_type_id}":
+    get:
+      parameters:
+        - in: path
+          name: payment_term_type_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/PaymentTermType"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Details of 1 payment term type
+      tags:
+        - PaymentTermTypes
+  /payment_terms:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/PaymentTerm"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get a list of payment terms
+      tags:
+        - PaymentTerms
+  "/payment_terms/{payment_term_id}":
+    get:
+      parameters:
+        - in: path
+          name: payment_term_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/PaymentTerm"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: PaymentTerm not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Details of 1 payment term
+      tags:
+        - PaymentTerms
+  /ping:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              status:
+                default: ok
+                type: string
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Check if API is up and API key works
+      tags:
+        - Ping
+  /products:
+    get:
+      parameters:
+        - description: Used to filter on the `name` of the products
+          in: query
+          name: name
+          type: string
+        - description: Used to filter on the `product_number` of the products
+          format: uuid
+          in: query
+          name: product_number
+          type: string
+        - description: Used to filter on the `barcode` of the products
+          in: query
+          name: barcode
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Product"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: List products
+      tags:
+        - Products
+    post:
+      parameters:
+        - in: body
+          name: product
+          schema:
+            properties:
+              barcode:
+                maxLength: 255
+                type: string
+              buying_price:
+                format: double
+                type: number
+              description:
+                maxLength: 8192
+                type: string
+              erp_id:
+                maxLength: 255
+                type: string
+              name:
+                maxLength: 255
+                type: string
+              product_number:
+                maxLength: 255
+                type: string
+              selling_price:
+                format: double
+                type: number
+            required:
+              - name
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add new product
+      tags:
+        - Products
+  "/products/{product_id}":
+    delete:
+      parameters:
+        - in: path
+          name: product_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: string
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete a product
+      tags:
+        - Products
+    get:
+      parameters:
+        - in: path
+          name: product_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Product"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View single product
+      tags:
+        - Products
+    put:
+      parameters:
+        - in: path
+          name: product_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit a product
+      tags:
+        - Products
+  /project_statuses:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/ProjectStatus"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get list of project statuses
+      tags:
+        - ProjectStatuses
+  "/project_statuses/{project_status_id}":
+    get:
+      parameters:
+        - in: path
+          name: project_status_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/ProjectStatus"
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get details about one contact type
+      tags:
+        - ProjectStatuses
+  /projects:
+    get:
+      parameters:
+        - default: false
+          description: Unless this is set to `true` only open projects will be shown
+          in: query
+          name: show_all
+          required: false
+          type: boolean
+        - description: Used to filter on the `contact_id` of the projects
+          format: uuid
+          in: query
+          name: contact_id
+          type: string
+        - description: Used to filter on the `project_status_id` of the projects
+          format: uuid
+          in: query
+          name: project_status_id
+          type: string
+        - collectionFormat: csv
+          description: Used to filter on the `project_status_id` of the projects (match any of the provided values)
+          in: query
+          items:
+            format: uuid
+            type: string
+          name: project_status_ids
+          type: array
+        - description: Used to search on the `name` of the projects
+          in: query
+          name: name
+          type: string
+        - description: Used to search on the `erp_project_id` of the projects
+          in: query
+          name: erp_project_id
+          type: string
+        - description: Used to search on the `erp_task_id` of the projects
+          in: query
+          name: erp_task_id
+          type: string
+        - description: Show projects with start time after than this value
+          in: query
+          name: start_time_gte
+          type: string
+        - description: Show projects with start time before this value
+          in: query
+          name: start_time_lte
+          type: string
+        - description: Show only projects with start time on specific date
+          in: query
+          name: start_time_eq
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Project"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View list of projects
+      tags:
+        - Projects
+    post:
+      parameters:
+        - in: body
+          name: project
+          schema:
+            properties:
+              contact_id:
+                format: uuid
+                type: string
+              description:
+                maxLength: 8192
+                type: string
+              erp_project_id:
+                maxLength: 255
+                type: string
+              erp_task_id:
+                maxLength: 255
+                type: string
+              name:
+                maxLength: 255
+                type: string
+              project_status_id:
+                format: uuid
+                type: string
+              start_time:
+                format: datetime
+                type: string
+              street_name:
+                maxLength: 255
+                type: string
+            required:
+              - name
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add a project
+      tags:
+        - Projects
+  "/projects/{project_id}":
+    delete:
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: string
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete a project
+      tags:
+        - Projects
+    get:
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/Project"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View specific project
+      tags:
+        - Projects
+    put:
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+        - in: body
+          name: project
+          schema:
+            properties:
+              contact_id:
+                format: uuid
+                type: string
+              description:
+                maxLength: 8192
+                type: string
+              erp_project_id:
+                maxLength: 255
+                type: string
+              erp_task_id:
+                maxLength: 255
+                type: string
+              name:
+                maxLength: 255
+                type: string
+              project_status_id:
+                format: uuid
+                type: string
+              start_time:
+                format: datetime
+                type: string
+              street_name:
+                maxLength: 255
+                type: string
+            required:
+              - name
+            type: object
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit a project
+      tags:
+        - Projects
+  "/projects/{project_id}/files":
+    get:
+      description: Used to show files uploaded to a project from wall post or form
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: string
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show list of files uploaded to project
+      tags:
+        - Projects
+  "/projects/{project_id}/files/{file_id}/":
+    delete:
+      description: Delete file uploaded to a project from wall post or form
+      parameters:
+        - format: uuid
+          in: path
+          name: project_id
+          required: true
+          type: string
+        - format: uuid
+          in: path
+          name: file_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete file
+      tags:
+        - Projects
+    get:
+      description: Show file uploaded to a project from wall post or form
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+        - in: path
+          name: file_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show file
+      tags:
+        - Projects
+    put:
+      description: Edit file uploaded to a project from wall post or form
+      parameters:
+        - format: uuid
+          in: path
+          name: project_id
+          required: true
+          type: string
+        - format: uuid
+          in: path
+          name: file_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit file
+      tags:
+        - Projects
+  "/projects/{project_id}/project_files":
+    get:
+      description: Returns files belonging to the project, not uploaded from wall post or form
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: string
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show list of project files uploaded to project
+      tags:
+        - Projects
+    post:
+      consumes:
+        - multipart/form-data
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+        - in: formData
+          name: file
+          required: true
+          type: file
+      responses:
+        "201":
+          description: Successfully added project file
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add project file to projects
+      tags:
+        - Projects
+  "/projects/{project_id}/project_files/{project_file_id}/":
+    delete:
+      parameters:
+        - format: uuid
+          in: path
+          name: project_file_id
+          required: true
+          type: string
+        - format: uuid
+          in: path
+          name: project_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete project file
+      tags:
+        - Projects
+    get:
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+        - in: path
+          name: project_file_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorNotFound"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show project file
+      tags:
+        - Projects
+    put:
+      parameters:
+        - format: uuid
+          in: path
+          name: project_id
+          required: true
+          type: string
+        - format: uuid
+          in: path
+          name: project_file_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit project file
+      tags:
+        - Projects
+  "/projects/{project_id}/users/":
+    get:
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/User"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Show list of users added to project
+      tags:
+        - Projects
+    post:
+      parameters:
+        - in: path
+          name: project_id
+          required: true
+          type: string
+        - in: body
+          name: user_id
+          schema:
+            properties:
+              user_id:
+                format: uuid
+                type: string
+            required:
+              - user_id
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add user to project
+      tags:
+        - Projects
+  "/projects/{project_id}/users/{user_id}":
+    delete:
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          type: string
+        - in: path
+          name: project_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete user from project
+      tags:
+        - Projects
+    get:
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          type: string
+        - in: path
+          name: project_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/User"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View specific user assigned to project
+      tags:
+        - Projects
+  /stock_locations:
+    get:
+      parameters:
+        - description: Used to filter on the `name` of the stock_locations
+          in: query
+          name: name
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/StockLocation"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: List stock_locations
+      tags:
+        - StockLocations
+    post:
+      parameters:
+        - in: body
+          name: location
+          schema:
+            properties:
+              name:
+                maxLength: 255
+                type: string
+            required:
+              - name
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add new stock_locations
+      tags:
+        - StockLocations
+  "/stock_locations/{location_id}":
+    delete:
+      parameters:
+        - in: path
+          name: location_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete location
+      tags:
+        - StockLocations
+    get:
+      parameters:
+        - in: path
+          name: location_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/StockLocation"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View single location
+      tags:
+        - StockLocations
+    put:
+      parameters:
+        - in: path
+          name: location_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit location
+      tags:
+        - StockLocations
+  /time_entries:
+    get:
+      parameters:
+        - in: query
+          name: user_id
+          type: string
+        - in: query
+          name: form_id
+          type: string
+        - in: query
+          name: project_id
+          type: string
+        - in: query
+          name: gt_from_time
+          type: string
+        - in: query
+          name: lt_from_time
+          type: string
+        - in: query
+          name: gt_to_time
+          type: string
+        - in: query
+          name: lt_to_time
+          type: string
+        - in: query
+          name: lt_sum
+          type: string
+        - in: query
+          name: gt_sum
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/TimeEntry"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: List time entries
+      tags:
+        - TimeEntries
+    post:
+      parameters:
+        - in: body
+          name: time_entry
+          schema:
+            properties:
+              form_id:
+                format: uuid
+                type: string
+              from_time:
+                format: dateTime
+                type: string
+              is_all_day:
+                type: boolean
+              project_id:
+                format: uuid
+                type: string
+              sum:
+                description: Amount of seconds - should only be included when using is_all_day, otherwise will be calculated from from_time and to_time
+                format: int32
+                type: integer
+              time_entry_type_id:
+                format: uuid
+                type: string
+              to_time:
+                format: dateTime
+                type: string
+              user_id:
+                format: uuid
+                type: string
+            required:
+              - user_id
+              - time_entry_type_id
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add new time entry
+      tags:
+        - TimeEntries
+  "/time_entries/{time_entry_id}":
+    delete:
+      parameters:
+        - format: uuid
+          in: path
+          name: time_entry_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete time entry
+      tags:
+        - TimeEntries
+    get:
+      parameters:
+        - format: uuid
+          in: path
+          name: time_entry_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/TimeEntry"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View time entry
+      tags:
+        - TimeEntries
+    put:
+      parameters:
+        - format: uuid
+          in: path
+          name: time_entry_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit time entry
+      tags:
+        - TimeEntries
+  /time_entry_intervals:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/TimeEntryInterval"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: List possible time entry intervals
+      tags:
+        - TimeEntryIntervals
+  "/time_entry_intervals/{time_entry_interval_id}":
+    get:
+      parameters:
+        - format: uuid
+          in: path
+          name: time_entry_interval_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/TimeEntryInterval"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View time entry interval
+      tags:
+        - TimeEntryIntervals
+  /time_entry_types:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/TimeEntryType"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: List time entries types
+      tags:
+        - TimeEntryTypes
+    post:
+      parameters:
+        - in: body
+          name: time_entry_type
+          schema:
+            properties:
+              description:
+                maxLength: 8192
+                type: string
+              name:
+                maxLength: 255
+                type: string
+              time_entry_interval_id:
+                format: uuid
+                type: string
+              time_entry_value_type_id:
+                format: uuid
+                type: string
+            required:
+              - time_entry_interval_id
+              - time_entry_value_type_id
+              - name
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add new time entry type
+      tags:
+        - TimeEntryTypes
+  "/time_entry_types/{time_entry_type_id}":
+    delete:
+      parameters:
+        - format: uuid
+          in: path
+          name: time_entry_type_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete time entry type
+      tags:
+        - TimeEntryTypes
+    get:
+      parameters:
+        - format: uuid
+          in: path
+          name: time_entry_type_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/TimeEntryType"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View time entry type
+      tags:
+        - TimeEntryTypes
+    put:
+      parameters:
+        - format: uuid
+          in: path
+          name: time_entry_type_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit time entry type
+      tags:
+        - TimeEntryTypes
+  /time_entry_unit_types:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/TimeEntryUnitType"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: List possible time entry unit types
+      tags:
+        - TimeEntryUnitTypes
+  "/time_entry_unit_types/{time_entry_unit_type_id}":
+    get:
+      parameters:
+        - format: uuid
+          in: path
+          name: time_entry_unit_type_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/TimeEntryUnitType"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View time entry unit type
+      tags:
+        - TimeEntryUnitTypes
+  /time_entry_value_types:
+    get:
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/TimeEntryValueType"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: List possible time entry value types
+      tags:
+        - TimeEntryValueTypes
+  "/time_entry_value_types/{time_entry_value_type_id}":
+    get:
+      parameters:
+        - format: uuid
+          in: path
+          name: time_entry_value_type_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/TimeEntryValueType"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View time entry value type
+      tags:
+        - TimeEntryValueTypes
+  /users:
+    get:
+      parameters:
+        - description: Used to filter on the `first_name` of the users
+          in: query
+          name: first_name
+          required: false
+          type: string
+        - description: Used to filter on the `last_name` of the users
+          in: query
+          name: last_name
+          required: false
+          type: string
+        - description: Used to filter on the `email` of the users
+          in: query
+          name: email
+          type: string
+        - description: Used to filter on the `stock_location_id` of the users
+          in: query
+          name: stock_location_id
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/User"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Get list of users in company
+      tags:
+        - Users
+    post:
+      parameters:
+        - in: body
+          name: user
+          schema:
+            properties:
+              city_id:
+                format: uuid
+                type: string
+              cost_price:
+                description: Cost of salaries
+                format: float
+                type: number
+              email:
+                format: email
+                maxLength: 255
+                type: string
+              extra_price:
+                description: Additional cost on this employee (pension, vacation etc.)
+                format: float
+                type: number
+              first_name:
+                maxLength: 255
+                type: string
+              is_active:
+                type: boolean
+              language_id:
+                format: uuid
+                type: string
+              last_name:
+                maxLength: 255
+                type: string
+              mobile:
+                maxLength: 32
+                type: string
+              mobile_countrycode:
+                maxLength: 8
+                type: string
+              password:
+                format: password
+                maxLength: 255
+                type: string
+              phone:
+                maxLength: 32
+                type: string
+              phone_countrycode:
+                maxLength: 8
+                type: string
+              receive_form_mails:
+                description: If `true` the employee will receive an email receipt of every form submitted
+                type: boolean
+              sale_price:
+                description: The price this employee costs per hour when working
+                format: float
+                type: number
+              street_name:
+                maxLength: 255
+                type: string
+            required:
+              - first_name
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add user to company
+      tags:
+        - Users
+  "/users/{user_id}":
+    delete:
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Delete user
+      tags:
+        - Users
+    get:
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/User"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View user
+      tags:
+        - Users
+    put:
+      parameters:
+        - in: path
+          name: user_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  type: object
+                type: array
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Edit user
+      tags:
+        - Users
+  /vendor_products:
+    get:
+      parameters:
+        - description: Used to filter on the `name` of the vendor products
+          in: query
+          name: name
+          type: string
+        - description: Used to filter on the `product_number` of the vendor products
+          format: uuid
+          in: query
+          name: product_number
+          type: string
+        - description: Used to filter on the `barcode` of the vendor products
+          in: query
+          name: barcode
+          type: string
+        - description: Used to filter on the `vendor_id` of the vendor products
+          in: query
+          name: vendor_id
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/VendorProduct"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: List vendor products
+      tags:
+        - VendorProducts
+  "/vendor_products/{vendor_product_id}":
+    get:
+      parameters:
+        - in: path
+          name: vendor_product_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/VendorProduct"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View single vendor product
+      tags:
+        - VendorProducts
+  /wall_comments:
+    post:
+      parameters:
+        - in: body
+          name: wall_comment
+          schema:
+            properties:
+              message:
+                type: string
+              wall_post_id:
+                format: uuid
+                type: string
+            required:
+              - wall_post_id
+              - message
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add wall comment
+      tags:
+        - WallComments
+  "/wall_comments/{wall_comment_id}":
+    get:
+      parameters:
+        - in: path
+          name: wall_comment_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/WallComment"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View wall comment
+      tags:
+        - WallComments
+  /wall_posts:
+    get:
+      parameters:
+        - format: uuid
+          in: query
+          name: project_id
+          required: true
+          type: string
+        - format: uuid
+          in: query
+          name: user_id
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/WallPost"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Not authorized to access project
+        "404":
+          description: Project not found
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View list of wall posts
+      tags:
+        - WallPosts
+    post:
+      parameters:
+        - in: body
+          name: wall_post
+          schema:
+            properties:
+              message:
+                type: string
+              project_id:
+                format: uuid
+                type: string
+            required:
+              - project_id
+              - message
+            type: object
+      responses:
+        "201":
+          description: OK
+          schema:
+            properties:
+              data:
+                properties:
+                  id:
+                    format: uuid
+                    type: string
+                type: object
+              success:
+                default: true
+                type: boolean
+            type: object
+        "422":
+          description: Validation error
+          schema:
+            $ref: "#/definitions/ErrorValidation"
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: Add a wall post
+      tags:
+        - WallPosts
+  "/wall_posts/{wall_post_id}":
+    get:
+      parameters:
+        - in: path
+          name: wall_post_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/WallPost"
+              success:
+                type: boolean
+            type: object
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: View wall post
+      tags:
+        - WallPosts
+  "/wall_posts/{wall_post_id}/wall_comments":
+    get:
+      parameters:
+        - in: path
+          name: wall_post_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/WallComment"
+                type: array
+              pagination:
+                $ref: "#/definitions/PaginationDetails"
+              success:
+                type: boolean
+            type: object
+        "401":
+          description: Not authorized to access project
+        "404":
+          description: Wall post not found
+      security:
+        - X-Auth-Token: []
+        - api_key: []
+      summary: See wall comments to a wall post
+      tags:
+        - WallPosts
+definitions:
+  City:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      deleted:
+        $ref: "#/definitions/deleted"
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+      zip_code:
+        maxLength: 11
+        type: integer
+    type: object
+  ClockingRecord:
+    properties:
+      checked_in:
+        format: dateTime
+        type: string
+      checked_out:
+        format: dateTime
+        type: string
+      checkin_latitude:
+        type: string
+      checkin_longitude:
+        type: string
+      checkout_latitude:
+        type: string
+      checkout_longitude:
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      modified_by_id:
+        format: uuid
+        type: string
+      project_id:
+        format: uuid
+        type: string
+      user_id:
+        format: uuid
+        type: string
+    type: object
+  Company:
+    properties:
+      city_id:
+        format: uuid
+        type: string
+      contact_person_id:
+        format: uuid
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        description: Read-only
+        format: uuid
+        type: string
+      cvr:
+        maxLength: 255
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      expired:
+        format: date-time
+        type: string
+      file_id:
+        format: uuid
+        type: string
+      id:
+        format: uuid
+        type: string
+      invoice_email:
+        format: email
+        maxLength: 255
+        type: string
+      language_id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+      next_invoice_number:
+        format: int32
+        maxLength: 8
+        type: integer
+      phone:
+        description: Format like eg. `28680133` or `046158971404`
+        maxLength: 32
+        type: string
+      phone_countrycode:
+        description: Format like eg. `45` or `49`
+        maxLength: 3
+        type: string
+      receive_form_mails:
+        format: email
+        maxLength: 255
+        type: string
+      street_name:
+        maxLength: 255
+        type: string
+      vat_percent:
+        format: int32
+        maxLength: 12
+        type: integer
+      website:
+        maxLength: 255
+        type: string
+    type: object
+  Contact:
+    properties:
+      address:
+        description: Street address
+        maxLength: 255
+        type: string
+      city_id:
+        format: uuid
+        type: string
+      company_id:
+        description: Only filled out if this represents another company within Apacta (used for partners)
+        format: uuid
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        description: Read-only
+        format: uuid
+        type: string
+      cvr:
+        maxLength: 255
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      email:
+        maxLength: 255
+        type: string
+      erp_id:
+        description: If company has integration to an ERP system, and the contacts are synchronized, this will be the ERP-systems ID of this contact
+        maxLength: 255
+        type: string
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+      phone:
+        description: Format like eg. `28680133` or `046158971404`
+        maxLength: 32
+        type: string
+      website:
+        maxLength: 255
+        type: string
+    type: object
+  ContactType:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        description: Read-only
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      identifier:
+        description: One of 3 values
+        enum:
+          - client
+          - partner
+          - supplier
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+    type: object
+  Currency:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      currency_sign:
+        maxLength: 8
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      identifier:
+        maxLength: 255
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+    type: object
+  ErrorNotFound:
+    properties:
+      data:
+        properties:
+          code:
+            description: The HTTP status code
+            type: integer
+          message:
+            default: A validation error occurred
+            description: Error message
+            type: string
+          url:
+            description: The url from which this originated
+            type: string
+        type: object
+      success:
+        default: false
+        type: boolean
+    type: object
+  ErrorValidation:
+    properties:
+      data:
+        properties:
+          code:
+            description: The HTTP status code
+            type: integer
+          errorCount:
+            description: The amount of validation errors
+            type: integer
+          errors:
+            description: Object that contains details information about which properties failed validation and what rules they failed.
+            type: object
+          message:
+            default: A validation error occurred
+            description: Error message
+            type: string
+          url:
+            description: The url from which this originated
+            type: string
+        type: object
+      success:
+        default: false
+        type: boolean
+    type: object
+  Expense:
+    properties:
+      company_id:
+        description: Read-only
+        format: uuid
+        type: string
+      contact_id:
+        format: uuid
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        description: Read-only
+        format: uuid
+        type: string
+      currency_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      delivery_date:
+        format: date
+        type: string
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        description: Read-only
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      project_id:
+        format: uuid
+        type: string
+      reference:
+        maxLength: 8192
+        type: string
+      short_text:
+        maxLength: 255
+        type: string
+      supplier_invoice_number:
+        maxLength: 255
+        type: string
+    type: object
+  ExpenseFile:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        description: Read-only
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      expense_id:
+        format: uuid
+        type: string
+      file:
+        description: File's name
+        maxLength: 255
+        type: string
+      file_extension:
+        maxLength: 255
+        type: string
+      file_original_name:
+        maxLength: 255
+        type: string
+      file_size:
+        description: File size in bytes
+        maxLength: 255
+        type: string
+      file_type:
+        description: File's MIME type
+        maxLength: 255
+        type: string
+      file_url:
+        description: Read-only
+        maxLength: 255
+        type: string
+      id:
+        description: Read-only
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+    type: object
+  ExpenseLine:
+    properties:
+      buying_price:
+        format: float
+        type: number
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        description: Read-only
+        format: uuid
+        type: string
+      currency_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      expense_id:
+        format: uuid
+        type: string
+      id:
+        description: Read-only
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      quantity:
+        format: int32
+        type: integer
+      selling_price:
+        format: float
+        type: number
+      text:
+        maxLength: 255
+        type: string
+    type: object
+  Form:
+    properties:
+      approved_by_id:
+        format: uuid
+        type: string
+      company_id:
+        format: uuid
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        description: Read-only
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      form_date:
+        format: date
+        type: string
+      form_template_id:
+        format: uuid
+        type: string
+      id:
+        description: Read-only
+        format: uuid
+        type: string
+      is_draft:
+        default: false
+        type: boolean
+      is_invoiced:
+        default: false
+        type: boolean
+      is_shared:
+        default: false
+        type: boolean
+      mass_form_id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      project_id:
+        format: uuid
+        type: string
+    type: object
+  FormField:
+    properties:
+      comment:
+        maxLength: 8192
+        type: string
+      content_value:
+        maxLength: 255
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        description: Read-only
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      file_id:
+        format: uuid
+        type: string
+      form_field_type_id:
+        format: uuid
+        type: string
+      form_id:
+        format: uuid
+        type: string
+      form_template_field_id:
+        format: uuid
+        type: string
+      id:
+        description: Read-only
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      placement:
+        format: int32
+        type: integer
+    type: object
+  FormFieldType:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        description: Read-only
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        description: Read-only
+        format: uuid
+        type: string
+      identifier:
+        maxLength: 255
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+    type: object
+  FormTemplate:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      form_category_id:
+        format: uuid
+        type: string
+      form_overview_category_id:
+        format: uuid
+        type: string
+      id:
+        format: uuid
+        type: string
+      identifier:
+        maxLength: 255
+        type: string
+      is_active:
+        type: boolean
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+      pdf_template_identifier:
+        maxLength: 255
+        type: string
+    type: object
+  IntegrationFeatureSetting:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      default_value:
+        maxLength: 255
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      identifier:
+        maxLength: 255
+        type: string
+      integration_feature_id:
+        format: uuid
+        type: string
+      is_custom_setting:
+        type: boolean
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+    type: object
+  Invoice:
+    properties:
+      company_id:
+        format: uuid
+        type: string
+      contact_id:
+        format: uuid
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      currency_id:
+        format: uuid
+        type: string
+      date_from:
+        format: date
+        type: string
+      date_to:
+        format: date
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      erp_id:
+        maxLength: 255
+        type: string
+      erp_payment_term_id:
+        maxLength: 255
+        type: string
+      eu_customer:
+        type: boolean
+      gross_payment:
+        format: float
+        type: number
+      id:
+        format: uuid
+        type: string
+      integration_id:
+        format: uuid
+        type: string
+      invoice_number:
+        format: int32
+        maxLength: 8
+        type: integer
+      is_draft:
+        type: boolean
+      is_locked:
+        type: boolean
+      is_offer:
+        type: boolean
+      issued_date:
+        format: date
+        type: string
+      message:
+        maxLength: 8192
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      net_payment:
+        format: float
+        type: number
+      offer_number:
+        format: int32
+        maxLength: 8
+        type: integer
+      payment_due_date:
+        format: date
+        type: string
+      payment_term_id:
+        format: uuid
+        type: string
+      project_id:
+        format: uuid
+        type: string
+      reference:
+        maxLength: 255
+        type: string
+      vat_percent:
+        format: int32
+        maxLength: 2
+        type: integer
+    type: object
+  InvoiceLine:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      discount_percent:
+        format: int32
+        type: integer
+      discount_text:
+        maxLength: 255
+        type: string
+      id:
+        format: uuid
+        type: string
+      invoice_id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 2048
+        type: string
+      product_id:
+        format: uuid
+        type: string
+      quantity:
+        format: int32
+        type: integer
+      selling_price:
+        format: float
+        type: number
+      user_id:
+        format: uuid
+        type: string
+    type: object
+  MassMessage:
+    properties:
+      company_id:
+        format: uuid
+        type: string
+      content:
+        maxLength: 8192
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+    type: object
+  MassMessagesUser:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      id:
+        format: uuid
+        type: string
+      is_read:
+        type: boolean
+      is_sent_email:
+        type: boolean
+      mass_message:
+        $ref: "#/definitions/MassMessage"
+      mass_message_id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      modified_by_id:
+        format: uuid
+        type: string
+      user_id:
+        format: uuid
+        type: string
+    type: object
+  Material:
+    properties:
+      barcode:
+        maxLength: 255
+        type: string
+      billing_cycle:
+        maxLength: 255
+        type: string
+      company_id:
+        format: uuid
+        type: string
+      cost_price:
+        format: float
+        type: number
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      is_single_usage:
+        type: boolean
+      modified:
+        $ref: "#/definitions/modified"
+      modified_by_id:
+        format: uuid
+        type: string
+      name:
+        maxLength: 2048
+        type: string
+      selling_price:
+        format: float
+        type: number
+    type: object
+  MaterialRental:
+    properties:
+      amount:
+        format: float
+        type: number
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      from_date:
+        format: dateTime
+        type: string
+      id:
+        format: uuid
+        type: string
+      is_invoiced:
+        format: dateTime
+        type: string
+      material_id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      modified_by_id:
+        format: uuid
+        type: string
+      project_id:
+        format: uuid
+        type: string
+      quantity:
+        format: float
+        type: number
+      to_date:
+        format: dateTime
+        type: string
+    type: object
+  PaginationDetails:
+    properties:
+      count:
+        type: integer
+      current_page:
+        type: string
+      has_next_page:
+        type: boolean
+      has_prev_page:
+        type: boolean
+      limit:
+        type: integer
+      page_count:
+        type: string
+    type: object
+  PaymentTerm:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      days_of_credit:
+        format: int32
+        maxLength: 11
+        type: integer
+      deleted:
+        $ref: "#/definitions/deleted"
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      payment_term_type_id:
+        format: uuid
+        type: string
+    type: object
+  PaymentTermType:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      identifier:
+        maxLength: 255
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+    type: object
+  Product:
+    properties:
+      barcode:
+        maxLength: 255
+        type: string
+      buying_price:
+        format: double
+        type: number
+      company_id:
+        format: uuid
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      erp_id:
+        maxLength: 255
+        type: string
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+      product_number:
+        maxLength: 255
+        type: string
+      selling_price:
+        format: double
+        type: number
+    type: object
+  Project:
+    properties:
+      contact_id:
+        format: uuid
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      erp_project_id:
+        maxLength: 255
+        type: string
+      erp_task_id:
+        maxLength: 255
+        type: string
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+      project_status_id:
+        format: uuid
+        type: string
+      start_time:
+        format: datetime
+        type: string
+      street_name:
+        maxLength: 255
+        type: string
+    required:
+      - id
+      - name
+    type: object
+  ProjectStatus:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      identifier:
+        description: One of 3 values
+        enum:
+          - ready_for_billing
+          - open
+          - closed
+        maxLength: 255
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+    type: object
+  StockLocation:
+    properties:
+      company_id:
+        format: uuid
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+    type: object
+  TimeEntry:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      form_id:
+        format: uuid
+        type: string
+      from_time:
+        format: dateTime
+        type: string
+      id:
+        format: uuid
+        type: string
+      is_all_day:
+        type: boolean
+      modified:
+        $ref: "#/definitions/modified"
+      modified_by_id:
+        format: uuid
+        type: string
+      project_id:
+        format: uuid
+        type: string
+      sum:
+        description: Amount of seconds
+        format: int32
+        type: integer
+      time_entry_type_id:
+        format: uuid
+        type: string
+      to_time:
+        format: dateTime
+        type: string
+      user_id:
+        format: uuid
+        type: string
+    type: object
+  TimeEntryInterval:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      identifier:
+        maxLength: 255
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      modified_by_id:
+        format: uuid
+        type: string
+      name:
+        maxLength: 255
+        type: string
+    type: object
+  TimeEntryType:
+    properties:
+      company_id:
+        format: uuid
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      modified_by_id:
+        format: uuid
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      time_entry_interval_id:
+        format: uuid
+        type: string
+      time_entry_value_type_id:
+        format: uuid
+        type: string
+    type: object
+  TimeEntryUnitType:
+    properties:
+      abbreviation:
+        maxLength: 255
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      identifier:
+        maxLength: 255
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      modified_by_id:
+        format: uuid
+        type: string
+      name:
+        maxLength: 255
+        type: string
+    type: object
+  TimeEntryValueType:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 8192
+        type: string
+      id:
+        format: uuid
+        type: string
+      identifier:
+        maxLength: 255
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      modified_by_id:
+        format: uuid
+        type: string
+      name:
+        maxLength: 255
+        type: string
+      time_entry_unit_type_id:
+        format: uuid
+        type: string
+    type: object
+  User:
+    properties:
+      api_key:
+        format: uuid
+        type: string
+      city_id:
+        format: uuid
+        type: string
+      company_id:
+        format: uuid
+        type: string
+      cost_price:
+        description: Cost of salaries
+        format: float
+        type: number
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      email:
+        format: email
+        maxLength: 255
+        type: string
+      extra_price:
+        description: Additional cost on this employee (pension, vacation etc.)
+        format: float
+        type: number
+      first_name:
+        maxLength: 255
+        type: string
+      full_name:
+        description: READ-ONLY
+        type: string
+      id:
+        format: uuid
+        type: string
+      is_active:
+        type: boolean
+      language_id:
+        format: uuid
+        type: string
+      last_name:
+        maxLength: 255
+        type: string
+      mobile:
+        maxLength: 32
+        type: string
+      mobile_countrycode:
+        maxLength: 8
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      password:
+        format: password
+        maxLength: 255
+        type: string
+      phone:
+        maxLength: 32
+        type: string
+      phone_countrycode:
+        maxLength: 8
+        type: string
+      receive_form_mails:
+        description: If `true` the employee will receive an email receipt of every form submitted
+        type: boolean
+      sale_price:
+        description: The price this employee costs per hour when working
+        format: float
+        type: number
+      street_name:
+        maxLength: 255
+        type: string
+      website:
+        maxLength: 255
+        type: string
+    type: object
+  VendorProduct:
+    properties:
+      barcode:
+        maxLength: 255
+        type: string
+      created:
+        $ref: "#/definitions/created"
+      created_by_id:
+        format: uuid
+        type: string
+      deleted:
+        $ref: "#/definitions/deleted"
+      description:
+        maxLength: 255
+        type: string
+      id:
+        format: uuid
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      name:
+        maxLength: 255
+        type: string
+      price:
+        format: double
+        type: number
+      product_category_number:
+        maxLength: 255
+        type: string
+      product_number:
+        maxLength: 255
+        type: string
+      vendor_id:
+        format: uuid
+        type: string
+    type: object
+  WallComment:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      deleted:
+        $ref: "#/definitions/deleted"
+      id:
+        format: uuid
+        type: string
+      message:
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      user_id:
+        maxLength: 255
+        type: string
+      wall_post_id:
+        format: uuid
+        type: string
+    type: object
+  WallPost:
+    properties:
+      created:
+        $ref: "#/definitions/created"
+      deleted:
+        $ref: "#/definitions/deleted"
+      id:
+        format: uuid
+        type: string
+      message:
+        type: string
+      modified:
+        $ref: "#/definitions/modified"
+      project_id:
+        format: uuid
+        type: string
+      user_id:
+        format: uuid
+        type: string
+    type: object
+  created:
+    description: READ-ONLY
+    format: dateTime
+    type: string
+  deleted:
+    description: READ-ONLY - only present if it's an deleted object
+    format: dateTime
+    type: string
+  modified:
+    description: READ-ONLY
+    format: dateTime
+    type: string

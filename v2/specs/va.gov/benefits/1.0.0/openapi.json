@@ -1,0 +1,1245 @@
+{
+  "openapi": "3.0.0",
+  "servers": [
+    {
+      "description": "VA.gov API sandbox environment",
+      "url": "https://sandbox-api.va.gov/services/vba_documents/{version}",
+      "variables": {
+        "version": {
+          "default": "v1"
+        }
+      }
+    },
+    {
+      "description": "VA.gov API production environment",
+      "url": "https://api.va.gov/services/vba_documents/{version}",
+      "variables": {
+        "version": {
+          "default": "v1"
+        }
+      }
+    }
+  ],
+  "info": {
+    "contact": {
+      "name": "va.gov"
+    },
+    "description": "# Benefits Intake\n\nAre you a Veteran? [Check your benefits or appeals claim status](https://www.va.gov/claim-or-appeal-status/).\n\nhttps://api.va.gov/services/vba_documents/docs/v1/api\n\nThe Benefits Intake API allows authorized third-party systems used by Veteran Service Organizations (VSOs), agencies, and Veterans to digitally submit VA benefits claim documents directly to the Veterans Benefits Administration's (VBA) claims intake process. This API handles documents related to the following benefit claim types: \n\n* Compensation\n* Pension/Survivors Benefits\n* Education\n* Fiduciary\n* Insurance\n* Veteran Readiness & Employment (VRE)\n* Board of Veteran Appeals (BVA)\n\nThis API also provides submission status updates until documents are successfully established for VBA claim processing, eliminating the need for users to switch between systems to manually check whether documents have been successfully uploaded.\n\n## Background \nThis API provides a secure, efficient, and tracked alternative to mail or fax for VA benefit claim document submissions. Documents are uploaded directly to the VBA system, where they can then be processed. Compared to mail or fax, these documents are processed faster, ultimately providing Veterans with claim decisions more quickly. \n\nAll successfully submitted documents are routed to the correct office for processing. \n\n## Technical overview\nThe Benefits Intake API first provides an upload location and unique submission identifier, and then accepts a payload consisting of a document in PDF format, zero or more optional attachments in PDF format, and some JSON metadata. \n\nThe metadata describes the document and attachments, and identifies the person for whom it is being submitted. This payload is encoded as binary multipart/form-data (not base64). The unique identifier supplied with the payload can subsequently be used to request the processing status of the uploaded document package.\n\nAPI consumers are encouraged to validate the `zipcode`,`fileNumber`, `veteranFirstName`, and 'veteranLastName' fields before submission according to their description in the DocumentUploadMetadata model and use the 'businessLine' attribute for the most efficient processing. Additionally, please ensure no PDF user or owner passwords are used in submitted PDFs. \n\n### Attachment & file size limits\nThere is no limit on the number of files a payload can contain, but size limits do apply.\n\n* Uploaded documents cannot be larger than 21\" x 21\"\n* The entire payload cannot exceed 5 GB\n* No single file in a payload can exceed 100 MB\n\n### Date of receipt\nThe date and time that documents are successfully submitted through the Benefits Intake API is used as the official VA date of receipt. However, note that until a document status of `received`, `processing`, `success`, or `vbms` is returned, a client cannot consider the document received by VA. \n\nA status of `received` means that the document package has been transmitted, but may not be validated. Any errors with the document package, such as unreadable PDFs or a Veteran not found, will cause the status to change to `error`.\n\nIf the document status is `error`, VA has not received the submission and cannot honor the submission date as the date of receipt.\n\n### Authentication and Authorization\nAPI requests are authorized through a symmetric API token, provided in an HTTP header with name 'apikey'. [Request an API key.](https://developer.va.gov/apply)\n\n### Testing in the sandbox environment\nIn the sandbox environment, the final status of a submission is `received` and submissions do not actually progress to the central mail repository or VBMS. \n\nProgress beyond the `received` status can be simulated for testing. We allow passing in a `Status-Override` header on the `/uploads/{id}` endpoint so that you can change the status of your submission to simulate the various scenarios. \n\nThe available statuses are `pending`, `uploaded`, `received`, `processing`, `success`, `vbms`, and `error`. The meaning of the various statuses is listed below in Models under DocumentUploadStatusAttributes.\n\n### Test data\nWe use mock test data in the sandbox environment. Data is not sent upstream and it is not necessary to align submitted test data with any other systems' data.\n\n### Upload operation\nAllows a client to upload a multi-part document package (form + attachments + metadata).\n\n1. Client Request: POST https://sandbox-api.va.gov/services/vba_documents/v1/\n    * No request body or parameters required\n\n2. Service Response: A JSON API object with the following attributes:\n    * `guid`: An identifier used for subsequent status requests\n    * `location`: A URL to which the actual document package payload can be submitted in the next step. The URL is specific to this upload request, and should not be re-used for subsequent uploads. The URL is valid for 900 seconds (15 minutes) from the time of this response. If the location is not used within 15 minutes, the GUID will expire. Once expired, status checks on the GUID will return a status of `expired`.\n        * Note: If, after you've submitted a document, the status hasn't changed to `uploaded` before 15 minutes has elapsed, we recommend retrying the upload in order to make sure the document properly reaches our servers. If the upload continues to fail, try encoding the payload as Base64 (See below).\n\n 3. Client Request: PUT to the location URL returned in Step 2.\n    * Request body should be encoded as binary multipart/form-data (base64 also available - see details below), equivalent to that generated by an HTML form submission or using “curl -F…”. The format is described in more detail below.\n    * No `apikey` authorization header is required for this request, as authorization is embedded in the signed location URL.\n\n4. Service Response: The HTTP status indicates whether the upload was successful.\n    * Additionally, the response includes an ETag header containing an MD5 hash of the submitted payload. This can be compared to the submitted payload to ensure data integrity of the upload.\n\n### Status caching\nDue to current system limitations, data for the `/uploads/report` endpoint is cached for one hour.\n\nA request to the `/uploads/{id}` endpoint will return a real-time status for that GUID, and update its status in `/uploads/report`.\n\nThe `updated_at` field indicates the last time the status for a given GUID was updated.\n\n### Optional Base64 encoding\n\nBase64 is an encoding scheme that converts binary data into text format, so that encoded textual data can be easily transported over networks uncorrupted and without data loss. \n\nBase64 can be used to encode binary multipart/form-data it in its entirety.  Note that the whole payload must be encoded, not individual parts/attachments.\n\nAfter encoding your payload, you'll be required to preface your base64 string with `data:multipart/form-data;base64,` in order to allow our system to distinguish the file type. Your final string payload would look something like `data:multipart/form-data;base64,(encryption string)==` and close with the standard == marker.  Note that the multipart boundaries i.e. -----WebKitFormBoundaryVfOwzCyvug0JmWYo and ending ------WebKitFormBoundaryVfOwzCyvug0JmWYo- must also be included.\n\n### Consumer onboarding process\nWhen you're ready to move to production, [request a production API key.](https://developer.va.gov/go-live)\n",
+    "title": "Benefits Intake",
+    "version": "1.0.0",
+    "x-apisguru-categories": [
+      "open_data"
+    ],
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_prod-va-gov-assets.s3-us-gov-west-1.amazonaws.com_img_design_icons_apple-touch-icon.png"
+    },
+    "x-origin": [
+      {
+        "format": "openapi",
+        "url": "https://api.va.gov/services/vba_documents/docs/v1/api",
+        "version": "3.0"
+      }
+    ],
+    "x-providerName": "va.gov",
+    "x-serviceName": "benefits"
+  },
+  "tags": [
+    {
+      "description": "VA Benefits document upload functionality",
+      "name": "document_uploads"
+    }
+  ],
+  "paths": {
+    "/path": {
+      "put": {
+        "description": "Accepts document metadata, document binary, and attachment binaries.Full URL, including\nquery parameters, provided from POST `/document_uploads`.\n\n## Example Payload\n\nThe following demonstrates a (redacted) multipart payload suitable for submitting to the PUT\nendpoint. Most programming languages should have provisions for assembling a multipart\npayload like this without having to do so manually.\n\n```\n--17de1ed8f01442b2a2d7a93506314b76\nContent-Disposition: form-data; name=\"metadata\"\nContent-Type: application/json\n\n{\"veteranFirstName\": \"Jane\",\n\"veteranLastName\": \"Doe\",\n\"fileNumber\": \"012345678\",\n\"zipCode\": \"97202\",\n\"source\": \"MyVSO\",\n\"docType\": \"21-22\"\n\"businessLine\": \"CMP\"}\n--17de1ed8f01442b2a2d7a93506314b76\nContent-Disposition: form-data; name=\"content\"\nContent-Type: application/pdf\n\n<Binary PDF contents>\n--17de1ed8f01442b2a2d7a93506314b76\nContent-Disposition: form-data; name=\"attachment1\"\nContent-Type: application/pdf\n\n<Binary PDF attachment contents>\n--17de1ed8f01442b2a2d7a93506314b76--\n```\n\nThis PUT request would have an overall HTTP Content-Type header:\n\n```\nContent-Type: multipart/form-data; boundary=17de1ed8f01442b2a2d7a93506314b76\n```\n\nNote that the Content-Disposition parameter \"name\" in each part must be the expected values\n\"metadata\", \"content\", \"attachment1\"...\"attachmentN\". The attachment attributes must be named \nexactly as they are listed here (case sensitive), for example: \"attachment_1\" or \"Attachment2\"\nare invalid.\n\nThis is an example curl command:\n\n```\ncurl -v -L -X PUT '<Location from \\uploads>' -F 'metadata=\"{\\\"veteranFirstName\\\": \\\"Jane\\\",\\\"veteranLastName\\\": \\\"Doe\\\",\\\"fileNumber\\\": \\\"012345678\\\",\\\"zipCode\\\": \\\"97202\\\",\\\"source\\\": \\\"MyVSO\\\",\\\"docType\\\": \\\"21-22\\\",\\\"businessLine\\\": \\\"CMP\\\"}\";type=application/json' -F 'content=@\"content.pdf\"' -F 'attachment1=@\"file1.pdf\"' -F 'attachment2=@\"another_file.pdf\"'\n```\n",
+        "operationId": "putBenefitsDocumentUpload",
+        "parameters": [
+          {
+            "description": "Base64-encoded 128-bit MD5 digest of the message. Use for integrity control",
+            "in": "header",
+            "name": "Content-MD5",
+            "required": false,
+            "schema": {
+              "format": "md5",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Document upload staged"
+          },
+          "400": {
+            "content": {
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/DocumentUploadFailure"
+                }
+              }
+            },
+            "description": "Document upload failed"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "Error detail",
+                      "example": "Unauthorized Request",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Unauthorized request"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human readable error detail. Only present if status = \"error\"",
+                      "example": "Internal server error",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "Human readable title description.",
+                      "example": "Internal server error",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "summary": "Accepts document upload.",
+        "tags": [
+          "document_uploads"
+        ]
+      }
+    },
+    "/uploads": {
+      "post": {
+        "operationId": "postBenefitsDocumentUpload",
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DocumentUploadPath"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Accepted. Location generated"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "Error detail",
+                      "example": "Unauthorized Request",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Unauthorized request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "Error detail",
+                      "example": "Invalid authentication credentials",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "errors": {
+                      "items": {
+                        "$ref": "#/components/schemas/ErrorModel"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "errors"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "message",
+                      "example": "API rate limit exceeded",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Too many requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human readable error detail. Only present if status = \"error\"",
+                      "example": "Internal server error",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "Human readable title description.",
+                      "example": "Internal server error",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Get a location for subsequent document upload PUT request",
+        "tags": [
+          "document_uploads"
+        ]
+      }
+    },
+    "/uploads/report": {
+      "post": {
+        "operationId": "getBenefitsDocumentUploadStatusReport",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/DocumentUploadStatusGuidList"
+              }
+            }
+          },
+          "description": "List of GUIDs for which to retrieve current status",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DocumentUploadStatusReport"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Upload status report retrieved successfully"
+          },
+          "400": {
+            "description": "Bad Request - invalid or missing list of guids"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "Error detail",
+                      "example": "Unauthorized Request",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Unauthorized request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "Error detail",
+                      "example": "Invalid authentication credentials",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "errors": {
+                      "items": {
+                        "$ref": "#/components/schemas/ErrorModel"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "errors"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "message",
+                      "example": "API rate limit exceeded",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Too many requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human readable error detail. Only present if status = \"error\"",
+                      "example": "Internal server error",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "Human readable title description.",
+                      "example": "Internal server error",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Get a bulk status report for a list of previous uploads",
+        "tags": [
+          "document_uploads"
+        ]
+      }
+    },
+    "/uploads/{id}": {
+      "get": {
+        "operationId": "getBenefitsDocumentUploadStatus",
+        "parameters": [
+          {
+            "description": "ID as returned by a previous create upload request",
+            "example": "6d8433c1-cd55-4c24-affd-f592287a7572",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "$ref": "#/components/schemas/DocumentUploadStatus"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ]
+                }
+              }
+            },
+            "description": "Upload status retrieved successfully"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "Error detail",
+                      "example": "Unauthorized Request",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Unauthorized request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "Error detail",
+                      "example": "Invalid authentication credentials",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 404,
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human readable error detail. Only present if status = \"error\"",
+                      "example": "The record identified by {{ind}} could not be found",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 404,
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "Human readable title description.",
+                      "example": "Record not found",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "errors": {
+                      "items": {
+                        "$ref": "#/components/schemas/ErrorModel"
+                      },
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "errors"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "message",
+                      "example": "API rate limit exceeded",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Too many requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human readable error detail. Only present if status = \"error\"",
+                      "example": "Internal server error",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "Human readable title description.",
+                      "example": "Internal server error",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Get status for a previous benefits document upload",
+        "tags": [
+          "document_uploads"
+        ]
+      }
+    },
+    "/uploads/{id}/download": {
+      "get": {
+        "description": "An endpoint that will allow you to see exactly what the server sees. We split apart all submitted docs and metadata and zip the file to make it available to you to help with debugging purposes. Files are deleted after 10 days. Only available in testing environments, not production.",
+        "operationId": "getBenefitsDocumentUploadDownload",
+        "parameters": [
+          {
+            "description": "ID as returned by a previous create upload request",
+            "example": "6d8433c1-cd55-4c24-affd-f592287a7572",
+            "in": "path",
+            "name": "id",
+            "required": true,
+            "schema": {
+              "format": "uuid",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "example": "Binary File",
+                  "format": "binary",
+                  "type": "string"
+                }
+              }
+            },
+            "description": "Zip file with the contents of your payload as parsed by our server"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "Error detail",
+                      "example": "Unauthorized Request",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Unauthorized request"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "Error detail",
+                      "example": "Invalid authentication credentials",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Forbidden"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 404,
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human readable error detail. Only present if status = \"error\"",
+                      "example": "The record identified by {{ind}} could not be found",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 404,
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "Human readable title description.",
+                      "example": "Record not found",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Not found"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "Message": {
+                      "description": "message",
+                      "example": "API rate limit exceeded",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Too many requests"
+          },
+          "500": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "code": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human readable error detail. Only present if status = \"error\"",
+                      "example": "Internal server error",
+                      "type": "string"
+                    },
+                    "status": {
+                      "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+                      "example": 500,
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "Human readable title description.",
+                      "example": "Internal server error",
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "data"
+                  ],
+                  "type": "object"
+                }
+              }
+            },
+            "description": "Internal server error"
+          }
+        },
+        "security": [
+          {
+            "apikey": []
+          }
+        ],
+        "summary": "Download zip of \"what the server sees\"",
+        "tags": [
+          "document_uploads"
+        ]
+      }
+    }
+  },
+  "components": {
+    "examples": {},
+    "links": {},
+    "parameters": {},
+    "requestBodies": {},
+    "responses": {},
+    "schemas": {
+      "DocumentUploadAttributes": {
+        "properties": {
+          "code": {
+            "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+            "type": "string"
+          },
+          "detail": {
+            "description": "Human readable error detail. Only present if status = \"error\"",
+            "type": "string"
+          },
+          "guid": {
+            "description": "The document upload identifier",
+            "example": "6d8433c1-cd55-4c24-affd-f592287a7572",
+            "format": "uuid",
+            "type": "string"
+          },
+          "location": {
+            "description": "Location to which to PUT document Payload",
+            "example": "https://sandbox-api.va.gov/services_user_content/vba_documents/{idpath}",
+            "format": "uri",
+            "type": "string"
+          },
+          "status": {
+            "description": "Document upload status. Note that until a document status of\n“received”, “processing”, “success”, or \"vbms\" is returned, a client\ncannot consider the document as received by VA. In particular a\nstatus of “uploaded” means that the document package has been\ntransmitted, but possibly not validated. Any errors with the\ndocument package (unreadable PDF, etc) may cause the status to\nchange to “error”.\n\n* `pending` - Initial status, indicates no document package has been uploaded yet\n* `uploaded` - Indicates document package has been successfully uploaded (PUT) from the vendor's application system to the API server but has not yet been validated. Date of Receipt is _not_ yet established with this status.\n* `received` - Indicates document package has been received upstream of the API, but is not yet in processing. <ins>Date of Receipt is set when this status is achieved.</ins> (This is also the final status in the sandbox environment unless further progress is simulated.)\n* `processing` - Indicates VBA Intake, Conversion and Mail Handling Services (ICMHS) is processing the document package.\n* `success` - Indicates document package has been received by Digital Mail Handling System (DHMS, aka the Centralized Mail portal).\n* `vbms` - Final status. Indicates document package has been received by Veterans Benefits Management System (VBMS).\n* `error` - Indicates that there was an error. See the `code` and `message` for further information.\n* `expired` - Indicates that the submission was not successfully uploaded via PUT request within the 15-minute window after the POST request. We recommend coding to retry unsuccessful uploads using the same GUID within 15 minutes in case of connection issues.\n",
+            "enum": [
+              "pending",
+              "uploaded",
+              "received",
+              "processing",
+              "success",
+              "vbms",
+              "error"
+            ],
+            "example": "pending",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "The last time the submission was updated",
+            "example": "2018-07-30T17:31:15.958Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "uploaded_pdf": {
+            "description": "Only populated after submission starts processing",
+            "example": "null"
+          }
+        },
+        "required": [
+          "guid",
+          "status"
+        ]
+      },
+      "DocumentUploadFailure": {
+        "description": "Document upload failed",
+        "properties": {
+          "Code": {
+            "description": "Error code",
+            "example": "Bad Digest",
+            "type": "string"
+          },
+          "Message": {
+            "description": "Error detail",
+            "example": "A client error (InvalidDigest) occurred when calling the PutObject operation - The Content-MD5 you specified was invalid.",
+            "type": "string"
+          },
+          "RequestId": {
+            "description": "Identifier for debug purposes",
+            "type": "string"
+          },
+          "Resource": {
+            "description": "Resource description",
+            "example": "/vba_documents/6d8433c1-cd55-4c24-affd-f592287a7572.upload",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "Error"
+        }
+      },
+      "DocumentUploadMetadata": {
+        "description": "Identifying properties about the document payload being submitted",
+        "properties": {
+          "businessLine": {
+            "description": "Optional parameter (can be missing or empty).  The values are:<br><br>\nCMP - Compensation requests such as those related to disability, unemployment, and pandemic claims<br><br>\nPMC - Pension requests including survivor’s pension<br><br>\nINS - Insurance such as life insurance, disability insurance, and other health insurance<br><br>\nEDU - Education benefits, programs, and affiliations<br><br>\nVRE - Veteran Readiness & Employment such as employment questionnaires, employment discrimination, employment verification<br><br>\nBVA - Board of Veteran Appeals<br><br>\nFID - Fiduciary / financial appointee, including family member benefits<br><br>\nOTH - Other (this value if used, will be treated as CMP)<br>\n",
+            "enum": [
+              "CMP",
+              "PMC",
+              "INS",
+              "EDU",
+              "VRE",
+              "BVA",
+              "FID",
+              "OTH"
+            ],
+            "example": "CMP",
+            "type": "string"
+          },
+          "docType": {
+            "description": "VBA form number of the document",
+            "example": "21-22",
+            "type": "string"
+          },
+          "fileNumber": {
+            "description": "The Veteran's file number is exactly 9 digits with no alpha characters, hyphens, spaces or punctuation. In most cases, this is the Veteran's SSN but may also be an 8 digit BIRL number. If no file number has been established or if it is unknown, the application should use the Veteran's SSN and the file number will be associated with the submission later in the process. Incorrect file numbers can cause delays.",
+            "example": "999887777",
+            "pattern": "^\\d{8,9}$",
+            "type": "string"
+          },
+          "source": {
+            "description": "System, installation, or entity submitting the document",
+            "example": "MyVSO",
+            "type": "string"
+          },
+          "veteranFirstName": {
+            "description": "Veteran first name. Cannot be missing or empty or longer than 50 characters. Only upper/lower case letters, hyphens(-), spaces and forward-slash(/) allowed.",
+            "example": "Jane",
+            "pattern": "^[a-zA-Z\\-\\/\\s]{1,50}$",
+            "type": "string"
+          },
+          "veteranLastName": {
+            "description": "Veteran last name. Cannot be missing or empty or longer than 50 characters. Only upper/lower case letters, hyphens(-), spaces and forward-slash(/) allowed.",
+            "example": "Doe-Smith",
+            "pattern": "^[a-zA-Z\\-\\/\\s]{1,50}$",
+            "type": "string"
+          },
+          "zipCode": {
+            "description": "Veteran zip code. Either five digits (XXXXX) or five digits then four digits separated by a hyphen (XXXXX-XXXX). Use '00000' for Veterans with non-US addresses.",
+            "example": "20571",
+            "type": "string"
+          }
+        },
+        "required": [
+          "veteranFirstName",
+          "veteranLastName",
+          "fileNumber",
+          "zipCode",
+          "source"
+        ],
+        "type": "object"
+      },
+      "DocumentUploadPath": {
+        "description": "Status record for a previously initiated document submission.",
+        "properties": {
+          "attributes": {
+            "$ref": "#/components/schemas/DocumentUploadAttributes"
+          },
+          "id": {
+            "description": "JSON API identifier",
+            "example": "6d8433c1-cd55-4c24-affd-f592287a7572",
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "description": "JSON API type specification",
+            "example": "document_upload",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "attributes"
+        ]
+      },
+      "DocumentUploadStatus": {
+        "description": "Status record for a previously initiated document submission.",
+        "properties": {
+          "attributes": {
+            "$ref": "#/components/schemas/DocumentUploadStatusAttributes"
+          },
+          "id": {
+            "description": "JSON API identifier",
+            "example": "6d8433c1-cd55-4c24-affd-f592287a7572",
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "description": "JSON API type specification",
+            "example": "document_upload",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "attributes"
+        ]
+      },
+      "DocumentUploadStatusAttributes": {
+        "properties": {
+          "code": {
+            "description": "Unambiguous status code. Only present if status = \"error\"\n\n* `DOC101` - Invalid multipart payload provided - not a multipart, or missing one or more required parts.\n* `DOC102` - Invalid metadata - not parseable as JSON, incorrect fields, etc.\n* `DOC103` - Invalid content - not parseable as PDF. Detail field will indicate which document or attachment part was affected.\n* `DOC104` - Upload rejected by upstream system. Processing failed and upload must be resubmitted. Detail field will indicate nature of rejection.\n* `DOC105` - Invalid or unknown id\n* `DOC106` - File size limit exceeded. Each document may be a maximum of 100MB.\n* `DOC107` - Empty payload.\n* `DOC108` - Maximum dimensions exceeded. Height and width must be less than 21 in x 21 in.\n* `DOC201` - Upload server error.\n* `DOC202` - Error during processing by upstream system. Processing failed and upload must be resubmitted. Detail field will provide additional details where available.\n",
+            "type": "string"
+          },
+          "detail": {
+            "description": "Human readable error detail. Only present if status = \"error\"",
+            "type": "string"
+          },
+          "guid": {
+            "description": "The document upload identifier",
+            "example": "6d8433c1-cd55-4c24-affd-f592287a7572",
+            "format": "uuid",
+            "type": "string"
+          },
+          "message": {
+            "description": "Human readable error description. Only present if status = \"error\"",
+            "type": "string"
+          },
+          "status": {
+            "description": "Document upload status. Note that until a document status of\n“received”, “processing”, “success”, or \"vbms\" is returned, a client\ncannot consider the document as received by VA. In particular a\nstatus of “uploaded” means that the document package has been\ntransmitted, but possibly not validated. Any errors with the\ndocument package (unreadable PDF, etc) may cause the status to\nchange to “error”.\n\n* `pending` - Initial status, indicates no document package has been uploaded yet\n* `uploaded` - Indicates document package has been successfully uploaded (PUT) from the vendor's application system to the API server but has not yet been validated. Date of Receipt is _not_ yet established with this status.\n* `received` - Indicates document package has been received upstream of the API, but is not yet in processing. <ins>Date of Receipt is set when this status is achieved.</ins> (This is also the final status in the sandbox environment unless further progress is simulated.)\n* `processing` - Indicates VBA Intake, Conversion and Mail Handling Services (ICMHS) is processing the document package.\n* `success` - Indicates document package has been received by Digital Mail Handling System (DHMS, aka the Centralized Mail portal).\n* `vbms` - Final status. Indicates document package has been received by Veterans Benefits Management System (VBMS).\n* `error` - Indicates that there was an error. See the `code` and `message` for further information.\n* `expired` - Indicates that the submission was not successfully uploaded via PUT request within the 15-minute window after the POST request. We recommend coding to retry unsuccessful uploads using the same GUID within 15 minutes in case of connection issues.\n",
+            "enum": [
+              "pending",
+              "uploaded",
+              "received",
+              "processing",
+              "success",
+              "vbms",
+              "error"
+            ],
+            "example": "received",
+            "type": "string"
+          },
+          "updated_at": {
+            "description": "The last time the submission was updated",
+            "example": "2018-07-30T17:31:15.958Z",
+            "format": "date-time",
+            "type": "string"
+          },
+          "uploaded_pdf": {
+            "$ref": "#/components/schemas/PdfUploadAttributes"
+          }
+        },
+        "required": [
+          "guid",
+          "status"
+        ]
+      },
+      "DocumentUploadStatusGuidList": {
+        "properties": {
+          "ids": {
+            "description": "List of IDs for previous document upload submissions",
+            "items": {
+              "example": "6d8433c1-cd55-4c24-affd-f592287a7572",
+              "format": "uuid",
+              "type": "string"
+            },
+            "maxItems": 1000,
+            "minItems": 1,
+            "type": "array"
+          }
+        },
+        "required": [
+          "ids"
+        ],
+        "type": "object"
+      },
+      "DocumentUploadStatusReport": {
+        "items": {
+          "$ref": "#/components/schemas/DocumentUploadStatus"
+        },
+        "type": "array"
+      },
+      "DocumentUploadSubmission": {
+        "description": "Record of requested document submission. Includes the location to which the document payload is to be uploaded",
+        "properties": {
+          "attributes": {
+            "$ref": "#/components/schemas/DocumentUploadSubmissionAttributes"
+          },
+          "id": {
+            "description": "JSON API Identifier",
+            "example": "6d8433c1-cd55-4c24-affd-f592287a7572",
+            "format": "uuid",
+            "type": "string"
+          },
+          "type": {
+            "description": "JSON API type specification",
+            "example": "document_upload",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "attributes"
+        ]
+      },
+      "DocumentUploadSubmissionAttributes": {
+        "allOf": [
+          {
+            "required": [
+              "location"
+            ],
+            "type": "object"
+          },
+          {
+            "$ref": "#/components/schemas/DocumentUploadStatusAttributes",
+            "properties": {
+              "location": {
+                "description": "Location to which to PUT document Payload",
+                "example": "https://sandbox-api.va.gov/services_user_content/vba_documents/{idpath}",
+                "format": "uri",
+                "type": "string"
+              }
+            }
+          }
+        ]
+      },
+      "ErrorModel": {
+        "description": "Errors with some details for the given request",
+        "properties": {
+          "detail": {
+            "description": "A more detailed message about why an error occurred",
+            "example": "DOC104 - Upload rejected by upstream system. Processing failed and upload must be resubmitted",
+            "type": "string"
+          },
+          "status": {
+            "description": "Standard HTTP Status returned with Error",
+            "example": "422",
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "status",
+          "detail"
+        ]
+      },
+      "PdfDimensionAttributes": {
+        "properties": {
+          "height": {
+            "description": "The document height",
+            "example": "11.0",
+            "type": "integer"
+          },
+          "oversized_pdf": {
+            "description": "Indicates if this is an oversized PDF (greater than 21x21)",
+            "example": "false",
+            "type": "boolean"
+          },
+          "width": {
+            "description": "The document width",
+            "example": "8.5",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "height",
+          "width",
+          "oversized_pdf"
+        ]
+      },
+      "PdfUploadAttributes": {
+        "properties": {
+          "content": {
+            "properties": {
+              "attachments": {
+                "items": {
+                  "properties": {
+                    "dimensions": {
+                      "$ref": "#/components/schemas/PdfDimensionAttributes"
+                    },
+                    "page_count": {
+                      "description": "The number of pages in this attachment",
+                      "example": "2",
+                      "type": "integer"
+                    }
+                  }
+                },
+                "type": "array"
+              },
+              "dimensions": {
+                "$ref": "#/components/schemas/PdfDimensionAttributes"
+              },
+              "page_count": {
+                "description": "The total number of pages solely in this PDF document",
+                "example": "1",
+                "type": "integer"
+              }
+            }
+          },
+          "total_documents": {
+            "description": "The total number of documents contained in this upload",
+            "example": "2",
+            "type": "integer"
+          },
+          "total_pages": {
+            "description": "The total number of pages contained in this upload",
+            "example": "3",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "total_documents",
+          "total_pages",
+          "content",
+          "dimensions",
+          "attachments"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "apikey": {
+        "in": "header",
+        "name": "apikey",
+        "type": "apiKey"
+      }
+    }
+  }
+}

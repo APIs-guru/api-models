@@ -1,0 +1,449 @@
+openapi: 3.0.0
+servers:
+  - description: Production Tier
+    url: https://api.openfigi.com/{basePath}
+    variables:
+      basePath:
+        default: v1
+        enum:
+          - v1
+          - v2
+          - v3
+info:
+  contact:
+    email: support@openfigi.com
+    name: OpenFIGI API Support
+    url: https://openfigi.com/api
+  description: A free & open API for FIGI discovery.
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://openfigi.com/docs/terms-of-service
+  title: OpenFIGI API
+  version: 1.4.0
+  x-apisguru-categories:
+    - open_data
+  x-origin:
+    - format: openapi
+      url: https://api.openfigi.com/schema
+      version: "3.0"
+  x-providerName: openfigi.com
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+security:
+  - {}
+  - ApiKeyAuth: []
+paths:
+  /mapping:
+    post:
+      description: Allows mapping from third-party identifiers to FIGIs.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/BulkMappingJob"
+        description: A list of third-party identifiers and extra filters.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkMappingJobResult"
+          description: A list of FIGIs and their metadata.
+        "400":
+          content:
+            "*/*":
+              schema:
+                type: string
+          description: Invalid request (body).
+        "401":
+          content:
+            "*/*":
+              schema:
+                type: string
+          description: API Key is invalid.
+        "406":
+          content:
+            "*/*":
+              schema:
+                type: string
+          description: Unsupported 'Accept' type.
+        "413":
+          content:
+            "*/*":
+              schema:
+                type: string
+          description: Too many mapping jobs in request.
+        "500":
+          content:
+            "*/*":
+              schema:
+                type: string
+          description: Internal server error.
+  "/mapping/values/{key}":
+    get:
+      description: Get values for enum-like fields.
+      parameters:
+        - description: Key of MappingJob for which to get possible values.
+          in: path
+          name: key
+          required: true
+          schema:
+            enum:
+              - idType
+              - exchCode
+              - micCode
+              - currency
+              - marketSecDes
+              - securityType
+              - securityType2
+            type: string
+          style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  values:
+                    items:
+                      type: string
+                    type: array
+                type: object
+          description: The list of values.
+        "400":
+          content:
+            "*/*":
+              schema:
+                type: string
+          description: Invalid request (key).
+        "500":
+          content:
+            "*/*":
+              schema:
+                type: string
+          description: Internal server error.
+components:
+  schemas:
+    BulkMappingJob:
+      items:
+        $ref: "#/components/schemas/MappingJob"
+      type: array
+    BulkMappingJobResult:
+      items:
+        $ref: "#/components/schemas/MappingJobResult"
+      type: array
+    FigiResult:
+      properties:
+        compositeFIGI:
+          nullable: true
+          type: string
+        exchCode:
+          nullable: true
+          type: string
+        figi:
+          type: string
+        marketSector:
+          nullable: true
+          type: string
+        metadata:
+          description: Exists when API is unable to show non-FIGI fields.
+          nullable: true
+          type: string
+        name:
+          nullable: true
+          type: string
+        securityDescription:
+          nullable: true
+          type: string
+        securityType:
+          nullable: true
+          type: string
+        securityType2:
+          nullable: true
+          type: string
+        shareClassFIGI:
+          nullable: true
+          type: string
+        ticker:
+          nullable: true
+          type: string
+      type: object
+    MappingJob:
+      description: "For V3: securityType2 is required when idType is BASE_TICKER or ID_EXCH_SYMBOL.  expiration is required when securityType2 is Option or Warrant.  maturity is required when securityType2 is Pool."
+      properties:
+        contractSize:
+          $ref: "#/components/schemas/NullableNumberInterval"
+        coupon:
+          $ref: "#/components/schemas/NullableNumberInterval"
+        currency:
+          nullable: true
+          type: string
+        exchCode:
+          nullable: true
+          type: string
+        expiration:
+          $ref: "#/components/schemas/NullableDateInterval"
+        idType:
+          enum:
+            - ID_ISIN
+            - ID_BB_UNIQUE
+            - ID_SEDOL
+            - ID_COMMON
+            - ID_WERTPAPIER
+            - ID_CUSIP
+            - ID_BB
+            - ID_ITALY
+            - ID_EXCH_SYMBOL
+            - ID_FULL_EXCHANGE_SYMBOL
+            - COMPOSITE_ID_BB_GLOBAL
+            - ID_BB_GLOBAL_SHARE_CLASS_LEVEL
+            - ID_BB_SEC_NUM_DES
+            - ID_BB_GLOBAL
+            - TICKER
+            - ID_CUSIP_8_CHR
+            - OCC_SYMBOL
+            - UNIQUE_ID_FUT_OPT
+            - OPRA_SYMBOL
+            - TRADING_SYSTEM_IDENTIFIER
+            - ID_CINS
+            - ID_SHORT_CODE
+            - BASE_TICKER
+            - VENDOR_INDEX_CODE
+          type: string
+        idValue:
+          default: string
+          oneOf:
+            - type: string
+            - type: integer
+        includeUnlistedEquities:
+          nullable: true
+          type: boolean
+        marketSecDes:
+          nullable: true
+          type: string
+        maturity:
+          $ref: "#/components/schemas/NullableDateInterval"
+        micCode:
+          nullable: true
+          type: string
+        optionType:
+          enum:
+            - Put
+            - Call
+          nullable: true
+          type: string
+        securityType:
+          nullable: true
+          type: string
+        securityType2:
+          nullable: true
+          type: string
+        stateCode:
+          enum:
+            - AB
+            - AC
+            - AC
+            - AH
+            - AK
+            - AL
+            - AM
+            - AR
+            - AS
+            - AT
+            - AZ
+            - BC
+            - BJ
+            - CA
+            - CB
+            - CO
+            - CQ
+            - CT
+            - CZ
+            - DC
+            - DE
+            - EH
+            - FH
+            - FI
+            - FJ
+            - FL
+            - FO
+            - FS
+            - GA
+            - GD
+            - GF
+            - GM
+            - GS
+            - GU
+            - GX
+            - GZ
+            - HA
+            - HB
+            - HE
+            - HG
+            - HI
+            - HI
+            - HL
+            - HN
+            - HO
+            - HS
+            - IA
+            - ID
+            - IG
+            - IK
+            - IL
+            - IN
+            - IT
+            - JL
+            - JS
+            - JX
+            - KA
+            - KC
+            - KN
+            - KO
+            - KS
+            - KT
+            - KU
+            - KY
+            - LA
+            - LN
+            - MA
+            - MB
+            - MD
+            - ME
+            - ME
+            - MG
+            - MI
+            - MN
+            - MO
+            - MS
+            - MT
+            - MZ
+            - NB
+            - NC
+            - ND
+            - NE
+            - NG
+            - NH
+            - NJ
+            - NL
+            - NM
+            - NM
+            - NN
+            - NR
+            - NS
+            - NS
+            - NS
+            - NT
+            - NU
+            - NV
+            - NW
+            - NX
+            - NY
+            - OH
+            - OK
+            - ON
+            - ON
+            - OR
+            - OS
+            - OT
+            - OT
+            - OY
+            - PA
+            - PE
+            - PR
+            - QC
+            - QH
+            - QL
+            - RI
+            - SA
+            - SA
+            - SC
+            - SC
+            - SD
+            - SD
+            - SH
+            - SI
+            - SK
+            - SN
+            - SN
+            - ST
+            - SX
+            - SZ
+            - TA
+            - TG
+            - TJ
+            - TK
+            - TN
+            - TS
+            - TT
+            - TT
+            - TX
+            - TY
+            - UT
+            - VA
+            - VI
+            - VI
+            - VT
+            - WA
+            - WA
+            - WI
+            - WK
+            - WV
+            - WY
+            - XJ
+            - XZ
+            - YA
+            - YN
+            - YN
+            - YT
+            - YU
+            - ZJ
+          nullable: true
+          type: string
+        strike:
+          $ref: "#/components/schemas/NullableNumberInterval"
+      required:
+        - idType
+        - idValue
+      type: object
+    MappingJobResult:
+      oneOf:
+        - $ref: "#/components/schemas/MappingJobResultFigiList"
+        - $ref: "#/components/schemas/MappingJobResultFigiNotFound"
+    MappingJobResultFigiList:
+      properties:
+        data:
+          items:
+            $ref: "#/components/schemas/FigiResult"
+          type: array
+      type: object
+    MappingJobResultFigiNotFound:
+      properties:
+        warning:
+          type: string
+      type: object
+    NullableDateInterval:
+      description: At least one entry should be non-null.
+      items:
+        format: date
+        nullable: true
+        type: string
+      maxItems: 2
+      minItems: 2
+      nullable: true
+      type: array
+    NullableNumberInterval:
+      description: At least one entry should be non-null.
+      items:
+        nullable: true
+        type: number
+      maxItems: 2
+      minItems: 2
+      nullable: true
+      type: array
+  securitySchemes:
+    ApiKeyAuth:
+      in: header
+      name: X-OPENFIGI-APIKEY
+      type: apiKey

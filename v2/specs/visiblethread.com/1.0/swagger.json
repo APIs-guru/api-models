@@ -1,0 +1,1106 @@
+{
+  "swagger": "2.0",
+  "schemes": [
+    "https"
+  ],
+  "host": "api.visiblethread.com",
+  "basePath": "/api/v1",
+  "info": {
+    "contact": {
+      "x-twitter": "VisibleThread"
+    },
+    "description": "## Introduction\nThe VisibleThread b API provides services for analyzing/searching documents and web pages.\nTo use the service you need an API key. \n\n**Contact us at support@visiblethread.com to request an API key**. \n\nThe services are split into **Documents** and **Webscans**.\n\n### Documents\nUpload documents and dictionaries so you can :\n- Measure the readability of your document\n- search a document for all terms from a dictionary\n- retrieve all paragraphs from a document or only matching paragraphs\n\n### Webscans\nAnalyze web pages so you can: \n- Measure the readability of your web content\n- Identify & highlight content issues e.g. long sentences, passive voice\n\nThe VisibleThread API allows you to programatially submit webpage urls to be scanned, \ncheck on the results of a scan, and view a list of previous scans you have performed.\n    \n-------------\n\nThe VisibleThread API is a HTTP-based JSON API, accessible at https://api.visiblethread.com \nEach request to the service requires your API key to be successful.\n\n## Getting Started With Webscans\n\nSteps:\n1. Enter your API key above and hit **Explore**. \n2. Run a new scan by submitting a **POST to /webscans** (title and some webUrls are required).\n   The scan runs asynchronously in the background but returns immediately with a JSON response containing an \"id\" that represents your scan.\n3. Check on the status of a scan by submitting **GET /webscans/{scanId}**, if the scan is still in progress it will return a HTTP 503. If \n   it is complete it will return a HTTP 200 with the appropriate JSON outlining the urls scanned and the summary statistics for each url.\n4. Retrieve all your previous scan results by submitting **GET /webscans**.  \n5. Retrieve detailed results for a url within a scan (readability, long sentence and passive language instances) by submitting \n   **GET /webscans/{scanId}/webUrls/{urlId}** (scanId and urlId are required)\n\n## Getting Started With Document scans:\n\nSteps:\n1. Enter your API key above and hit **Explore**\n2. Run a new scan by submitting a **POST to /documents** (document required). The scan runs asynchronously in the background but returns\n   immediately with a JSON response containins an \"id\" that represents your scan\n3. Check on the status of a scan by submitting **GET /documents/{scanId}**, if the scan is still in progress it will return a HTTP 503. If \n   it is complete it will return a HTTP 200 with the appropriate JSON outlining the document readability results. It will contain detailed\n   analysis of each paragraph in the document\n4. Retrieve all your previous scan results by submitting **GET /documents**\n\n### Searching a document for keywords\n\nThe VisibleThread API allows you to upload a set of keywords or a 'dictionary'. You can then perform a search of a already uploaded document \nusing that dictionary\n\nSteps (Assuming you have uploaded your document using the steps above):\n1. Upload a csv file to use as a keyword dictionary by submitting a **POST to /dictionaries** (csv file required). This returns a JSON \n   response with the dictionary Id \n2. Search a document with the dictionary by submitting a **POST to /searches** (document id and dictionary id required). \n3. Get the resuhlts of the search by submitting  **GET /searches/{docId}/{dictionaryId}\" . This will return JSON response containing \n   detailed results of searching the document using the dictionary.\n4. To view the list of all searches you have performed submit a **GET /searches**. \n\nBelow is a list of the available API endpoints, documentation & a form to try out each operation.",
+    "title": "VisibleThread API",
+    "version": "1.0",
+    "x-apisguru-categories": [
+      "text"
+    ],
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_twitter.com_VisibleThread_profile_image.jpeg"
+    },
+    "x-origin": [
+      {
+        "format": "swagger",
+        "url": "https://api.visiblethread.com/example/vt.yaml",
+        "version": "2.0"
+      }
+    ],
+    "x-providerName": "visiblethread.com"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "api_key": {
+      "in": "header",
+      "name": "apiKey",
+      "type": "apiKey"
+    }
+  },
+  "security": [
+    {
+      "api_key": []
+    }
+  ],
+  "paths": {
+    "/dictionaries": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Get your list of dictionaries",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        },
+        "summary": "Get your list of dictionaries",
+        "tags": [
+          "Documents"
+        ]
+      },
+      "post": {
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "description": "Upload a dictionary (CSV format) to your VisibleThread account. ",
+        "operationId": "uploadDictionary",
+        "parameters": [
+          {
+            "description": "The uploaded CSV dictionary",
+            "in": "formData",
+            "name": "file",
+            "required": true,
+            "type": "file"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        },
+        "summary": "Upload a dictionary (CSV)",
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/documents": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Get your list of documents",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/DocumentListSummary"
+              },
+              "title": "Documents",
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Get your list of documents",
+        "tags": [
+          "Documents"
+        ]
+      },
+      "post": {
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "description": "Upload a document to your VisibleThread account. \nWe return a JSON response that contains a \"docId\" that represents your document.        \nYou can use this id in other requests to check on the analysis status for the document and run a dictionary search and retrieve search\nresults. ",
+        "operationId": "uploadDoc",
+        "parameters": [
+          {
+            "description": "The uploaded file data",
+            "in": "formData",
+            "name": "file",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "description": "Optional setting what constitutes a long sentence (default 25)",
+            "format": "int32",
+            "in": "formData",
+            "name": "longSentenceWordCount",
+            "type": "integer"
+          },
+          {
+            "description": "Optional setting what constitutes a very long sentence (default 30)",
+            "format": "int32",
+            "in": "formData",
+            "name": "veryLongSentenceWordCount",
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/NewDocumentResponse"
+            }
+          },
+          "405": {
+            "description": "Invalid input"
+          },
+          "413": {
+            "description": "The document exceeds the maximum supported file size (15mb)"
+          }
+        },
+        "summary": "Upload a document",
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/documents/{docId}": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Get data from a previously submitted document identified by ***docId***",
+        "operationId": "getDocById",
+        "parameters": [
+          {
+            "description": "Id of document to fetch",
+            "format": "int64",
+            "in": "path",
+            "name": "docId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "document response contained readability details for the document",
+            "schema": {
+              "$ref": "#/definitions/DocumentResponseDetailed"
+            }
+          },
+          "404": {
+            "description": "document not found"
+          },
+          "415": {
+            "description": "the document is an unsupported file type"
+          },
+          "500": {
+            "description": "an unknown error occurred processing the document"
+          },
+          "503": {
+            "description": "the document analysis has not yet completed, try again later",
+            "schema": {
+              "$ref": "#/definitions/DocumentResponseNotReady"
+            }
+          }
+        },
+        "summary": "Get data from a previously submitted document",
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/searches": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Get your list of searches",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response"
+          }
+        },
+        "summary": "Get your list of searches",
+        "tags": [
+          "Documents"
+        ]
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Run a search on document **docId** using dictionary **dictId** ",
+        "operationId": "runSearch",
+        "parameters": [
+          {
+            "description": "Run a search on document **docId** using dictionary**dictId**",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Search"
+            }
+          }
+        ],
+        "produces": [
+          "text/plain"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "type": "object"
+            }
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        },
+        "summary": "Run a search",
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/searches/{docId}/{dictionaryId}": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Get detailed results for a scan/url (readability, long sentence and passive language instances), identified by **scanId** & **urlId**",
+        "operationId": "getSearchResults",
+        "parameters": [
+          {
+            "description": "Id of document",
+            "format": "int64",
+            "in": "path",
+            "name": "docId",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "description": "Id of dictionary",
+            "format": "int64",
+            "in": "path",
+            "name": "dictionaryId",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "description": "Only returning paragraphs containing a match",
+            "in": "query",
+            "name": "matchingOnly",
+            "required": true,
+            "type": "boolean"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "scan response"
+          }
+        },
+        "summary": "Gets search results for a particular document/dictionary",
+        "tags": [
+          "Documents"
+        ]
+      }
+    },
+    "/webscans": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Get your list of scans",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/ScanResponseSummary"
+              },
+              "title": "Scans",
+              "type": "array"
+            }
+          }
+        },
+        "summary": "Get your list of scans",
+        "tags": [
+          "Webscans"
+        ]
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "The scan runs in the background but returns immediately with a JSON response containing an \"id\" that represents your scan.        \nYou can use this id in other requests to retrieve your scan result. \n\nAlso, an \"id\" is returned for each url which can be used to retrieve detailed results for individual scan urls. ",
+        "operationId": "runScan",
+        "parameters": [
+          {
+            "description": "Scan title and webUrls to analyze",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/NewScan"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful response",
+            "schema": {
+              "$ref": "#/definitions/NewScanResponse"
+            }
+          },
+          "405": {
+            "description": "Invalid input"
+          }
+        },
+        "summary": "Run a new scan",
+        "tags": [
+          "Webscans"
+        ]
+      }
+    },
+    "/webscans/{scanId}": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Get data from a previously run scan, identified by **scanId**",
+        "operationId": "getScanById",
+        "parameters": [
+          {
+            "description": "Id of scan to fetch",
+            "format": "int64",
+            "in": "path",
+            "name": "scanId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "scan response",
+            "schema": {
+              "$ref": "#/definitions/ScanResponseDetailed"
+            }
+          },
+          "404": {
+            "description": "webscan not found"
+          },
+          "503": {
+            "description": "the web analysis has not yet completed, try again later",
+            "schema": {
+              "$ref": "#/definitions/WebResponseNotReady"
+            }
+          }
+        },
+        "summary": "Get data from a previously run scan",
+        "tags": [
+          "Webscans"
+        ]
+      }
+    },
+    "/webscans/{scanId}/webUrls/{urlId}": {
+      "get": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Get detailed results for a scan/url (readability, long sentence and passive language instances), identified by **scanId** & **urlId**",
+        "operationId": "getScanUrlById",
+        "parameters": [
+          {
+            "description": "Id of scan",
+            "format": "int64",
+            "in": "path",
+            "name": "scanId",
+            "required": true,
+            "type": "integer"
+          },
+          {
+            "description": "Id of url to fetch",
+            "format": "int64",
+            "in": "path",
+            "name": "urlId",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "scan response",
+            "schema": {
+              "$ref": "#/definitions/WebUrlDetail"
+            }
+          },
+          "404": {
+            "description": "scan url not found"
+          }
+        },
+        "summary": "Gets data for a particular scan/webUrl",
+        "tags": [
+          "Webscans"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "Adverbs": {
+      "items": {
+        "properties": {
+          "end": {
+            "example": 399,
+            "type": "integer"
+          },
+          "start": {
+            "example": 386,
+            "type": "integer"
+          },
+          "text": {
+            "example": "exceptionally",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "Analysis": {
+      "properties": {
+        "stats": {
+          "$ref": "#/definitions/Stats"
+        },
+        "title": {
+          "example": "My funky scan title",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "DocumentListSummary": {
+      "properties": {
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "name": {
+          "example": "My Document.pdf",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "DocumentResponseDetailed": {
+      "properties": {
+        "completed": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "eta": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "paragraphs": {
+          "items": {
+            "properties": {
+              "paragraphCounter": {
+                "example": 12,
+                "type": "integer"
+              },
+              "paragraphIndex": {
+                "example": 22,
+                "type": "integer"
+              },
+              "stats": {
+                "properties": {
+                  "adverbs": {
+                    "items": {
+                      "$ref": "#/definitions/Adverbs"
+                    },
+                    "type": "array"
+                  },
+                  "hiddenVerbs": {
+                    "items": {
+                      "$ref": "#/definitions/HiddenVerbs"
+                    },
+                    "type": "array"
+                  },
+                  "longSentences": {
+                    "items": {
+                      "$ref": "#/definitions/LongSentences"
+                    },
+                    "type": "array"
+                  },
+                  "passives": {
+                    "items": {
+                      "$ref": "#/definitions/Passives"
+                    },
+                    "type": "array"
+                  },
+                  "veryLongSentences": {
+                    "items": {
+                      "$ref": "#/definitions/VeryLongSentences"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              },
+              "text": {
+                "example": "This is an exmaple sentence which was extracted from a web page during a scan previously run using the VisibleThread API service. This is a short, simple sentence.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "scanSettings": {
+          "properties": {
+            "longSentenceWordCount": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "veryLongSentenceWordCount": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "started": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "stats": {
+          "$ref": "#/definitions/Stats"
+        },
+        "title": {
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "DocumentResponseNotReady": {
+      "properties": {
+        "eta": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "started": {
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "HiddenVerbs": {
+      "items": {
+        "properties": {
+          "end": {
+            "example": 210,
+            "type": "integer"
+          },
+          "noun": {
+            "example": "investment",
+            "type": "string"
+          },
+          "start": {
+            "example": 185,
+            "type": "integer"
+          },
+          "text": {
+            "example": "investment in intangibles",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "LongSentences": {
+      "items": {
+        "properties": {
+          "end": {
+            "example": 130,
+            "type": "integer"
+          },
+          "start": {
+            "example": 0,
+            "type": "integer"
+          },
+          "wordCount": {
+            "example": 22,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "NewDocumentResponse": {
+      "properties": {
+        "docId": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "scanSettings": {
+          "properties": {
+            "longSentenceWordCount": {
+              "format": "int32",
+              "type": "integer"
+            },
+            "veryLongSentenceWordCount": {
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "task": {
+          "example": "parse",
+          "type": "string"
+        }
+      },
+      "required": [
+        "docId",
+        "task",
+        "scanSettings"
+      ],
+      "type": "object"
+    },
+    "NewScan": {
+      "properties": {
+        "scanSettings": {
+          "properties": {
+            "longSentenceWordCount": {
+              "example": 20,
+              "format": "int32",
+              "type": "integer"
+            },
+            "veryLongSentenceWordCount": {
+              "example": 30,
+              "format": "int32",
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "title": {
+          "example": "My fancy scan title",
+          "type": "string"
+        },
+        "webUrls": {
+          "items": {
+            "properties": {
+              "url": {
+                "example": "http://visiblethread.com",
+                "type": "string"
+              }
+            },
+            "required": [
+              "url"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "webUrls"
+      ],
+      "type": "object"
+    },
+    "NewScanResponse": {
+      "properties": {
+        "id": {
+          "example": 56487,
+          "format": "int64",
+          "type": "integer"
+        },
+        "title": {
+          "example": "My fancy scan title",
+          "type": "string"
+        },
+        "webUrls": {
+          "items": {
+            "properties": {
+              "id": {
+                "example": 88596,
+                "format": "int64",
+                "type": "integer"
+              },
+              "url": {
+                "example": "http://visiblethread.com",
+                "type": "string"
+              }
+            },
+            "required": [
+              "url",
+              "id"
+            ],
+            "type": "object"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "id",
+        "title",
+        "webUrls"
+      ],
+      "type": "object"
+    },
+    "Passives": {
+      "items": {
+        "properties": {
+          "end": {
+            "example": 47,
+            "type": "integer"
+          },
+          "passivePiece": {
+            "example": "was extracted",
+            "type": "string"
+          },
+          "start": {
+            "example": 34,
+            "type": "integer"
+          },
+          "verb": {
+            "example": "extracted",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "ScanDetailed": {
+      "properties": {
+        "stats": {
+          "$ref": "#/definitions/Stats"
+        },
+        "title": {
+          "example": "My fancy scan title",
+          "type": "string"
+        },
+        "webUrls": {
+          "items": {
+            "$ref": "#/definitions/WebUrl"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "webUrls",
+        "stats"
+      ],
+      "type": "object"
+    },
+    "ScanResponseDetailed": {
+      "properties": {
+        "completed": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "eta": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "scan": {
+          "$ref": "#/definitions/ScanDetailed"
+        },
+        "started": {
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ScanResponseSummary": {
+      "properties": {
+        "completed": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "eta": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "scan": {
+          "$ref": "#/definitions/ScanSummary"
+        },
+        "started": {
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ScanSummary": {
+      "properties": {
+        "title": {
+          "example": "My fancy scan title",
+          "type": "string"
+        },
+        "webUrls": {
+          "items": {
+            "$ref": "#/definitions/WebUrlHeader"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "title",
+        "webUrls"
+      ],
+      "type": "object"
+    },
+    "Search": {
+      "properties": {
+        "dictId": {
+          "example": 47364,
+          "format": "int64",
+          "type": "integer"
+        },
+        "docId": {
+          "example": 56487,
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "docId",
+        "dictId"
+      ],
+      "type": "object"
+    },
+    "Stats": {
+      "properties": {
+        "avgSentenceLength": {
+          "type": "integer"
+        },
+        "fleschKincaidGradeLevel": {
+          "format": "float",
+          "type": "number"
+        },
+        "fleschReadingLevel": {
+          "type": "integer"
+        },
+        "longSentenceCount": {
+          "type": "integer"
+        },
+        "passiveSentenceCount": {
+          "type": "integer"
+        },
+        "sentenceCount": {
+          "type": "integer"
+        },
+        "wordCount": {
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "VeryLongSentences": {
+      "items": {
+        "properties": {
+          "end": {
+            "example": 130,
+            "type": "integer"
+          },
+          "start": {
+            "example": 0,
+            "type": "integer"
+          },
+          "wordCount": {
+            "example": 34,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "type": "array"
+    },
+    "WebResponseNotReady": {
+      "properties": {
+        "eta": {
+          "format": "date-time",
+          "type": "string"
+        },
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "started": {
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "WebUrl": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/WebUrlHeader"
+        },
+        {
+          "properties": {
+            "analysis": {
+              "$ref": "#/definitions/Analysis"
+            }
+          },
+          "required": [
+            "analysis"
+          ],
+          "type": "object"
+        }
+      ]
+    },
+    "WebUrlDetail": {
+      "properties": {
+        "paragraphs": {
+          "items": {
+            "properties": {
+              "paragraphCounter": {
+                "example": 12,
+                "type": "integer"
+              },
+              "paragraphIndex": {
+                "example": 22,
+                "type": "integer"
+              },
+              "stats": {
+                "properties": {
+                  "adverbs": {
+                    "items": {
+                      "$ref": "#/definitions/Adverbs"
+                    },
+                    "type": "array"
+                  },
+                  "hiddenVerbs": {
+                    "items": {
+                      "$ref": "#/definitions/HiddenVerbs"
+                    },
+                    "type": "array"
+                  },
+                  "longSentences": {
+                    "items": {
+                      "$ref": "#/definitions/LongSentences"
+                    },
+                    "type": "array"
+                  },
+                  "passives": {
+                    "items": {
+                      "$ref": "#/definitions/Passives"
+                    },
+                    "type": "array"
+                  },
+                  "veryLongSentences": {
+                    "items": {
+                      "$ref": "#/definitions/VeryLongSentences"
+                    },
+                    "type": "array"
+                  }
+                },
+                "type": "object"
+              },
+              "text": {
+                "example": "This is an exmaple sentence which was extracted from a web page during a scan previously run using the VisibleThread API service. This is a short, simple sentence.",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "stats": {
+          "$ref": "#/definitions/Stats"
+        },
+        "title": {
+          "example": "My fancy scan title",
+          "type": "string"
+        },
+        "url": {
+          "example": "http://visiblethread.com",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "url",
+        "stats"
+      ],
+      "type": "object"
+    },
+    "WebUrlHeader": {
+      "properties": {
+        "id": {
+          "format": "int64",
+          "type": "integer"
+        },
+        "url": {
+          "example": "http://visiblethread.com",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "url"
+      ],
+      "type": "object"
+    }
+  }
+}

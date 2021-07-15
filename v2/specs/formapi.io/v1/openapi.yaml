@@ -1,0 +1,4808 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.docspring.com/api/v1
+info:
+  contact:
+    x-twitter: form_api
+  description: DocSpring is a service that helps you fill out and sign PDF templates.
+  title: API v1
+  version: v1
+  x-apisguru-categories:
+    - text
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_getdocspring_profile_image.jpeg
+  x-origin:
+    - format: openapi
+      url: https://docspring.com/api-docs/v1/swagger.json
+      version: "3.0"
+  x-providerName: formapi.io
+paths:
+  /authentication:
+    get:
+      operationId: testAuthentication
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    status: success
+              schema:
+                properties:
+                  status:
+                    enum:
+                      - success
+                    type: string
+                required:
+                  - status
+                title: authentication_success_response
+                type: object
+          description: authentication succeeded
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+      security:
+        - api_token_basic: []
+      summary: Test Authentication
+      tags:
+        - PDF
+  /combined_submissions:
+    post:
+      operationId: combineSubmissions
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                expires_in: 300
+                metadata:
+                  bar: baz
+                  foo: 123
+                submission_ids:
+                  - sub_000000000000000001
+                  - sub_000000000000000002
+              properties:
+                expires_in:
+                  type: integer
+                metadata:
+                  type: object
+                submission_ids:
+                  items:
+                    type: string
+                  type: array
+                test:
+                  type: boolean
+              required:
+                - submission_ids
+              title: combined_submission_data
+              type: object
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    combined_submission:
+                      actions: []
+                      download_url: null
+                      expired: false
+                      expires_at: null
+                      id: com_000000000000000001
+                      metadata:
+                        bar: baz
+                        foo: 123
+                      pdf_hash: null
+                      processed_at: null
+                      source_pdfs: []
+                      state: pending
+                      submission_ids:
+                        - sub_000000000000000001
+                        - sub_000000000000000002
+                    status: success
+              schema:
+                properties:
+                  combined_submission:
+                    properties:
+                      actions:
+                        items:
+                          $ref: "#/components/schemas/combined_submission_action"
+                        type: array
+                      download_url:
+                        nullable: true
+                        type: string
+                      expired:
+                        type: boolean
+                      expires_at:
+                        nullable: true
+                        type: string
+                      id:
+                        type: string
+                      metadata:
+                        type: object
+                      pdf_hash:
+                        nullable: true
+                        type: string
+                      source_pdfs:
+                        items:
+                          oneOf:
+                            - additionalProperties: false
+                              properties:
+                                id:
+                                  type: string
+                                type:
+                                  enum:
+                                    - submission
+                                    - combined_submission
+                                    - template
+                                    - custom_file
+                                  type: string
+                              required:
+                                - type
+                                - id
+                              type: object
+                            - additionalProperties: false
+                              properties:
+                                type:
+                                  enum:
+                                    - url
+                                  type: string
+                                url:
+                                  format: uri
+                                  type: string
+                              required:
+                                - type
+                                - url
+                              type: object
+                        type: array
+                      state:
+                        enum:
+                          - pending
+                          - processed
+                          - error
+                        type: string
+                      submission_ids:
+                        items:
+                          type: string
+                        type: array
+                    required:
+                      - id
+                      - state
+                      - expired
+                      - submission_ids
+                      - source_pdfs
+                    title: combined_submission
+                    type: object
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                required:
+                  - status
+                  - combined_submission
+                title: create_combined_submission_response
+                type: object
+          description: combined submission created
+        "400":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: "There was a problem with the JSON you submitted: unexpected character at line 1, column 37 in '{ \"submission_ids\": [\"123\", \"345\"], metadata: { \"user_id\": \"This PDF is great!\" }}"
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: invalid JSON
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "422":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    errors:
+                      - "source_pdfs: Could not find Submission with ID: MISSING_ID"
+                    status: error
+              schema:
+                $ref: "#/components/schemas/invalid_request"
+          description: invalid request
+      security:
+        - api_token_basic: []
+      summary: Merge generated PDFs together
+      tags:
+        - PDF
+  "/combined_submissions/{combined_submission_id}":
+    delete:
+      operationId: expireCombinedSubmission
+      parameters:
+        - example: com_000000000000000001
+          in: path
+          name: combined_submission_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    actions:
+                      - action_category: file_upload
+                        action_type: aws_s3_upload
+                        id: csa_000000000000000001
+                        integration_id: aci_000000000000000001
+                        result_data:
+                          s3_bucket: docspring-custom-s3-test
+                          s3_key: acc_1234/2018/combined_submissions/20181005090010-com_1234.pdf
+                          s3_region: us-east-1
+                          s3_url: https://docspring-custom-s3-test.s3.amazonaws.com/acc_1234/2018/combined_submissions/20181005090010-com_1234.pdf
+                        state: processed
+                    download_url: null
+                    expired: true
+                    expires_at: 2018-10-20T13:00:00Z
+                    id: com_000000000000000001
+                    metadata:
+                      qux: abc
+                      user_id: 42
+                    pdf_hash: 12342342471442006963e3244a1b43610e066165c09770978221f91bd7ace8f5
+                    processed_at: 2020-05-14T02:00:00Z
+                    source_pdfs: []
+                    state: processed
+                    submission_ids:
+                      - sub_000000000000000001
+                      - sub_000000000000000002
+              schema:
+                properties:
+                  actions:
+                    items:
+                      $ref: "#/components/schemas/combined_submission_action"
+                    type: array
+                  download_url:
+                    nullable: true
+                    type: string
+                  expired:
+                    type: boolean
+                  expires_at:
+                    nullable: true
+                    type: string
+                  id:
+                    type: string
+                  metadata:
+                    type: object
+                  pdf_hash:
+                    nullable: true
+                    type: string
+                  source_pdfs:
+                    items:
+                      oneOf:
+                        - additionalProperties: false
+                          properties:
+                            id:
+                              type: string
+                            type:
+                              enum:
+                                - submission
+                                - combined_submission
+                                - template
+                                - custom_file
+                              type: string
+                          required:
+                            - type
+                            - id
+                          type: object
+                        - additionalProperties: false
+                          properties:
+                            type:
+                              enum:
+                                - url
+                              type: string
+                            url:
+                              format: uri
+                              type: string
+                          required:
+                            - type
+                            - url
+                          type: object
+                    type: array
+                  state:
+                    enum:
+                      - pending
+                      - processed
+                      - error
+                    type: string
+                  submission_ids:
+                    items:
+                      type: string
+                    type: array
+                required:
+                  - id
+                  - state
+                  - expired
+                  - submission_ids
+                  - source_pdfs
+                title: combined_submission
+                type: object
+          description: submission was expired
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "403":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: You must use a live API token to expire a combined submission.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: test API token used
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Combined submission not found.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: combined submission not found
+      security:
+        - api_token_basic: []
+      summary: Expire a combined submission
+      tags:
+        - PDF
+    get:
+      operationId: getCombinedSubmission
+      parameters:
+        - example: com_000000000000000001
+          in: path
+          name: combined_submission_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    actions:
+                      - action_category: file_upload
+                        action_type: aws_s3_upload
+                        id: csa_000000000000000001
+                        integration_id: aci_000000000000000001
+                        result_data:
+                          s3_bucket: docspring-custom-s3-test
+                          s3_key: acc_1234/2018/combined_submissions/20181005090010-com_1234.pdf
+                          s3_region: us-east-1
+                          s3_url: https://docspring-custom-s3-test.s3.amazonaws.com/acc_1234/2018/combined_submissions/20181005090010-com_1234.pdf
+                        state: processed
+                    download_url: https://example.com/combined_submissions/combined_submission.pdf
+                    expired: false
+                    expires_at: 2018-10-20T13:05:00Z
+                    id: com_000000000000000001
+                    metadata:
+                      qux: abc
+                      user_id: 42
+                    pdf_hash: 12342342471442006963e3244a1b43610e066165c09770978221f91bd7ace8f5
+                    processed_at: 2020-05-14T02:00:00Z
+                    source_pdfs: []
+                    state: processed
+                    submission_ids:
+                      - sub_000000000000000001
+                      - sub_000000000000000002
+              schema:
+                properties:
+                  actions:
+                    items:
+                      $ref: "#/components/schemas/combined_submission_action"
+                    type: array
+                  download_url:
+                    nullable: true
+                    type: string
+                  expired:
+                    type: boolean
+                  expires_at:
+                    nullable: true
+                    type: string
+                  id:
+                    type: string
+                  metadata:
+                    type: object
+                  pdf_hash:
+                    nullable: true
+                    type: string
+                  source_pdfs:
+                    items:
+                      oneOf:
+                        - additionalProperties: false
+                          properties:
+                            id:
+                              type: string
+                            type:
+                              enum:
+                                - submission
+                                - combined_submission
+                                - template
+                                - custom_file
+                              type: string
+                          required:
+                            - type
+                            - id
+                          type: object
+                        - additionalProperties: false
+                          properties:
+                            type:
+                              enum:
+                                - url
+                              type: string
+                            url:
+                              format: uri
+                              type: string
+                          required:
+                            - type
+                            - url
+                          type: object
+                    type: array
+                  state:
+                    enum:
+                      - pending
+                      - processed
+                      - error
+                    type: string
+                  submission_ids:
+                    items:
+                      type: string
+                    type: array
+                required:
+                  - id
+                  - state
+                  - expired
+                  - submission_ids
+                  - source_pdfs
+                title: combined_submission
+                type: object
+          description: processed combined submission found
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Combined submission not found.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: combined submission not found
+      security:
+        - api_token_basic: []
+      summary: Check the status of a combined submission (merged PDFs)
+      tags:
+        - PDF
+  /combined_submissions?v=2:
+    post:
+      operationId: combinePdfs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              example:
+                delete_custom_files: true
+                expires_in: 300
+                metadata:
+                  bar: baz
+                  foo: 123
+                source_pdfs:
+                  - id: sub_000000000000000001
+                    type: submission
+                  - id: tpl_000000000000000001
+                    type: template
+                  - id: sub_000000000000000002
+                    type: submission
+                  - id: cfi_0000000000000000000000001
+                    type: custom_file
+                  - id: com_000000000000000001
+                    type: combined_submission
+                  - type: url
+                    url: http://example.com/test-pdf.pdf
+              properties:
+                delete_custom_files:
+                  type: boolean
+                expires_in:
+                  type: integer
+                metadata:
+                  type: object
+                source_pdfs:
+                  items:
+                    oneOf:
+                      - additionalProperties: false
+                        properties:
+                          id:
+                            type: string
+                          type:
+                            enum:
+                              - submission
+                              - combined_submission
+                              - template
+                              - custom_file
+                            type: string
+                        required:
+                          - type
+                          - id
+                        type: object
+                      - additionalProperties: false
+                        properties:
+                          type:
+                            enum:
+                              - url
+                            type: string
+                          url:
+                            format: uri
+                            type: string
+                        required:
+                          - type
+                          - url
+                        type: object
+                  type: array
+                test:
+                  type: boolean
+              required:
+                - source_pdfs
+              title: combine_pdfs_data
+              type: object
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    combined_submission:
+                      actions:
+                        - action_category: file_upload
+                          action_type: aws_s3_upload
+                          id: csa_000000000000000002
+                          integration_id: aci_000000000000000001
+                          result_data:
+                            s3_bucket: docspring-custom-s3-test
+                            s3_key: acc_1234/2018/combined_submissions/20181005090010-com_1234.pdf
+                            s3_region: us-east-1
+                            s3_url: https://docspring-custom-s3-test.s3.amazonaws.com/acc_1234/2018/combined_submissions/20181005090010-com_1234.pdf
+                          state: processed
+                      download_url: null
+                      expired: false
+                      expires_at: null
+                      id: com_000000000000000002
+                      metadata:
+                        bar: baz
+                        foo: 123
+                      pdf_hash: null
+                      processed_at: null
+                      source_pdfs:
+                        - id: sub_000000000000000001
+                          type: submission
+                        - id: tpl_000000000000000001
+                          type: template
+                        - id: sub_000000000000000002
+                          type: submission
+                        - id: cfi_0000000000000000000000001
+                          type: custom_file
+                        - id: com_000000000000000001
+                          type: combined_submission
+                        - type: url
+                          url: http://example.com/test-pdf.pdf
+                      state: pending
+                      submission_ids:
+                        - sub_000000000000000001
+                        - sub_000000000000000002
+                    status: success
+              schema:
+                properties:
+                  combined_submission:
+                    properties:
+                      actions:
+                        items:
+                          $ref: "#/components/schemas/combined_submission_action"
+                        type: array
+                      download_url:
+                        nullable: true
+                        type: string
+                      expired:
+                        type: boolean
+                      expires_at:
+                        nullable: true
+                        type: string
+                      id:
+                        type: string
+                      metadata:
+                        type: object
+                      pdf_hash:
+                        nullable: true
+                        type: string
+                      source_pdfs:
+                        items:
+                          oneOf:
+                            - additionalProperties: false
+                              properties:
+                                id:
+                                  type: string
+                                type:
+                                  enum:
+                                    - submission
+                                    - combined_submission
+                                    - template
+                                    - custom_file
+                                  type: string
+                              required:
+                                - type
+                                - id
+                              type: object
+                            - additionalProperties: false
+                              properties:
+                                type:
+                                  enum:
+                                    - url
+                                  type: string
+                                url:
+                                  format: uri
+                                  type: string
+                              required:
+                                - type
+                                - url
+                              type: object
+                        type: array
+                      state:
+                        enum:
+                          - pending
+                          - processed
+                          - error
+                        type: string
+                      submission_ids:
+                        items:
+                          type: string
+                        type: array
+                    required:
+                      - id
+                      - state
+                      - expired
+                      - submission_ids
+                      - source_pdfs
+                    title: combined_submission
+                    type: object
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                required:
+                  - status
+                  - combined_submission
+                title: create_combined_submission_response
+                type: object
+          description: combined submission created
+        "400":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: "There was a problem with the JSON you submitted: unexpected character at line 1, column 34 in '{ \"source_pdfs\": [\"123\", \"345\"], metadata: { \"user_id\": \"This PDF is great!\" }}"
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: invalid JSON
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "422":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    errors:
+                      - "source_pdfs: Could not find Submission with ID: MISSING_SUBMISSION_ID"
+                      - "source_pdfs: Template document is not processed: tpl_000000000000000001 (state: pending)"
+                      - "source_pdfs: Could not find Template with ID: MISSING_TEMPLATE_ID"
+                      - "source_pdfs: Could not find Custom File with ID: MISSING_CUSTOM_FILE_ID"
+                      - "source_pdfs: Could not find Combined Submission with ID: MISSING_COMBINED_SUBMISSION_ID"
+                    status: error
+              schema:
+                $ref: "#/components/schemas/invalid_request"
+          description: invalid request
+      security:
+        - api_token_basic: []
+      summary: Merge submission PDFs, template PDFs, or custom files
+      tags:
+        - PDF
+  /custom_files:
+    post:
+      operationId: createCustomFileFromUpload
+      requestBody:
+        content:
+          application/json:
+            schema:
+              additionalProperties: false
+              example:
+                cache_id: 00000000000000001.pdf
+              properties:
+                cache_id:
+                  minLength: 1
+                  type: string
+              required:
+                - cache_id
+              title: create_custom_file_data
+              type: object
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    custom_file:
+                      id: cfi_000000000000000001
+                      url: /uploads/test/store/acc_000000000000000001/custom_files/cfi_000000000000000001.pdf
+                    status: success
+              schema:
+                properties:
+                  custom_file:
+                    additionalProperties: false
+                    properties:
+                      id:
+                        type: string
+                      url:
+                        type: string
+                    required:
+                      - id
+                      - url
+                    title: custom_file
+                    type: object
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                required:
+                  - status
+                  - custom_file
+                title: create_custom_file_response
+                type: object
+          description: returns the custom file
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+      security:
+        - api_token_basic: []
+      summary: Create a new custom file from a cached presign upload
+      tags:
+        - PDF
+  "/data_requests/{data_request_id}":
+    get:
+      operationId: getDataRequest
+      parameters:
+        - example: drq_000000000000000001
+          in: path
+          name: data_request_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    auth_phone_number_hash: fdcc3985b0698d655137019b1e776171081369f0aad125b8c7f57af2b8225490
+                    auth_provider: null
+                    auth_second_factor_type: phone_number
+                    auth_session_id_hash: null
+                    auth_session_started_at: 2018-10-23T13:00:00Z
+                    auth_type: password
+                    auth_user_id_hash: 8ae0e445664ca53407906db8638d8ba07a2383f656383a4427bed1ab645ca29a
+                    auth_username_hash: b7c141423f7030a6a771563ee0731192ea871146653a3d0cf8f8b78ca8f9699b
+                    completed_at: null
+                    data:
+                      description: Great PDF, good job!
+                    email: jdoe@example.com
+                    fields:
+                      - description
+                    id: drq_000000000000000001
+                    ip_address: 1.1.1.1
+                    metadata:
+                      user_id: 42
+                    name: John Doe
+                    order: 1
+                    sort_order: 0
+                    state: pending
+                    user_agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36
+                    viewed_at: null
+              schema:
+                $ref: "#/components/schemas/submission_data_request"
+          description: completed submission data request found
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Invalid API token secret
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Data request not found.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: submission data request not found
+      security:
+        - api_token_basic: []
+      summary: Look up a submission data request
+      tags:
+        - PDF
+    put:
+      operationId: updateDataRequest
+      parameters:
+        - example: drq_000000000000000001
+          in: path
+          name: data_request_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                auth_provider: google
+                auth_session_id_hash: 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92
+                auth_session_started_at: 2018-10-23 09:00:00 -0400
+                auth_type: oauth
+                metadata:
+                  user_id: 123
+              properties:
+                auth_phone_number_hash:
+                  nullable: true
+                  type: string
+                auth_provider:
+                  nullable: true
+                  type: string
+                auth_second_factor_type:
+                  enum:
+                    - none
+                    - phone_number
+                    - totp
+                    - mobile_push
+                    - security_key
+                    - fingerprint
+                  type: string
+                auth_session_id_hash:
+                  nullable: true
+                  type: string
+                auth_session_started_at:
+                  nullable: true
+                  type: string
+                auth_type:
+                  enum:
+                    - none
+                    - password
+                    - oauth
+                    - email_link
+                    - phone_number
+                    - ldap
+                    - saml
+                  type: string
+                auth_user_id_hash:
+                  nullable: true
+                  type: string
+                auth_username_hash:
+                  nullable: true
+                  type: string
+                email:
+                  nullable: true
+                  type: string
+                fields:
+                  items:
+                    type: string
+                  type: array
+                metadata:
+                  type: object
+                name:
+                  nullable: true
+                  type: string
+                order:
+                  type: integer
+              title: update_submission_data_request_data
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    data_request:
+                      auth_phone_number_hash: null
+                      auth_provider: google
+                      auth_second_factor_type: none
+                      auth_session_id_hash: 8d969eef6ecad3c29a3a629280e686cf0c3f5d5a86aff3ca12020c923adc6c92
+                      auth_session_started_at: 2018-10-23T13:00:00Z
+                      auth_type: oauth
+                      auth_user_id_hash: null
+                      auth_username_hash: null
+                      completed_at: null
+                      data:
+                        description: Great PDF, good job!
+                      email: jdoe@example.com
+                      fields:
+                        - description
+                      id: drq_000000000000000001
+                      ip_address: 1.1.1.1
+                      metadata:
+                        user_id: 123
+                      name: John Doe
+                      order: 1
+                      sort_order: 0
+                      state: pending
+                      user_agent: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_4) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/81.0.4044.122 Safari/537.36
+                      viewed_at: null
+                    status: success
+              schema:
+                properties:
+                  data_request:
+                    $ref: "#/components/schemas/submission_data_request"
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                required:
+                  - status
+                  - data_request
+                title: update_data_request_response
+                type: object
+          description: submission data request updated
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Invalid API token secret
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Data request not found.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: submission data request not found
+        "422":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    errors:
+                      - Data requests cannot be updated after they have been completed.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/invalid_request"
+          description: invalid request
+      security:
+        - api_token_basic: []
+      summary: Update a submission data request
+      tags:
+        - PDF
+  "/data_requests/{data_request_id}/tokens":
+    post:
+      operationId: createDataRequestToken
+      parameters:
+        - example: drq_000000000000000001
+          in: path
+          name: data_request_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    status: success
+                    token:
+                      data_request_url: http://app.docspring.local/data_requests/drq_000000000000000001?token_id=000000000000000001&token_secret=ABCDEF01234567890
+                      expires_at: 2018-10-20T14:00:00Z
+                      id: "000000000000000001"
+                      secret: ABCDEF01234567890
+              schema:
+                properties:
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                  token:
+                    properties:
+                      data_request_url:
+                        type: string
+                      expires_at:
+                        type: string
+                      id:
+                        type: string
+                      secret:
+                        type: string
+                    required:
+                      - id
+                      - secret
+                      - expires_at
+                      - data_request_url
+                    type: object
+                required:
+                  - status
+                  - token
+                title: create_submission_data_request_token_response
+                type: object
+          description: token created
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+      security:
+        - api_token_basic: []
+      summary: Creates a new data request token for form authentication
+      tags:
+        - PDF
+  /folders/:
+    get:
+      operationId: listFolders
+      parameters:
+        - description: Filter By Folder Id
+          example: fld_000000000000000002
+          in: query
+          name: parent_folder_id
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    - id: fld_000000000000000003
+                      name: nested folder 1
+                      parent_folder_id: fld_000000000000000002
+                      path: /Folder 2
+                    - id: fld_000000000000000002
+                      name: Folder 2
+                      parent_folder_id: null
+                      path: /
+                    - id: fld_000000000000000001
+                      name: Folder 1
+                      parent_folder_id: null
+                      path: /
+              schema:
+                items:
+                  properties:
+                    id:
+                      type: string
+                    name:
+                      type: string
+                    parent_folder_id:
+                      nullable: true
+                      type: string
+                    path:
+                      type: string
+                  title: folder
+                  type: object
+                title: folders
+                type: array
+          description: enumerate all folders
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+      security:
+        - api_token_basic: []
+      summary: Get a list of all folders
+      tags:
+        - PDF
+    post:
+      operationId: createFolder
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                folder:
+                  name: Folder 3
+              properties:
+                folder:
+                  properties:
+                    name:
+                      type: string
+                    parent_folder_id:
+                      type: string
+                  required:
+                    - name
+                  type: object
+              required:
+                - folder
+              title: create_folder_data
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    id: fld_0000000000000000n1
+                    name: Folder 3
+                    parent_folder_id: null
+                    path: /
+              schema:
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                title: folder
+                type: object
+          description: folder created inside another folder
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+          description: parent folder doesnt exist
+        "422":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                title: folder
+                type: object
+          description: name already exist
+      security:
+        - api_token_basic: []
+      summary: Create a folder
+      tags:
+        - PDF
+  "/folders/{folder_id}":
+    delete:
+      operationId: deleteFolder
+      parameters:
+        - example: fld_000000000000000001
+          in: path
+          name: folder_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    id: fld_000000000000000001
+                    name: Folder 1
+                    parent_folder_id: null
+                    path: /
+              schema:
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                title: folder
+                type: object
+          description: folder is empty
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+          description: folder doesnt exist
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+          description: folder has contents
+      security:
+        - api_token_basic: []
+      summary: Delete a folder
+      tags:
+        - PDF
+  "/folders/{folder_id}/move":
+    post:
+      operationId: moveFolderToFolder
+      parameters:
+        - example: fld_000000000000000001
+          in: path
+          name: folder_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                parent_folder_id: fld_000000000000000002
+              properties:
+                parent_folder_id:
+                  type: string
+              title: move_folder_data
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    id: fld_000000000000000001
+                    name: Folder 1
+                    parent_folder_id: fld_000000000000000002
+                    path: /Folder 2
+              schema:
+                properties:
+                  id:
+                    type: string
+                  name:
+                    type: string
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                title: folder
+                type: object
+          description: move to root folder
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+          description: parent folder doesnt exist
+      security:
+        - api_token_basic: []
+      summary: Move a folder
+      tags:
+        - PDF
+  "/folders/{folder_id}/rename":
+    post:
+      operationId: renameFolder
+      parameters:
+        - example: fld_000000000000000001
+          in: path
+          name: folder_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                name: Folder 3
+              properties:
+                name:
+                  type: string
+              required:
+                - name
+              title: rename_folder_data
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    id: fld_000000000000000001
+                    name: Folder 3
+                    parent_folder_id: null
+                    path: /
+          description: successful rename
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          description: folder doesnt belong to me
+        "422":
+          description: name already exist
+      security:
+        - api_token_basic: []
+      summary: Rename a folder
+      tags:
+        - PDF
+  /submissions/batches:
+    post:
+      operationId: batchGeneratePdfs
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                metadata:
+                  job_id: 54321
+                submissions:
+                  - data:
+                      description: This PDF is great!
+                      title: Test PDF 1
+                    metadata:
+                      submission_number: 1
+                    template_id: tpl_000000000000000001
+                    test: false
+                  - data:
+                      description: This PDF is also pretty good!
+                      title: Test PDF 2
+                    metadata:
+                      submission_number: 2
+                    template_id: tpl_000000000000000001
+                template_id: null
+                test: true
+              properties:
+                metadata:
+                  type: object
+                submissions:
+                  items:
+                    properties:
+                      css:
+                        type: string
+                      data:
+                        type: object
+                      html:
+                        type: string
+                      metadata:
+                        type: object
+                      template_id:
+                        nullable: true
+                        type: string
+                      test:
+                        type: boolean
+                    required:
+                      - template_id
+                      - data
+                    title: submission_data_batch_request
+                    type: object
+                  type: array
+                template_id:
+                  nullable: true
+                  type: string
+                test:
+                  type: boolean
+              required:
+                - submissions
+              title: submission_batch_data
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    status: error
+                    submission_batch:
+                      completion_percentage: 100
+                      error_count: 1
+                      id: sbb_000000000000000001
+                      metadata:
+                        job_id: 54321
+                      pending_count: 0
+                      processed_at: null
+                      state: error
+                      total_count: 2
+                    submissions:
+                      - status: valid_but_not_saved
+                      - errors:
+                          - The root object did not contain a required property of 'title'
+                        status: error
+                        submission:
+                          actions: []
+                          batch_id: sbb_000000000000000001
+                          data_requests: []
+                          download_url: null
+                          editable: null
+                          expired: false
+                          expires_at: null
+                          id: sub_000000000000000001
+                          json_schema_errors:
+                            - The root object did not contain a required property of 'title'
+                          metadata:
+                            submission_number: 2
+                          pdf_hash: null
+                          permanent_download_url: null
+                          processed_at: null
+                          state: invalid_data
+                          template_id: tpl_000000000000000001
+                          test: true
+                          truncated_text: {}
+              schema:
+                properties:
+                  error:
+                    type: string
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                  submission_batch:
+                    properties:
+                      completion_percentage:
+                        type: integer
+                      error_count:
+                        type: integer
+                      id:
+                        type: string
+                      metadata:
+                        type: object
+                      pending_count:
+                        type: integer
+                      processed_at:
+                        nullable: true
+                        type: string
+                      state:
+                        enum:
+                          - pending
+                          - processed
+                          - error
+                        type: string
+                      submissions:
+                        items:
+                          $ref: "#/components/schemas/submission"
+                        type: array
+                      total_count:
+                        type: integer
+                    required:
+                      - id
+                      - total_count
+                      - pending_count
+                      - error_count
+                      - completion_percentage
+                      - state
+                      - processed_at
+                      - metadata
+                    title: submission_batch
+                    type: object
+                  submissions:
+                    items:
+                      properties:
+                        errors:
+                          items:
+                            type: string
+                          type: array
+                        status:
+                          enum:
+                            - success
+                            - error
+                            - valid_but_not_saved
+                          type: string
+                        submission:
+                          $ref: "#/components/schemas/submission"
+                      required:
+                        - status
+                      title: create_submission_batch_submissions_response
+                      type: object
+                    type: array
+                required:
+                  - status
+                  - submission_batch
+                  - submissions
+                title: create_submission_batch_response
+                type: object
+          description: some PDFs with invalid data
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    status: success
+                    submission_batch:
+                      completion_percentage: 0
+                      error_count: 0
+                      id: sbb_000000000000000001
+                      metadata:
+                        job_id: 54321
+                      pending_count: 2
+                      processed_at: null
+                      state: pending
+                      total_count: 2
+                    submissions:
+                      - status: success
+                        submission:
+                          actions: []
+                          batch_id: sbb_000000000000000001
+                          data_requests: []
+                          download_url: null
+                          editable: null
+                          expired: false
+                          expires_at: null
+                          id: sub_000000000000000001
+                          json_schema_errors: []
+                          metadata:
+                            submission_number: 1
+                          pdf_hash: null
+                          permanent_download_url: null
+                          processed_at: null
+                          state: pending
+                          template_id: tpl_000000000000000001
+                          test: false
+                          truncated_text: {}
+                      - status: success
+                        submission:
+                          actions: []
+                          batch_id: sbb_000000000000000001
+                          data_requests: []
+                          download_url: null
+                          editable: null
+                          expired: false
+                          expires_at: null
+                          id: sub_000000000000000002
+                          json_schema_errors: []
+                          metadata:
+                            submission_number: 2
+                          pdf_hash: null
+                          permanent_download_url: null
+                          processed_at: null
+                          state: pending
+                          template_id: tpl_000000000000000001
+                          test: true
+                          truncated_text: {}
+              schema:
+                properties:
+                  error:
+                    type: string
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                  submission_batch:
+                    properties:
+                      completion_percentage:
+                        type: integer
+                      error_count:
+                        type: integer
+                      id:
+                        type: string
+                      metadata:
+                        type: object
+                      pending_count:
+                        type: integer
+                      processed_at:
+                        nullable: true
+                        type: string
+                      state:
+                        enum:
+                          - pending
+                          - processed
+                          - error
+                        type: string
+                      submissions:
+                        items:
+                          $ref: "#/components/schemas/submission"
+                        type: array
+                      total_count:
+                        type: integer
+                    required:
+                      - id
+                      - total_count
+                      - pending_count
+                      - error_count
+                      - completion_percentage
+                      - state
+                      - processed_at
+                      - metadata
+                    title: submission_batch
+                    type: object
+                  submissions:
+                    items:
+                      properties:
+                        errors:
+                          items:
+                            type: string
+                          type: array
+                        status:
+                          enum:
+                            - success
+                            - error
+                            - valid_but_not_saved
+                          type: string
+                        submission:
+                          $ref: "#/components/schemas/submission"
+                      required:
+                        - status
+                      title: create_submission_batch_submissions_response
+                      type: object
+                    type: array
+                required:
+                  - status
+                  - submission_batch
+                  - submissions
+                title: create_submission_batch_response
+                type: object
+          description: submissions created
+        "400":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: "There was a problem with the JSON you submitted: unexpected character at line 1, column 24 in '{ \"title\": \"Test PDF\", description: \"This PDF is great!\" }"
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: invalid JSON
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Invalid API token secret
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+      security:
+        - api_token_basic: []
+      summary: Generates multiple PDFs
+      tags:
+        - PDF
+  "/submissions/batches/{submission_batch_id}":
+    get:
+      operationId: getSubmissionBatch
+      parameters:
+        - example: sbb_000000000000000001
+          in: path
+          name: submission_batch_id
+          required: true
+          schema:
+            type: string
+        - example: true
+          in: query
+          name: include_submissions
+          schema:
+            type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    completion_percentage: 100
+                    error_count: 2
+                    id: sbb_000000000000000001
+                    metadata:
+                      qux: abc
+                    pending_count: 0
+                    processed_at: null
+                    state: error
+                    submissions:
+                      - actions: []
+                        batch_id: sbb_000000000000000001
+                        data_requests: []
+                        download_url: https://example.com/submissions/submission.pdf
+                        editable: false
+                        expired: false
+                        expires_at: null
+                        id: sub_000000000000000001
+                        json_schema_errors: []
+                        metadata: {}
+                        pdf_hash: bbc369dd471442006963e3244a1b43610e066165c09770978221f91bd7ace8f5
+                        permanent_download_url: http://app.docspring.local/submissions/sub_000000000000000001/download
+                        processed_at: null
+                        state: processed
+                        template_id: tpl_000000000000000001
+                        test: false
+                        truncated_text: {}
+                      - actions: []
+                        batch_id: sbb_000000000000000001
+                        data_requests: []
+                        download_url: https://example.com/submissions/submission.pdf
+                        editable: false
+                        expired: false
+                        expires_at: null
+                        id: sub_000000000000000002
+                        json_schema_errors: []
+                        metadata: {}
+                        pdf_hash: bbc369dd471442006963e3244a1b43610e066165c09770978221f91bd7ace8f5
+                        permanent_download_url: http://app.docspring.local/submissions/sub_000000000000000002/download
+                        processed_at: null
+                        state: processed
+                        template_id: tpl_000000000000000001
+                        test: false
+                        truncated_text: {}
+                    total_count: 10
+              schema:
+                properties:
+                  completion_percentage:
+                    type: integer
+                  error_count:
+                    type: integer
+                  id:
+                    type: string
+                  metadata:
+                    type: object
+                  pending_count:
+                    type: integer
+                  processed_at:
+                    nullable: true
+                    type: string
+                  state:
+                    enum:
+                      - pending
+                      - processed
+                      - error
+                    type: string
+                  submissions:
+                    items:
+                      $ref: "#/components/schemas/submission"
+                    type: array
+                  total_count:
+                    type: integer
+                required:
+                  - id
+                  - total_count
+                  - pending_count
+                  - error_count
+                  - completion_percentage
+                  - state
+                  - processed_at
+                  - metadata
+                title: submission_batch
+                type: object
+          description: processed submission batch found
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Invalid API token secret
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Submission batch not found.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: submission batch not found
+      security:
+        - api_token_basic: []
+      summary: Check the status of a submission batch job
+      tags:
+        - PDF
+  "/submissions/{submission_id}":
+    delete:
+      operationId: expireSubmission
+      parameters:
+        - example: sub_000000000000000001
+          in: path
+          name: submission_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    actions:
+                      - action_category: file_upload
+                        action_type: aws_s3_upload
+                        id: sba_000000000000000001
+                        integration_id: aci_000000000000000001
+                        result_data:
+                          s3_bucket: docspring-custom-s3-test
+                          s3_key: templates/tpl_eGc5CmFbPnCCmerqsx/sub_gzYpKDYFqEHxzca4kK.pdf
+                          s3_region: us-east-1
+                          s3_url: https://docspring-custom-s3-test.s3.amazonaws.com/templates/tpl_eGc5CmFbPnCCmerqsx/sub_gzYpKDYFqEHxzca4kK.pdf
+                        state: processed
+                    batch_id: null
+                    data_requests: []
+                    download_url: null
+                    editable: false
+                    expired: true
+                    expires_at: 2018-10-20T13:00:00Z
+                    id: sub_000000000000000001
+                    json_schema_errors: []
+                    metadata:
+                      qux: abc
+                      user_id: 42
+                    pdf_hash: bbc369dd471442006963e3244a1b43610e066165c09770978221f91bd7ace8f5
+                    permanent_download_url: null
+                    processed_at: 2020-05-14T02:00:00Z
+                    state: processed
+                    template_id: tpl_000000000000000001
+                    test: true
+                    truncated_text:
+                      description:
+                        - text that couldn't fit
+              schema:
+                $ref: "#/components/schemas/submission"
+          description: submission was expired
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Invalid API token secret
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "403":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: You must use a live API token to expire a submission.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: test API token used
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Submission not found.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: submission not found
+      security:
+        - api_token_basic: []
+      summary: Expire a PDF submission
+      tags:
+        - PDF
+    get:
+      operationId: getSubmission
+      parameters:
+        - example: sub_000000000000000001
+          in: path
+          name: submission_id
+          required: true
+          schema:
+            type: string
+        - example: true
+          in: query
+          name: include_data
+          schema:
+            type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    actions:
+                      - action_category: file_upload
+                        action_type: aws_s3_upload
+                        id: sba_000000000000000001
+                        integration_id: aci_000000000000000001
+                        result_data:
+                          s3_bucket: docspring-custom-s3-test
+                          s3_key: templates/tpl_eGc5CmFbPnCCmerqsx/sub_gzYpKDYFqEHxzca4kK.pdf
+                          s3_region: us-east-1
+                          s3_url: https://docspring-custom-s3-test.s3.amazonaws.com/templates/tpl_eGc5CmFbPnCCmerqsx/sub_gzYpKDYFqEHxzca4kK.pdf
+                        state: processed
+                    batch_id: null
+                    data:
+                      description: This PDF is great!
+                      title: Test PDF
+                    data_requests: []
+                    download_url: https://example.com/submissions/submission.pdf
+                    editable: false
+                    expired: false
+                    expires_at: 2018-10-27T13:00:00Z
+                    id: sub_000000000000000001
+                    json_schema_errors: []
+                    metadata:
+                      qux: abc
+                      user_id: 42
+                    pdf_hash: bbc369dd471442006963e3244a1b43610e066165c09770978221f91bd7ace8f5
+                    permanent_download_url: http://app.docspring.local/submissions/sub_000000000000000001/download
+                    processed_at: 2020-05-14T02:00:00Z
+                    referrer: null
+                    source: api
+                    state: processed
+                    template_id: tpl_000000000000000001
+                    test: true
+                    truncated_text:
+                      description:
+                        - text that couldn't fit
+              schema:
+                $ref: "#/components/schemas/submission"
+          description: processed submission found
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+                    status: error
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Submission not found.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: submission not found
+      security:
+        - api_token_basic: []
+      summary: Check the status of a PDF
+      tags:
+        - PDF
+  /templates:
+    get:
+      operationId: listTemplates
+      parameters:
+        - description: Search By Name
+          example: "2"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: Filter By Folder Id
+          example: fld_000000000000000001
+          in: query
+          name: parent_folder_id
+          required: false
+          schema:
+            type: string
+        - description: "Default: 1"
+          example: 2
+          in: query
+          name: page
+          required: false
+          schema:
+            minimum: 1
+            type: integer
+        - description: "Default: 50"
+          example: 1
+          in: query
+          name: per_page
+          required: false
+          schema:
+            maximum: 50
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    - allow_additional_properties: false
+                      description: null
+                      document_filename: test-document.pdf
+                      document_processed: true
+                      document_state: pending
+                      document_url: /uploads/test/store/templates/test/test-document.pdf
+                      editable_submissions: false
+                      expiration_interval: days
+                      expire_after: 7
+                      expire_submissions: true
+                      id: tpl_000000000000000011
+                      locked: false
+                      name: Sub Template 1
+                      page_count: 3
+                      page_dimensions:
+                        - - 612
+                          - 792
+                        - - 792
+                          - 612
+                        - - 612
+                          - 792
+                      parent_folder_id: fld_000000000000000001
+                      path: /Folder
+                      permanent_document_url: http://app.docspring.local/templates/tpl_000000000000000011/original_pdf?token=123456789abcdef
+                      public_submissions: false
+                      public_web_form: false
+                      redirect_url: null
+                      slack_webhook_url: null
+                      template_type: pdf
+                      webhook_url: null
+                    - allow_additional_properties: false
+                      description: null
+                      document_filename: null
+                      document_processed: false
+                      document_state: pending
+                      document_url: null
+                      editable_submissions: false
+                      expiration_interval: days
+                      expire_after: 7
+                      expire_submissions: true
+                      id: tpl_000000000000000003
+                      locked: false
+                      name: Template 3
+                      page_count: 1
+                      page_dimensions: null
+                      parent_folder_id: null
+                      path: /
+                      permanent_document_url: null
+                      public_submissions: false
+                      public_web_form: false
+                      redirect_url: null
+                      slack_webhook_url: null
+                      template_type: html
+                      webhook_url: null
+                    - allow_additional_properties: false
+                      description: null
+                      document_filename: test-document.pdf
+                      document_processed: true
+                      document_state: pending
+                      document_url: /uploads/test/store/templates/test/test-document.pdf
+                      editable_submissions: false
+                      expiration_interval: days
+                      expire_after: 7
+                      expire_submissions: true
+                      id: tpl_000000000000000002
+                      locked: false
+                      name: Template 2
+                      page_count: 3
+                      page_dimensions:
+                        - - 612
+                          - 792
+                        - - 792
+                          - 612
+                        - - 612
+                          - 792
+                      parent_folder_id: null
+                      path: /
+                      permanent_document_url: http://app.docspring.local/templates/tpl_000000000000000002/original_pdf?token=123456789abcdef
+                      public_submissions: false
+                      public_web_form: false
+                      redirect_url: null
+                      slack_webhook_url: null
+                      template_type: pdf
+                      webhook_url: null
+                    - allow_additional_properties: false
+                      description: null
+                      document_filename: blank_pdf.pdf
+                      document_processed: true
+                      document_state: processed
+                      document_url: /uploads/test/store/acc_000000000000000001/templates/tpl_000000000000000001/document/original-0000000000.pdf
+                      editable_submissions: false
+                      expiration_interval: days
+                      expire_after: 7
+                      expire_submissions: true
+                      id: tpl_000000000000000001
+                      locked: false
+                      name: Template 1
+                      page_count: 1
+                      page_dimensions:
+                        - - 612
+                          - 792
+                      parent_folder_id: null
+                      path: /
+                      permanent_document_url: http://app.docspring.local/templates/tpl_000000000000000001/original_pdf?token=123456789abcdef
+                      public_submissions: false
+                      public_web_form: false
+                      redirect_url: null
+                      slack_webhook_url: null
+                      template_type: pdf
+                      webhook_url: null
+              schema:
+                items:
+                  properties:
+                    allow_additional_properties:
+                      type: boolean
+                    description:
+                      nullable: true
+                      type: string
+                    document_url:
+                      nullable: true
+                      type: string
+                    editable_submissions:
+                      type: boolean
+                    expiration_interval:
+                      enum:
+                        - minutes
+                        - hours
+                        - days
+                      type: string
+                    expire_after:
+                      type: number
+                    expire_submissions:
+                      type: boolean
+                    id:
+                      type: string
+                    locked:
+                      type: boolean
+                    name:
+                      nullable: true
+                      type: string
+                    page_dimensions:
+                      items:
+                        items:
+                          type: number
+                        maxItems: 2
+                        minItems: 2
+                        type: array
+                      nullable: true
+                      type: array
+                    parent_folder_id:
+                      nullable: true
+                      type: string
+                    path:
+                      type: string
+                    permanent_document_url:
+                      nullable: true
+                      type: string
+                    public_submissions:
+                      type: boolean
+                    public_web_form:
+                      type: boolean
+                    redirect_url:
+                      nullable: true
+                      type: string
+                    slack_webhook_url:
+                      nullable: true
+                      type: string
+                    template_type:
+                      type: string
+                    webhook_url:
+                      nullable: true
+                      type: string
+                  required:
+                    - id
+                    - name
+                    - description
+                    - template_type
+                    - public_web_form
+                    - public_submissions
+                    - expire_submissions
+                    - allow_additional_properties
+                    - editable_submissions
+                    - locked
+                    - webhook_url
+                    - slack_webhook_url
+                    - redirect_url
+                  title: template
+                  type: object
+                title: templates
+                type: array
+          description: enumerate all templates
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/error"
+          description: filter templates by invalid folder id
+      security:
+        - api_token_basic: []
+      summary: Get a list of all templates
+      tags:
+        - PDF
+    post:
+      operationId: createPDFTemplate
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                "template[document]":
+                  example: <Uploaded File>
+                  format: binary
+                  type: string
+                "template[name]":
+                  example: Test Template
+                  type: string
+                "template[parent_folder_id]":
+                  example: fld_000000000000000001
+                  type: string
+              required:
+                - template[document]
+                - template[name]
+              type: object
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    allow_additional_properties: false
+                    description: null
+                    document_filename: fw8ben.pdf
+                    document_processed: false
+                    document_state: pending
+                    document_url: /cache/cached_upload.pdf
+                    editable_submissions: false
+                    expiration_interval: days
+                    expire_after: 7
+                    expire_submissions: false
+                    id: tpl_000000000000000004
+                    locked: false
+                    name: Test Template
+                    page_count: 0
+                    page_dimensions: null
+                    parent_folder_id: fld_000000000000000001
+                    path: /Folder
+                    permanent_document_url: null
+                    public_submissions: false
+                    public_web_form: false
+                    redirect_url: null
+                    slack_webhook_url: null
+                    template_type: pdf
+                    webhook_url: null
+              schema:
+                properties:
+                  allow_additional_properties:
+                    type: boolean
+                  description:
+                    nullable: true
+                    type: string
+                  editable_submissions:
+                    type: boolean
+                  expiration_interval:
+                    enum:
+                      - minutes
+                      - hours
+                      - days
+                    type: string
+                  expire_after:
+                    type: number
+                  expire_submissions:
+                    type: boolean
+                  id:
+                    type: string
+                  locked:
+                    type: boolean
+                  name:
+                    nullable: true
+                    type: string
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                  public_submissions:
+                    type: boolean
+                  public_web_form:
+                    type: boolean
+                  redirect_url:
+                    nullable: true
+                    type: string
+                  slack_webhook_url:
+                    nullable: true
+                    type: string
+                  template_type:
+                    type: string
+                  webhook_url:
+                    nullable: true
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - template_type
+                  - public_web_form
+                  - public_submissions
+                  - expire_submissions
+                  - allow_additional_properties
+                  - editable_submissions
+                  - locked
+                  - page_dimensions
+                  - webhook_url
+                  - slack_webhook_url
+                  - redirect_url
+                title: pending_template
+                type: object
+          description: returns a pending template
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+      security:
+        - api_token_basic: []
+      summary: Create a new PDF template with a form POST file upload
+      tags:
+        - PDF
+  "/templates/{template_id}":
+    get:
+      operationId: getTemplate
+      parameters:
+        - example: tpl_000000000000000011
+          in: path
+          name: template_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    allow_additional_properties: false
+                    description: null
+                    document_filename: test-document.pdf
+                    document_processed: true
+                    document_state: pending
+                    document_url: /uploads/test/store/templates/test/test-document.pdf
+                    editable_submissions: false
+                    expiration_interval: days
+                    expire_after: 7
+                    expire_submissions: true
+                    id: tpl_000000000000000011
+                    locked: false
+                    name: Sub Template 1
+                    page_count: 3
+                    page_dimensions:
+                      - - 612
+                        - 792
+                      - - 792
+                        - 612
+                      - - 612
+                        - 792
+                    parent_folder_id: fld_000000000000000001
+                    path: /Folder
+                    permanent_document_url: http://app.docspring.local/templates/tpl_000000000000000011/original_pdf?token=123456789abcdef
+                    public_submissions: false
+                    public_web_form: false
+                    redirect_url: null
+                    slack_webhook_url: null
+                    template_type: pdf
+                    webhook_url: null
+              schema:
+                properties:
+                  allow_additional_properties:
+                    type: boolean
+                  description:
+                    nullable: true
+                    type: string
+                  document_url:
+                    nullable: true
+                    type: string
+                  editable_submissions:
+                    type: boolean
+                  expiration_interval:
+                    enum:
+                      - minutes
+                      - hours
+                      - days
+                    type: string
+                  expire_after:
+                    type: number
+                  expire_submissions:
+                    type: boolean
+                  id:
+                    type: string
+                  locked:
+                    type: boolean
+                  name:
+                    nullable: true
+                    type: string
+                  page_dimensions:
+                    items:
+                      items:
+                        type: number
+                      maxItems: 2
+                      minItems: 2
+                      type: array
+                    nullable: true
+                    type: array
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                  permanent_document_url:
+                    nullable: true
+                    type: string
+                  public_submissions:
+                    type: boolean
+                  public_web_form:
+                    type: boolean
+                  redirect_url:
+                    nullable: true
+                    type: string
+                  slack_webhook_url:
+                    nullable: true
+                    type: string
+                  template_type:
+                    type: string
+                  webhook_url:
+                    nullable: true
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - template_type
+                  - public_web_form
+                  - public_submissions
+                  - expire_submissions
+                  - allow_additional_properties
+                  - editable_submissions
+                  - locked
+                  - webhook_url
+                  - slack_webhook_url
+                  - redirect_url
+                title: template
+                type: object
+          description: template found
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Template not found.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: template not found
+      security:
+        - api_token_basic: []
+      summary: Get a single template
+      tags:
+        - PDF
+    put:
+      operationId: updateTemplate
+      parameters:
+        - example: tpl_000000000000000003
+          in: path
+          name: template_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                template:
+                  footer_html: updated footer
+                  header_html: updated header
+                  html: updated html
+                  scss: updated scss
+              properties:
+                template:
+                  properties:
+                    allow_additional_properties:
+                      type: boolean
+                    description:
+                      nullable: true
+                      type: string
+                    editable_submissions:
+                      type: boolean
+                    expiration_interval:
+                      enum:
+                        - minutes
+                        - hours
+                        - days
+                      type: string
+                    expire_after:
+                      type: number
+                    expire_submissions:
+                      type: boolean
+                    footer_html:
+                      nullable: true
+                      type: string
+                    header_html:
+                      nullable: true
+                      type: string
+                    html:
+                      nullable: true
+                      type: string
+                    name:
+                      nullable: true
+                      type: string
+                    public_submissions:
+                      type: boolean
+                    public_web_form:
+                      type: boolean
+                    redirect_url:
+                      nullable: true
+                      type: string
+                    scss:
+                      nullable: true
+                      type: string
+                    slack_webhook_url:
+                      nullable: true
+                      type: string
+                    webhook_url:
+                      nullable: true
+                      type: string
+                  title: template_data
+                  type: object
+              required:
+                - template
+              title: update_template_data
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    status: success
+              schema:
+                properties:
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                required:
+                  - status
+                title: update_template_response
+                type: object
+          description: update template success
+      security:
+        - api_token_basic: []
+      summary: Update a Template
+      tags:
+        - PDF
+  "/templates/{template_id}/add_fields":
+    put:
+      operationId: addFieldsToTemplate
+      parameters:
+        - example: tpl_000000000000000002
+          in: path
+          name: template_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                fields:
+                  - name: new_field1
+                    page: 1
+                  - default: default text
+                    displayType: text
+                    name: new_field2
+                    overflow: truncate
+                    page: 1
+                    rotation: 10
+                    type: string
+                  - displayType: text
+                    integer: true
+                    name: new_field3
+                    page: 2
+                    rotation: 0
+                    type: number
+                  - displayType: text
+                    integer: true
+                    name: new_field4
+                    page: 3
+                    rotation: 0
+                    type: number
+                  - displayType: text
+                    height: 50
+                    id: 99
+                    integer: true
+                    name: new_field5
+                    page: 2
+                    rotation: 0
+                    type: number
+                    width: 150
+                    x: 20
+                    y: 60
+                  - description: updated description for existing field
+                    displayType: text
+                    height: 50
+                    integer: true
+                    maximum: 100
+                    minimum: 10
+                    name: title
+                    page: 1
+                    rotation: 0
+                    type: number
+                    width: 150
+                    x: 40
+                    y: 60
+              properties:
+                fields:
+                  items:
+                    additionalProperties: false
+                    properties:
+                      alignment:
+                        enum:
+                          - left
+                          - center
+                          - right
+                        type: string
+                      autoCalculateMaxLength:
+                        type: boolean
+                      backgroundColor:
+                        type: string
+                      backgroundColorFieldName:
+                        type: string
+                      backgroundColorFieldRequired:
+                        type: boolean
+                      barcodeSymbology:
+                        type: string
+                      bold:
+                        type: boolean
+                      characterSpacing:
+                        type: number
+                      checkCharacter:
+                        enum:
+                          - "&#10003;"
+                          - "&#10004;"
+                          - "&#10006;"
+                          - "&#10007;"
+                          - "&#10008;"
+                        type: string
+                      checkColor:
+                        type: string
+                      checkColorFieldName:
+                        type: string
+                      checkColorFieldRequired:
+                        type: boolean
+                      color:
+                        type: string
+                      colorFieldName:
+                        type: string
+                      colorFieldRequired:
+                        type: boolean
+                      comb:
+                        type: boolean
+                      combNumberOfCells:
+                        minimum: 0
+                        type: number
+                      combValueOffset:
+                        type: number
+                      combinedFieldFormat:
+                        type: string
+                      combinedFieldNames:
+                        type: string
+                      combinedFieldSeparator:
+                        type: string
+                      combinedFieldType:
+                        type: string
+                      condition:
+                        type: string
+                      currency:
+                        type: boolean
+                      dateTimeFormat:
+                        type: string
+                      decimalPlaces:
+                        minimum: 0
+                        type: number
+                      default:
+                        type: string
+                      description:
+                        type: string
+                      displayType:
+                        enum:
+                          - text
+                          - check
+                          - qrcode
+                          - barcode
+                          - image
+                          - shape
+                        type: string
+                      exclusiveMaximum:
+                        type: boolean
+                      exclusiveMinimum:
+                        type: boolean
+                      falseText:
+                        type: string
+                      fontSize:
+                        minimum: 0
+                        type: number
+                      height:
+                        minimum: 0
+                        type: number
+                      hidden:
+                        type: boolean
+                      id:
+                        minimum: 0
+                        type: number
+                      imageGravity:
+                        enum:
+                          - NorthWest
+                          - North
+                          - NorthEast
+                          - West
+                          - Center
+                          - East
+                          - SouthWest
+                          - South
+                          - SouthEast
+                        type: string
+                      imageScaleType:
+                        enum:
+                          - fit
+                          - fill
+                          - stretch
+                        type: string
+                      includeTime:
+                        type: boolean
+                      integer:
+                        type: boolean
+                      invertBooleanCondition:
+                        type: boolean
+                      maxLength:
+                        type: number
+                      maximum:
+                        type: number
+                      metadata:
+                        type: string
+                      minLength:
+                        type: number
+                      minimum:
+                        type: number
+                      multiline:
+                        type: boolean
+                      multilineLines:
+                        minimum: 0
+                        type: number
+                      name:
+                        type: string
+                      numberConditionRangeExclusiveMax:
+                        type: boolean
+                      numberConditionRangeExclusiveMin:
+                        type: boolean
+                      numberConditionRangeMax:
+                        type: number
+                      numberConditionRangeMin:
+                        type: number
+                      numberConditionType:
+                        enum:
+                          - equals
+                          - range
+                          - gte
+                          - gt
+                          - lte
+                          - lt
+                        type: string
+                      opacity:
+                        maximum: 1
+                        minimum: 0
+                        type: number
+                      optionList:
+                        type: string
+                      overflow:
+                        enum:
+                          - shrink_to_fit
+                          - truncate
+                        type: string
+                      page:
+                        minimum: 1
+                        type: number
+                      qrcodeColor:
+                        type: string
+                      qrcodeColorFieldName:
+                        type: string
+                      qrcodeColorFieldRequired:
+                        type: boolean
+                      required:
+                        type: boolean
+                      rotation:
+                        maximum: 360
+                        minimum: 0
+                        type: number
+                      shapeBorderColor:
+                        type: string
+                      shapeBorderColorFieldName:
+                        type: string
+                      shapeBorderColorFieldRequired:
+                        type: boolean
+                      shapeBorderWidth:
+                        minimum: 0
+                        type: number
+                      shapeFillColor:
+                        type: string
+                      shapeFillColorFieldName:
+                        type: string
+                      shapeFillColorFieldRequired:
+                        type: boolean
+                      shapeType:
+                        enum:
+                          - square
+                          - rectangle
+                          - circle
+                          - ellipse
+                        type: string
+                      signatureAllowDraw:
+                        type: boolean
+                      signatureAllowType:
+                        type: boolean
+                      static:
+                        type: boolean
+                      strikethrough:
+                        type: boolean
+                      stringConditionType:
+                        enum:
+                          - equals
+                          - contains
+                          - starts_with
+                          - ends_with
+                          - regex
+                        type: string
+                      title:
+                        type: string
+                      trueText:
+                        type: string
+                      type:
+                        enum:
+                          - string
+                          - number
+                          - boolean
+                          - date
+                          - address
+                          - country
+                          - email
+                          - url
+                          - image
+                          - signature
+                          - barcode
+                          - combined
+                        type: string
+                      typeface:
+                        type: string
+                      uppercase:
+                        type: boolean
+                      vAlignment:
+                        enum:
+                          - bottom
+                          - center
+                          - top
+                        type: string
+                      width:
+                        minimum: 0
+                        type: number
+                      x:
+                        minimum: 0
+                        type: number
+                      y:
+                        minimum: 0
+                        type: number
+                    required:
+                      - name
+                      - page
+                    type: object
+                  type: array
+              required:
+                - fields
+              title: add_fields_data
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    new_field_ids:
+                      - 3
+                      - 4
+                      - 5
+                      - 6
+                      - 99
+                      - 7
+                    status: success
+              schema:
+                properties:
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  new_field_ids:
+                    items:
+                      type: integer
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                required:
+                  - status
+                title: add_fields_template_response
+                type: object
+          description: add fields success
+        "422":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    errors:
+                      - The property '#/fields/0' did not contain a required property of 'page'
+                      - The property '#/fields/1/page' did not have a minimum value of 1, inclusively
+                      - The property '#/fields/5' contains additional properties ["unknown_property"] outside of the schema when none are allowed
+                      - "The property '#/fields/6/displayType' value \"unknown display type\" did not match one of the following values: text, check, qrcode, barcode, image, shape"
+                      - "The property '#/fields/6/type' value \"unknown type\" did not match one of the following values: string, number, boolean, date, address, country, email, url, image, signature, barcode, combined"
+                      - The property '#/fields/6' did not contain a required property of 'page'
+                      - "The property '#/fields/7/width' of type string did not match the following type: number"
+                      - The property '#/fields/8/height' did not have a minimum value of 0, inclusively
+                      - The property '#/fields/8/width' did not have a minimum value of 0, inclusively
+                      - The property '#/fields/8/x' did not have a minimum value of 0, inclusively
+                      - The property '#/fields/8/y' did not have a minimum value of 0, inclusively
+                      - The property '#/fields/2/id' value "1" is already taken by another field
+                      - The property '#/fields/2/page' value "5" did not have a maximum value of 3, inclusively (Template has 3 pages)
+                      - The property '#/fields/3/page' value "4" did not have a maximum value of 3, inclusively (Template has 3 pages)
+                    status: error
+              schema:
+                properties:
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  new_field_ids:
+                    items:
+                      type: integer
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                required:
+                  - status
+                title: add_fields_template_response
+                type: object
+          description: add fields error
+      security:
+        - api_token_basic: []
+      summary: Add new fields to a Template
+      tags:
+        - PDF
+  "/templates/{template_id}/copy":
+    post:
+      operationId: copyTemplate
+      parameters:
+        - example: tpl_000000000000000001
+          in: path
+          name: template_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                name: Copied Template Name
+                parent_folder_id: fld_000000000000000001
+              properties:
+                name:
+                  type: string
+                parent_folder_id:
+                  type: string
+              required:
+                - parent_folder_id
+              title: copy_template_data
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    allow_additional_properties: false
+                    description: null
+                    document_filename: blank_pdf.pdf
+                    document_processed: true
+                    document_state: processed
+                    document_url: /uploads/test/store/acc_000000000000000001/templates/tpl_00000000000000new1/document/original-0000000000.pdf
+                    editable_submissions: false
+                    expiration_interval: days
+                    expire_after: 7
+                    expire_submissions: true
+                    id: tpl_00000000000000new1
+                    locked: false
+                    name: Copied Template Name
+                    page_count: 1
+                    page_dimensions:
+                      - - 612
+                        - 792
+                    parent_folder_id: fld_000000000000000001
+                    path: /Folder
+                    permanent_document_url: http://app.docspring.local/templates/tpl_00000000000000new1/original_pdf?token=123456789abcdef
+                    public_submissions: false
+                    public_web_form: false
+                    redirect_url: null
+                    slack_webhook_url: null
+                    template_type: pdf
+                    webhook_url: null
+              schema:
+                properties:
+                  allow_additional_properties:
+                    type: boolean
+                  description:
+                    nullable: true
+                    type: string
+                  document_url:
+                    nullable: true
+                    type: string
+                  editable_submissions:
+                    type: boolean
+                  expiration_interval:
+                    enum:
+                      - minutes
+                      - hours
+                      - days
+                    type: string
+                  expire_after:
+                    type: number
+                  expire_submissions:
+                    type: boolean
+                  id:
+                    type: string
+                  locked:
+                    type: boolean
+                  name:
+                    nullable: true
+                    type: string
+                  page_dimensions:
+                    items:
+                      items:
+                        type: number
+                      maxItems: 2
+                      minItems: 2
+                      type: array
+                    nullable: true
+                    type: array
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                  permanent_document_url:
+                    nullable: true
+                    type: string
+                  public_submissions:
+                    type: boolean
+                  public_web_form:
+                    type: boolean
+                  redirect_url:
+                    nullable: true
+                    type: string
+                  slack_webhook_url:
+                    nullable: true
+                    type: string
+                  template_type:
+                    type: string
+                  webhook_url:
+                    nullable: true
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - template_type
+                  - public_web_form
+                  - public_submissions
+                  - expire_submissions
+                  - allow_additional_properties
+                  - editable_submissions
+                  - locked
+                  - webhook_url
+                  - slack_webhook_url
+                  - redirect_url
+                title: template
+                type: object
+          description: copy template success
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Could not find parent folder MISSING_ID
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: folder not found
+      security:
+        - api_token_basic: []
+      summary: Copy a Template
+      tags:
+        - PDF
+  "/templates/{template_id}/move":
+    post:
+      operationId: moveTemplateToFolder
+      parameters:
+        - example: tpl_000000000000000001
+          in: path
+          name: template_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                parent_folder_id: fld_000000000000000001
+              properties:
+                parent_folder_id:
+                  type: string
+              required:
+                - parent_folder_id
+              title: move_template_data
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    allow_additional_properties: false
+                    description: null
+                    document_filename: blank_pdf.pdf
+                    document_processed: true
+                    document_state: processed
+                    document_url: /uploads/test/store/acc_000000000000000001/templates/tpl_000000000000000001/document/original-0000000000.pdf
+                    editable_submissions: false
+                    expiration_interval: days
+                    expire_after: 7
+                    expire_submissions: true
+                    id: tpl_000000000000000001
+                    locked: false
+                    name: Template 1
+                    page_count: 1
+                    page_dimensions:
+                      - - 612
+                        - 792
+                    parent_folder_id: fld_000000000000000001
+                    path: /Folder
+                    permanent_document_url: http://app.docspring.local/templates/tpl_000000000000000001/original_pdf?token=123456789abcdef
+                    public_submissions: false
+                    public_web_form: false
+                    redirect_url: null
+                    slack_webhook_url: null
+                    template_type: pdf
+                    webhook_url: null
+              schema:
+                properties:
+                  allow_additional_properties:
+                    type: boolean
+                  description:
+                    nullable: true
+                    type: string
+                  document_url:
+                    nullable: true
+                    type: string
+                  editable_submissions:
+                    type: boolean
+                  expiration_interval:
+                    enum:
+                      - minutes
+                      - hours
+                      - days
+                    type: string
+                  expire_after:
+                    type: number
+                  expire_submissions:
+                    type: boolean
+                  id:
+                    type: string
+                  locked:
+                    type: boolean
+                  name:
+                    nullable: true
+                    type: string
+                  page_dimensions:
+                    items:
+                      items:
+                        type: number
+                      maxItems: 2
+                      minItems: 2
+                      type: array
+                    nullable: true
+                    type: array
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                  permanent_document_url:
+                    nullable: true
+                    type: string
+                  public_submissions:
+                    type: boolean
+                  public_web_form:
+                    type: boolean
+                  redirect_url:
+                    nullable: true
+                    type: string
+                  slack_webhook_url:
+                    nullable: true
+                    type: string
+                  template_type:
+                    type: string
+                  webhook_url:
+                    nullable: true
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - template_type
+                  - public_web_form
+                  - public_submissions
+                  - expire_submissions
+                  - allow_additional_properties
+                  - editable_submissions
+                  - locked
+                  - webhook_url
+                  - slack_webhook_url
+                  - redirect_url
+                title: template
+                type: object
+          description: move template success
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Could not find parent folder MISSING_ID
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: folder not found
+      security:
+        - api_token_basic: []
+      summary: Move Template to folder
+      tags:
+        - PDF
+  "/templates/{template_id}/schema":
+    get:
+      operationId: getTemplateSchema
+      parameters:
+        - example: tpl_000000000000000001
+          in: path
+          name: template_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    $schema: http://json-schema.org/draft-04/schema#
+                    additionalProperties: false
+                    definitions: {}
+                    description: JSON Schema generated by DocSpring.com
+                    id: https://api.docspring.com/api/v1/templates/tpl_000000000000000001/schema.json
+                    properties:
+                      description:
+                        title: Description
+                        type: string
+                      title:
+                        title: Title
+                        type: string
+                    required:
+                      - description
+                      - title
+                    title: Template 1
+                    type: object
+              schema:
+                additionalProperties: false
+                properties:
+                  $schema:
+                    format: uri
+                    type: string
+                  additionalProperties:
+                    type: boolean
+                  definitions:
+                    default: {}
+                    type: object
+                  description:
+                    type: string
+                  id:
+                    format: uri-reference
+                    type: string
+                  properties:
+                    type: object
+                  required:
+                    items: {}
+                    type: array
+                  title:
+                    type: string
+                  type:
+                    type: string
+                title: template_schema
+                type: object
+          description: template found
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "404":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Template not found.
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: template not found
+      security:
+        - api_token_basic: []
+      summary: Fetch the JSON schema for a template
+      tags:
+        - PDF
+  "/templates/{template_id}/submissions":
+    post:
+      operationId: generatePDF
+      parameters:
+        - example: tpl_000000000000000001
+          in: path
+          name: template_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                data:
+                  description: This PDF is great!
+                  title: Test PDF
+                metadata:
+                  bar: baz
+                  foo: 123
+              properties:
+                css:
+                  type: string
+                data:
+                  type: object
+                data_requests:
+                  items:
+                    properties:
+                      auth_phone_number_hash:
+                        nullable: true
+                        type: string
+                      auth_provider:
+                        nullable: true
+                        type: string
+                      auth_second_factor_type:
+                        enum:
+                          - none
+                          - phone_number
+                          - totp
+                          - mobile_push
+                          - security_key
+                          - fingerprint
+                        type: string
+                      auth_session_id_hash:
+                        nullable: true
+                        type: string
+                      auth_session_started_at:
+                        nullable: true
+                        type: string
+                      auth_type:
+                        enum:
+                          - none
+                          - password
+                          - oauth
+                          - email_link
+                          - phone_number
+                          - ldap
+                          - saml
+                        type: string
+                      auth_user_id_hash:
+                        nullable: true
+                        type: string
+                      auth_username_hash:
+                        nullable: true
+                        type: string
+                      email:
+                        nullable: true
+                        type: string
+                      fields:
+                        items:
+                          type: string
+                        nullable: true
+                        type: array
+                      metadata:
+                        type: object
+                      name:
+                        nullable: true
+                        type: string
+                      order:
+                        type: integer
+                    required:
+                      - email
+                      - auth_type
+                    title: create_submission_data_request_data
+                    type: object
+                  type: array
+                field_overrides:
+                  type: object
+                html:
+                  type: string
+                metadata:
+                  type: object
+                test:
+                  type: boolean
+              required:
+                - data
+              title: submission_data
+              type: object
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    status: success
+                    submission:
+                      actions: []
+                      batch_id: null
+                      data_requests: []
+                      download_url: null
+                      editable: null
+                      expired: false
+                      expires_at: null
+                      id: sub_000000000000000001
+                      json_schema_errors: []
+                      metadata:
+                        bar: baz
+                        foo: 123
+                      pdf_hash: null
+                      permanent_download_url: null
+                      processed_at: null
+                      state: pending
+                      template_id: tpl_000000000000000001
+                      test: false
+                      truncated_text: {}
+              schema:
+                properties:
+                  errors:
+                    items:
+                      type: string
+                    type: array
+                  status:
+                    enum:
+                      - success
+                      - error
+                    type: string
+                  submission:
+                    $ref: "#/components/schemas/submission"
+                required:
+                  - status
+                  - submission
+                title: create_submission_response
+                type: object
+          description: submission created
+        "400":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: "There was a problem with the JSON you submitted: unexpected character at line 1, column 24 in '{ \"title\": \"Test PDF\", description: \"This PDF is great!\" }"
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: invalid JSON
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Invalid API token secret
+                    status: error
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "422":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    errors:
+                      - The root object did not contain a required property of 'description'
+                    status: error
+                    submission:
+                      actions: []
+                      batch_id: null
+                      data_requests: []
+                      download_url: null
+                      editable: null
+                      expired: false
+                      expires_at: null
+                      id: sub_000000000000000001
+                      json_schema_errors:
+                        - The root object did not contain a required property of 'description'
+                      metadata:
+                        bar: baz
+                        foo: 123
+                      pdf_hash: null
+                      permanent_download_url: null
+                      processed_at: null
+                      state: invalid_data
+                      template_id: tpl_000000000000000001
+                      test: false
+                      truncated_text: {}
+              schema:
+                $ref: "#/components/schemas/invalid_request"
+          description: invalid request
+      security:
+        - api_token_basic: []
+      summary: Generates a new PDF
+      tags:
+        - PDF
+  "/templates/{template_id}/submissions/batch":
+    post:
+      operationId: batchGeneratePdfV1
+      parameters:
+        - example: tpl_000000000000000001
+          in: path
+          name: template_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                - data:
+                    description: This PDF is great!
+                    title: Test PDF 1
+                  metadata:
+                    submission_number: 1
+                - data:
+                    description: This PDF is also pretty good!
+                    title: Test PDF 2
+                  metadata:
+                    submission_number: 2
+              items:
+                title: submission_data
+                type: object
+              properties:
+                css:
+                  type: string
+                data:
+                  type: object
+                data_requests:
+                  items:
+                    properties:
+                      auth_phone_number_hash:
+                        nullable: true
+                        type: string
+                      auth_provider:
+                        nullable: true
+                        type: string
+                      auth_second_factor_type:
+                        enum:
+                          - none
+                          - phone_number
+                          - totp
+                          - mobile_push
+                          - security_key
+                          - fingerprint
+                        type: string
+                      auth_session_id_hash:
+                        nullable: true
+                        type: string
+                      auth_session_started_at:
+                        nullable: true
+                        type: string
+                      auth_type:
+                        enum:
+                          - none
+                          - password
+                          - oauth
+                          - email_link
+                          - phone_number
+                          - ldap
+                          - saml
+                        type: string
+                      auth_user_id_hash:
+                        nullable: true
+                        type: string
+                      auth_username_hash:
+                        nullable: true
+                        type: string
+                      email:
+                        nullable: true
+                        type: string
+                      fields:
+                        items:
+                          type: string
+                        nullable: true
+                        type: array
+                      metadata:
+                        type: object
+                      name:
+                        nullable: true
+                        type: string
+                      order:
+                        type: integer
+                    required:
+                      - email
+                      - auth_type
+                    title: create_submission_data_request_data
+                    type: object
+                  type: array
+                html:
+                  type: string
+                metadata:
+                  type: object
+                test:
+                  type: boolean
+              required:
+                - data
+              title: create_submission_batch_v1
+              type: array
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    - status: success
+                      submission:
+                        actions: []
+                        batch_id: null
+                        data_requests: []
+                        download_url: null
+                        editable: null
+                        expired: false
+                        expires_at: null
+                        id: sub_000000000000000001
+                        json_schema_errors: []
+                        metadata:
+                          submission_number: 1
+                        pdf_hash: null
+                        permanent_download_url: null
+                        processed_at: null
+                        state: pending
+                        template_id: tpl_000000000000000001
+                        test: false
+                        truncated_text: {}
+                    - status: success
+                      submission:
+                        actions: []
+                        batch_id: null
+                        data_requests: []
+                        download_url: null
+                        editable: null
+                        expired: false
+                        expires_at: null
+                        id: sub_000000000000000002
+                        json_schema_errors: []
+                        metadata:
+                          submission_number: 2
+                        pdf_hash: null
+                        permanent_download_url: null
+                        processed_at: null
+                        state: pending
+                        template_id: tpl_000000000000000001
+                        test: false
+                        truncated_text: {}
+              schema:
+                items:
+                  properties:
+                    errors:
+                      items:
+                        type: string
+                      type: array
+                    status:
+                      enum:
+                        - success
+                        - error
+                      type: string
+                    submission:
+                      $ref: "#/components/schemas/submission"
+                  required:
+                    - status
+                    - submission
+                  title: create_submission_response
+                  type: object
+                type: array
+          description: submissions created
+        "400":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: "There was a problem with the JSON you submitted: unexpected character at line 1, column 24 in '{ \"title\": \"Test PDF\", description: \"This PDF is great!\" }"
+                    status: error
+              schema:
+                $ref: "#/components/schemas/error"
+          description: invalid JSON
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Invalid API token secret
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+        "422":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    - errors:
+                        - The root object did not contain a required property of 'description'
+                      status: error
+                      submission:
+                        actions: []
+                        batch_id: null
+                        data_requests: []
+                        download_url: null
+                        editable: null
+                        expired: false
+                        expires_at: null
+                        id: sub_000000000000000001
+                        json_schema_errors:
+                          - The root object did not contain a required property of 'description'
+                        metadata:
+                          submission_number: 1
+                        pdf_hash: null
+                        permanent_download_url: null
+                        processed_at: null
+                        state: invalid_data
+                        template_id: tpl_000000000000000001
+                        test: false
+                        truncated_text: {}
+                    - errors:
+                        - The root object did not contain a required property of 'title'
+                      status: error
+                      submission:
+                        actions: []
+                        batch_id: null
+                        data_requests: []
+                        download_url: null
+                        editable: null
+                        expired: false
+                        expires_at: null
+                        id: sub_000000000000000002
+                        json_schema_errors:
+                          - The root object did not contain a required property of 'title'
+                        metadata:
+                          submission_number: 2
+                        pdf_hash: null
+                        permanent_download_url: null
+                        processed_at: null
+                        state: invalid_data
+                        template_id: tpl_000000000000000001
+                        test: false
+                        truncated_text: {}
+              schema:
+                items:
+                  $ref: "#/components/schemas/invalid_request"
+                type: array
+          description: invalid requests
+      security:
+        - api_token_basic: []
+      summary: Generates multiple PDFs
+      tags:
+        - PDF
+  /templates?desc=cached_upload:
+    post:
+      operationId: createPDFTemplateFromUpload
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                template:
+                  document:
+                    id: b6903dbfb15c13bbad1444c35064df9e
+                    metadata:
+                      filename: fw8ben-presigned.pdf
+                      mime_type: application/pdf
+                      size: 5885
+                    storage: cache
+                  name: Test Template Presigned
+              properties:
+                template:
+                  properties:
+                    allow_additional_properties:
+                      type: boolean
+                    description:
+                      nullable: true
+                      type: string
+                    document:
+                      properties:
+                        id:
+                          type: string
+                        metadata:
+                          properties:
+                            filename:
+                              type: string
+                            mime_type:
+                              enum:
+                                - application/pdf
+                              type: string
+                            size:
+                              type: integer
+                          required:
+                            - filename
+                            - size
+                            - mime_type
+                          type: object
+                        storage:
+                          enum:
+                            - cache
+                          type: string
+                      required:
+                        - id
+                        - storage
+                        - metadata
+                      type: object
+                    editable_submissions:
+                      type: boolean
+                    expiration_interval:
+                      enum:
+                        - minutes
+                        - hours
+                        - days
+                      type: string
+                    expire_after:
+                      type: number
+                    expire_submissions:
+                      type: boolean
+                    footer_html:
+                      nullable: true
+                      type: string
+                    header_html:
+                      nullable: true
+                      type: string
+                    html:
+                      nullable: true
+                      type: string
+                    name:
+                      nullable: true
+                      type: string
+                    public_submissions:
+                      type: boolean
+                    public_web_form:
+                      type: boolean
+                    redirect_url:
+                      nullable: true
+                      type: string
+                    scss:
+                      nullable: true
+                      type: string
+                    slack_webhook_url:
+                      nullable: true
+                      type: string
+                    template_type:
+                      enum:
+                        - pdf
+                        - html
+                      type: string
+                    webhook_url:
+                      nullable: true
+                      type: string
+                  required:
+                    - name
+                  title: upload_template_data
+                  type: object
+              required:
+                - template
+              title: create_template_from_upload_data
+              type: object
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    allow_additional_properties: false
+                    description: null
+                    document_filename: fw8ben-presigned.pdf
+                    document_processed: false
+                    document_state: pending
+                    document_url: /uploads/test/cache/b6903dbfb15c13bbad1444c35064df9e
+                    editable_submissions: false
+                    expiration_interval: days
+                    expire_after: 7
+                    expire_submissions: false
+                    id: tpl_000000000000000004
+                    locked: false
+                    name: Test Template Presigned
+                    page_count: 0
+                    page_dimensions: null
+                    parent_folder_id: null
+                    path: /
+                    permanent_document_url: null
+                    public_submissions: false
+                    public_web_form: false
+                    redirect_url: null
+                    slack_webhook_url: null
+                    template_type: pdf
+                    webhook_url: null
+              schema:
+                properties:
+                  allow_additional_properties:
+                    type: boolean
+                  description:
+                    nullable: true
+                    type: string
+                  editable_submissions:
+                    type: boolean
+                  expiration_interval:
+                    enum:
+                      - minutes
+                      - hours
+                      - days
+                    type: string
+                  expire_after:
+                    type: number
+                  expire_submissions:
+                    type: boolean
+                  id:
+                    type: string
+                  locked:
+                    type: boolean
+                  name:
+                    nullable: true
+                    type: string
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                  public_submissions:
+                    type: boolean
+                  public_web_form:
+                    type: boolean
+                  redirect_url:
+                    nullable: true
+                    type: string
+                  slack_webhook_url:
+                    nullable: true
+                    type: string
+                  template_type:
+                    type: string
+                  webhook_url:
+                    nullable: true
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - template_type
+                  - public_web_form
+                  - public_submissions
+                  - expire_submissions
+                  - allow_additional_properties
+                  - editable_submissions
+                  - locked
+                  - page_dimensions
+                  - webhook_url
+                  - slack_webhook_url
+                  - redirect_url
+                title: pending_template
+                type: object
+          description: returns a pending template
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+      security:
+        - api_token_basic: []
+      summary: Create a new PDF template from a cached presign upload
+      tags:
+        - PDF
+  /templates?desc=html:
+    post:
+      operationId: createHTMLTemplate
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                template:
+                  description: HTML template created via API
+                  footer_html: Test Footer
+                  header_html: Test Header
+                  html: <html><body><p>Test Content</p></body></html>
+                  name: Test HTML Template
+                  scss: "body { color: #444; }"
+                  template_type: html
+              properties:
+                template:
+                  properties:
+                    allow_additional_properties:
+                      type: boolean
+                    description:
+                      nullable: true
+                      type: string
+                    editable_submissions:
+                      type: boolean
+                    expiration_interval:
+                      enum:
+                        - minutes
+                        - hours
+                        - days
+                      type: string
+                    expire_after:
+                      type: number
+                    expire_submissions:
+                      type: boolean
+                    footer_html:
+                      nullable: true
+                      type: string
+                    header_html:
+                      nullable: true
+                      type: string
+                    html:
+                      nullable: true
+                      type: string
+                    name:
+                      nullable: true
+                      type: string
+                    public_submissions:
+                      type: boolean
+                    public_web_form:
+                      type: boolean
+                    redirect_url:
+                      nullable: true
+                      type: string
+                    scss:
+                      nullable: true
+                      type: string
+                    slack_webhook_url:
+                      nullable: true
+                      type: string
+                    template_type:
+                      enum:
+                        - pdf
+                        - html
+                      type: string
+                    webhook_url:
+                      nullable: true
+                      type: string
+                  required:
+                    - name
+                  title: html_template_data
+                  type: object
+              required:
+                - template
+              title: create_html_template_data
+              type: object
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    allow_additional_properties: false
+                    description: HTML template created via API
+                    document_filename: null
+                    document_processed: false
+                    document_state: pending
+                    document_url: null
+                    editable_submissions: false
+                    expiration_interval: days
+                    expire_after: 7
+                    expire_submissions: false
+                    id: tpl_000000000000000004
+                    locked: false
+                    name: Test HTML Template
+                    page_count: 1
+                    page_dimensions: null
+                    parent_folder_id: null
+                    path: /
+                    permanent_document_url: null
+                    public_submissions: false
+                    public_web_form: false
+                    redirect_url: null
+                    slack_webhook_url: null
+                    template_type: html
+                    webhook_url: null
+              schema:
+                properties:
+                  allow_additional_properties:
+                    type: boolean
+                  description:
+                    nullable: true
+                    type: string
+                  editable_submissions:
+                    type: boolean
+                  expiration_interval:
+                    enum:
+                      - minutes
+                      - hours
+                      - days
+                    type: string
+                  expire_after:
+                    type: number
+                  expire_submissions:
+                    type: boolean
+                  id:
+                    type: string
+                  locked:
+                    type: boolean
+                  name:
+                    nullable: true
+                    type: string
+                  parent_folder_id:
+                    nullable: true
+                    type: string
+                  path:
+                    type: string
+                  public_submissions:
+                    type: boolean
+                  public_web_form:
+                    type: boolean
+                  redirect_url:
+                    nullable: true
+                    type: string
+                  slack_webhook_url:
+                    nullable: true
+                    type: string
+                  template_type:
+                    type: string
+                  webhook_url:
+                    nullable: true
+                    type: string
+                required:
+                  - id
+                  - name
+                  - description
+                  - template_type
+                  - public_web_form
+                  - public_submissions
+                  - expire_submissions
+                  - allow_additional_properties
+                  - editable_submissions
+                  - locked
+                  - page_dimensions
+                  - webhook_url
+                  - slack_webhook_url
+                  - redirect_url
+                title: pending_template
+                type: object
+          description: returns a created template
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+      security:
+        - api_token_basic: []
+      summary: Create a new HTML template
+      tags:
+        - PDF
+  /uploads/presign:
+    get:
+      operationId: getPresignUrl
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    fields:
+                      key: ed9424dccf185f3835df4e9e1da0ca0b
+                      policy: eyJleHBpcmF0aW9uIjoiMjAxOS0xMC0wNVQxNDowMDowMFoiLCJjb25kaXRpb25zIjpbeyJidWNrZXQiOiJ0ZXN0LWJ1Y2tldCJ9LHsia2V5IjoiZWQ5NDI0ZGNjZjE4NWYzODM1ZGY0ZTllMWRhMGNhMGIifSx7IngtYW16LWNyZWRlbnRpYWwiOiIxMjM0NTY3ODkvMjAxOTEwMDUvdXMtZWFzdC0xL3MzL2F3czRfcmVxdWVzdCJ9LHsieC1hbXotYWxnb3JpdGhtIjoiQVdTNC1ITUFDLVNIQTI1NiJ9LHsieC1hbXotZGF0ZSI6IjIwMTkxMDA1VDEzMDAwMFoifV19
+                      x-amz-algorithm: AWS4-HMAC-SHA256
+                      x-amz-credential: 123456789/20191005/us-east-1/s3/aws4_request
+                      x-amz-date: 20191005T130000Z
+                      x-amz-signature: 6b715e441bd7ea5beec87f8415230a600be6dfd76b8f89103137618dca959fac
+                    headers: {}
+                    method: post
+                    url: https://test-bucket.s3.amazonaws.com
+              schema:
+                additionalProperties: false
+                properties:
+                  fields:
+                    additionalProperties: false
+                    properties:
+                      key:
+                        type: string
+                      policy:
+                        type: string
+                      x-amz-algorithm:
+                        type: string
+                      x-amz-credential:
+                        type: string
+                      x-amz-date:
+                        type: string
+                      x-amz-signature:
+                        type: string
+                    required:
+                      - key
+                      - policy
+                      - x-amz-algorithm
+                      - x-amz-credential
+                      - x-amz-date
+                      - x-amz-signature
+                    type: object
+                  headers:
+                    type: object
+                  method:
+                    enum:
+                      - post
+                    type: string
+                  url:
+                    type: string
+                required:
+                  - fields
+                  - headers
+                  - url
+                title: upload_presign
+                type: object
+          description: presign URL generated
+        "401":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    error: Unauthorized
+              schema:
+                $ref: "#/components/schemas/authentication_error"
+          description: authentication failed
+      security:
+        - api_token_basic: []
+      summary: Get a presigned URL so that you can upload a file to our AWS S3 bucket
+      tags:
+        - PDF
+components:
+  schemas:
+    authentication_error:
+      properties:
+        error:
+          type: string
+        status:
+          enum:
+            - error
+          type: string
+      required:
+        - error
+      title: authentication_error_response
+      type: object
+    combined_submission_action:
+      properties:
+        action_category:
+          enum:
+            - notification
+            - file_upload
+          type: string
+        action_type:
+          enum:
+            - webhook
+            - slack_webhook
+            - email
+            - aws_s3_upload
+          type: string
+        id:
+          type: string
+        integration_id:
+          nullable: true
+          type: string
+        result_data:
+          type: object
+        state:
+          enum:
+            - pending
+            - processed
+            - failed
+            - error
+          type: string
+      required:
+        - id
+        - integration_id
+        - state
+        - action_category
+        - action_type
+        - result_data
+      title: combined_submission_action
+      type: object
+    error:
+      properties:
+        error:
+          type: string
+        status:
+          enum:
+            - error
+          type: string
+      required:
+        - status
+        - error
+      title: error_response
+      type: object
+    invalid_request:
+      properties:
+        errors:
+          items:
+            type: string
+          type: array
+        status:
+          enum:
+            - error
+          type: string
+      required:
+        - status
+        - errors
+      title: invalid_request_response
+      type: object
+    submission:
+      properties:
+        actions:
+          items:
+            $ref: "#/components/schemas/submission_action"
+          type: array
+        batch_id:
+          nullable: true
+          type: string
+        data:
+          nullable: true
+          type: object
+        data_requests:
+          items:
+            $ref: "#/components/schemas/submission_data_request"
+          type: array
+        download_url:
+          nullable: true
+          type: string
+        editable:
+          nullable: true
+          type: boolean
+        expired:
+          type: boolean
+        expires_at:
+          nullable: true
+          type: string
+        id:
+          type: string
+        metadata:
+          type: object
+        pdf_hash:
+          nullable: true
+          type: string
+        permanent_download_url:
+          nullable: true
+          type: string
+        processed_at:
+          nullable: true
+          type: string
+        referrer:
+          nullable: true
+          type: string
+        source:
+          nullable: true
+          type: string
+        state:
+          enum:
+            - pending
+            - processed
+            - invalid_data
+            - error
+            - image_download_failed
+            - image_processing_failed
+            - waiting_for_data_requests
+            - syntax_error
+            - account_suspended
+            - license_revoked
+            - accidental
+          type: string
+        template_id:
+          type: string
+        test:
+          type: boolean
+        truncated_text:
+          type: object
+      required:
+        - id
+        - state
+        - test
+        - expired
+      title: submission
+      type: object
+    submission_action:
+      properties:
+        action_category:
+          enum:
+            - notification
+            - file_upload
+          type: string
+        action_type:
+          enum:
+            - webhook
+            - slack_webhook
+            - email
+            - aws_s3_upload
+          type: string
+        id:
+          type: string
+        integration_id:
+          nullable: true
+          type: string
+        result_data:
+          type: object
+        state:
+          enum:
+            - pending
+            - processed
+            - failed
+            - error
+          type: string
+      required:
+        - id
+        - integration_id
+        - state
+        - action_category
+        - action_type
+        - result_data
+      title: submission_action
+      type: object
+    submission_data_request:
+      properties:
+        auth_phone_number_hash:
+          nullable: true
+          type: string
+        auth_provider:
+          nullable: true
+          type: string
+        auth_second_factor_type:
+          enum:
+            - none
+            - phone_number
+            - totp
+            - mobile_push
+            - security_key
+            - fingerprint
+          type: string
+        auth_session_id_hash:
+          nullable: true
+          type: string
+        auth_session_started_at:
+          nullable: true
+          type: string
+        auth_type:
+          enum:
+            - none
+            - password
+            - oauth
+            - email_link
+            - phone_number
+            - ldap
+            - saml
+          type: string
+        auth_user_id_hash:
+          nullable: true
+          type: string
+        auth_username_hash:
+          nullable: true
+          type: string
+        completed_at:
+          nullable: true
+          type: string
+        email:
+          nullable: true
+          type: string
+        fields:
+          items:
+            type: string
+          nullable: true
+          type: array
+        id:
+          type: string
+        ip_address:
+          nullable: true
+          type: string
+        metadata:
+          type: object
+        name:
+          nullable: true
+          type: string
+        order:
+          type: integer
+        sort_order:
+          type: integer
+        state:
+          enum:
+            - pending
+            - completed
+          type: string
+        user_agent:
+          nullable: true
+          type: string
+        viewed_at:
+          nullable: true
+          type: string
+      required:
+        - id
+        - name
+        - email
+        - order
+        - sort_order
+        - fields
+        - metadata
+        - state
+      title: submission_data_request
+      type: object
+  securitySchemes:
+    api_token_basic:
+      description: "Username: API Token ID, Password: API Token Secret"
+      scheme: basic
+      type: http

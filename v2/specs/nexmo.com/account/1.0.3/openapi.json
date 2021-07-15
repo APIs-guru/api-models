@@ -1,0 +1,896 @@
+{
+  "openapi": "3.0.2",
+  "servers": [
+    {
+      "url": "https://api.nexmo.com"
+    }
+  ],
+  "info": {
+    "contact": {
+      "name": "Vonage.com",
+      "url": "https://developer.nexmo.com"
+    },
+    "description": "Enables users to manage their Vonage API Account by programmable means. More information is available here: <https://developer.nexmo.com/account/overview>.",
+    "title": "Account API",
+    "version": "1.0.3",
+    "x-origin": [
+      {
+        "format": "openapi",
+        "url": "https://raw.githubusercontent.com/nexmo/api-specification/master/definitions/account.yml",
+        "version": "3.0"
+      }
+    ],
+    "x-providerName": "nexmo.com",
+    "x-serviceName": "account",
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg"
+    }
+  },
+  "tags": [
+    {
+      "description": "This section shows how you can query the current balance of your account, and if you have auto-reload enabled how to trigger a top-up to your account without waiting for the next balance check.",
+      "name": "Balance"
+    },
+    {
+      "description": "Manage the settings on your account",
+      "name": "Configuration"
+    },
+    {
+      "description": "Many of the Vonage APIs are accessed using an API key and secret. It is recommended that you change or \"rotate\" your secrets from time to time for security purposes. This section provides the API interface for achieving this.\nNote: to work on secrets for your secondary accounts, you may authenticate with your primary credentials and supply the secondary API keys as URL parameters to these API endpoints.",
+      "name": "Secret Management"
+    }
+  ],
+  "paths": {
+    "/account/get-balance": {
+      "get": {
+        "description": "Retrieve the current balance of your Vonage API account",
+        "operationId": "getAccountBalance",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/api_key_for_auth"
+          },
+          {
+            "$ref": "#/components/parameters/api_secret_for_auth"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": {
+                  "autoReload": false,
+                  "value": 10.171275
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/accountBalance"
+                }
+              },
+              "application/xml": {
+                "example": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?> <accountBalance>\n  <value>10.17127500</value>\n  <autoReload>false</autoReload>\n</accountBalance>",
+                "schema": {
+                  "$ref": "#/components/schemas/accountBalance"
+                }
+              }
+            },
+            "description": "The current balance of your account"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorAuthenticationFailedAccountBalance"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorAuthenticationFailedAccountBalance"
+                }
+              }
+            },
+            "description": "Not Authorised. You must supply your `api_key` and `api_secret` as query parameters to this request"
+          }
+        },
+        "summary": "Get Account Balance",
+        "tags": [
+          "Balance"
+        ]
+      },
+      "servers": [
+        {
+          "url": "https://rest.nexmo.com"
+        }
+      ]
+    },
+    "/account/settings": {
+      "post": {
+        "description": "Update the default webhook URLs associated with your account:\n  * Callback URL for incoming SMS messages\n  * Callback URL for delivery receipts\n\nNote that the URLs you provide must be valid and active. Vonage will check that they return a 200 OK response before the setting is saved.",
+        "operationId": "changeAccountSettings",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/api_key_for_auth"
+          },
+          {
+            "$ref": "#/components/parameters/api_secret_for_auth"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/accountSettingsRequest"
+              }
+            }
+          },
+          "required": false
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\n  \"mo-callback-url\": \"https:\\/\\/example.com\\/webhooks\\/inbound-sms\",\n  \"dr-callback-url\": \"https:\\/\\/example.com\\/webhooks\\/delivery-receipt\",\n  \"max-outbound-request\": 30,\n  \"max-inbound-request\": 30,\n  \"max-calls-per-second\": 30\n}",
+                "schema": {
+                  "$ref": "#/components/schemas/accountSettings"
+                }
+              },
+              "application/xml": {
+                "example": "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"yes\"?> <account-settings>\n  <mo-callback-url>https://example.com/webhooks/inbound-sms</mo-callback-url>\n  <dr-callback-url>https://example.com/webhooks/delivery-receipt</dr-callback-url>\n  <max-outbound-request>30</max-outbound-request>\n  <max-inbound-request>30</max-inbound-request>\n  <max-calls-per-second>30</max-calls-per-second>\n</account-settings>",
+                "schema": {
+                  "$ref": "#/components/schemas/accountSettings"
+                }
+              }
+            },
+            "description": "OK. Settings were updated if supplied, the details of the current settings are included in the response."
+          },
+          "401": {
+            "description": "Not Authorised. You must supply your `api_key` and `api_secret` as query parameters to this request"
+          }
+        },
+        "summary": "Change Account Settings",
+        "tags": [
+          "Configuration"
+        ]
+      },
+      "servers": [
+        {
+          "url": "https://rest.nexmo.com"
+        }
+      ]
+    },
+    "/account/top-up": {
+      "post": {
+        "description": "You can top up your account using this API when you have enabled auto-reload in the dashboard. The amount added by the top-up operation will be the same amount as was added in the payment when auto-reload was enabled.\nYour account balance is checked every 5-10 minutes and if it falls below the threshold and auto-reload is enabled, then it will be topped up automatically. Use this endpoint  if you need to top up at times when your credit may be exhausted more quickly than the auto-reload may occur.",
+        "externalDocs": {
+          "description": "Read more about automatic payments on the Knowledgebase",
+          "url": "https://help.nexmo.com/hc/en-us/articles/205603248-How-do-I-set-up-automatic-payments-using-PayPal-or-credit-card-"
+        },
+        "operationId": "topUpAccountBalance",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/api_key_for_auth"
+          },
+          {
+            "$ref": "#/components/parameters/api_secret_for_auth"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/topupRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/success"
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "$ref": "#/components/schemas/success"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorAuthenticationFailed"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorAutoReloadNotEnabled"
+                    }
+                  ]
+                }
+              },
+              "application/xml": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorAuthenticationFailed"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorAutoReloadNotEnabled"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Not Authorised"
+          }
+        },
+        "summary": "Top Up Account Balance",
+        "tags": [
+          "Balance"
+        ]
+      },
+      "servers": [
+        {
+          "url": "https://rest.nexmo.com"
+        }
+      ]
+    },
+    "/accounts/{api_key}/secrets": {
+      "get": {
+        "operationId": "retrieveAPISecrets",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/APIKey"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\n  \"_links\": {\n    \"self\": {\n      \"href\": \"/accounts/abcd1234/secrets\"\n    }\n  },\n  \"_embedded\": {\n    \"secrets\": [\n      {\n        \"_links\": {\n          \"self\": {\n            \"href\": \"/accounts/abcd1234/secrets/01234567-aaaa-bbbb-cccc-defdefdefdef\"\n          }\n        },\n        \"id\": \"01234567-aaaa-bbbb-cccc-defdefdefdef\",\n        \"created_at\": \"2018-12-03T10:07:23Z\"\n      }\n    ]\n  }\n}",
+                "schema": {
+                  "properties": {
+                    "_embedded": {
+                      "description": "The single `secrets` key returns an array of API secrets",
+                      "properties": {
+                        "secrets": {
+                          "description": "Array of API secrets",
+                          "items": {
+                            "$ref": "#/components/schemas/secretInfo"
+                          },
+                          "type": "array"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    "_links": {
+                      "$ref": "#/components/schemas/secretMgmtLinks"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "The list of your current API secrets"
+          },
+          "401": {
+            "$ref": "#/components/responses/BadCredentialsError"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorAPIKeyNotFound"
+                }
+              }
+            },
+            "description": "Item not found"
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "summary": "Retrieve API Secrets",
+        "tags": [
+          "Secret Management"
+        ]
+      },
+      "post": {
+        "operationId": "createAPISecret",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/APIKey"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/createSecretRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "content": {
+              "application/json": {
+                "example": "{\n  \"_links\": {\n    \"self\": {\n      \"href\": \"/accounts/abcd1234/secrets/01234567-aaaa-bbbb-cccc-defdefdefdef\"\n    }\n  },\n  \"id\": \"01234567-aaaa-bbbb-cccc-defdefdefdef\",\n  \"created_at\": \"2018-12-03T10:07:23Z\"\n}",
+                "schema": {
+                  "$ref": "#/components/schemas/secretInfo"
+                }
+              }
+            },
+            "description": "Secret created"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "description": "More detail regarding this error, including the API key supplied",
+                      "example": "The request failed due to secret validation errors",
+                      "type": "string"
+                    },
+                    "instance": {
+                      "description": "Internal Trace ID",
+                      "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+                      "type": "string"
+                    },
+                    "invalid_parameters": {
+                      "description": "Array of the parameters that are considered invalid, and explanations of why",
+                      "items": {
+                        "properties": {
+                          "name": {
+                            "description": "Field name",
+                            "example": "secret",
+                            "type": "string"
+                          },
+                          "reason": {
+                            "description": "Explanation of why parameter is considered invalid",
+                            "example": "Does not meet complexity requirements",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "title": {
+                      "description": "Description of the error",
+                      "example": "Bad Request",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "URL for further information",
+                      "example": "https://developer.nexmo.com/api-errors/account/secret-management#validation",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Bad request. This usually indicates valid data but can also occur when a user has exceeded the allowed number of secrets on their account."
+          },
+          "401": {
+            "$ref": "#/components/responses/BadCredentialsError"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorAPIKeyNotFound"
+                }
+              }
+            },
+            "description": "Item not found"
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "summary": "Create API Secret",
+        "tags": [
+          "Secret Management"
+        ]
+      }
+    },
+    "/accounts/{api_key}/secrets/{secret_id}": {
+      "delete": {
+        "operationId": "revokeAPISecret",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/APIKey"
+          },
+          {
+            "$ref": "#/components/parameters/secretId"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Revoked secret response (without body content)"
+          },
+          "401": {
+            "$ref": "#/components/responses/BadCredentialsError"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "properties": {
+                    "detail": {
+                      "description": "More detail regarding this error",
+                      "example": "Can not delete the last secret. The account must always have at least 1 secret active at any time",
+                      "type": "string"
+                    },
+                    "instance": {
+                      "description": "Internal Trace ID",
+                      "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+                      "type": "string"
+                    },
+                    "title": {
+                      "description": "Description of the error",
+                      "example": "Secret Deletion Forbidden",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "URL for further information",
+                      "example": "https://developer.nexmo.com/api-errors/account/secret-management#delete-last-secret",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Operation forbidden by permissions or because this is the only API secret and you are required to have at least one."
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorAPIKeyNotFound"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorSecretIDNotFound"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Item not found"
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "summary": "Revoke an API Secret",
+        "tags": [
+          "Secret Management"
+        ]
+      },
+      "get": {
+        "operationId": "retrieveAPISecret",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/APIKey"
+          },
+          {
+            "$ref": "#/components/parameters/secretId"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "example": "{\n  \"_links\": {\n    \"self\": {\n      \"href\": \"/accounts/abcd1234/secrets/01234567-aaaa-bbbb-cccc-defdefdefdef\"\n    }\n  },\n  \"id\": \"01234567-aaaa-bbbb-cccc-defdefdefdef\",\n  \"created_at\": \"2018-12-03T10:07:23Z\"\n}",
+                "schema": {
+                  "$ref": "#/components/schemas/secretInfo"
+                }
+              }
+            },
+            "description": "API secret response"
+          },
+          "401": {
+            "$ref": "#/components/responses/BadCredentialsError"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorAPIKeyNotFound"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorSecretIDNotFound"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Item not found"
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "summary": "Retrieve one API Secret",
+        "tags": [
+          "Secret Management"
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "APIKey": {
+        "description": "The API key to manage secrets for",
+        "example": "abcd1234",
+        "in": "path",
+        "name": "api_key",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      },
+      "api_key_for_auth": {
+        "description": "Your Vonage API key. You can find this in the [dashboard](https://dashboard.nexmo.com)",
+        "in": "query",
+        "name": "api_key",
+        "required": true,
+        "schema": {
+          "example": "abcd1234",
+          "type": "string"
+        }
+      },
+      "api_secret_for_auth": {
+        "description": "Your Vonage API secret. You can find this in the [dashboard](https://dashboard.nexmo.com)",
+        "in": "query",
+        "name": "api_secret",
+        "required": true,
+        "schema": {
+          "example": "ABCDEFGH01234abc",
+          "type": "string"
+        }
+      },
+      "secretId": {
+        "description": "ID of the API Secret",
+        "example": "01234567-aaaa-bbbb-cccc-defdefdefdef",
+        "in": "path",
+        "name": "secret_id",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "BadCredentialsError": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "detail": {
+                  "description": "More detail regarding this error, including the expected value",
+                  "example": "Invalid credentials format. Expected: \"Authorization: (Base64(UTF-8(apiKey:secret)))\"",
+                  "type": "string"
+                },
+                "instance": {
+                  "description": "Internal Trace ID",
+                  "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+                  "type": "string"
+                },
+                "title": {
+                  "description": "Description of the error",
+                  "example": "Unauthorized",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "URL for further information",
+                  "example": "https://developer.nexmo.com/",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Credentials are missing or invalid"
+      }
+    },
+    "schemas": {
+      "ErrorAPIKeyNotFound": {
+        "description": "This API key was not recognised",
+        "properties": {
+          "detail": {
+            "description": "More detail regarding this error, including the API key supplied",
+            "example": "API key 'abc123' not found",
+            "type": "string"
+          },
+          "instance": {
+            "description": "Internal Trace ID",
+            "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+            "type": "string"
+          },
+          "title": {
+            "description": "Description of the error",
+            "example": "Invalid API Key",
+            "type": "string"
+          },
+          "type": {
+            "description": "URL for further information",
+            "example": "https://developer.nexmo.com/api-errors#invalid-api-key",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "detail",
+          "instance"
+        ],
+        "type": "object"
+      },
+      "ErrorAuthenticationFailed": {
+        "description": "Authentication Failed",
+        "properties": {
+          "error-code": {
+            "example": "401"
+          },
+          "error-code-label": {
+            "example": "authentication failed"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "response"
+        }
+      },
+      "ErrorAuthenticationFailedAccountBalance": {
+        "description": "Authentication Failed",
+        "properties": {
+          "error-code": {
+            "example": "401"
+          },
+          "error-code-label": {
+            "example": "authentication failed"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "accountBalance"
+        }
+      },
+      "ErrorAutoReloadNotEnabled": {
+        "description": "Auto-Reload not enabled",
+        "properties": {
+          "error-code": {
+            "example": "401"
+          },
+          "error-code-label": {
+            "example": "not auto-reload enabled"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "response"
+        }
+      },
+      "ErrorSecretIDNotFound": {
+        "description": "This secret ID was not recognised",
+        "properties": {
+          "detail": {
+            "description": "More detail regarding this error, including the secret ID supplied",
+            "example": "ID '07239aeb-d756-4c32-a1de-cf64f8b21827' could not be found",
+            "type": "string"
+          },
+          "instance": {
+            "description": "Internal Trace ID",
+            "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+            "type": "string"
+          },
+          "title": {
+            "description": "Description of the error",
+            "example": "Invalid ID",
+            "type": "string"
+          },
+          "type": {
+            "description": "URL for further information",
+            "example": "https://developer.nexmo.com/api-errors#invalid-id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "detail",
+          "instance"
+        ],
+        "type": "object"
+      },
+      "accountBalance": {
+        "properties": {
+          "autoReload": {
+            "description": "Whether the account has auto-reloading enabled",
+            "enum": [
+              true,
+              false
+            ],
+            "example": false,
+            "type": "boolean"
+          },
+          "value": {
+            "description": "The balance of the account, in EUR",
+            "example": 10.28,
+            "type": "number"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "accountBalance"
+        }
+      },
+      "accountSettings": {
+        "properties": {
+          "dr-callback-url": {
+            "description": "The current or updated delivery receipt webhook URI",
+            "example": "https://example.com/webhooks/delivery-receipt",
+            "format": "url",
+            "type": "string"
+          },
+          "max-calls-per-second": {
+            "description": "The maximum number of API calls per second.",
+            "example": 30,
+            "type": "integer"
+          },
+          "max-inbound-request": {
+            "description": "The maximum number of inbound messages per second.",
+            "example": 30,
+            "type": "integer"
+          },
+          "max-outbound-request": {
+            "description": "The maximum number of outbound messages per second.",
+            "example": 30,
+            "type": "integer"
+          },
+          "mo-callback-url": {
+            "description": "The current or updated inbound message webhook URI",
+            "example": "https://example.com/webhooks/inbound-sms",
+            "format": "url",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "account-settings"
+        }
+      },
+      "accountSettingsRequest": {
+        "properties": {
+          "drCallBackUrl": {
+            "description": "The webhook URL that Vonage makes a request to when a delivery receipt is available  for an SMS sent by one of your Vonage numbers.\nSend an empty string to unset this value.",
+            "example": "https://example.com/webhooks/delivery-receipt",
+            "format": "url",
+            "type": "string"
+          },
+          "moCallBackUrl": {
+            "description": "The default webhook URL for inbound SMS. If an SMS is received at a Vonage number  that does not have its own inbound SMS webhook configured, Vonage makes a request here.\nSend an empty string to unset this value.",
+            "example": "https://example.com/webhooks/inbound-sms",
+            "format": "url",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "createSecretRequest": {
+        "properties": {
+          "secret": {
+            "description": "The new secret must follow these rules:\n\n* minimum 8 characters\n* maximum 25 characters\n* minimum 1 lower case character\n* minimum 1 upper case character\n* minimum 1 digit\n",
+            "example": "example-4PI-secret",
+            "type": "string"
+          }
+        },
+        "required": [
+          "secret"
+        ],
+        "type": "object"
+      },
+      "secretInfo": {
+        "properties": {
+          "_links": {
+            "$ref": "#/components/schemas/secretMgmtLinks"
+          },
+          "created_at": {
+            "description": "Creation date/time for this secret",
+            "example": "2017-03-02T16:34:49Z",
+            "type": "string"
+          },
+          "id": {
+            "description": "Secret ID",
+            "example": "ad6dc56f-07b5-46e1-a527-85530e625800",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "secretMgmtLinks": {
+        "description": "Links related to this resource",
+        "properties": {
+          "self": {
+            "description": "This resource",
+            "properties": {
+              "href": {
+                "description": "The URI for this resource",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "success": {
+        "properties": {
+          "error-code": {
+            "example": "200"
+          },
+          "error-code-label": {
+            "example": "success"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "response"
+        }
+      },
+      "topupRequest": {
+        "properties": {
+          "trx": {
+            "description": "The transaction reference of the transaction when balance was added and auto-reload was enabled on your account.",
+            "example": "8ef2447e69604f642ae59363aa5f781b",
+            "type": "string"
+          }
+        },
+        "required": [
+          "trx"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "description": "Provide an `Authorization` header, with a value of \"Basic\" followed by the result of base64-encoding your Vonage API key and secret separated by a colon. You can find your API key and secret on the [dashboard](https://dashboard.nexmo.com) and more information is available [on the developer portal](https://developer.nexmo.com/concepts/guides/authentication#header-based-api-key-and-secret-authentication).\nIf your API key were aaa012 and your API secret were abc123456789 then your HTTP header would be: `Authorization: Basic YWFhMDEyOmFiYzEyMzQ1Njc4OQ==`",
+        "scheme": "basic",
+        "type": "http"
+      }
+    }
+  },
+  "x-errors": {
+    "delete-last-secret": {
+      "description": "You can not delete your only API secret",
+      "resolution": "Add another API secret before deleting this one"
+    },
+    "validation": {
+      "description": "The provided payload is invalid",
+      "link": {
+        "text": "View API reference",
+        "url": "/api/account/api-secret-management#createSecret"
+      },
+      "resolution": "Modify your request to provide a valid payload.\n* Minimum 8 characters\n* Maximum 25 characters\n* Minimum 1 lower case character\n* Minimum 1 upper case character\n* Minimum 1 digit\n"
+    }
+  }
+}

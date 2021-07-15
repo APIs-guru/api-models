@@ -1,0 +1,2178 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.nexmo.com
+info:
+  contact:
+    email: devrel@vonage.com
+    name: Vonage DevRel
+    url: https://developer.nexmo.com/
+  description: |
+    The [Reports API](/reports/overview) enables you to request a report of activity for your Vonage account.
+
+    Depending on your query pattern, you can choose from one of the two versions of the Reports API: asynchronous and synchronous. The asynchronous version is optimized for infrequent and large data queries (from several records to tens of millions). The synchronous version is optimized for frequent and periodic retrievals of small batches of data records (from one record to tens of thousand per query).
+
+    Only synchronous version supports retrival of data records by message/record ID.
+
+    Vonage recommends that you limit asynchronous queries to a maximum of 20 million records, by setting the start and end dates accordingly. On average, the asynchronous Reports API takes 5 - 10 minutes to generate 1 million records.
+  license:
+    name: The MIT License (MIT)
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://www.nexmo.com/terms-of-use
+  title: Reports API
+  version: 2.1.17
+  x-label: Beta
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/nexmo/api-specification/master/definitions/reports.yml
+      version: "3.0"
+  x-providerName: nexmo.com
+  x-serviceName: reports
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+paths:
+  /v2/reports:
+    get:
+      description: List reports created by the specified account based on filtered provided.
+      operationId: list-reports
+      parameters:
+        - $ref: "#/components/parameters/account_id"
+        - description: A comma-separated list of report status values. Reports with any of the statuses specified are returned. The values in the comma-seperated list specified for `status` can be any of `PENDING`, `PROCESSING`, `SUCCESS`, `ABORTED`, `FAILED`, `TRUNCATED`.
+          example: SUCCESS, FAILED
+          in: query
+          name: status
+          required: true
+          schema:
+            type: string
+        - description: ISO-8601 extended time zone offset or ISO-8601 UTC zone offset formatted date from which the list of reports will be queried. Format `yyyy-mm-ddThh:mm:ss[.sss]±hh:mm` or `yyyy-mm-ddThh:mm:ss[.sss]Z`.
+          example: 2019-06-28T00:00:00-00:00
+          in: query
+          name: date_from
+          schema:
+            format: date
+            type: string
+        - description: ISO-8601 extended time zone offset or ISO-8601 UTC zone offset formatted date until which the list of reports will be queried. Format `yyyy-mm-ddThh:mm:ss[.sss]±hh:mm` or `yyyy-mm-ddThh:mm:ss[.sss]Z`.
+          example: 2019-06-28T23:59:59-00:00
+          in: query
+          name: date_to
+          schema:
+            format: date
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/list_report_response"
+        "400":
+          $ref: "#/components/responses/400_params"
+        "401":
+          $ref: "#/components/responses/401"
+      security:
+        - basicAuth: []
+      summary: List reports
+    post:
+      description: Request a report on your account activity
+      operationId: create-async-report
+      requestBody:
+        content:
+          application/json:
+            schema:
+              discriminator:
+                propertyName: product
+              oneOf:
+                - $ref: "#/components/schemas/SMS"
+                - $ref: "#/components/schemas/VOICE-CALL"
+                - $ref: "#/components/schemas/WEBSOCKET-CALL"
+                - $ref: "#/components/schemas/VERIFY-API"
+                - $ref: "#/components/schemas/NUMBER-INSIGHT"
+                - $ref: "#/components/schemas/MESSAGES"
+                - $ref: "#/components/schemas/CONVERSATIONS"
+                - $ref: "#/components/schemas/ASR"
+        description: |
+          The parameters of the JSON body will be used to create and filter the report.<br> The value of the `product` field will define which product the report will be created for and which parameters are accepted.
+      responses:
+        "200":
+          $ref: "#/components/responses/report_responses_create_report"
+        "400":
+          $ref: "#/components/responses/400_json"
+        "401":
+          $ref: "#/components/responses/401"
+        "403":
+          $ref: "#/components/responses/403"
+        "422":
+          $ref: "#/components/responses/422"
+      security:
+        - basicAuth: []
+      summary: Create an asynchronous report
+  /v2/reports/records:
+    get:
+      description: Fetch usage data synchronously
+      operationId: get-records
+      parameters:
+        - description: The account for which the list of reports will be queried.
+          example: abcd1234
+          in: query
+          name: account_id
+          required: true
+          schema:
+            maxLength: 8
+            minLength: 8
+            type: string
+        - description: The product to return records for
+          example: SMS
+          in: query
+          name: product
+          required: true
+          schema:
+            enum:
+              - SMS
+              - VOICE-CALL
+              - VOICE-FAILED
+              - WEBSOCKET-CALL
+              - VERIFY-API
+              - NUMBER-INSIGHT
+              - MESSAGES
+              - CONVERSATIONS
+              - ASR
+              - REPORTS-USAGE
+            type: string
+        - description: Direction of the communication, either `inbound` (received by our services), or `outbound` (originated from our services). Required for products `SMS` and `MESSAGES`. Optional for `VOICE-CALL`. Invalid for `CONVERSATIONS`, `NUMBER-INSIGHT`, `VERIFY-API`.
+          example: inbound
+          in: query
+          name: direction
+          schema:
+            enum:
+              - inbound
+              - outbound
+            type: string
+        - description: |
+            The UUID of the message or call to be searched for. You can specify a comma-separated list of UUIDs. If UUIDs are not found they are listed in the response in the `ids_not_found` field.
+
+            If you specify `id`, you must not specify `status`, `date_start` or `date_end`.
+          example: aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+          in: query
+          name: id
+          schema:
+            type: string
+        - description: |
+            ISO-8601 extended time zone offset or ISO-8601 UTC zone offset formatted date (format `yyyy-mm-ddThh:mm:ss[.sss]±hh:mm` or `yyyy-mm-ddThh:mm:ss[.sss]Z`) for when reports should begin. 
+
+            It filters on the time the API call was received by Vonage and corresponds to the field `date_received` (`date_start` for Voice) in the report file. It is inclusive, i.e. the provided value is less than or equal to the value in the field `date_received` (`date_start` for Voice) in the CDR.
+
+            If you provide this, you must provide `date_end` and must not provide `id`.
+          example: 2017-12-01T00:00:00+0000
+          in: query
+          name: date_start
+          schema:
+            format: date
+            type: string
+        - description: |
+            **Must be no more than 24 hours later than `date_start`**
+
+            ISO-8601 extended time zone offset or ISO-8601 UTC zone offset formatted date (format `yyyy-mm-ddThh:mm:ss[.sss]±hh:mm` or `yyyy-mm-ddThh:mm:ss[.sss]Z`) for when report should end.
+
+            It is exclusive, i.e. the provided value is strictly greater than the value in the field `date_received` in the CDR.
+
+            If you provide this, you must provide `date_start` and must not provide `id`.
+          example: 2018-01-01T00:00:00+0000
+          in: query
+          name: date_end
+          schema:
+            format: date
+            type: string
+        - description: Include the message contents in the records. Only applicable for use with products `SMS` and `MESSAGES`, where it is optional.
+          example: true
+          in: query
+          name: include_message
+          schema:
+            default: false
+            enum:
+              - true
+              - false
+            type: boolean
+        - description: Indicates whether the SMS was split up into multiple parts (due to its length).
+          example: false
+          in: query
+          name: show_concatenated
+          schema:
+            default: false
+            enum:
+              - true
+              - false
+            type: boolean
+        - description: The event type to search for. Only used, and is required, when product is `CONVERSATIONS`.
+          example: ip-voice
+          in: query
+          name: type
+          schema:
+            default: none
+            enum:
+              - ip-voice
+              - cs-custom-event
+            type: string
+        - description: The SMS status to search for. Optional where product is `SMS`.
+          example: delivered
+          in: query
+          name: status
+          schema:
+            default: none
+            enum:
+              - delivered
+              - expired
+              - failed
+              - rejected
+              - accepted
+              - buffered
+              - unknown
+              - deleted
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/json_record_response"
+        "403":
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    example: User not authorized to query the requested data
+                    type: string
+                  instance:
+                    $ref: "#/components/schemas/instance"
+                  title:
+                    example: Forbidden
+                    type: string
+          description: Unprocessable entity
+        "422":
+          content:
+            application/json:
+              schema:
+                oneOf:
+                  - description: Missing parameter
+                    properties:
+                      instance:
+                        $ref: "#/components/schemas/instance"
+                      invalid_parameters:
+                        items:
+                          properties:
+                            name:
+                              example: date_end
+                              type: string
+                            reason:
+                              example: Missing required parameter
+                              type: string
+                          type: object
+                        type: array
+                      title:
+                        example: Unprocessable entity
+                        type: string
+                  - description: Invalid Product
+                    properties:
+                      instance:
+                        $ref: "#/components/schemas/instance"
+                      invalid_parameters:
+                        items:
+                          properties:
+                            name:
+                              example: product
+                              type: string
+                            reason:
+                              example: Could not resolve product name. Please use one of the following values [CONVERSATIONS, MESSAGES, NUMBER-INSIGHT, SMS, VERIFY-API, VERIFY-SDK, VOICE-CALL, WEBSOCKET-CALL, ASR]
+                              type: string
+                          type: object
+                        type: array
+                      title:
+                        example: Unprocessable entity
+                        type: string
+                  - description: Invalid filter
+                    properties:
+                      detail:
+                        example: "When using message_id, the following parameters are not supported: [date_start, date_end]"
+                        type: string
+                      instance:
+                        $ref: "#/components/schemas/instance"
+                      title:
+                        example: Invalid filter
+                        type: string
+                      type:
+                        example: https://developer.nexmo.com/api-errors/reports#invalid-filter
+                        type: string
+          description: Unprocessable entity
+      security:
+        - basicAuth: []
+      summary: Load records synchronously
+  "/v2/reports/{report_id}":
+    delete:
+      description: Cancel the execution of a pending or processing report.
+      operationId: cancel-report
+      parameters:
+        - description: UUID of the report
+          in: path
+          name: report_id
+          required: true
+          schema:
+            example: aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/report_responses"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+        "409":
+          $ref: "#/components/responses/409"
+      security:
+        - basicAuth: []
+      summary: Cancel the execution of a report
+    get:
+      description: Retrieve status and metadata about a requested report.
+      operationId: get-report
+      parameters:
+        - description: UUID of the report request (`request_id` in response).
+          in: path
+          name: report_id
+          required: true
+          schema:
+            example: aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/report_responses"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+      security:
+        - basicAuth: []
+      summary: Get status of report
+  "/v3/media/{file_id}":
+    get:
+      description: |
+        Download a zipped archive of the rendered report. The file is available for download for 72 hours.<br> The zip file will be named `<PRODUCT>_<REPORT_ID>.zip`<br> The csv file in the zip archive will be named as `report_<PRODUCT>_<ACCOUNT_ID>_<DATE>.csv` the date will be formatted as `yyyyMMdd`.
+      operationId: download-report
+      parameters:
+        - description: UUID of the file.
+          in: path
+          name: file_id
+          required: true
+          schema:
+            example: aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+            type: string
+      responses:
+        "200":
+          $ref: "#/components/responses/csv_report_response"
+        "401":
+          $ref: "#/components/responses/401"
+        "404":
+          $ref: "#/components/responses/404"
+      security:
+        - basicAuth: []
+      summary: Get report data
+components:
+  parameters:
+    account_id:
+      description: The account for which the list of reports will be queried.
+      example: abcd1234
+      in: query
+      name: account_id
+      required: true
+      schema:
+        maxLength: 8
+        minLength: 8
+        type: string
+  responses:
+    "401":
+      content:
+        application/json:
+          schema:
+            properties:
+              detail:
+                example: You did not provide correct credentials.
+                type: string
+              instance:
+                example: f94b4e56604e07e5e5ad5a7228618f81
+                type: string
+              title:
+                example: Unauthorized
+                type: string
+              type:
+                example: https://developer.nexmo.com/api-errors#unauthorized
+                type: string
+      description: Unauthorized
+    "403":
+      content:
+        application/json:
+          schema:
+            properties:
+              detail:
+                example: User not authorized to query the requested data.
+                type: string
+              instance:
+                example: f94b4e56604e07e5e5ad5a7228618f81
+                type: string
+              title:
+                example: Forbidden
+                type: string
+              type:
+                example: https://developer.nexmo.com/api-errors#forbidden
+                type: string
+      description: Forbidden
+    "404":
+      content:
+        application/json:
+          schema:
+            properties:
+              detail:
+                example: Report aaaaaaaa-bbbb-cccc-dddd-0123456789ab does not exist, or you do not have access.
+                type: string
+              instance:
+                example: f94b4e56604e07e5e5ad5a7228618f81
+                type: string
+              title:
+                example: Invalid report ID
+                type: string
+              type:
+                example: https://developer.nexmo.com/api-errors#not-found
+                type: string
+      description: Not found
+    "409":
+      content:
+        application/json:
+          schema:
+            properties:
+              detail:
+                example: The job is already in a terminated state such as `SUCCESS`, `TRUNCATED`, `FAILED` or `ABORTED`.
+                type: string
+              instance:
+                example: f94b4e56604e07e5e5ad5a7228618f81
+                type: string
+              title:
+                example: Invalid Abort Operation
+                type: string
+              type:
+                example: https://developer.nexmo.com/api-errors/reports#invalid-abort-operation
+                type: string
+      description: Invalid Abort Operation
+    "422":
+      content:
+        application/json:
+          schema:
+            properties:
+              detail:
+                example: Unprocessable entity.
+                type: string
+              instance:
+                example: f94b4e56604e07e5e5ad5a7228618f81
+                type: string
+              title:
+                example: Unprocessable entity
+                type: string
+              type:
+                example: https://developer.nexmo.com/api-errors#not-found
+                type: string
+      description: Unprocessable entity
+    400_json:
+      content:
+        application/json:
+          schema:
+            properties:
+              detail:
+                example: Malformed JSON payload.
+                type: string
+              instance:
+                example: f94b4e56604e07e5e5ad5a7228618f81
+                type: string
+              title:
+                example: Malformed JSON
+                type: string
+              type:
+                example: https://developer.nexmo.com/api-errors#invalid-json
+                type: string
+      description: Bad Request
+    400_params:
+      content:
+        application/json:
+          schema:
+            properties:
+              detail:
+                example: Invalid request parameter.
+                type: string
+              instance:
+                example: f94b4e56604e07e5e5ad5a7228618f81
+                type: string
+              title:
+                example: Invalid request parameter
+                type: string
+              type:
+                example: https://developer.nexmo.com/api-errors/reports#invalid-request-parameters
+                type: string
+      description: Bad Request
+    csv_report_response:
+      content:
+        application/octet-stream:
+          schema:
+            properties:
+              report:
+                description: The report in CSV format inside the zip archive.
+                items:
+                  anyOf:
+                    - $ref: "#/components/schemas/csv_sms_outbound"
+                    - $ref: "#/components/schemas/csv_sms_inbound"
+                    - $ref: "#/components/schemas/csv_voice"
+                    - $ref: "#/components/schemas/csv_websockets"
+                    - $ref: "#/components/schemas/csv_verify"
+                    - $ref: "#/components/schemas/csv_ni"
+                    - $ref: "#/components/schemas/csv_messages_outbound"
+                    - $ref: "#/components/schemas/csv_messages_inbound"
+                    - $ref: "#/components/schemas/csv_conversations_ip_voice"
+                    - $ref: "#/components/schemas/csv_asr"
+                  type: object
+                type: array
+            type: object
+      description: Zip file containing CSV files
+    json_record_response:
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: SMS (Outbound)
+                    properties:
+                      direction:
+                        description: Direction of the communication, either `inbound` (received by our services), or `outbound` (originated from our services). Required for products `SMS` and `MESSAGES`. Optional for `VOICE-CALL`. Invalid for `CONVERSATIONS`, `NUMBER-INSIGHT`, `VERIFY-API`.
+                        enum:
+                          - inbound
+                          - outbound
+                        example: outbound
+                        type: string
+                      include_message:
+                        description: Include the text of messages in the report.
+                        example: "true"
+                        type: boolean
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_sms"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/json_sms_outbound_with_body"
+                        type: array
+                      show_concatenated:
+                        description: Indicates whether the SMS was split up into multiple parts (due to its length).
+                        example: "false"
+                        type: boolean
+                    type: object
+                    x-tab-id: sms-outbound
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: SMS (Inbound)
+                    properties:
+                      direction:
+                        description: Direction of the communication, either `inbound` (received by our services), or `outbound` (originated from our services). Required for products `SMS` and `MESSAGES`. Optional for `VOICE-CALL`. Invalid for `CONVERSATIONS`, `NUMBER-INSIGHT`, `VERIFY-API`.
+                        enum:
+                          - inbound
+                          - outbound
+                        example: inbound
+                        type: string
+                      include_message:
+                        description: Include the text of messages in the report.
+                        example: "true"
+                        type: boolean
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_sms"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/json_sms_inbound_with_body"
+                        type: array
+                      show_concatenated:
+                        description: Indicates whether the SMS was split up into multiple parts (due to its length).
+                        example: "false"
+                        type: boolean
+                    type: object
+                    x-tab-id: sms-inbound
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: Voice Call
+                    properties:
+                      direction:
+                        $ref: "#/components/schemas/direction"
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_voice"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/csv_voice"
+                        type: array
+                    type: object
+                    x-tab-id: voice-call
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: WebSocket Call
+                    properties:
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_websocket"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/csv_websockets"
+                        type: array
+                    type: object
+                    x-tab-id: websocket-call
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: Verify
+                    properties:
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_verify"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/csv_verify"
+                        type: array
+                    type: object
+                    x-tab-id: verify
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: Number Insight
+                    properties:
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_ni"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/csv_ni"
+                        type: array
+                    type: object
+                    x-tab-id: number-insight
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: Messages (Outbound)
+                    properties:
+                      direction:
+                        description: Direction of the communication, either `inbound` (received by our services), or `outbound` (originated from our services). Required for products `SMS` and `MESSAGES`. Optional for `VOICE-CALL`. Invalid for `CONVERSATIONS`, `NUMBER-INSIGHT`, `VERIFY-API`.
+                        enum:
+                          - inbound
+                          - outbound
+                        example: outbound
+                        type: string
+                      include_message:
+                        description: Include the text of messages in the report.
+                        example: "true"
+                        type: boolean
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_messages"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/csv_messages_outbound"
+                        type: array
+                      show_concatenated:
+                        description: Indicates whether the SMS was split up into multiple parts (due to its length).
+                        example: "true"
+                        type: boolean
+                    type: object
+                    x-tab-id: messages-outbound
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: Messages (Inbound)
+                    properties:
+                      direction:
+                        description: Direction of the communication, either `inbound` (received by our services), or `outbound` (originated from our services). Required for products `SMS` and `MESSAGES`. Optional for `VOICE-CALL`. Invalid for `CONVERSATIONS`, `NUMBER-INSIGHT`, `VERIFY-API`.
+                        enum:
+                          - inbound
+                          - outbound
+                        example: inbound
+                        type: string
+                      include_message:
+                        description: Include the text of messages in the report.
+                        example: "true"
+                        type: boolean
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_messages"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/csv_messages_inbound"
+                        type: array
+                      show_concatenated:
+                        description: Indicates whether the SMS was split up into multiple parts (due to its length).
+                        example: "true"
+                        type: boolean
+                    type: object
+                    x-tab-id: messages-inbound
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: IP Voice
+                    properties:
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_conversations"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/csv_conversations_ip_voice"
+                        type: array
+                    type: object
+                    x-tab-id: conversations
+              - allOf:
+                  - $ref: "#/components/schemas/report_response_top_level"
+                  - description: ASR
+                    properties:
+                      items_count:
+                        description: The number of returned records
+                        example: 1
+                        type: integer
+                      product:
+                        $ref: "#/components/schemas/product_asr"
+                      records:
+                        description: Records in JSON format
+                        items:
+                          $ref: "#/components/schemas/csv_asr"
+                        type: array
+                    type: object
+                    x-tab-id: asr
+      description: OK
+    list_report_response:
+      content:
+        application/json:
+          schema:
+            properties:
+              items_count:
+                description: The number of reports in the list.
+                type: integer
+              reports:
+                description: The list of reports.
+                items:
+                  anyOf:
+                    - $ref: "#/components/schemas/sms_response_get_report"
+                    - $ref: "#/components/schemas/voice_call_response_get_report"
+                    - $ref: "#/components/schemas/websocket_call_response_get_report"
+                    - $ref: "#/components/schemas/verify_api_response_get_report"
+                    - $ref: "#/components/schemas/number_insight_response_get_report"
+                    - $ref: "#/components/schemas/messages_response_get_report"
+                    - $ref: "#/components/schemas/conversations_response_get_report"
+                    - $ref: "#/components/schemas/asr_response_get_report"
+                  type: object
+                type: array
+              self_link:
+                description: URI of this search.
+                example: https://api.nexmo.com/v2/reports/
+                format: uri
+                type: string
+            type: object
+      description: OK
+    report_responses:
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/sms_response_get_report"
+              - $ref: "#/components/schemas/voice_call_response_get_report"
+              - $ref: "#/components/schemas/websocket_call_response_get_report"
+              - $ref: "#/components/schemas/verify_api_response_get_report"
+              - $ref: "#/components/schemas/number_insight_response_get_report"
+              - $ref: "#/components/schemas/messages_response_get_report"
+              - $ref: "#/components/schemas/conversations_response_get_report"
+              - $ref: "#/components/schemas/asr_response_get_report"
+      description: OK
+    report_responses_create_report:
+      content:
+        application/json:
+          schema:
+            oneOf:
+              - $ref: "#/components/schemas/sms_response_create_report"
+              - $ref: "#/components/schemas/voice_call_response_create_report"
+              - $ref: "#/components/schemas/websocket_call_response_create_report"
+              - $ref: "#/components/schemas/verify_api_response_create_report"
+              - $ref: "#/components/schemas/number_insight_response_create_report"
+              - $ref: "#/components/schemas/messages_response_create_report"
+              - $ref: "#/components/schemas/conversations_response_create_report"
+              - $ref: "#/components/schemas/asr_response_create_report"
+      description: OK
+  schemas:
+    ASR:
+      allOf:
+        - $ref: "#/components/schemas/report_request"
+        - $ref: "#/components/schemas/asr_fields"
+      description: ASR
+      x-tab-id: asr
+    CONVERSATIONS:
+      allOf:
+        - $ref: "#/components/schemas/report_request"
+        - $ref: "#/components/schemas/conversations_fields"
+      description: Conversations
+      x-tab-id: conversations
+    MESSAGES:
+      allOf:
+        - $ref: "#/components/schemas/report_request"
+        - $ref: "#/components/schemas/messages_fields"
+      description: Messages
+      x-tab-id: messages
+    NUMBER-INSIGHT:
+      allOf:
+        - $ref: "#/components/schemas/report_request"
+        - $ref: "#/components/schemas/number_insight_fields"
+      description: Number Insight
+      x-tab-id: number-insight
+    SMS:
+      allOf:
+        - $ref: "#/components/schemas/report_request"
+        - $ref: "#/components/schemas/sms_fields"
+      description: SMS
+      x-tab-id: SMS
+    VERIFY-API:
+      allOf:
+        - $ref: "#/components/schemas/report_request"
+        - $ref: "#/components/schemas/verify_api_fields"
+      description: Verify
+      x-tab-id: verify
+    VOICE-CALL:
+      allOf:
+        - $ref: "#/components/schemas/report_request"
+        - $ref: "#/components/schemas/voice_call_fields"
+      description: Voice Call
+      x-tab-id: voice-call
+    WEBSOCKET-CALL:
+      allOf:
+        - $ref: "#/components/schemas/report_request"
+        - $ref: "#/components/schemas/websocket_call_fields"
+      description: WebSocket Call
+      x-tab-id: websocket-call
+    _links:
+      properties:
+        download_report:
+          properties:
+            href:
+              description: URL pointing to the generated report.
+              example: https://api.nexmo.com/v3/media/aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+              format: uri
+              type: string
+          type: object
+        self:
+          properties:
+            href:
+              description: URI of this document.
+              example: https://api.nexmo.com/v2/reports/aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+              format: uri
+              type: string
+          type: object
+      type: object
+    _links_create_report:
+      properties:
+        self:
+          properties:
+            href:
+              description: URI of this document.
+              example: https://api.nexmo.com/v2/reports/aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+              format: uri
+              type: string
+          type: object
+      type: object
+    account_id:
+      description: The account ID (API key) you wish to search for. This can differ from the API key in the authorization header because some accounts can request reports for other accounts, e.g. a primary account owner wants to create a report for one of its subaccounts.
+      example: abcdef01
+      type: string
+    account_ref:
+      description: Search for messages with this `account_ref`.
+      maxLength: 40
+      minLength: 40
+      type: string
+    application_id:
+      description: Search only for requests attached to a particular Application ID.
+      type: string
+    asr_fields:
+      description: ASR
+      properties:
+        direction:
+          $ref: "#/components/schemas/direction"
+        from:
+          $ref: "#/components/schemas/from"
+        product:
+          $ref: "#/components/schemas/product_asr"
+        status:
+          $ref: "#/components/schemas/asr_status"
+        to:
+          $ref: "#/components/schemas/to"
+      type: object
+      x-tab-id: asr
+    asr_response_create_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response_create_report"
+        - $ref: "#/components/schemas/asr_fields"
+      description: ASR
+      x-tab-id: asr
+    asr_response_get_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response"
+        - $ref: "#/components/schemas/asr_fields"
+      description: ASR
+      x-tab-id: asr
+    asr_status:
+      description: Search only for ASR with corresponding status.
+      enum:
+        - ok
+        - error
+      example: ok
+      type: string
+    asr_status_description:
+      description: ASR error message.
+      example: ""
+      type: string
+    call_end_date:
+      description: Date of the end of the call.
+      example: 2019-06-28T15:30:00+0000
+      format: date
+      type: string
+    call_start_date:
+      description: Date of the start of the call.
+      example: 2019-06-28T15:30:00+0000
+      format: date
+      type: string
+    callback_url:
+      description: URL to send a callback upon completion of the report. This POST callback contains the same information as the response to [Get status of report](/api/reports#get-report).
+      example: https://requestb.in/12345
+      format: uri
+      type: string
+    client_ref:
+      description: Search for messages with this `client_ref`.
+      maxLength: 40
+      minLength: 40
+      type: string
+    concatenated:
+      default: false
+      description: Whether the SMS was split up into multiple parts (due to its length).
+      example: "true"
+      type: boolean
+    conversation_id:
+      description: Search only for Voice calls attached to this particular Conversation. This should include the "CON-" prefix.
+      example: CON-abc123
+      type: string
+    conversation_type:
+      description: Type of conversation request. Only used, and is required, when product is `CONVERSATIONS`.
+      enum:
+        - ip-voice
+        - cs-custom-event
+      example: ip-voice
+      type: string
+    conversations_fields:
+      description: Conversations
+      properties:
+        conversation_id:
+          $ref: "#/components/schemas/conversation_id"
+        product:
+          $ref: "#/components/schemas/product_conversations"
+        status:
+          $ref: "#/components/schemas/status"
+        type:
+          $ref: "#/components/schemas/conversation_type"
+      type: object
+      x-tab-id: conversations
+    conversations_response_create_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response_create_report"
+        - $ref: "#/components/schemas/conversations_fields"
+      description: Conversations
+      x-tab-id: conversations
+    conversations_response_get_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response"
+        - $ref: "#/components/schemas/conversations_fields"
+      description: Conversations
+      x-tab-id: conversations
+    conversations_user_id:
+      description: User ID of the caller.
+      example: aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+      type: string
+    country:
+      description: Country where the request was sent.
+      example: FR
+      type: string
+    country_name:
+      description: Country name where the request was sent.
+      example: France
+      type: string
+    csv_asr:
+      description: ASR
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        call_date_start:
+          $ref: "#/components/schemas/call_start_date"
+        call_id:
+          $ref: "#/components/schemas/request_id"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_end:
+          $ref: "#/components/schemas/call_end_date"
+        date_start:
+          $ref: "#/components/schemas/call_start_date"
+        direction:
+          $ref: "#/components/schemas/direction"
+        duration:
+          $ref: "#/components/schemas/duration"
+        from:
+          $ref: "#/components/schemas/from"
+        price:
+          $ref: "#/components/schemas/price"
+        status:
+          $ref: "#/components/schemas/asr_status"
+        status_description:
+          $ref: "#/components/schemas/asr_status_description"
+        to:
+          $ref: "#/components/schemas/to"
+        total_price:
+          $ref: "#/components/schemas/total_price"
+      type: object
+      x-tab-id: asr
+    csv_conversations_ip_voice:
+      description: IP Voice Conversations
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        application_id:
+          $ref: "#/components/schemas/application_id"
+        conversation_id:
+          $ref: "#/components/schemas/conversation_id"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_end:
+          $ref: "#/components/schemas/call_end_date"
+        date_start:
+          $ref: "#/components/schemas/call_start_date"
+        duration:
+          $ref: "#/components/schemas/duration"
+        leg_id:
+          $ref: "#/components/schemas/ip_voice_leg_id"
+        price:
+          $ref: "#/components/schemas/price"
+        request_id:
+          $ref: "#/components/schemas/request_id"
+        status:
+          $ref: "#/components/schemas/ip_voice_status"
+        total_price:
+          $ref: "#/components/schemas/total_price"
+        user_id:
+          $ref: "#/components/schemas/conversations_user_id"
+      type: object
+      x-tab-id: conversations-ip-voice
+    csv_messages_inbound:
+      description: Inbound Messages
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_received:
+          $ref: "#/components/schemas/date"
+        direction:
+          $ref: "#/components/schemas/direction"
+        from:
+          $ref: "#/components/schemas/from"
+        message_body:
+          $ref: "#/components/schemas/message_body"
+        message_id:
+          $ref: "#/components/schemas/message_id"
+        provider:
+          $ref: "#/components/schemas/messages_provider"
+        to:
+          $ref: "#/components/schemas/to"
+        total_price:
+          $ref: "#/components/schemas/total_price"
+      type: object
+      x-tab-id: inbound-messages
+    csv_messages_outbound:
+      description: Outbound Messages
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        client_ref:
+          $ref: "#/components/schemas/client_ref"
+        country:
+          $ref: "#/components/schemas/country"
+        country_name:
+          $ref: "#/components/schemas/country_name"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_finalized:
+          $ref: "#/components/schemas/date_finalized"
+        date_received:
+          $ref: "#/components/schemas/date"
+        direction:
+          $ref: "#/components/schemas/direction"
+        error_code:
+          $ref: "#/components/schemas/messages_error_code"
+        from:
+          $ref: "#/components/schemas/from"
+        latency:
+          $ref: "#/components/schemas/latency"
+        message_body:
+          $ref: "#/components/schemas/message_body"
+        message_id:
+          $ref: "#/components/schemas/message_id"
+        provider:
+          $ref: "#/components/schemas/messages_provider"
+        status:
+          $ref: "#/components/schemas/messages_status"
+        to:
+          $ref: "#/components/schemas/to"
+        total_price:
+          $ref: "#/components/schemas/total_price"
+      type: object
+      x-tab-id: outbound-messages
+    csv_ni:
+      description: Number Insight
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        country:
+          $ref: "#/components/schemas/ni_country"
+        country_name:
+          $ref: "#/components/schemas/ni_country_name"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_received:
+          $ref: "#/components/schemas/date"
+        first_name:
+          $ref: "#/components/schemas/ni_first_name"
+        last_name:
+          $ref: "#/components/schemas/ni_last_name"
+        network:
+          $ref: "#/components/schemas/ni_network"
+        network_name:
+          $ref: "#/components/schemas/ni_network_name"
+        network_type:
+          $ref: "#/components/schemas/ni_network_type"
+        number:
+          $ref: "#/components/schemas/ni_number"
+        ported:
+          $ref: "#/components/schemas/ni_ported"
+        product_type:
+          $ref: "#/components/schemas/ni_product_type"
+        reachable:
+          $ref: "#/components/schemas/ni_reachable"
+        request_id:
+          $ref: "#/components/schemas/request_id"
+        response_code:
+          $ref: "#/components/schemas/ni_response_code"
+        status:
+          $ref: "#/components/schemas/ni_status"
+        total_price:
+          $ref: "#/components/schemas/total_price"
+        valid:
+          $ref: "#/components/schemas/ni_valid"
+      type: object
+      x-tab-id: number-insight
+    csv_sms_inbound:
+      description: Inbound SMS
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        country:
+          $ref: "#/components/schemas/country"
+        country_name:
+          $ref: "#/components/schemas/country_name"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_received:
+          $ref: "#/components/schemas/date"
+        direction:
+          $ref: "#/components/schemas/direction"
+        from:
+          $ref: "#/components/schemas/from"
+        message_body:
+          $ref: "#/components/schemas/message_body"
+        message_id:
+          $ref: "#/components/schemas/message_id"
+        network:
+          $ref: "#/components/schemas/network"
+        network_name:
+          $ref: "#/components/schemas/network_name"
+        to:
+          $ref: "#/components/schemas/to"
+        total_price:
+          $ref: "#/components/schemas/price"
+      type: object
+      x-tab-id: inbound-sms
+    csv_sms_outbound:
+      description: Outbound SMS
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        client_ref:
+          $ref: "#/components/schemas/client_ref"
+        country:
+          $ref: "#/components/schemas/country"
+        country_name:
+          $ref: "#/components/schemas/country_name"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_finalized:
+          $ref: "#/components/schemas/date_finalized"
+        date_received:
+          $ref: "#/components/schemas/date"
+        direction:
+          $ref: "#/components/schemas/direction"
+        error_code:
+          $ref: "#/components/schemas/error_code"
+        error_code_description:
+          $ref: "#/components/schemas/error_code_description"
+        from:
+          $ref: "#/components/schemas/from"
+        latency:
+          $ref: "#/components/schemas/latency"
+        message_body:
+          $ref: "#/components/schemas/message_body"
+        message_id:
+          $ref: "#/components/schemas/message_id"
+        network:
+          $ref: "#/components/schemas/network"
+        network_name:
+          $ref: "#/components/schemas/network_name"
+        status:
+          $ref: "#/components/schemas/sms_status"
+        to:
+          $ref: "#/components/schemas/to"
+        total_price:
+          $ref: "#/components/schemas/price"
+      type: object
+      x-tab-id: outbound-sms
+    csv_verify:
+      description: Verify
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        country:
+          $ref: "#/components/schemas/country"
+        country_name:
+          $ref: "#/components/schemas/country_name"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_finalized:
+          $ref: "#/components/schemas/date_finalized"
+        date_received:
+          $ref: "#/components/schemas/date"
+        estimated_price:
+          $ref: "#/components/schemas/estimated_price"
+        first_event_date:
+          $ref: "#/components/schemas/first_event_date"
+        from:
+          $ref: "#/components/schemas/from"
+        last_event_date:
+          $ref: "#/components/schemas/last_event_date"
+        locale:
+          $ref: "#/components/schemas/locale"
+        network:
+          $ref: "#/components/schemas/network"
+        network_name:
+          $ref: "#/components/schemas/network_name"
+        number_type:
+          $ref: "#/components/schemas/number_type"
+        price:
+          $ref: "#/components/schemas/price"
+        pricing_model:
+          $ref: "#/components/schemas/pricing_model"
+        request_id:
+          $ref: "#/components/schemas/request_id"
+        sms_event_count:
+          $ref: "#/components/schemas/sms_event_count"
+        to:
+          $ref: "#/components/schemas/to"
+        tts_event_count:
+          $ref: "#/components/schemas/tts_event_count"
+        verify_status:
+          $ref: "#/components/schemas/verify_status"
+      type: object
+      x-tab-id: verify
+    csv_voice:
+      description: Voice Call
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        call_id:
+          $ref: "#/components/schemas/request_id"
+        country:
+          $ref: "#/components/schemas/country"
+        country_name:
+          $ref: "#/components/schemas/country_name"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_end:
+          $ref: "#/components/schemas/call_end_date"
+        date_start:
+          $ref: "#/components/schemas/call_start_date"
+        direction:
+          $ref: "#/components/schemas/direction"
+        duration:
+          $ref: "#/components/schemas/duration"
+        from:
+          $ref: "#/components/schemas/from"
+        network:
+          $ref: "#/components/schemas/network"
+        network_name:
+          $ref: "#/components/schemas/network_name"
+        price:
+          $ref: "#/components/schemas/price"
+        status:
+          $ref: "#/components/schemas/voice_status"
+        status_description:
+          $ref: "#/components/schemas/voice_status_description"
+        to:
+          $ref: "#/components/schemas/to"
+        total_price:
+          $ref: "#/components/schemas/total_price"
+      type: object
+      x-tab-id: voice-call
+    csv_websockets:
+      description: WebSocket Call
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        call_id:
+          $ref: "#/components/schemas/request_id"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_end:
+          $ref: "#/components/schemas/call_end_date"
+        date_start:
+          $ref: "#/components/schemas/call_start_date"
+        duration:
+          $ref: "#/components/schemas/duration"
+        price:
+          $ref: "#/components/schemas/price"
+        status:
+          $ref: "#/components/schemas/websocket_status"
+        total_price:
+          $ref: "#/components/schemas/total_price"
+      type: object
+      x-tab-id: websocket-call
+    currency:
+      description: Currency of the price of the request.
+      example: EUR
+      type: string
+    date:
+      description: Date of the request.
+      example: 2019-06-28T15:30:00+0000
+      format: date
+      type: string
+    date_end:
+      description: |
+        ISO-8601 extended time zone offset or ISO-8601 UTC zone offset formatted date (format `yyyy-mm-ddThh:mm:ss[.sss]±hh:mm` or `yyyy-mm-ddThh:mm:ss[.sss]Z`) for when report should end.  It is exclusive, i.e. the provided value is strictly greater than the value in the field `date_received` in the CDR. <br>If unspecified, defaults to the current time.
+      example: 2018-01-01T00:00:00+00:00
+      format: date
+      type: string
+    date_finalized:
+      description: Date when the request was finalized.
+      example: 2019-06-28T15:30:00+0000
+      format: date
+      type: string
+    date_start:
+      description: |
+        ISO-8601 extended time zone offset or ISO-8601 UTC zone offset formatted date (format `yyyy-mm-ddThh:mm:ss[.sss]±hh:mm` or `yyyy-mm-ddThh:mm:ss[.sss]Z`) for when reports  should begin. It filters on the time the API call was received by Vonage and corresponds to the field `date_received` (`date_start` for Voice) in the report file. It is inclusive, i.e. the provided value is less than or equal to the value in the field `date_received` (`date_start` for Voice) in the CDR.<br>If unspecified, defaults  to seven days ago.
+      example: 2017-12-01T00:00:00+00:00
+      format: date
+      type: string
+    direction:
+      description: Direction of the communication, either `inbound` (received by our services), or `outbound` (originated from our services). Required for products `SMS` and `MESSAGES`. Optional for `VOICE-CALL`. Invalid for `CONVERSATIONS`, `NUMBER-INSIGHT`, `VERIFY-API`.
+      enum:
+        - inbound
+        - outbound
+      example: outbound
+      type: string
+    duration:
+      description: Duration of the call in seconds.
+      example: "42"
+      type: integer
+    error_code:
+      description: Error code of the request.
+      example: "0"
+      type: string
+    error_code_description:
+      description: Description of the error code of the request.
+      example: Delivered
+      type: string
+    estimated_price:
+      description: Estimated price of the verify request.
+      example: "0.042"
+      type: string
+    file_id:
+      description: Id of the generated report file.
+      example: aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+      type: string
+    first_event_date:
+      description: Date of the first verify event.
+      example: 2019-06-28T15:30:00+0000
+      format: date
+      type: string
+    from:
+      description: Request from this number.
+      example: "441234567890"
+      type: string
+    id:
+      description: Search only messages with the specified uuid.
+      example: aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+      type: string
+    ids_not_found:
+      description: If you request multiple records using a comma-separated list of UUIDs, then the UUIDs of any records not found are listed in this field.
+      example: 7b10a0c2-1a05-11eb-bad9-38f9d331649,7b1091b8-1a05-11eb-bad9-38f9d331493
+      type: string
+    include_message:
+      default: false
+      description: Include the text of messages in the report.
+      example: "true"
+      type: boolean
+    include_subaccounts:
+      default: false
+      description: Whether to include subaccounts or not.
+      enum:
+        - true
+        - false
+      example: "false"
+      type: boolean
+    instance:
+      example: f94b4e56604e07e5e5ad5a7228618f81
+      type: string
+    ip_voice_leg_id:
+      description: Id of the leg.
+      example: aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+      type: string
+    ip_voice_status:
+      description: Status of the conversation evnet.
+      example: "0"
+      type: string
+    items_count:
+      description: The number of rows in the resulting file (when report has been completed).
+      type: integer
+    json_sms_inbound:
+      description: Inbound SMS
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        country:
+          $ref: "#/components/schemas/country"
+        country_name:
+          $ref: "#/components/schemas/country_name"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_received:
+          $ref: "#/components/schemas/date"
+        direction:
+          allOf:
+            - $ref: "#/components/schemas/direction"
+            - example: inbound
+        from:
+          $ref: "#/components/schemas/from"
+        message_id:
+          $ref: "#/components/schemas/message_id"
+        network:
+          $ref: "#/components/schemas/network"
+        network_name:
+          $ref: "#/components/schemas/network_name"
+        to:
+          $ref: "#/components/schemas/to"
+        total_price:
+          $ref: "#/components/schemas/price"
+      type: object
+      x-tab-id: inbound-sms
+    json_sms_inbound_with_body:
+      allOf:
+        - $ref: "#/components/schemas/json_sms_inbound"
+        - properties:
+            message_body:
+              $ref: "#/components/schemas/message_body"
+    json_sms_outbound:
+      description: Outbound SMS
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        client_ref:
+          $ref: "#/components/schemas/client_ref"
+        concatenated:
+          $ref: "#/components/schemas/concatenated"
+        country:
+          $ref: "#/components/schemas/country"
+        country_name:
+          $ref: "#/components/schemas/country_name"
+        currency:
+          $ref: "#/components/schemas/currency"
+        date_finalized:
+          $ref: "#/components/schemas/date_finalized"
+        date_received:
+          $ref: "#/components/schemas/date"
+        direction:
+          $ref: "#/components/schemas/direction"
+        error_code:
+          $ref: "#/components/schemas/error_code"
+        error_code_description:
+          $ref: "#/components/schemas/error_code_description"
+        from:
+          $ref: "#/components/schemas/from"
+        latency:
+          $ref: "#/components/schemas/latency"
+        message_id:
+          $ref: "#/components/schemas/message_id"
+        network:
+          $ref: "#/components/schemas/network"
+        network_name:
+          $ref: "#/components/schemas/network_name"
+        status:
+          $ref: "#/components/schemas/sms_status"
+        to:
+          $ref: "#/components/schemas/to"
+        total_price:
+          $ref: "#/components/schemas/price"
+      type: object
+      x-tab-id: outbound-sms
+    json_sms_outbound_with_body:
+      allOf:
+        - $ref: "#/components/schemas/json_sms_outbound"
+        - properties:
+            message_body:
+              $ref: "#/components/schemas/message_body"
+    last_event_date:
+      description: Date of the last verify event.
+      example: 2019-06-28T15:30:00+0000
+      format: date
+      type: string
+    latency:
+      description: Latency of the request in ms.
+      example: "42"
+      type: integer
+    locale:
+      description: Locale used for the TTS.
+      example: en-gb
+      type: string
+    message_body:
+      description: Body of the message sent. Only present if include_message parameter is set to true.
+      example: This is a text message
+      type: string
+    message_id:
+      description: Id of the request.
+      example: 0000000A
+      type: string
+    messages_error_code:
+      description: Error code of the message.
+      example: "1300"
+      type: string
+    messages_fields:
+      description: Messages
+      properties:
+        direction:
+          $ref: "#/components/schemas/direction"
+        from:
+          $ref: "#/components/schemas/from"
+        id:
+          $ref: "#/components/schemas/id"
+        include_message:
+          $ref: "#/components/schemas/include_message"
+        product:
+          $ref: "#/components/schemas/product_messages"
+        to:
+          $ref: "#/components/schemas/to"
+      required:
+        - product
+        - account_id
+        - direction
+      type: object
+      x-tab-id: messages
+    messages_provider:
+      description: Provider of the message.
+      example: whatsapp
+      type: string
+    messages_response_create_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response_create_report"
+        - $ref: "#/components/schemas/messages_fields"
+      description: Messages
+      x-tab-id: messages
+    messages_response_get_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response"
+        - $ref: "#/components/schemas/messages_fields"
+      description: Messages
+      x-tab-id: messages
+    messages_status:
+      description: Status of the message.
+      example: submitted
+      type: string
+    network:
+      description: Network used to send the request.
+      example: "23415"
+      type: string
+    network_name:
+      description: Name of the network used to send the request.
+      example: Vodafone Limited
+      type: string
+    ni_country:
+      description: Country of the looked up number.
+      example: mobile
+      type: string
+    ni_country_name:
+      description: Country name of the looked up number.
+      example: mobile
+      type: string
+    ni_first_name:
+      description: First name of the owner of the looked up number.
+      example: valid
+      type: string
+    ni_last_name:
+      description: Last name of the owner of the looked up number.
+      example: valid
+      type: string
+    ni_network:
+      description: Network of the looked up number.
+      example: "23415"
+      type: string
+    ni_network_name:
+      description: Network name of the looked up number.
+      example: Vodafone Limited
+      type: string
+    ni_network_type:
+      description: Network type of the looked up number.
+      example: mobile
+      type: string
+    ni_number:
+      description: Number looked up for this request.
+      example: HLR-LOOKUP
+      type: string
+    ni_ported:
+      description: Is the looked up number ported.
+      example: ported
+      type: string
+    ni_product_type:
+      description: Type of Number Insight request.
+      example: HLR-LOOKUP
+      type: string
+    ni_reachable:
+      description: Is the looked up number reachable.
+      example: reachable
+      type: string
+    ni_response_code:
+      description: Response code of the Number Insight request.
+      example: "0"
+      type: string
+    ni_status:
+      description: Status of the Number Insight request.
+      example: Success
+      type: string
+    ni_valid:
+      description: Is the looked up number valid.
+      example: valid
+      type: string
+    number:
+      description: Search only request for the target number.
+      example: "441234567890"
+      type: string
+    number_insight_fields:
+      description: Number Insight
+      properties:
+        network:
+          $ref: "#/components/schemas/network"
+        number:
+          $ref: "#/components/schemas/number"
+        product:
+          $ref: "#/components/schemas/product_ni"
+      type: object
+      x-tab-id: number-insight
+    number_insight_response_create_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response_create_report"
+        - $ref: "#/components/schemas/number_insight_fields"
+      description: Number Insight
+      x-tab-id: number-insight
+    number_insight_response_get_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response"
+        - $ref: "#/components/schemas/number_insight_fields"
+      description: Number Insight
+      x-tab-id: number-insight
+    number_type:
+      description: Type of phone number to which requests are sent.
+      example: MOBILE
+      type: string
+    price:
+      description: Price of the request.
+      example: "0.042"
+      type: number
+    pricing_model:
+      description: Pricing model used for this request.
+      example: "0"
+      type: string
+    product:
+      description: Which product you wish to generate a report for.
+      enum:
+        - SMS
+        - VOICE-CALL
+        - WEBSOCKET-CALL
+        - VERIFY-API
+        - NUMBER-INSIGHT
+        - MESSAGES
+        - CONVERSATIONS
+        - ASR
+      example: SMS
+      type: string
+    product_asr:
+      description: Which product you wish to generate a report for.
+      enum:
+        - SMS
+        - VOICE-CALL
+        - WEBSOCKET-CALL
+        - VERIFY-API
+        - NUMBER-INSIGHT
+        - MESSAGES
+        - CONVERSATIONS
+        - ASR
+      example: ASR
+      type: string
+    product_conversations:
+      description: Which product you wish to generate a report for.
+      enum:
+        - SMS
+        - VOICE-CALL
+        - WEBSOCKET-CALL
+        - VERIFY-API
+        - NUMBER-INSIGHT
+        - MESSAGES
+        - CONVERSATIONS
+        - ASR
+      example: CONVERSATIONS
+      type: string
+    product_messages:
+      description: Which product you wish to generate a report for.
+      enum:
+        - SMS
+        - VOICE-CALL
+        - VERIFY-API
+        - NUMBER-INSIGHT
+        - MESSAGES
+        - CONVERSATIONS
+        - ASR
+      example: MESSAGES
+      type: string
+    product_ni:
+      description: Which product you wish to generate a report for.
+      enum:
+        - SMS
+        - VOICE-CALL
+        - WEBSOCKET-CALL
+        - VERIFY-API
+        - NUMBER-INSIGHT
+        - MESSAGES
+        - CONVERSATIONS
+        - ASR
+      example: NUMBER-INSIGHT
+      type: string
+    product_sms:
+      description: Which product you wish to generate a report for.
+      enum:
+        - SMS
+        - VOICE-CALL
+        - WEBSOCKET-CALL
+        - VERIFY-API
+        - NUMBER-INSIGHT
+        - MESSAGES
+        - CONVERSATIONS
+        - ASR
+      example: SMS
+      type: string
+    product_verify:
+      description: Which product you wish to generate a report for.
+      enum:
+        - SMS
+        - VOICE-CALL
+        - WEBSOCKET-CALL
+        - VERIFY-API
+        - NUMBER-INSIGHT
+        - MESSAGES
+        - CONVERSATIONS
+        - ASR
+      example: VERIFY-API
+      type: string
+    product_voice:
+      description: Which product you wish to generate a report for.
+      enum:
+        - SMS
+        - VOICE-CALL
+        - WEBSOCKET-CALL
+        - VERIFY-API
+        - NUMBER-INSIGHT
+        - MESSAGES
+        - CONVERSATIONS
+        - ASR
+      example: VOICE-CALL
+      type: string
+    product_websocket:
+      description: Which product you wish to generate a report for.
+      enum:
+        - SMS
+        - VOICE-CALL
+        - WEBSOCKET-CALL
+        - VERIFY-API
+        - NUMBER-INSIGHT
+        - MESSAGES
+        - CONVERSATIONS
+        - ASR
+      example: WEBSOCKET-CALL
+      type: string
+    receive_time:
+      description: Time at which the report request was received by the service.
+      example: 2019-06-28T15:30:00+0000
+      format: date
+      type: string
+    report_request:
+      discriminator:
+        propertyName: product
+      properties:
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        callback_url:
+          $ref: "#/components/schemas/callback_url"
+        date_end:
+          $ref: "#/components/schemas/date_end"
+        date_start:
+          $ref: "#/components/schemas/date_start"
+        include_subaccounts:
+          $ref: "#/components/schemas/include_subaccounts"
+        product:
+          $ref: "#/components/schemas/product"
+      required:
+        - product
+        - account_id
+      type: object
+    report_response:
+      properties:
+        _links:
+          $ref: "#/components/schemas/_links"
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        callback_url:
+          $ref: "#/components/schemas/callback_url"
+        date_end:
+          $ref: "#/components/schemas/date_end"
+        date_start:
+          $ref: "#/components/schemas/date_start"
+        include_subaccounts:
+          $ref: "#/components/schemas/include_subaccounts"
+        items_count:
+          $ref: "#/components/schemas/items_count"
+        product:
+          $ref: "#/components/schemas/product"
+        receive_time:
+          $ref: "#/components/schemas/receive_time"
+        request_id:
+          $ref: "#/components/schemas/request_id"
+        request_status:
+          $ref: "#/components/schemas/request_status"
+        start_time:
+          $ref: "#/components/schemas/start_time"
+      type: object
+    report_response_create_report:
+      properties:
+        _links:
+          $ref: "#/components/schemas/_links_create_report"
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        callback_url:
+          $ref: "#/components/schemas/callback_url"
+        date_end:
+          $ref: "#/components/schemas/date_end"
+        date_start:
+          $ref: "#/components/schemas/date_start"
+        include_subaccounts:
+          $ref: "#/components/schemas/include_subaccounts"
+        product:
+          $ref: "#/components/schemas/product"
+        receive_time:
+          $ref: "#/components/schemas/receive_time"
+        request_id:
+          $ref: "#/components/schemas/request_id"
+        request_status:
+          $ref: "#/components/schemas/request_status_create_report"
+        start_time:
+          $ref: "#/components/schemas/start_time"
+      type: object
+    report_response_top_level:
+      properties:
+        _links:
+          properties:
+            self:
+              properties:
+                href:
+                  example: https://api.nexmo.com/v2/reports/records?product=SMS&direction=outbound&date_start=2020-03-05T13%3A00%3A00Z&date_end=2020-03-05T14%0A00%3A00Z&account_id=abcdef01
+                  type: string
+              type: object
+          type: object
+        account_id:
+          $ref: "#/components/schemas/account_id"
+        currency:
+          $ref: "#/components/schemas/currency"
+        ids_not_found:
+          $ref: "#/components/schemas/ids_not_found"
+        price:
+          $ref: "#/components/schemas/price"
+        received_at:
+          $ref: "#/components/schemas/receive_time"
+        request_id:
+          $ref: "#/components/schemas/request_id"
+        request_status:
+          $ref: "#/components/schemas/request_status"
+      type: object
+    request_id:
+      description: UUID of the request.
+      example: aaaaaaaa-bbbb-cccc-dddd-0123456789ab
+      type: string
+    request_status:
+      description: Status of the request.
+      enum:
+        - PENDING
+        - PROCESSING
+        - SUCCESS
+        - ABORTED
+        - FAILED
+        - TRUNCATED
+      example: SUCCESS
+      type: string
+    request_status_create_report:
+      description: Status of the request.
+      enum:
+        - PENDING
+        - PROCESSING
+        - SUCCESS
+        - ABORTED
+        - FAILED
+        - TRUNCATED
+      example: PENDING
+      type: string
+    show_concatenated:
+      default: false
+      description: Indicates whether the SMS was split up into multiple parts (due to its length).
+      example: "false"
+      type: boolean
+    sms_event_count:
+      description: Number of sms sent for this verify request.
+      example: "1"
+      type: integer
+    sms_fields:
+      description: SMS
+      properties:
+        account_ref:
+          $ref: "#/components/schemas/account_ref"
+        client_ref:
+          $ref: "#/components/schemas/client_ref"
+        direction:
+          $ref: "#/components/schemas/direction"
+        from:
+          $ref: "#/components/schemas/from"
+        include_message:
+          $ref: "#/components/schemas/include_message"
+        network:
+          $ref: "#/components/schemas/network"
+        product:
+          $ref: "#/components/schemas/product_sms"
+        show_concatenated:
+          $ref: "#/components/schemas/show_concatenated"
+        status:
+          $ref: "#/components/schemas/sms_status"
+        to:
+          $ref: "#/components/schemas/to"
+      required:
+        - product
+        - account_id
+        - direction
+      type: object
+      x-tab-id: SMS
+    sms_response_create_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response_create_report"
+        - $ref: "#/components/schemas/sms_fields"
+      description: SMS
+      x-tab-id: SMS
+    sms_response_get_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response"
+        - $ref: "#/components/schemas/sms_fields"
+      description: SMS
+      x-tab-id: SMS
+    sms_status:
+      description: Search only for sms with the corresponding status.
+      enum:
+        - delivered
+        - expired
+        - failed
+        - rejected
+        - accepted
+        - buffered
+        - unknown
+      example: delivered
+      type: string
+    start_time:
+      description: Time at which the report processing of the report has started.
+      example: 2019-06-28T15:30:00+0000
+      format: date
+      type: string
+    status:
+      description: Search only for conversation events with the specified event status.
+      example: "0"
+      type: string
+    to:
+      description: Request to this number.
+      example: "441234567890"
+      type: string
+    total_price:
+      description: Total price of the request.
+      example: "0.042"
+      type: number
+    tts_event_count:
+      description: Number of tts sent for this verify request.
+      example: "1"
+      type: integer
+    verify_api_fields:
+      description: Verify
+      properties:
+        network:
+          $ref: "#/components/schemas/network"
+        product:
+          $ref: "#/components/schemas/product_verify"
+        to:
+          $ref: "#/components/schemas/to"
+      type: object
+      x-tab-id: verify
+    verify_api_response_create_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response_create_report"
+        - $ref: "#/components/schemas/verify_api_fields"
+      description: Verify
+      x-tab-id: verify
+    verify_api_response_get_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response"
+        - $ref: "#/components/schemas/verify_api_fields"
+      description: Verify
+      x-tab-id: verify
+    verify_status:
+      description: Status of the verify request.
+      example: SUCCESS
+      type: string
+    voice_call_fields:
+      description: Voice Call
+      properties:
+        direction:
+          $ref: "#/components/schemas/direction"
+        from:
+          $ref: "#/components/schemas/from"
+        network:
+          $ref: "#/components/schemas/network"
+        product:
+          $ref: "#/components/schemas/product_voice"
+        status:
+          $ref: "#/components/schemas/voice_status"
+        to:
+          $ref: "#/components/schemas/to"
+      type: object
+      x-tab-id: voice-call
+    voice_call_response_create_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response_create_report"
+        - $ref: "#/components/schemas/voice_call_fields"
+      description: Voice Call
+      x-tab-id: voice-call
+    voice_call_response_get_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response"
+        - $ref: "#/components/schemas/voice_call_fields"
+      description: Voice Call
+      x-tab-id: voice-call
+    voice_status:
+      description: Search only for voice call with the corresponding status.
+      enum:
+        - started
+        - ringing
+        - answered
+        - machine
+        - completed
+        - timeout
+        - failed
+        - rejected
+        - cancelled
+        - busy
+      example: started
+      type: string
+    voice_status_description:
+      description: Description of the status of the call.
+      example: The call was successful.
+      type: string
+    websocket_call_fields:
+      description: WebSocket Call
+      properties:
+        product:
+          $ref: "#/components/schemas/product_websocket"
+        status:
+          $ref: "#/components/schemas/websocket_status"
+      type: object
+      x-tab-id: websocket-call
+    websocket_call_response_create_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response_create_report"
+        - $ref: "#/components/schemas/websocket_call_fields"
+      description: WebSocket Call
+      x-tab-id: websocket-call
+    websocket_call_response_get_report:
+      allOf:
+        - $ref: "#/components/schemas/report_response"
+        - $ref: "#/components/schemas/websocket_call_fields"
+      description: WebSocket Call
+      x-tab-id: websocket-call
+    websocket_status:
+      description: Search only for WebSocket call with corresponding status.
+      example: 200
+      type: string
+  securitySchemes:
+    basicAuth:
+      scheme: basic
+      type: http
+x-errors:
+  invalid-abort-operation:
+    description: The job is already in a terminated state such as `SUCCESS`, `TRUNCATED`, `FAILED` or `ABORTED`.
+    link:
+      text: View API reference
+      url: /api/reports#cancel-report
+    resolution: None
+  invalid-request-parameters:
+    description: The provided payload is invalid
+    link:
+      text: View API reference
+      url: /api/reports#create-report
+    resolution: Modify your request to provide a valid payload

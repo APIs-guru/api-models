@@ -1,0 +1,864 @@
+{
+  "swagger": "2.0",
+  "schemes": [
+    "https"
+  ],
+  "host": "sponsorship.api.npr.org",
+  "info": {
+    "contact": {
+      "email": "NPROneEnterprise@npr.org",
+      "name": "NPR One Enterprise Team",
+      "url": "https://dev.npr.org",
+      "x-twitter": "NPR"
+    },
+    "description": "Sponsorship for non-NPR One client applications",
+    "termsOfService": "https://dev.npr.org/guide/prerequisites/terms-of-use",
+    "title": "NPR Sponsorship Service",
+    "version": "2",
+    "x-apisguru-categories": [
+      "entertainment"
+    ],
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_twitter.com_NPR_profile_image.jpeg"
+    },
+    "x-origin": [
+      {
+        "format": "swagger",
+        "url": "https://sponsorship.api.npr.org/v2/swagger.json",
+        "version": "2.0"
+      }
+    ],
+    "x-providerName": "npr.org",
+    "x-serviceName": "sponsorship"
+  },
+  "externalDocs": {
+    "description": "Learn more at the NPR One Developer Center",
+    "url": "https://dev.npr.org/guide/app-experience/sponsorship/"
+  },
+  "consumes": [
+    "application/json",
+    "application/vnd.collection.doc+json"
+  ],
+  "produces": [
+    "application/xml"
+  ],
+  "securityDefinitions": {
+    "oauth2": {
+      "authorizationUrl": "https://authorization.api.npr.org/v2/authorize",
+      "flow": "accessCode",
+      "scopes": {
+        "identity.readonly": "See your personal information, such as your first name, last name, and favorite station.",
+        "identity.write": "Update your personal information, such as your favorite station(s) or program(s) you follow, on your behalf.",
+        "listening.readonly": "See your NPR One listening history and get audio recommendations.",
+        "listening.write": "Record that you have heard, marked as interesting, and/or skipped NPR One stories in order to personalize future audio recommendations.",
+        "localactivation": "Connect you with your local NPR member station for communication purposes."
+      },
+      "tokenUrl": "https://authorization.api.npr.org/v2/token",
+      "type": "oauth2"
+    }
+  },
+  "parameters": {
+    "Authorization": {
+      "description": "Your access token from the Authorization Service. Should start with `Bearer`, followed by a space, followed by the token.",
+      "in": "header",
+      "name": "Authorization",
+      "required": true,
+      "type": "string"
+    },
+    "X-Advertising-ID": {
+      "description": "A device-specific advertising identifier, if possible. Apple's IDFA is an example.",
+      "in": "header",
+      "name": "X-Advertising-ID",
+      "required": false,
+      "type": "string"
+    }
+  },
+  "responses": {
+    "400WithDocument": {
+      "description": "A bad request; generally, one or more parameters passed in were incorrect or missing",
+      "headers": {
+        "X-RateLimit-Limit": {
+          "description": "The number of allowed requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Remaining": {
+          "description": "The number of remaining requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Reset": {
+          "description": "The number of seconds left in the current period",
+          "type": "integer"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "401WithDocument": {
+      "description": "The client is not authorized to complete this request. Check to ensure a valid access token was passed in the headers.",
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "404WithDocument": {
+      "description": "The resource with the requested ID could not be found, and the server was unable to complete the request.",
+      "headers": {
+        "X-RateLimit-Limit": {
+          "description": "The number of allowed requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Remaining": {
+          "description": "The number of remaining requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Reset": {
+          "description": "The number of seconds left in the current period",
+          "type": "integer"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "429WithDocument": {
+      "description": "The client has exceeded the number of daily calls as per their rate limit. For now, this only applies to prototype applications and untrusted clients. Trusted clients will never be rate-limited, nor will any production apps.",
+      "headers": {
+        "X-RateLimit-Limit": {
+          "description": "The number of allowed requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Remaining": {
+          "description": "The number of remaining requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Reset": {
+          "description": "The number of seconds left in the current period",
+          "type": "integer"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "500WithDocument": {
+      "description": "A server error",
+      "headers": {
+        "X-RateLimit-Limit": {
+          "description": "The number of allowed requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Remaining": {
+          "description": "The number of remaining requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Reset": {
+          "description": "The number of seconds left in the current period",
+          "type": "integer"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "503WithDocument": {
+      "description": "The system is undergoing maintenance and we are unable to fulfill this request. Look for a `Retry-After` header to see the predicted time the system will be back up.",
+      "headers": {
+        "Retry-After": {
+          "description": "The predicted time the system will be back up",
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    }
+  },
+  "paths": {
+    "/v2/ads": {
+      "get": {
+        "description": "**Not** for use by NPR One clients (for whom sponsorship is already integrated into the Listening Service), this endpoint is designed to be used by our other client applications to request sponsorship on behalf of a user. Sponsorship units are returned in the form of VAST XML. It is worth noting that this endpoint attempts to always return XML, even in the case of exceptions.\n\nThe default behavior of this endpoint is asynchronous; on an initial request, a call to our external sponsorship provider is placed on a queue, which is typically processed within 3 minutes. Once the sponsorship call is received and processed, the returned sponsorship units are placed in a cache on our server for the current user. Subsequent calls to this endpoint will return VAST sponsorship units from this cache until tracking information is submitted, which removes the ad from the cache and will automatically request additional ads asynchronously if there are fewer than a certain number remaining in the cache.\n\nFor development purposes, it's worth noting that there is currently no way to clear a user's cache without submitting some form of tracking.",
+        "operationId": "getAds",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Authorization"
+          },
+          {
+            "$ref": "#/parameters/X-Advertising-ID"
+          },
+          {
+            "description": "Whether to force a synchronous call to our external sponsorship provider; the default behavior is asynchronous.",
+            "in": "query",
+            "name": "forceResult",
+            "required": false,
+            "type": "boolean"
+          },
+          {
+            "description": "How many sponsorship units to request in one call; if left unspecified, the default behavior is to return only 1.",
+            "format": "int32",
+            "in": "query",
+            "maximum": 5,
+            "minimum": 1,
+            "name": "adCount",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/xml"
+        ],
+        "responses": {
+          "200": {
+            "description": "Request completed successfully; a VAST XML document is returned. Note that this response will only be returned if either `force=true` was passed in the querystring, or a call to get sponsorship was previously made, and ads now exist in the cache for this user; otherwise, the 202 response is returned.",
+            "schema": {
+              "$ref": "#/definitions/VASTXml"
+            }
+          },
+          "202": {
+            "description": "Request accepted. Check back later for actual ads."
+          },
+          "400": {
+            "description": "A bad request; generally, one or more parameters passed in were incorrect or missing",
+            "schema": {
+              "$ref": "#/definitions/ErrorXmlDocument"
+            }
+          },
+          "500": {
+            "description": "A server error",
+            "schema": {
+              "$ref": "#/definitions/ErrorXmlDocument"
+            }
+          }
+        },
+        "summary": "Request VAST sponsorship units",
+        "tags": [
+          "sponsorship"
+        ]
+      },
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "**Not** for use by NPR One clients (for whom sponsorship is already integrated into the Listening Service), this endpoint is designed to be used by our other client applications to submit tracking information for sponsorship units obtained from the `GET /sponsorship/v2/ads` endpoint.\n\nThe tracking information should be submitted in the body of the request in the form of a JSON object following the Collection.Doc+JSON specification.",
+        "operationId": "receiveAdTracking",
+        "parameters": [
+          {
+            "$ref": "#/parameters/Authorization"
+          },
+          {
+            "$ref": "#/parameters/X-Advertising-ID"
+          },
+          {
+            "description": "A JSON object representing sponsorship tracking data to submit to our external provider.",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/UserAdDocument"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Request completed successfully, but there is nothing that we need to return to the caller."
+          },
+          "400": {
+            "description": "A bad request; generally, one or more parameters passed in were incorrect or missing",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          },
+          "500": {
+            "description": "A server error",
+            "schema": {
+              "$ref": "#/definitions/Error"
+            }
+          }
+        },
+        "summary": "Record tracking data for VAST sponsorship units",
+        "tags": [
+          "sponsorship"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "AbstractCDocLink": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AbstractLink"
+        },
+        {
+          "properties": {
+            "content-type": {
+              "description": "The MIME type of the response of this link",
+              "type": "string"
+            }
+          },
+          "required": [
+            "content-type"
+          ]
+        }
+      ]
+    },
+    "AbstractLink": {
+      "properties": {
+        "href": {
+          "description": "The link to be followed",
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "href"
+      ]
+    },
+    "AdTrackingData": {
+      "description": "All the information needed for the Sponsorship Service to send back tracking information to our external sponsorship provider",
+      "properties": {
+        "adId": {
+          "description": "The VAST Ad node `id` attribute value, (e.g. AdswizzAd12345)",
+          "type": "string"
+        },
+        "event": {
+          "default": "start",
+          "description": "The user-interaction event to submit tracking for",
+          "enum": [
+            "start",
+            "firstQuartile",
+            "midpoint",
+            "thirdQuartile",
+            "complete"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "adId",
+        "event"
+      ]
+    },
+    "AdTrackingDocument": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CollectionDocument"
+        },
+        {
+          "properties": {
+            "attributes": {
+              "$ref": "#/definitions/AdTrackingData",
+              "description": "All the information needed for the Sponsorship Service to send back tracking information to our external sponsorship provider"
+            },
+            "items": {
+              "description": "Not used",
+              "items": {
+                "type": "object"
+              },
+              "type": "array"
+            }
+          }
+        }
+      ],
+      "description": "All the information needed for the Sponsorship Service to send back tracking information to our external sponsorship provider"
+    },
+    "AdXml": {
+      "properties": {
+        "InLine": {
+          "$ref": "#/definitions/InLineXml"
+        },
+        "id": {
+          "type": "string",
+          "xml": {
+            "attribute": true
+          }
+        }
+      },
+      "type": "object",
+      "xml": {
+        "name": "Ad",
+        "namespace": "http://www.w3.org/2001/XMLSchema-instance"
+      }
+    },
+    "Affiliation": {
+      "description": "A program (aggregation) that a given user has shown an affiliation with",
+      "properties": {
+        "daysSinceLastListen": {
+          "description": "The number of days since a user last listened to a story from this aggregation. Absent if user never listened to the aggregation.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "following": {
+          "default": false,
+          "description": "Whether or not the user is following the aggregation. When changing affiliation status, the client is expected to toggle this value and then send the entire object back.",
+          "type": "boolean"
+        },
+        "href": {
+          "description": "A link to more details about the program from the NPR Story API",
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for the aggregation (program)",
+          "type": "string"
+        },
+        "notif_following": {
+          "description": "The topic in Firebase Cloud Messaging to which the device should subscribe if it supports notifications and the user wants notifications about the podcasts they follow.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "notif_rated": {
+          "description": "The topic in Firebase Cloud Messaging to which the device should subscribe if it supports notifications and the user wants notifications about the podcasts they have highly rated.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "rating": {
+          "description": "The user's average rating for this affiliation on a scale of 0-1. Absent if user never listened to the aggregation.",
+          "format": "float",
+          "type": "number"
+        },
+        "title": {
+          "description": "The title for the aggregation (program)",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "href",
+        "following"
+      ]
+    },
+    "CollectionDocument": {
+      "description": "Base Collection.Doc+JSON output",
+      "properties": {
+        "attributes": {
+          "type": "object"
+        },
+        "errors": {
+          "description": "A list of encountered errors, ignored on POST, PUT",
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "href": {
+          "description": "A URL representation of the resource; should generally be ignored by clients unless noted otherwise",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "links": {
+          "type": "object"
+        },
+        "version": {
+          "default": "1.0",
+          "description": "The version of the Collection.Doc+JSON spec being used",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "href",
+        "attributes",
+        "items",
+        "links",
+        "errors"
+      ]
+    },
+    "CompanionXml": {
+      "properties": {
+        "CompanionClickThrough": {
+          "type": "string"
+        },
+        "StaticResource": {
+          "$ref": "#/definitions/StaticResourceXml"
+        },
+        "TrackingEvents": {
+          "items": {
+            "$ref": "#/definitions/TrackingXml"
+          },
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          }
+        },
+        "height": {
+          "format": "int32",
+          "type": "integer",
+          "xml": {
+            "attribute": true
+          }
+        },
+        "id": {
+          "format": "int32",
+          "type": "integer",
+          "xml": {
+            "attribute": true
+          }
+        },
+        "width": {
+          "format": "int32",
+          "type": "integer",
+          "xml": {
+            "attribute": true
+          }
+        }
+      },
+      "type": "object",
+      "xml": {
+        "name": "Companion"
+      }
+    },
+    "CreativeXml": {
+      "properties": {
+        "CompanionAds": {
+          "items": {
+            "$ref": "#/definitions/CompanionXml"
+          },
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          }
+        },
+        "Linear": {
+          "$ref": "#/definitions/LinearXml"
+        },
+        "id": {
+          "format": "int32",
+          "type": "integer",
+          "xml": {
+            "attribute": true
+          }
+        },
+        "sequence": {
+          "default": 1,
+          "format": "int32",
+          "type": "integer",
+          "xml": {
+            "attribute": true
+          }
+        }
+      },
+      "required": [
+        "sequence"
+      ],
+      "type": "object",
+      "xml": {
+        "name": "Creative"
+      }
+    },
+    "Error": {
+      "description": "A serialized version of any error encountered when processing this request",
+      "properties": {
+        "code": {
+          "description": "The error code",
+          "format": "int32",
+          "type": "integer"
+        },
+        "debug": {
+          "description": "Additional debug information if debug mode is turned on",
+          "type": "string"
+        },
+        "text": {
+          "description": "The error description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code"
+      ]
+    },
+    "ErrorDocument": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CollectionDocument"
+        },
+        {
+          "properties": {
+            "attributes": {
+              "description": "Ignore; will be empty for errors",
+              "type": "object"
+            },
+            "errors": {
+              "description": "A list of encountered errors, ignored on POST, PUT",
+              "items": {
+                "$ref": "#/definitions/Error"
+              },
+              "type": "array"
+            },
+            "items": {
+              "description": "Ignore; will be empty for errors",
+              "items": {
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "links": {
+              "description": "Ignore; will be empty for errors",
+              "type": "object"
+            }
+          }
+        }
+      ],
+      "description": "A Collection.doc+JSON representation of an error result from an API call"
+    },
+    "ErrorXmlDocument": {
+      "description": "One or more errors represented in a VAST XML document",
+      "properties": {
+        "error": {
+          "items": {
+            "description": "An individual error, presented in XML format",
+            "type": "string",
+            "xml": {
+              "name": "error"
+            }
+          },
+          "type": "array",
+          "xml": {
+            "wrapped": false
+          }
+        },
+        "version": {
+          "default": "1.0",
+          "type": "string",
+          "xml": {
+            "attribute": true
+          }
+        }
+      },
+      "required": [
+        "version",
+        "error"
+      ],
+      "type": "object",
+      "xml": {
+        "name": "VAST"
+      }
+    },
+    "ImpressionXml": {
+      "properties": {
+        "id": {
+          "format": "int32",
+          "type": "integer",
+          "xml": {
+            "attribute": true
+          }
+        }
+      },
+      "required": [
+        "id"
+      ],
+      "type": "string",
+      "xml": {
+        "name": "Impression"
+      }
+    },
+    "InLineXml": {
+      "properties": {
+        "AdSystem": {
+          "type": "string"
+        },
+        "AdTitle": {
+          "type": "string"
+        },
+        "Category": {
+          "type": "string"
+        },
+        "Creatives": {
+          "items": {
+            "$ref": "#/definitions/CreativeXml"
+          },
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          }
+        },
+        "Description": {
+          "type": "string"
+        },
+        "Extensions": {
+          "items": {
+            "type": "string",
+            "xml": {
+              "name": "Extension"
+            }
+          },
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          }
+        },
+        "Impression": {
+          "items": {
+            "$ref": "#/definitions/ImpressionXml"
+          },
+          "type": "array",
+          "xml": {
+            "wrapped": false
+          }
+        }
+      },
+      "type": "object"
+    },
+    "LinearXml": {
+      "properties": {
+        "Duration": {
+          "type": "string"
+        },
+        "MediaFiles": {
+          "items": {
+            "$ref": "#/definitions/MediaFileXml"
+          },
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          }
+        },
+        "TrackingEvents": {
+          "items": {
+            "$ref": "#/definitions/TrackingXml"
+          },
+          "type": "array",
+          "xml": {
+            "wrapped": true
+          }
+        }
+      },
+      "type": "object",
+      "xml": {
+        "name": "Linear"
+      }
+    },
+    "MediaFileXml": {
+      "properties": {
+        "bitrate": {
+          "default": 320000,
+          "format": "int32",
+          "type": "integer",
+          "xml": {
+            "attribute": true
+          }
+        },
+        "delivery": {
+          "default": "progressive",
+          "type": "string",
+          "xml": {
+            "attribute": true
+          }
+        },
+        "type": {
+          "type": "string",
+          "xml": {
+            "attribute": true
+          }
+        }
+      },
+      "type": "string",
+      "xml": {
+        "name": "MediaFile"
+      }
+    },
+    "StaticResourceXml": {
+      "properties": {
+        "creativeType": {
+          "default": "image/jpeg",
+          "type": "string",
+          "xml": {
+            "attribute": true
+          }
+        }
+      },
+      "type": "string",
+      "xml": {
+        "name": "StaticResource"
+      }
+    },
+    "TrackingXml": {
+      "properties": {
+        "event": {
+          "default": "start",
+          "enum": [
+            "start",
+            "firstQuartile",
+            "midpoint",
+            "thirdQuartile",
+            "complete",
+            "creativeView"
+          ],
+          "type": "string",
+          "xml": {
+            "attribute": true
+          }
+        }
+      },
+      "type": "string",
+      "xml": {
+        "name": "Tracking"
+      }
+    },
+    "UserAdData": {
+      "description": "All information relevant to a user who has requested sponsorship or submitted tracking information",
+      "properties": {
+        "ipAddress": {
+          "description": "The TCP/IP address of the client making the request. The server will attempt to grab this from the headers, so it probably does not need to be passed in the body unless you get back an error message stating that we were unable to determine an IP address from the request.",
+          "type": "string"
+        },
+        "userAgent": {
+          "description": "An identifying string for the browser making the request. The server will attempt to grab this from the headers, so it probably does not need to be passed in the body unless you get back an error message stating that we were unable to determine a User-Agent from the request.",
+          "type": "string"
+        }
+      }
+    },
+    "UserAdDocument": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CollectionDocument"
+        },
+        {
+          "properties": {
+            "attributes": {
+              "$ref": "#/definitions/UserAdData",
+              "description": "All information relevant to a user who has requested sponsorship or submitted tracking information"
+            },
+            "items": {
+              "description": "All the information needed for the Sponsorship Service to send back tracking information to our external sponsorship provider",
+              "items": {
+                "$ref": "#/definitions/AdTrackingDocument"
+              },
+              "type": "array"
+            }
+          }
+        }
+      ],
+      "description": "All information relevant to a user who has requested sponsorship or submitted tracking information"
+    },
+    "VASTXml": {
+      "description": "Please visit <a href='https://www.iab.com/guidelines/digital-video-ad-serving-template-vast/' target='_blank'>https://www.iab.com/guidelines/digital-video-ad-serving-template-vast/</a> for more information on the VAST XML specification.",
+      "properties": {
+        "Ad": {
+          "$ref": "#/definitions/AdXml"
+        },
+        "version": {
+          "default": "1.0",
+          "type": "string",
+          "xml": {
+            "attribute": true
+          }
+        }
+      },
+      "required": [
+        "version"
+      ],
+      "type": "object",
+      "xml": {
+        "name": "VAST"
+      }
+    }
+  }
+}

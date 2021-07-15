@@ -1,0 +1,316 @@
+openapi: 3.0.3
+servers:
+  - url: http://mbus.local
+  - url: /
+info:
+  title: M-Bus HTTPD API
+  version: 0.3.5
+  x-apisguru-categories:
+    - iot
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/packom/mbus-api/master/api/openapi.yaml
+      version: "3.0"
+  x-providerName: mbus.local
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+paths:
+  /mbus/api:
+    get:
+      description: Returns this API specification
+      operationId: mbus_api
+      responses:
+        "200":
+          content:
+            text/x-yaml:
+              schema:
+                $ref: "#/components/schemas/yaml"
+          description: OK
+        "404":
+          content:
+            text/plain:
+              example: File not found
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Not found
+  "/mbus/get/{device}/{baudrate}/{address}":
+    post:
+      description: Gets data from the slave identified by {address}
+      operationId: get
+      parameters:
+        - description: The serial device to scan - /dev/ is pre-pended to {device} by M-Bus HTTPD before scanning
+          example: ttyAMA0
+          explode: false
+          in: path
+          name: device
+          required: true
+          schema:
+            $ref: "#/components/schemas/device"
+          style: simple
+        - description: Baudrate to communicate with M-Bus devices
+          example: 2400
+          explode: false
+          in: path
+          name: baudrate
+          required: true
+          schema:
+            $ref: "#/components/schemas/baudrate"
+          style: simple
+        - description: The slave device to get data from
+          example: 48
+          explode: false
+          in: path
+          name: address
+          required: true
+          schema:
+            $ref: "#/components/schemas/address"
+          style: simple
+      responses:
+        "200":
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/mbusData"
+          description: OK
+        "400":
+          content:
+            text/plain:
+              example: Baudrate {baudrate} is invalid
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Bad request
+        "404":
+          content:
+            text/plain:
+              example: Slave {address} not responding
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Not found (or M-Bus HTTPD is unauthorized to access it, or to change baud rate to that specified, etc)
+  "/mbus/getMulti/{device}/{baudrate}/{address}/{maxframes}":
+    post:
+      description: Gets data from the slave identified by {address}, and supports multiple responses from the slave
+      operationId: getMulti
+      parameters:
+        - description: The serial device to scan - /dev/ is pre-pended to {device} by M-Bus HTTPD before scanning
+          example: ttyAMA0
+          explode: false
+          in: path
+          name: device
+          required: true
+          schema:
+            $ref: "#/components/schemas/device"
+          style: simple
+        - description: Baudrate to communicate with M-Bus devices
+          example: 2400
+          explode: false
+          in: path
+          name: baudrate
+          required: true
+          schema:
+            $ref: "#/components/schemas/baudrate"
+          style: simple
+        - description: The slave device to get data from
+          example: 48
+          explode: false
+          in: path
+          name: address
+          required: true
+          schema:
+            $ref: "#/components/schemas/address"
+          style: simple
+        - description: The slave device to get data from
+          example: 16
+          explode: false
+          in: path
+          name: maxframes
+          required: true
+          schema:
+            $ref: "#/components/schemas/maxframes"
+          style: simple
+      responses:
+        "200":
+          content:
+            application/xml:
+              schema:
+                $ref: "#/components/schemas/mbusData"
+          description: OK
+        "400":
+          content:
+            text/plain:
+              example: Baudrate {baudrate} is invalid
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Bad request
+        "404":
+          content:
+            text/plain:
+              example: Slave {address} not responding
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Not found (or M-Bus HTTPD is unauthorized to access it, or to change baud rate to that specified, etc)
+  /mbus/hat:
+    get:
+      description: Gets Raspberry Pi Hat information
+      operationId: hat
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/hat"
+          description: OK
+        "404":
+          content:
+            text/plain:
+              example: Hat information not found
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Not found
+  /mbus/hat/off:
+    post:
+      description: Turns off power to the M-Bus
+      operationId: hatOff
+      responses:
+        "200":
+          description: OK
+        "404":
+          content:
+            text/plain:
+              example: M-Bus Master Hat not installed
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Not found
+  /mbus/hat/on:
+    post:
+      description: Turns on power to the M-Bus
+      operationId: hatOn
+      responses:
+        "200":
+          description: OK
+        "404":
+          content:
+            text/plain:
+              example: M-Bus Master Hat not installed
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Not found
+  "/mbus/scan/{device}/{baudrate}":
+    post:
+      description: Scan the specified device for slaves
+      operationId: scan
+      parameters:
+        - description: The serial device to scan - /dev/ is pre-pended to {device} by M-Bus HTTPD before scanning
+          example: ttyAMA0
+          explode: false
+          in: path
+          name: device
+          required: true
+          schema:
+            $ref: "#/components/schemas/device"
+          style: simple
+        - description: Baudrate to communicate with M-Bus devices
+          example: 2400
+          explode: false
+          in: path
+          name: baudrate
+          required: true
+          schema:
+            $ref: "#/components/schemas/baudrate"
+          style: simple
+      responses:
+        "200":
+          content:
+            text/plain:
+              example: Found a M-Bus device at address 1
+              schema:
+                $ref: "#/components/schemas/slaves"
+          description: OK
+        "400":
+          content:
+            text/plain:
+              example: Baudrate {baudrate} is invalid
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Bad request
+        "404":
+          content:
+            text/plain:
+              example: Device /dev/{device} does not exist
+              schema:
+                $ref: "#/components/schemas/textError"
+          description: Not found (e.g. device not found, or M-Bus HTTPD is unauthorized to access it, or to change baud rate to that specified, device not responding etc)
+components:
+  schemas:
+    address:
+      description: Slave address (primary or secondary)
+      example: "48"
+      format: string
+      maxLength: 16
+      minLength: 1
+      type: string
+    baudrate:
+      description: Baudrate to use for the communication - valid values 300, 600, 1200, 2400, 4800, 9600
+      enum:
+        - 300
+        - 600
+        - 1200
+        - 2400
+        - 4800
+        - 9600
+      example: 2400
+      format: int32
+      type: integer
+    device:
+      description: The device the M-Bus is connected to - /dev/ is prepended to {device} by M-Bus HTTPD
+      example: ttyAMA0
+      type: string
+    hat:
+      description: Raspberry Pi Hat Information
+      example:
+        addr: 30
+        enabled: true
+        index: 1
+      properties:
+        product:
+          description: Product
+          example: M-Bus Master
+          type: string
+        productId:
+          description: Product ID
+          example: 1
+          type: string
+        productVer:
+          description: Product Version
+          example: 2
+          type: string
+        uuid:
+          description: Hat UUID
+          example: 148fa981-a33b-a07a-a13f-a2405d08e0fe
+          type: string
+        vendor:
+          description: Hat Vendor
+          example: packom.net
+          type: string
+    maxframes:
+      description: Max frames to listen for
+      example: 16
+      format: int32
+      maximum: 250
+      minimum: 1
+      type: integer
+    mbusData:
+      description: M-Bus device data as an XML document
+      example: <?xml version="1.0" encoding="UTF-8"?>...
+      type: string
+    slaves:
+      description: Output of libmbus scan command
+      example: Found a M-Bus device at address 1
+      type: string
+    textError:
+      description: Some error text
+      example: Device /dev/{device} does not exist
+      type: string
+    yaml:
+      description: A YAML file
+      example: A YAML file
+      type: string

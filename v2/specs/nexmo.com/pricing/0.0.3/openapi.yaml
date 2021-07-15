@@ -1,0 +1,292 @@
+openapi: 3.0.0
+servers:
+  - url: https://rest.nexmo.com/account
+info:
+  contact:
+    email: devrel@nexmo.com
+    name: Nexmo DevRel
+    url: https://developer.nexmo.com/
+  description: |-
+    The API to retrieve pricing information.
+    Please note the Pricing API is rate limited to one request per second.
+  title: Pricing API
+  version: 0.0.3
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/nexmo/api-specification/master/definitions/pricing.yml
+      version: "3.0"
+  x-providerName: nexmo.com
+  x-serviceName: pricing
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+paths:
+  "/get-full-pricing/outbound/{type}":
+    get:
+      description: |
+        Retrieves the pricing information for all countries.
+      operationId: retrievePricingAllCountries
+      parameters:
+        - $ref: "#/components/parameters/type"
+        - $ref: "#/components/parameters/api_key"
+        - $ref: "#/components/parameters/api_secret"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PricingCountriesResponse"
+          description: Pricing response
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "429":
+          $ref: "#/components/responses/TooManyRequestsError"
+      summary: Retrieve outbound pricing for all countries.
+      tags:
+        - Pricing
+  "/get-prefix-pricing/outbound/{type}":
+    get:
+      description: |
+        Retrieves the pricing information based on the dialing prefix.
+      operationId: retrievePrefixPricing
+      parameters:
+        - $ref: "#/components/parameters/type"
+        - $ref: "#/components/parameters/api_key"
+        - $ref: "#/components/parameters/api_secret"
+        - description: The numerical dialing prefix to look up pricing for. Examples include 44, 1 and so on.
+          in: query
+          name: prefix
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PricingCountriesResponse"
+          description: Pricing countries response
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "429":
+          $ref: "#/components/responses/TooManyRequestsError"
+      summary: Retrieve outbound pricing for a specific dialing prefix.
+      tags:
+        - Pricing
+  "/get-pricing/outbound/{type}":
+    get:
+      description: |
+        Retrieves the pricing information based on the specified country.
+      operationId: retrievePricingCountry
+      parameters:
+        - $ref: "#/components/parameters/type"
+        - $ref: "#/components/parameters/api_key"
+        - $ref: "#/components/parameters/api_secret"
+        - description: A two letter [country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2). For example, `CA`.
+          in: query
+          name: country
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PricingCountryResponse"
+          description: Pricing information for a specific country.
+        "400":
+          $ref: "#/components/responses/BadRequestError"
+        "401":
+          $ref: "#/components/responses/UnauthorizedError"
+        "404":
+          $ref: "#/components/responses/NotFoundError"
+        "429":
+          $ref: "#/components/responses/TooManyRequestsError"
+      summary: Retrieve outbound pricing for a specific country.
+      tags:
+        - Pricing
+components:
+  parameters:
+    api_key:
+      description: Your Nexmo API key.
+      in: query
+      name: api_key
+      required: true
+      schema:
+        type: string
+    api_secret:
+      description: Your Nexmo API secret.
+      in: query
+      name: api_secret
+      required: true
+      schema:
+        type: string
+    type:
+      description: "The type of service you wish to retrieve data about: either `sms`, `sms-transit` or `voice`."
+      example: sms
+      in: path
+      name: type
+      required: true
+      schema:
+        type: string
+  responses:
+    BadRequestError:
+      content:
+        application/json:
+          schema:
+            properties:
+              error_title:
+                example: Bad Request
+                type: string
+              invalid_parameters:
+                properties:
+                  message:
+                    example: Is required
+                    type: string
+                  parameter:
+                    example: country
+                    type: string
+                type: object
+              type:
+                example: BAD_REQUEST
+                type: string
+            required:
+              - type
+              - error_title
+              - invalid_parameters
+            type: object
+      description: Bad request. You probably provided an invalid parameter.
+    NotFoundError:
+      description: The page you requested was not found
+    TooManyRequestsError:
+      description: You made too many requests. The API is rate limited to one request per second.
+    UnauthorizedError:
+      content:
+        application/json:
+          schema:
+            properties:
+              code:
+                example: "401"
+                type: string
+              currency:
+                example: EUR
+                type: string
+              error-code-label:
+                example: authentication failed
+                type: string
+            required:
+              - currency
+              - code
+              - error-code-label
+            type: object
+      description: You did not provide valid credentials
+  schemas:
+    CountryObject:
+      properties:
+        countryDisplayName:
+          description: Readable country name.
+          example: Canada
+          type: string
+        countryName:
+          description: Readable country name.
+          example: Canada
+          type: string
+        currency:
+          description: The currency that your account is being billed in (by default `Euros—EUR`). Can change in the Dashboard to US Dollars—USD.
+          example: EUR
+          type: string
+        defaultPrice:
+          description: The default price.
+          example: "0.00620000"
+          type: string
+        dialingPrefix:
+          description: The dialling prefix.
+          example: "1"
+          type: string
+        networks:
+          description: An array of network objects
+          items:
+            $ref: "#/components/schemas/NetworkObject"
+          type: array
+      type: object
+    NetworkObject:
+      properties:
+        currency:
+          description: The currency used for prices for this network.
+          example: EUR
+          type: string
+        mcc:
+          description: The [Mobile Country Code](https://en.wikipedia.org/wiki/Mobile_country_code) of the operator.
+          example: "302"
+          type: string
+        mnc:
+          description: The Mobile Network Code of the operator.
+          example: "530"
+          type: string
+        networkCode:
+          description: The Mobile Country Code and Mobile Network Code combined to give a unique reference for the operator.
+          example: "302530"
+          type: string
+        networkName:
+          description: The company/organisational name of the operator.
+          example: Keewaytinook Okimakanak
+          type: string
+        price:
+          description: The cost to send a message or make a call to this network
+          example: "0.00590000"
+          type: string
+        type:
+          description: "The type of network: mobile or landline."
+          example: mobile
+          type: string
+      type: object
+    PricingCountriesResponse:
+      properties:
+        count:
+          description: The number of countries retrieved.
+          example: "243"
+          type: string
+        countries:
+          description: A list of countries.
+          items:
+            $ref: "#/components/schemas/CountryObject"
+          type: array
+    PricingCountryResponse:
+      properties:
+        countryCode:
+          description: Two letter country code.
+          example: CA
+          type: string
+        countryDisplayName:
+          description: Readable country name.
+          example: Canada
+          type: string
+        countryName:
+          description: Readable country name.
+          example: Canada
+          type: string
+        currency:
+          description: The currency that your account is being billed in (by default `Euros—EUR`). Can change in the Dashboard to US Dollars—USD.
+          example: EUR
+          type: string
+        defaultPrice:
+          description: The default price.
+          example: "0.00620000"
+          type: string
+        dialingPrefix:
+          description: The dialling prefix.
+          example: "1"
+          type: string
+        networks:
+          description: An array of network objects
+          items:
+            $ref: "#/components/schemas/NetworkObject"
+          type: array

@@ -1,0 +1,4139 @@
+openapi: 3.0.0
+servers:
+  - url: https://market.openchannel.io/v2
+info:
+  title: OpenChannel Market API
+  version: 2.0.24
+  x-origin:
+    - format: swagger
+      url: https://api.swaggerhub.com/apis/OpenChannel/Market-API/2.0.24
+      version: "2.0"
+  x-providerName: openchannel.io
+  x-serviceName: market
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+security:
+  - basicAuth: []
+paths:
+  /apps:
+    get:
+      description: |
+        - Results are paginated and the default is value is 1000 if no limit is provided
+        - If no query is specified, returns all APPROVED or SUSPENDED apps within the marketplace
+      parameters:
+        - description: "A query document. Example: {'name':'MyApp'} matches all the apps that have the name 'MyApp'"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'name':1} sorts the results by name in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+        - description: The unique id of the user requesting this resource
+          in: query
+          name: userId
+          required: false
+          schema:
+            type: string
+        - description: Whether this result should only contain apps that are owned by this user
+          in: query
+          name: isOwner
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/AppPages"
+          description: OK
+      summary: Returns a paginated list of APPROVED or SUSPENDED apps
+      tags:
+        - "apps : Find and modify apps"
+    post:
+      description: |
+        - This method is called on behalf of a developer.
+        - Price is required if the model is 'single' or 'recurring'
+        - Returns the newly created app
+      parameters:
+        - description: The unique id of the developer that is adding this app
+          in: query
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The name of the app
+          in: query
+          name: name
+          required: true
+          schema:
+            type: string
+        - description: The type for this app
+          in: query
+          name: type
+          required: false
+          schema:
+            type: string
+        - description: A JSON object representing the pricing model type for this app
+          in: query
+          name: model
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+        - description: A custom set of app attributes defined by the administrator and attached to this app
+          in: query
+          name: attributes
+          required: false
+          schema:
+            type: string
+        - description: "JSON object to restrict users from owning or viewing this app. Example: {'view':{'country':['Canada','Mexico']},'own':{'country':['Canada','Mexico']}} restricts users from canada and mexico from viewing or owning this app"
+          in: query
+          name: restrict
+          required: false
+          schema:
+            type: string
+        - description: "JSON object to restrict users from owning or viewing this app. Example: {'view':{'country':['Canada','Mexico']},'own':{'country':['Canada','Mexico']}} restricts users from canada and mexico from viewing or owning this app"
+          in: query
+          name: allow
+          required: false
+          schema:
+            type: string
+        - description: JSON array of data access requirements
+          in: query
+          name: access
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "409":
+          description: Already Exists - An app with this name already exists
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/AppVersion"
+          description: OK
+      summary: Adds a new app for this developer
+      tags:
+        - "apps : Find and modify apps"
+  "/apps/bySafeName/{safeName}":
+    get:
+      description: |
+        - A 'view' event is recorded when trackViews is set to true
+      parameters:
+        - description: The safeName of the App to be located
+          in: path
+          name: safeName
+          required: true
+          schema:
+            type: string
+        - description: The unique id of the user that is requesting this resource
+          in: query
+          name: userId
+          required: false
+          schema:
+            type: string
+        - description: Whether this call should be tracked as a 'view' for this app. Default is false.
+          in: query
+          name: trackViews
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The App is either restricted or was not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/App"
+          description: OK
+      summary: Returns a single APPROVED or SUSPENDED app
+      tags:
+        - "apps : Find and modify apps"
+  /apps/textSearch:
+    get:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: "A query document. Example: {'name':'MyApp'} matches all the documents that have the name 'MyApp'"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: The text to search for.
+          in: query
+          name: text
+          required: true
+          schema:
+            type: string
+        - description: "A JSON array containing all the fields to be searched through. Example: ['name', 'customData.description']"
+          in: query
+          name: fields
+          required: true
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+        - description: The unique id of the user requesting this resource
+          in: query
+          name: userId
+          required: false
+          schema:
+            type: string
+        - description: Whether this result should only contain apps that are owned by this user
+          in: query
+          name: isOwned
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/SearchPages"
+          description: OK
+      summary: Searches through the text of fields to find APPROVED or SUSPENDED apps
+      tags:
+        - "apps : Find and modify apps"
+  /apps/versions:
+    get:
+      description: |
+        - Results are paginated when limit is set, otherwise all results are returned
+        - If no query is specified, returns all AppVersions within the marketplace
+        - Only returns AppVersions owned by this developer
+      parameters:
+        - description: "A query document. Example: {'name':'MyApp'} matches all the apps that have the name 'MyApp'"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'name':1} sorts the results by name in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+        - description: The unique id of the developer requesting this resource
+          in: query
+          name: developerId
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/VersionPages"
+          description: OK
+      summary: Returns a paginated list of AppVersions
+      tags:
+        - "apps : Find and modify apps"
+  "/apps/{appId}":
+    delete:
+      description: |
+        - This method is called on behalf of a developer.
+      parameters:
+        - description: The id of the App to be removed
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The unique id of the developer that is removing this app
+          in: query
+          name: developerId
+          required: true
+          schema:
+            type: string
+      responses:
+        "404":
+          description: Not Found - App is not found
+      summary: Removes app and all versions
+      tags:
+        - "apps : Find and modify apps"
+    get:
+      description: |
+        - A 'view' event is recorded when trackViews is set to true
+      parameters:
+        - description: The id of the App to be located
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The unique id of the user that is requesting this resource
+          in: query
+          name: userId
+          required: false
+          schema:
+            type: string
+        - description: Whether this call should be tracked as a 'view' for this app. Default is false.
+          in: query
+          name: trackViews
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The App is either restricted or was not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/App"
+          description: OK
+      summary: Returns a single APPROVED or SUSPENDED app
+      tags:
+        - "apps : Find and modify apps"
+  "/apps/{appId}/live":
+    post:
+      description: |
+        - This method is called on behalf of a developer.
+      parameters:
+        - description: The id of the App to be changed
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The unique id of the developer that is changing this AppVersion
+          in: query
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The new version of the live App
+          in: query
+          name: version
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - App is not found
+      summary: Change the live app to another, previously approved version
+      tags:
+        - "apps : Find and modify apps"
+  "/apps/{appId}/publish":
+    post:
+      description: |
+        - This method is called on behalf of a developer. 
+        - Only effects the current working version of the app.
+      parameters:
+        - description: The id of the app to be published
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The unique id of the developer that is modifying this app
+          in: query
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The version of the app to be published
+          in: query
+          name: version
+          required: true
+          schema:
+            type: integer
+        - description: If true, this AppVersion is automatically approved and becomes immediately available to end users
+          in: query
+          name: autoApprove
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "202":
+          description: Accepted - Publishing succeeded but there are restrictions
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - App was not found
+        "409":
+          description: Conflict - An app with that name already exists
+      summary: Publishes the current working version of the app to the marketplace
+      tags:
+        - "apps : Find and modify apps"
+  "/apps/{appId}/versions/{version}":
+    delete:
+      description: |
+        - This method is called on behalf of a developer.
+      parameters:
+        - description: The id of the App to be removed
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The version of the App to be removed
+          in: path
+          name: version
+          required: true
+          schema:
+            type: string
+        - description: The unique id of the developer that is removing this app
+          in: query
+          name: developerId
+          required: true
+          schema:
+            type: string
+      responses:
+        "404":
+          description: Not Found - App is not found
+      summary: Removes AppVersion
+      tags:
+        - "apps : Find and modify apps"
+    get:
+      description: |
+        - Only returns AppVersions owned by this developer
+      parameters:
+        - description: The id of the App to be located
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The version number of the app
+          in: path
+          name: version
+          required: true
+          schema:
+            type: integer
+        - description: The unique id of the developer that is requesting this resource
+          in: query
+          name: developerId
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The App or version number was not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/AppVersion"
+          description: OK
+      summary: Returns a single AppVersion
+      tags:
+        - "apps : Find and modify apps"
+    patch:
+      description: |
+        - This method is called on behalf of a developer.
+        - Price and is required if the model is 'single' or 'recurring'
+        - Returns the newly updated app
+        - This endpoint updates only the fields provided in the request (relative update). In contrast, the POST version of this method replaces the entire object to match the request (absolute update). 
+      parameters:
+        - description: The id of the App to be updated
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The version of the App to be updated
+          in: path
+          name: version
+          required: true
+          schema:
+            type: string
+        - description: The unique id of the developer that is updating this app
+          in: query
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The name of the app
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: The type for this app
+          in: query
+          name: type
+          required: false
+          schema:
+            type: string
+        - description: A JSON object representing the pricing model type for this app
+          in: query
+          name: model
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+        - description: A custom set of app attributes defined by the administrator and attached to this app
+          in: query
+          name: attributes
+          required: false
+          schema:
+            type: string
+        - description: "JSON object to restrict users from purchasing or viewing this app. Example: {'view':{'country':['Canada','Mexico']},'purchase':{'country':['Canada','Mexico']}} restricts users from canada and mexico from viewing or purchasing this app"
+          in: query
+          name: restrict
+          required: false
+          schema:
+            type: string
+        - description: "JSON object to allow users to purchase or view this app. Example: {'purchase':{'country':['Canada','Mexico']}} allows only users from canada and mexico to purchase this app"
+          in: query
+          name: allow
+          required: false
+          schema:
+            type: string
+        - description: JSON array of data access requirements
+          in: query
+          name: access
+          required: false
+          schema:
+            type: string
+        - description: False if updates should skip the approval process and be available immediately. Default is True
+          in: query
+          name: approvalRequired
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - App is not found
+        "409":
+          description: Already Exists - An app with this name already exists
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/AppVersion"
+          description: OK
+      summary: Updates the app fields or creates a new version
+      tags:
+        - "apps : Find and modify apps"
+    post:
+      description: |
+        - This method is called on behalf of a developer.
+        - Price and is required if the model is 'single' or 'recurring'
+        - Returns the newly updated app
+        - This endpoint replaces the entire object to match the request (absolute update). In contrast, the PATCH version of this endpoint updates only the fields provided in the request (relative update).
+      parameters:
+        - description: The id of the App to be updated
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The version of the App to be updated
+          in: path
+          name: version
+          required: true
+          schema:
+            type: string
+        - description: The unique id of the developer that is updating this app
+          in: query
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The name of the app
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: The type for this app
+          in: query
+          name: type
+          required: false
+          schema:
+            type: string
+        - description: A JSON object representing the pricing model type for this app
+          in: query
+          name: model
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+        - description: A custom set of app attributes defined by the administrator and attached to this app
+          in: query
+          name: attributes
+          required: false
+          schema:
+            type: string
+        - description: "JSON object to restrict users from purchasing or viewing this app. Example: {'view':{'country':['Canada','Mexico']},'purchase':{'country':['Canada','Mexico']}} restricts users from canada and mexico from viewing or purchasing this app"
+          in: query
+          name: restrict
+          required: false
+          schema:
+            type: string
+        - description: "JSON object to allow users to purchase or view this app. Example: {'purchase':{'country':['Canada','Mexico']}} allows only users from canada and mexico to purchase this app"
+          in: query
+          name: allow
+          required: false
+          schema:
+            type: string
+        - description: JSON array of data access requirements
+          in: query
+          name: access
+          required: false
+          schema:
+            type: string
+        - description: False if updates should skip the approval process and be available immediately. Default is True
+          in: query
+          name: approvalRequired
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - App is not found
+        "409":
+          description: Already Exists - An app with this name already exists
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/AppVersion"
+          description: OK
+      summary: Updates the app or creates a new version
+      tags:
+        - "apps : Find and modify apps"
+  "/apps/{appId}/versions/{version}/status":
+    post:
+      description: |
+        Only certain status changes are allowed. For instance, a developer is only able to suspend and unsuspend their app (which must already be approved). See here for a state change diagram of allowed status changes for administrators: https://support.openchannel.io/documentation/api/#415-apps-status-change
+      parameters:
+        - description: The id of the App to be updated
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The version of the App to be updated
+          in: path
+          name: version
+          required: true
+          schema:
+            type: integer
+        - description: The unique id of the developer that is modifying this app
+          in: query
+          name: developerId
+          required: false
+          schema:
+            type: string
+        - description: The new status for this app. Can be either 'inReview', 'approved', 'suspended' or 'rejected'
+          in: query
+          name: status
+          required: false
+          schema:
+            enum:
+              - inReview
+              - approved
+              - suspended
+              - rejected
+            type: string
+        - description: The role initiating this status change. Can be either 'developer' or 'administrator' (default)
+          in: query
+          name: modifiedBy
+          required: false
+          schema:
+            default: administrator
+            enum:
+              - developer
+              - administrator
+            type: string
+        - description: The reason for this status change
+          in: query
+          name: reason
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - App is not found
+        "412":
+          description: Precondition Failed - The app's new status is not valid because of the app's current status
+      summary: Allows a developer or administrator to change the status of apps
+      tags:
+        - "apps : Find and modify apps"
+  "/custom-gateway/payment/{ownershipId}":
+    post:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials 
+        - Payments must be enabled and 'Custom' must be selected as the gateway in order to use this API endpoint
+      parameters:
+        - description: The id of the ownership record involved in this transaction
+          in: path
+          name: ownershipId
+          required: true
+          schema:
+            type: string
+        - description: The total amount paid in cents
+          in: query
+          name: amount
+          required: true
+          schema:
+            type: integer
+        - description: The date (in milliseconds) of when this payment was made
+          in: query
+          name: date
+          required: false
+          schema:
+            format: int64
+            type: integer
+        - description: The fee (in cents) paid to a payment processors or third parties to process this payment. Default is 0.
+          in: query
+          name: feeAmount
+          required: false
+          schema:
+            type: integer
+        - description: The amount (in cents) paid to the marketplace owner as a commission for the purchase of this app. Defaults based on the commission amount configured for this marketplace.
+          in: query
+          name: marketplaceAmount
+          required: false
+          schema:
+            type: integer
+        - description: The amount (in cents) paid to the owner of the app. Defaults based on the commission amount configured for this marketplace.
+          in: query
+          name: developerAmount
+          required: false
+          schema:
+            type: integer
+        - description: A custom JSON object to attach to this transaction
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "412":
+          description: Precondition Failed - Payments must be enabled and 'Custom' must be selected as the gateway in order to use this API endpoint
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Transaction"
+          description: OK
+      summary: Adds a payment for an app on behalf of a user
+      tags:
+        - "custom-gateway : Process payments and refunds"
+  "/custom-gateway/refund/{ownershipId}":
+    post:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+        - Payments must be enabled and 'Custom' must be selected as the gateway in order to use this API endpoint
+      parameters:
+        - description: The id of the ownership record involved in this transaction
+          in: path
+          name: ownershipId
+          required: true
+          schema:
+            type: string
+        - description: The total amount refunded in cents
+          in: query
+          name: amount
+          required: true
+          schema:
+            type: integer
+        - description: The date (in milliseconds) of when this refund was made
+          in: query
+          name: date
+          required: false
+          schema:
+            format: int64
+            type: integer
+        - description: The fee (in cents) recovered from a payment processor or third party to process this payment. The default value is 0
+          in: query
+          name: feeAmount
+          required: false
+          schema:
+            type: integer
+        - description: The amount (in cents) recovered from the marketplace owner as a commission refund for the purchase of this app
+          in: query
+          name: marketplaceAmount
+          required: false
+          schema:
+            type: integer
+        - description: The amount (in cents) recovered from the owner of the app
+          in: query
+          name: developerAmount
+          required: false
+          schema:
+            type: integer
+        - description: A custom JSON object to attach to this transaction
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "412":
+          description: Precondition Failed - Payments must be enabled and 'Custom' must be selected as the gateway in order to use this API endpoint
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Transaction"
+          description: OK
+      summary: Fully or partially refund payment for an app on behalf of a user
+      tags:
+        - "custom-gateway : Process payments and refunds"
+  /developerAccounts:
+    get:
+      description: |
+        - Results are paginated and the default is value is 1000 if no limit is provided
+      parameters:
+        - description: "A query document. Example: {'name':'NASA'} matches all the developerAccounts that have the name 'NASA'"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'name':1} sorts the results by name in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/DeveloperAccountPages"
+          description: OK
+      summary: Returns a paginated list of developerAccounts
+      tags:
+        - "developerAccounts : Find and modify developer accounts"
+  "/developerAccounts/{developerAccountId}":
+    delete:
+      parameters:
+        - description: The id of the developer account to be updated
+          in: path
+          name: developerAccountId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          description: OK
+      summary: Removes the developer account
+      tags:
+        - "developerAccounts : Find and modify developer accounts"
+    get:
+      parameters:
+        - description: The id of the developer account to be located
+          in: path
+          name: developerAccountId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - Developer account is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/DeveloperAccount"
+          description: OK
+      summary: Returns a single developer account
+      tags:
+        - "developerAccounts : Find and modify developer accounts"
+    patch:
+      parameters:
+        - description: The id of the developer account to be updated
+          in: path
+          name: developerAccountId
+          required: true
+          schema:
+            type: string
+        - description: The id of the developer that this account belongs to
+          in: query
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The contact email address
+          in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - description: The name for the account
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The developer is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/DeveloperAccount"
+          description: OK
+      summary: Updates the developer account fields
+      tags:
+        - "developerAccounts : Find and modify developer accounts"
+    post:
+      parameters:
+        - description: The id of the developer account to be updated
+          in: path
+          name: developerAccountId
+          required: true
+          schema:
+            type: string
+        - description: The id of the developer that this account belongs to
+          in: query
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The contact email address
+          in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - description: The name for the account
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/DeveloperAccount"
+          description: OK
+      summary: Updates the developer account or adds the developer account if it doesn't exist
+      tags:
+        - "developerAccounts : Find and modify developer accounts"
+  /developers:
+    get:
+      description: |
+        - Results are paginated and the default is value is 100 if no limit is provided
+      parameters:
+        - description: "A query document. Example: {'name':'John'} matches all the developers that have the name 'John'"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'name':1} sorts the results by name in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/DeveloperPages"
+          description: OK
+      summary: Returns a paginated list of developers
+      tags:
+        - "developers : Find and modify developers"
+  "/developers/{developerId}":
+    delete:
+      parameters:
+        - description: The id of the developer to be removed
+          in: path
+          name: developerId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - Developer is not found
+        default:
+          description: OK
+      summary: Removes a single developer
+      tags:
+        - "developers : Find and modify developers"
+    get:
+      parameters:
+        - description: The id of the developer to be located
+          in: path
+          name: developerId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - Developer is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Developer"
+          description: OK
+      summary: Returns a single developer
+      tags:
+        - "developers : Find and modify developers"
+    patch:
+      parameters:
+        - description: The id of the developer to be located
+          in: path
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The type for this developer
+          in: query
+          name: type
+          required: false
+          schema:
+            type: string
+        - description: The developer's email
+          in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - description: The developer's username
+          in: query
+          name: username
+          required: false
+          schema:
+            type: string
+        - description: The developer's name
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The developer is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Developer"
+          description: OK
+      summary: Updates the developer fields
+      tags:
+        - "developers : Find and modify developers"
+    post:
+      parameters:
+        - description: The id of the developer to be located
+          in: path
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The type for this developer
+          in: query
+          name: type
+          required: false
+          schema:
+            type: string
+        - description: The developer's email
+          in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - description: The developer's username
+          in: query
+          name: username
+          required: false
+          schema:
+            type: string
+        - description: The developer's name
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Developer"
+          description: OK
+      summary: Updates the developer record or adds the developer if it doesn't exist
+      tags:
+        - "developers : Find and modify developers"
+  "/events/{eventId}":
+    get:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the event
+          in: path
+          name: eventId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The event was not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Event"
+          description: OK
+      summary: Returns an event
+      tags:
+        - "events : Find events"
+  /files:
+    get:
+      parameters:
+        - description: "A query document. Example: {'name':'file.txt'} matches all the files that have the name 'file.txt'"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'name':1} sorts the results by name in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/File"
+          description: OK
+      summary: Returns a paginated list of files
+      tags:
+        - "files : Upload files "
+    post:
+      description: |
+        - WARNING: File URLs or fileIds must be stored somewhere within the customData field for an app, review, developer or user. Unused files will be removed after a few days. 
+        - This method is called on behalf of a developer.
+      parameters:
+        - description: If true, this file will be protected as a private file and require the generation of a signed URL in order to download using the Download File API. The default is false.
+          in: query
+          name: isPrivate
+          required: false
+          schema:
+            type: boolean
+        - description: A comma separated list of hashes to return in order to verify file integrity.
+          in: query
+          name: hash
+          required: false
+          schema:
+            type: string
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                file:
+                  description: The file to be uploaded
+                  format: binary
+                  type: string
+              required:
+                - file
+              type: object
+        required: true
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/File"
+          description: OK
+      summary: Uploads a file.
+      tags:
+        - "files : Upload files "
+  /files/byIdOrUrl:
+    get:
+      parameters:
+        - description: The fileId or fileUrl of the file to be returned
+          in: query
+          name: fileIdOrUrl
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/File"
+          description: OK
+      summary: Get the details for a file.
+      tags:
+        - "files : Upload files "
+  /files/download:
+    get:
+      parameters:
+        - description: The URL of the file to be uploaded
+          in: query
+          name: fileId
+          required: true
+          schema:
+            type: string
+        - description: The number of seconds that this signed URL should be valid for. The default is 60.
+          in: query
+          name: validSeconds
+          required: false
+          schema:
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The file was not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/FileDownload"
+          description: OK
+      summary: A signed URL for downloading a private file can be returned by providing the fileId.
+      tags:
+        - "files : Upload files "
+  /files/url:
+    post:
+      description: |
+        - WARNING: File URLs or fileIds must be stored somewhere within the customData field for an app, review, developer or user. Unused files will be removed after a few days.
+        - This method is called on behalf of a developer.
+      parameters:
+        - description: The URL of the file to be uploaded
+          in: query
+          name: url
+          required: true
+          schema:
+            type: string
+        - description: If true, this file will be protected as a private file and require the generation of a signed URL in order to download using the Download File API. The default is false.
+          in: query
+          name: isPrivate
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/File"
+          description: OK
+      summary: Uploads a file from a URL
+      tags:
+        - "files : Upload files "
+  /markets/this:
+    get:
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Market"
+          description: OK
+      summary: Returns the current marketplace
+      tags:
+        - "markets : This marketplace"
+  /ownership:
+    get:
+      description: " - Results are returned for the market provided within the basic authentication credentials "
+      parameters:
+        - description: "A query document. Example: {'userId':'12'} matches all the ownership records that have the userId '12'."
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'date':1} sorts the results by date in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/OwnershipPages"
+          description: OK
+      summary: Returns a paginated list of app licenses
+      tags:
+        - "ownership : Find ownership"
+  /ownership/install:
+    post:
+      description: " - This method is called on behalf of a user - This method requires either a modelId from the app or a custom model - User data and statistics are recorded when this method is called "
+      parameters:
+        - description: The id of the App being owned
+          in: query
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User requesting to own the App
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The id of the model associated with this ownership request
+          in: query
+          name: modelId
+          required: false
+          schema:
+            type: string
+        - description: A custom model that will override the app's default model for this install
+          in: query
+          name: model
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object to attach to this ownership record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "402":
+          description: Payment Required - The App requires a user with pre-set payment details
+        "404":
+          description: Not Found - The App is either restricted or was not found
+        "409":
+          description: Already Exists - The User already owns this app (or is already participating in a trial)
+        "412":
+          description: Payment Failed - The User's payment details are invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Ownership"
+          description: OK
+      summary: Aquires an app license for a user (installs app)
+      tags:
+        - "ownership : Find ownership"
+  "/ownership/uninstall/{ownershipId}":
+    post:
+      description: " - This method is called on behalf of a user - User data and statistics are recorded when this method is called "
+      parameters:
+        - description: The id of the ownership to be unintalled
+          in: path
+          name: ownershipId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User requesting to uninstall the App
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: True if this app will require payment to be re-installed. Default is false
+          in: query
+          name: cancelOwnership
+          required: false
+          schema:
+            type: boolean
+        - description: A custom JSON object to attach to this ownership record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - App is not found
+        "409":
+          description: App is not owned by this user
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Ownership"
+          description: OK
+      summary: Uninstalls a license for a particular user and app (uninstalls app)
+      tags:
+        - "ownership : Find ownership"
+  "/ownership/{ownershipId}":
+    get:
+      description: " - Results are returned for the market provided within the basic authentication credentials "
+      parameters:
+        - description: The id belonging to the ownership record
+          in: path
+          name: ownershipId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Ownership"
+          description: OK
+      summary: Returns an ownership record
+      tags:
+        - "ownership : Find ownership"
+    patch:
+      description: " - Results are returned for the market provided within the basic authentication credentials "
+      parameters:
+        - description: The id of the ownership to be updated
+          in: path
+          name: ownershipId
+          required: true
+          schema:
+            type: string
+        - description: Custom JSON object that will be attached to this ownership record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+        - description: The date (in millis) of when this app ownership expires
+          in: query
+          name: expires
+          required: false
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The ownership was not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Ownership"
+          description: OK
+      summary: Updates ownership fields
+      tags:
+        - "ownership : Find ownership"
+    post:
+      description: " - Results are returned for the market provided within the basic authentication credentials "
+      parameters:
+        - description: The id of the ownership to be updated
+          in: path
+          name: ownershipId
+          required: true
+          schema:
+            type: string
+        - description: Custom JSON object that will be attached to this ownership record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+        - description: The date (in millis) of when this app ownership expires
+          in: query
+          name: expires
+          required: false
+          schema:
+            format: int64
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Ownership"
+          description: OK
+      summary: Updates an ownership record
+      tags:
+        - "ownership : Find ownership"
+  "/permission/apps/{appId}":
+    delete:
+      parameters:
+        - description: The id of the app
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The id of the user
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The access is not found
+      summary: Removes permission that allows the app to access this user's data
+      tags:
+        - "permission : Add and remove permissions "
+    get:
+      parameters:
+        - description: The id of the app
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The id of the user
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - The access is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Access"
+          description: OK
+      summary: Returns permission that allows the app to access this user's data
+      tags:
+        - "permission : Add and remove permissions "
+    post:
+      parameters:
+        - description: The id of the app
+          in: path
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The id of the user
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The time (in milliseconds) of when the user agreed to the access request
+          in: query
+          name: date
+          required: false
+          schema:
+            format: int64
+            type: integer
+        - description: The ip address of the user agreeing to the access request
+          in: query
+          name: ip
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - App not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Access"
+          description: OK
+      summary: Adds permission to allow the app to access this user's data
+      tags:
+        - "permission : Add and remove permissions "
+  /reviews:
+    get:
+      description: |
+        - Results are paginated and the default is value is 100 if no limit is provided
+      parameters:
+        - description: "A query document. Example: {'rating': 500} matches all the reviews that have a rating of 500. "
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'rating':1} sorts the results by rating in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/ReviewPages"
+          description: OK
+      summary: Find reviews for a particular App and marketplace. Results are automatically paginated when limit is set
+      tags:
+        - "reviews : Find and modify reviews "
+    post:
+      description: |
+        - Only authenticated users are able to post reviews
+        - Returns the newly created review
+      parameters:
+        - description: The id of the App that will own this review
+          in: query
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User that is posting this review
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User account that is posting this review
+          in: query
+          name: userAccountId
+          required: false
+          schema:
+            type: string
+        - description: The review's headline. Limited to 50 characters.
+          in: query
+          name: headline
+          required: true
+          schema:
+            type: string
+        - description: The rating given within this review. The rating is represented as an integer between 0 and 500 (0 - 5 stars)
+          in: query
+          name: rating
+          required: true
+          schema:
+            maximum: 500
+            minimum: 0
+            type: integer
+        - description: The review's description. Limited to 2000 characters.
+          in: query
+          name: description
+          required: true
+          schema:
+            type: string
+        - description: The type for this review
+          in: query
+          name: type
+          required: false
+          schema:
+            type: string
+        - description: True if a review can be created only by a user that has owned the app. The default is True.
+          in: query
+          name: mustOwnApp
+          required: false
+          schema:
+            type: boolean
+        - description: True if the review should be automatically approved. The default is False.
+          in: query
+          name: autoApprove
+          required: false
+          schema:
+            type: boolean
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "403":
+          description: Forbidden - Users must have owned the app before they can post a review; Anonymous users cannot post reviews
+        "409":
+          description: Already Exists - The User has already reviewed this app
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Review"
+          description: OK
+      summary: Post a review from a User and returns the new post
+      tags:
+        - "reviews : Find and modify reviews "
+  "/reviews/{reviewId}":
+    delete:
+      description: |
+        - Only the review author is able to remove their review
+      parameters:
+        - description: The id of the Review to be updated
+          in: path
+          name: reviewId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User that is removing this review
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User account that is emoving this review
+          in: query
+          name: userAccountId
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+      summary: Remove a review
+      tags:
+        - "reviews : Find and modify reviews "
+    get:
+      parameters:
+        - description: The id of the review to be located
+          in: path
+          name: reviewId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - Review is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Review"
+          description: OK
+      summary: Find a Review within a particular App and marketplace
+      tags:
+        - "reviews : Find and modify reviews "
+    patch:
+      description: |
+        - Only the review author is able to update their review
+        - Returns the newly updated review
+      parameters:
+        - description: The id of the Review to be updated
+          in: path
+          name: reviewId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User that is updating this review
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User account that is posting this review
+          in: query
+          name: userAccountId
+          required: false
+          schema:
+            type: string
+        - description: The review's headline. Limited to 50 characters.
+          in: query
+          name: headline
+          required: false
+          schema:
+            type: string
+        - description: The rating given within this review. The rating is represented as an integer between 0 and 500 (0 - 5 stars)
+          in: query
+          name: rating
+          required: false
+          schema:
+            maximum: 500
+            minimum: 0
+            type: integer
+        - description: The review's description. Limited to 2000 characters.
+          in: query
+          name: description
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "403":
+          description: Forbidden - Anonymous users cannot update reviews
+        "404":
+          description: Not Found - This review was not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Review"
+          description: OK
+      summary: Update a review fields
+      tags:
+        - "reviews : Find and modify reviews "
+    post:
+      description: |
+        - Only the review author is able to update their review
+        - Returns the newly updated review
+      parameters:
+        - description: The id of the Review to be updated
+          in: path
+          name: reviewId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User that is updating this review
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The id of the User account that is posting this review
+          in: query
+          name: userAccountId
+          required: true
+          schema:
+            type: string
+        - description: The review's headline. Limited to 50 characters.
+          in: query
+          name: headline
+          required: true
+          schema:
+            type: string
+        - description: The rating given within this review. The rating is represented as an integer between 0 and 500 (0 - 5 stars)
+          in: query
+          name: rating
+          required: true
+          schema:
+            maximum: 500
+            minimum: 0
+            type: integer
+        - description: The review's description. Limited to 2000 characters.
+          in: query
+          name: description
+          required: true
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "403":
+          description: Forbidden - Anonymous users cannot update reviews
+        "404":
+          description: Not Found - This review was not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Review"
+          description: OK
+      summary: Update a review from a User and returns the new post
+      tags:
+        - "reviews : Find and modify reviews "
+  "/stats/increment/{field}":
+    post:
+      description: increment a statistics field
+      parameters:
+        - description: The field to be incremented
+          in: path
+          name: field
+          required: true
+          schema:
+            type: string
+        - description: The id of the app associated with this statistic value
+          in: query
+          name: appId
+          required: true
+          schema:
+            type: string
+        - description: The id of the user that is performing the action
+          in: query
+          name: userId
+          required: false
+          schema:
+            type: string
+        - description: The increment amount. Default is 1 if no value is provided.
+          in: query
+          name: value
+          required: false
+          schema:
+            type: integer
+        - description: The date (in millis) for when this increment occurred. The default is the current date if no value is provided.
+          in: query
+          name: date
+          required: false
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          description: OK
+      summary: Increments a statistics field
+      tags:
+        - "stats: Find marketplace statistics"
+  "/stats/series/{period}/{fields}":
+    get:
+      description: "Return a timeseries nested array containing date and value. Example: [[1406520000000,2],[1406606400000,34],[1406692800000,245],...]"
+      parameters:
+        - description: The period for the series (day or month)
+          in: path
+          name: period
+          required: true
+          schema:
+            enum:
+              - day
+              - month
+            type: string
+        - description: The field to be graphed. This also be a comma separated list of fields and the result will be a single timeseries containing the sum of all fields.
+          in: path
+          name: fields
+          required: true
+          schema:
+            type: string
+        - description: The start date for this series (in millis)
+          in: query
+          name: start
+          required: false
+          schema:
+            format: int64
+            type: integer
+        - description: The end date for this series (in millis)
+          in: query
+          name: end
+          required: false
+          schema:
+            format: int64
+            type: integer
+        - description: "A query document. Example: {'developerId': '112'} matches all the apps that have the developer with id 112"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+      responses:
+        default:
+          content:
+            "*/*":
+              schema:
+                items:
+                  items:
+                    type: object
+                  type: array
+                type: array
+          description: OK
+      summary: Return a timeseries for a particular field
+      tags:
+        - "stats: Find marketplace statistics"
+  /stats/total:
+    get:
+      parameters:
+        - description: "A comma seperated list of all the fields to be returned in the total (available by default: dislikes, likes, reviews, totalSales, developerSales, marketplaceSales, downloads, ownerships, views)"
+          in: query
+          name: fields
+          required: true
+          schema:
+            type: string
+        - description: "A query document. Example: {'developerId': '112'} matches all the apps that have the developer with id 112"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: The start date for this total (in millis)
+          in: query
+          name: start
+          required: false
+          schema:
+            format: int64
+            type: integer
+        - description: The end date for this total (in millis)
+          in: query
+          name: end
+          required: false
+          schema:
+            format: int64
+            type: integer
+      responses:
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Total"
+          description: OK
+      summary: Returns the total number of events for a particular field.
+      tags:
+        - "stats: Find marketplace statistics"
+  "/stripe-gateway/developer/{developerId}/accounts":
+    get:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the developer connecting their Stripe account
+          in: path
+          name: developerId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "412":
+          description: Precondition Failed - Payments must be enabled and 'Stripe' must be selected as the gateway in order to use this API endpoint
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Accounts"
+          description: OK
+      summary: Returns a developers connected Stripe accounts
+      tags:
+        - "stripe-gateway : Process payments and refunds "
+    post:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials 
+        - The URL generated by this method is only valid for 48 hours.
+      parameters:
+        - description: The id of the developer connecting their Stripe account
+          in: path
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The URL to redirect this developer after they have connected their Stripe account
+          in: query
+          name: redirectUrl
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "412":
+          description: Precondition Failed - Payments must be enabled and 'Stripe' must be selected as the gateway in order to use this API endpoint
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/DeveloperToken"
+          description: OK
+      summary: Generate a temporary URL to allow a developer to connect their Stripe account
+      tags:
+        - "stripe-gateway : Process payments and refunds "
+  "/stripe-gateway/developer/{developerId}/accounts/{stripeId}":
+    delete:
+      description: |
+        
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the developer disconnecting their Stripe account
+          in: path
+          name: developerId
+          required: true
+          schema:
+            type: string
+        - description: The id of the stripe account to disconnect
+          in: path
+          name: stripeId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "412":
+          description: Precondition Failed - Payments must be enabled and 'Stripe' must be selected as the gateway in order to use this API endpoint
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Accounts"
+          description: OK
+      summary: Disconnects a developer's Stripe account
+      tags:
+        - "stripe-gateway : Process payments and refunds "
+  "/stripe-gateway/user/{userId}/cards":
+    get:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the user requesting their credit cards
+          in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "412":
+          description: Precondition Failed - Payments must be enabled and 'Stripe' must be selected as the gateway in order to use this API endpoint
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Cards"
+          description: OK
+      summary: Returns credit cards for this user
+      tags:
+        - "stripe-gateway : Process payments and refunds "
+    post:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the user adding their credit card
+          in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The Stripe token returned by the Stripe.js Stripe.card.createToken call
+          in: query
+          name: token
+          required: true
+          schema:
+            type: string
+        - description: Set to true if this should be set to be the default credit card
+          in: query
+          name: isDefault
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "412":
+          description: Precondition Failed - Payments must be enabled and 'Stripe' must be selected as the gateway in order to use this API endpoint
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Cards"
+          description: OK
+      summary: Adds credit card for this user
+      tags:
+        - "stripe-gateway : Process payments and refunds "
+  "/stripe-gateway/user/{userId}/cards/{cardId}":
+    delete:
+      parameters:
+        - description: The id of the user removing their credit card
+          in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The id of the credit card to remove
+          in: path
+          name: cardId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "412":
+          description: Precondition Failed - Payments must be enabled and 'Stripe' must be selected as the gateway in order to use this API endpoint
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Cards"
+          description: OK
+      summary: Removes a credit card for a user
+      tags:
+        - "stripe-gateway : Process payments and refunds "
+    post:
+      description: |
+        
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the user adding their credit card
+          in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The id of the card to be updated
+          in: path
+          name: cardId
+          required: true
+          schema:
+            type: string
+        - description: Set to true if this should be set to be the default credit card
+          in: query
+          name: isDefault
+          required: false
+          schema:
+            type: boolean
+        - description: The card holder's city
+          in: query
+          name: address_city
+          required: false
+          schema:
+            type: string
+        - description: The card holder's country
+          in: query
+          name: address_country
+          required: false
+          schema:
+            type: string
+        - description: The card holder's street address
+          in: query
+          name: address_line1
+          required: false
+          schema:
+            type: string
+        - description: The card holder's street address
+          in: query
+          name: address_line2
+          required: false
+          schema:
+            type: string
+        - description: The card holder's city state/province
+          in: query
+          name: address_state
+          required: false
+          schema:
+            type: string
+        - description: The card holder's zip/postal code
+          in: query
+          name: address_zip
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "412":
+          description: Precondition Failed - Payments must be enabled and 'Stripe' must be selected as the gateway in order to use this API endpoint
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Cards"
+          description: OK
+      summary: Updates a credit card for this user
+      tags:
+        - "stripe-gateway : Process payments and refunds "
+  /transactions:
+    get:
+      description: |
+        - Results are paginated and the default is value is 100 if no limit is provided
+      parameters:
+        - description: "A query document. Example: {'userId':'1'} matches all the transactions that have the userId '1'."
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'date':1} sorts the results by total in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/TransactionPages"
+          description: OK
+      summary: Returns a paginated list of transactions
+      tags:
+        - "transactions : Find payments and refunds "
+  "/transactions/{transactionId}":
+    delete:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the transaction to be deleted
+          in: path
+          name: transactionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+      summary: Deleted a transaction
+      tags:
+        - "transactions : Find payments and refunds "
+    get:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the transaction to return
+          in: path
+          name: transactionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+      summary: Returns a transaction
+      tags:
+        - "transactions : Find payments and refunds "
+    post:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the transaction to be updated
+          in: path
+          name: transactionId
+          required: true
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/Transaction"
+          description: OK
+      summary: Updates a transaction
+      tags:
+        - "transactions : Find payments and refunds "
+  /userAccounts:
+    get:
+      description: |
+        - Results are paginated and the default is value is 1000 if no limit is provided
+      parameters:
+        - description: "A query document. Example: {'name':'NASA'} matches all the userAccounts that have the name 'NASA'"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'name':1} sorts the results by name in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/UserAccountPages"
+          description: OK
+      summary: Returns a paginated list of userAccounts
+      tags:
+        - "userAccounts : Find and modify user accounts "
+  "/userAccounts/{userAccountId}":
+    delete:
+      parameters:
+        - description: The id of the user account to be removed
+          in: path
+          name: userAccountId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          description: OK
+      summary: Removes the user account
+      tags:
+        - "userAccounts : Find and modify user accounts "
+    get:
+      parameters:
+        - description: The id of the user account to be located
+          in: path
+          name: userAccountId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - Developer account is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/UserAccount"
+          description: OK
+      summary: Returns a single user account
+      tags:
+        - "userAccounts : Find and modify user accounts "
+    patch:
+      parameters:
+        - description: The id of the user account to be updated
+          in: path
+          name: userAccountId
+          required: true
+          schema:
+            type: string
+        - description: The Id of the user that this account belongs to
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The contact email address
+          in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - description: The user account name
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - User account is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/UserAccount"
+          description: OK
+      summary: Updates the user account fields
+      tags:
+        - "userAccounts : Find and modify user accounts "
+    post:
+      parameters:
+        - description: The id of the user account to be updated
+          in: path
+          name: userAccountId
+          required: true
+          schema:
+            type: string
+        - description: The Id of the user that this account belongs to
+          in: query
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The contact email address
+          in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - description: The user account name
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/UserAccount"
+          description: OK
+      summary: Updates the user account or adds the user account if it doesn't exist
+      tags:
+        - "userAccounts : Find and modify user accounts "
+  /users:
+    get:
+      description: |
+        - Results are paginated and the default is value is 100 if no limit is provided
+      parameters:
+        - description: "A query document. Example: {'name':'John'} matches all the users that have the name 'John'"
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+        - description: "A sort document. Example: {'name':1} sorts the results by name in ascending order"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: The result set page number to be returned
+          in: query
+          name: pageNumber
+          required: false
+          schema:
+            type: integer
+        - description: The maximum number of results to return per page
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: integer
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/UserPages"
+          description: OK
+      summary: Returns a paginated list of users
+      tags:
+        - "users : Find and modify users "
+  "/users/{userId}":
+    delete:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the user to be removed
+          in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - User is not found
+        default:
+          description: OK
+      summary: Removes a single user
+      tags:
+        - "users : Find and modify users "
+    get:
+      description: |
+        - Results are returned for the market provided within the basic authentication credentials
+      parameters:
+        - description: The id of the user to be located
+          in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - User is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/User"
+          description: OK
+      summary: Return a single user
+      tags:
+        - "users : Find and modify users "
+    patch:
+      parameters:
+        - description: The id of the user to be updated
+          in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The type for this user
+          in: query
+          name: type
+          required: false
+          schema:
+            type: string
+        - description: The user's email
+          in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - description: The user's username
+          in: query
+          name: username
+          required: false
+          schema:
+            type: string
+        - description: The user's name
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        "404":
+          description: Not Found - User is not found
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/User"
+          description: OK
+      summary: Updates user fields
+      tags:
+        - "users : Find and modify users "
+    post:
+      parameters:
+        - description: The id of the user to be updated
+          in: path
+          name: userId
+          required: true
+          schema:
+            type: string
+        - description: The type for this user
+          in: query
+          name: type
+          required: false
+          schema:
+            type: string
+        - description: The user's email
+          in: query
+          name: email
+          required: false
+          schema:
+            type: string
+        - description: The user's username
+          in: query
+          name: username
+          required: false
+          schema:
+            type: string
+        - description: The user's name
+          in: query
+          name: name
+          required: false
+          schema:
+            type: string
+        - description: A custom JSON object that you can create and attach to this record
+          in: query
+          name: customData
+          required: false
+          schema:
+            type: string
+      responses:
+        "400":
+          description: Bad Request - Required parameters are missing, malformed or invalid
+        default:
+          content:
+            "*/*":
+              schema:
+                $ref: "#/components/schemas/User"
+          description: OK
+      summary: Updates a single user or adds the user if they don't exist
+      tags:
+        - "users : Find and modify users "
+components:
+  schemas:
+    Access:
+      description: ""
+      properties:
+        access:
+          description: The approved access restrictions for this app
+          items:
+            type: string
+          type: array
+        appId:
+          description: The id of the app that owns this access key
+          type: string
+        date:
+          description: The time (in milliseconds) of when the user agreed to the access request
+          format: int64
+          type: integer
+        ip:
+          description: The ip address of the user agreeing to the access request
+          type: string
+        isValid:
+          description: True if this access is up to date with the current version of the app
+          type: boolean
+        userId:
+          description: The id for this user
+          type: string
+      required:
+        - appId
+        - userId
+        - access
+        - date
+        - ip
+        - isValid
+    Account:
+      description: The connected Stripe account for a developer
+      properties:
+        accountName:
+          description: The name of the Stripe account
+          type: string
+        country:
+          description: The country for this Stripe account
+          type: string
+        defaultCurrency:
+          description: The default currency for this Stripe account
+          type: string
+        stripeId:
+          description: The id of the Stripe account
+          type: string
+      required:
+        - stripeId
+        - accountName
+        - country
+        - defaultCurrency
+    Accounts:
+      description: A developer's connected Stripe accounts
+      properties:
+        accounts:
+          description: An array of connected Stripe accounts
+          items:
+            $ref: "#/components/schemas/Account"
+          type: array
+        developerId:
+          description: The id of the developer
+          type: string
+      required:
+        - developerId
+        - accounts
+    App:
+      description: An app
+      properties:
+        access:
+          description: A custom defined list of access requirements
+          items:
+            type: string
+          type: array
+        allow:
+          $ref: "#/components/schemas/Restrictions"
+        appId:
+          description: The id of this app
+          type: string
+        attributes:
+          description: A custom defined list of app attributes
+          type: object
+        created:
+          description: The date (in millis) that this app was created
+          format: int64
+          type: integer
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: object
+        developerId:
+          description: The id of the developer that owns this app
+          type: string
+        isLive:
+          description: True if this is the live version of the app
+          type: boolean
+        lastUpdated:
+          description: The date (in millis) that this app was last modified
+          format: int64
+          type: integer
+        model:
+          description: The models that describes the cost and pricing for this app
+          items:
+            $ref: "#/components/schemas/Model"
+          type: array
+        name:
+          description: The name of this app
+          type: string
+        ownership:
+          $ref: "#/components/schemas/Ownership"
+        randomize:
+          description: A random number that changes hourly and is used for achieving a random sort order when displaying apps
+          type: integer
+        rating:
+          description: The average review rating for this app. Reviews are rated from 100 (one star) to 500 (five star)
+          maximum: 500
+          minimum: 0
+          type: integer
+        restrict:
+          $ref: "#/components/schemas/Restrictions"
+        reviewCount:
+          description: The number of approved reviews for this app.
+          type: integer
+        safeName:
+          description: URL safe aliases that can be used to identify this app even after name changes. The current alias is always at position 0.
+          items:
+            type: string
+          type: array
+        statistics:
+          description: A field containing summary stats about the app and is specially designed to allow apps to be sorted by popularity
+          type: object
+        status:
+          $ref: "#/components/schemas/Status"
+        submittedDate:
+          description: The date (in millis) that this app was submitted for approval
+          format: int64
+          type: integer
+        type:
+          description: The type for this app
+          type: string
+        version:
+          description: The version number for this app
+          type: integer
+      required:
+        - appId
+        - name
+        - safeName
+        - developerId
+        - model
+        - status
+        - lastUpdated
+        - created
+        - rating
+        - randomize
+        - allow
+        - customData
+        - restrict
+        - version
+        - isLive
+        - attributes
+    AppPages:
+      description: Pages of app results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of apps for the current page
+          items:
+            $ref: "#/components/schemas/App"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    AppTotal:
+      description: The totals for the app
+      properties:
+        $appId:
+          $ref: "#/components/schemas/DataTotal"
+      required:
+        - $appId
+    AppVersion:
+      description: An AppVersion
+      properties:
+        access:
+          description: A custom defined list of access requirements
+          items:
+            type: string
+          type: array
+        allow:
+          $ref: "#/components/schemas/Restrictions"
+        appId:
+          description: The id of this app
+          type: string
+        attributes:
+          description: A custom defined list of app attributes
+          type: object
+        created:
+          description: The date (in millis) that this app was created
+          format: int64
+          type: integer
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: object
+        developerId:
+          description: The id of the developer that owns this app
+          type: string
+        isLatestVersion:
+          description: True if this is the latest version of this app
+          type: boolean
+        isLive:
+          description: True if this is the live version of the app
+          type: boolean
+        lastUpdated:
+          description: The date (in millis) that this app was last modified
+          format: int64
+          type: integer
+        model:
+          description: The models that describes the cost and pricing for this app
+          items:
+            $ref: "#/components/schemas/Model"
+          type: array
+        name:
+          description: The name of this app
+          type: string
+        parent:
+          $ref: "#/components/schemas/Parent"
+        rating:
+          description: The average review rating for this app. Reviews are rated from 100 (one star) to 500 (five star)
+          maximum: 500
+          minimum: 0
+          type: integer
+        restrict:
+          $ref: "#/components/schemas/Restrictions"
+        reviewCount:
+          description: The number of approved reviews for this app.
+          type: integer
+        safeName:
+          description: URL safe aliases that can be used to identify this app even after name changes. The current alias is always at position 0.
+          items:
+            type: string
+          type: array
+        status:
+          $ref: "#/components/schemas/Status"
+        type:
+          description: The type for this app
+          type: string
+        version:
+          description: The version number for this app
+          type: integer
+      required:
+        - appId
+        - name
+        - safeName
+        - developerId
+        - model
+        - status
+        - lastUpdated
+        - created
+        - allow
+        - parent
+        - customData
+        - restrict
+        - version
+        - isLive
+        - isLatestVersion
+    App_Entry:
+      description: ""
+      properties:
+        appId:
+          description: The id of the app involved in this action
+          type: string
+        date:
+          description: The date (in millis) of when this action was performed
+          format: int64
+          type: integer
+      required:
+        - date
+        - appId
+    Attributes:
+      description: An app attribute
+      properties:
+        name:
+          description: The name of this attribute
+          type: string
+        type:
+          description: The type of this attribute
+          enum:
+            - text
+            - select
+            - multi
+          type: string
+        values:
+          description: A comma seperated list of values allowed for this attribute
+          type: string
+      required:
+        - name
+        - type
+    Card:
+      description: ""
+      properties:
+        address_city:
+          description: The card holder's city
+          type: string
+        address_country:
+          description: The card holder's country
+          type: string
+        address_line1:
+          description: The card holder's street address
+          type: string
+        address_line2:
+          description: The card holder's street address
+          type: string
+        address_state:
+          description: The card holder's city state/province
+          type: string
+        address_zip:
+          description: The card holder's zip/postal code
+          type: string
+        brand:
+          description: "The brand of the credit card. Example: Visa"
+          type: string
+        cardId:
+          description: The id for this credit card
+          type: string
+        exp_month:
+          description: The two digit expiration month
+          type: integer
+        exp_year:
+          description: The four digit expiration year
+          type: integer
+        isDefault:
+          description: True if this is the default credit card
+          type: boolean
+        last4:
+          description: The last 4 digits of the credit card number
+          type: string
+        name:
+          description: The card holder's full name
+          type: string
+      required:
+        - cardId
+        - last4
+        - exp_year
+        - exp_month
+        - brand
+        - name
+        - isDefault
+    Cards:
+      description: A User's credit card details
+      properties:
+        cards:
+          description: An array of credit cards added by this user
+          items:
+            $ref: "#/components/schemas/Card"
+          type: array
+        userId:
+          description: The id of this user
+          type: string
+      required:
+        - userId
+        - cards
+    Category:
+      description: The category supported by this category group
+      properties:
+        description:
+          description: The description of this category
+          type: string
+        name:
+          description: The name of this category
+          type: string
+      required:
+        - name
+        - description
+    CategoryGroups:
+      description: The category groups supported by this marketplace
+      properties:
+        categories:
+          description: The categories supported by this category group
+          items:
+            $ref: "#/components/schemas/Category"
+          type: array
+        name:
+          description: The name of this category group
+          type: string
+      required:
+        - name
+        - categories
+    DataTotal:
+      description: The totals for the field
+      properties:
+        $field:
+          description: The totals for the field
+          type: integer
+      required:
+        - $appId
+    Developer:
+      description: A Developer
+      properties:
+        created:
+          description: The time (in millis) of when this developer was created
+          type: integer
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: object
+        developerId:
+          description: The id of this developer
+          type: string
+        email:
+          description: The developer's email
+          type: string
+        name:
+          description: The developer's name
+          type: string
+        type:
+          description: The type for this developer
+          type: string
+      required:
+        - developerId
+        - created
+    DeveloperAccount:
+      description: A Developer Account
+      properties:
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: object
+        developerAccountId:
+          description: The id of this developer account
+          type: string
+        developerId:
+          description: The id of the developer that this account belongs to
+          type: string
+        email:
+          description: The contact email address
+          type: string
+        name:
+          description: The name for the account
+          type: string
+      required:
+        - developerAccountId
+        - developerId
+    DeveloperAccountPages:
+      description: Pages of developerAccount results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of developerAccounts for the current page
+          items:
+            $ref: "#/components/schemas/DeveloperAccount"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - pages
+        - list
+        - pageNumber
+        - count
+    DeveloperPages:
+      description: Pages of developer results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of developers for the current page
+          items:
+            $ref: "#/components/schemas/Developer"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - pages
+        - list
+        - pageNumber
+        - count
+    DeveloperToken:
+      description: ""
+      properties:
+        developerId:
+          description: The id of the developer connecting their Stripe account
+          type: string
+        expires:
+          description: The time (in milliseconds) when this URL expires
+          format: int64
+          type: integer
+        targetUrl:
+          description: The URL that this developer can use to connect their Stripe account
+          type: string
+      required:
+        - developerId
+        - expires
+        - targetUrl
+    Event:
+      description: ""
+      properties:
+        app:
+          $ref: "#/components/schemas/App"
+        createdDate:
+          description: The date (in millis) of when this event occurred
+          format: int64
+          type: integer
+        description:
+          description: A description of the event
+          type: string
+        developer:
+          $ref: "#/components/schemas/Developer"
+        eventId:
+          description: The id of the event
+          type: string
+        eventType:
+          description: The current event type
+          enum:
+            - app.submitted
+            - app.approved
+            - app.suspended
+            - app.unsuspended
+            - app.rejected
+            - app.inReview
+            - app.installed
+            - app.uninstalled
+            - review.created
+            - review.updated
+            - review.approved
+            - review.spam
+            - review.removed
+            - user.created
+            - user.updated
+            - user.removed
+            - user.invalidPaymentDetails
+            - user.paymentDetailsRequired
+            - developer.created
+            - developer.updated
+            - developer.removed
+            - developer.paymentDetailsRequired
+            - permission.added
+            - permission.removed
+            - payment.complete
+            - payment.refunded
+            - payment.required
+            - ownership.expired
+          type: string
+        marketplaceId:
+          description: The id of the marketplace that owns this event
+          type: string
+        ownership:
+          $ref: "#/components/schemas/Ownership"
+        review:
+          $ref: "#/components/schemas/Review"
+        transaction:
+          $ref: "#/components/schemas/Transaction"
+        user:
+          $ref: "#/components/schemas/User"
+      required:
+        - eventId
+        - eventType
+        - createdDate
+        - marketplaceId
+        - message
+    File:
+      description: The file ids of the uploaded file
+      properties:
+        contentType:
+          description: The internet media type of the file
+          type: string
+        fileId:
+          description: The id of the uploaded file
+          type: string
+        fileUrl:
+          description: The path where the file can be located.
+          type: string
+        hash:
+          $ref: "#/components/schemas/Hash"
+        mimeCheck:
+          description: The mime type validation check to see if the extension of this file matches it's content. Can be PASSED or FAILED
+          enum:
+            - PASSED
+            - FAILED
+          type: string
+        name:
+          description: The name of the uploaded file
+          type: string
+        size:
+          description: The number of bytes in the uploaded file
+          type: integer
+        uploadDate:
+          description: The time in milliseconds when the file was uploaded
+          format: int64
+          type: integer
+        virusScan:
+          $ref: "#/components/schemas/VirusScan"
+      required:
+        - fileId
+        - name
+        - size
+        - uploadDate
+    FileDownload:
+      description: The signed URL for downloading a private file
+      properties:
+        url:
+          description: The signed URL for downloading a private file
+          type: string
+      required:
+        - url
+    File_Pages:
+      description: Pages of file results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of users for the current page
+          items:
+            $ref: "#/components/schemas/File"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    FoundVirus:
+      description: The virus found within this file
+      properties:
+        fileName:
+          description: The name of the file
+          type: string
+        virusName:
+          description: The name of the virus
+          type: string
+      required:
+        - url
+    Hash:
+      description: The hashes requested for the file.
+      properties:
+        MD5:
+          description: The MD5 hash for this uploaded file.
+          type: string
+        SHA-1:
+          description: The SHA-1 hash for this uploaded file.
+          type: string
+        SHA-256:
+          description: The SHA-256 hash for this uploaded file.
+          type: string
+    Market:
+      description: A marketplace
+      properties:
+        attributes:
+          description: The different app attributes supported by this marketplace
+          items:
+            $ref: "#/components/schemas/Attributes"
+          type: array
+        categoryGroups:
+          description: The category groups supported by this marketplace
+          items:
+            $ref: "#/components/schemas/CategoryGroups"
+          type: array
+        marketplaceId:
+          description: The id of this marketplace
+          type: string
+        previewAppUrl:
+          description: The URL template for previewing apps on this marketplace
+          type: string
+        viewAppUrl:
+          description: The URL template for viewing apps on this marketplace
+          type: string
+      required:
+        - marketplaceId
+        - attributes
+        - viewAppUrl
+        - previewAppUrl
+    Market_Pages:
+      description: Pages of marketplace results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of markets for the current page
+          items:
+            $ref: "#/components/schemas/Market"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    Model:
+      description: The model that describes the cost and pricing for apps
+      properties:
+        billingPeriod:
+          description: The billingPeriod along with the billingPeriodUnit make up the time between billing cycles
+          enum:
+            - daily
+            - weekly
+            - monthly
+            - annually
+          type: string
+        billingPeriodUnit:
+          description: The billingPeriod along with the billingPeriodUnit make up the time between billing cycles
+          type: integer
+        commission:
+          description: The marketplace commission applied to this app's model multiplied by 100 to include two digits for fractions of a percent
+          type: integer
+        currency:
+          description: The ISO 4217 currency code for this price
+          type: string
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: object
+        feePayer:
+          description: The payee that will be paying for any payment processing fees
+          enum:
+            - developer
+            - marketplace
+          type: string
+        license:
+          description: The license model type. Single allows a purchase to a single user or organization
+          enum:
+            - single
+          type: string
+        modelId:
+          description: The id that uniquely identifies this model
+          type: string
+        price:
+          description: The price of this app in cents
+          type: integer
+        subtype:
+          description: The pricing model subtype
+          enum:
+            - usage
+            - seat
+          type: string
+        trial:
+          description: The maximum number of free trial days available
+          type: integer
+        type:
+          description: The pricing model type. Free has no cost, single has a one time purchase cost and recurring requires a monthly subscription
+          enum:
+            - free
+            - single
+            - recurring
+          type: string
+      required:
+        - type
+        - price
+        - trial
+        - license
+        - currency
+        - commission
+        - feePayer
+    Ownership:
+      description: ""
+      properties:
+        appId:
+          description: The id of the app that is owned
+          type: string
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: object
+        date:
+          description: The date (in millis) of when this app was owned
+          format: int64
+          type: integer
+        developerId:
+          description: The id of the developer for this app
+          type: string
+        expires:
+          description: The date (in millis) of when this app ownership expires
+          format: int64
+          type: integer
+        model:
+          $ref: "#/components/schemas/Model"
+        ownershipId:
+          description: The id of this ownership
+          type: string
+        ownershipStatus:
+          description: The current ownership status for this app
+          enum:
+            - pending
+            - active
+            - uninstalled
+            - cancelled
+          type: string
+        ownershipType:
+          description: The current ownership type for this app
+          enum:
+            - full
+            - subscription
+            - trial
+          type: string
+        uninstallDate:
+          description: The date (in millis) of when this app was uninstalled
+          format: int64
+          type: integer
+        userId:
+          description: The id of the user that owns this app
+          type: string
+      required:
+        - ownershipId
+        - date
+        - ownershipType
+        - ownershipStatus
+        - appId
+        - userId
+        - developerId
+        - model
+    OwnershipPages:
+      description: Pages of ownership results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of ownership records for the current page
+          items:
+            $ref: "#/components/schemas/Ownership"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    Parent:
+      description: Details of the live version of this app
+      properties:
+        status:
+          $ref: "#/components/schemas/Status"
+    Profanity:
+      description: Profanity found in this review
+      properties:
+        end:
+          description: The ending location of the profanity
+          type: integer
+        start:
+          description: The starting location of the profanity
+          type: integer
+        word:
+          description: The profane word
+          type: string
+      required:
+        - start
+        - end
+        - word
+    Restrictions:
+      description: Resticts users from accessing this app
+      properties:
+        own:
+          description: "A custom object containing fields paired with an array value of restrictions. Restricts the users that may own this app. Example: {'country':['Canada','Mexico']}"
+          type: object
+        view:
+          description: "A custom object containing fields paired with an array value of restrictions. Restricts the users that may view this app. Example: {'country':['Canada','Mexico']}"
+          type: object
+    Revenue:
+      description: The revenue generated by this app
+      properties:
+        developer:
+          description: The total revenue generated for the developer by this app in cents
+          type: integer
+        total:
+          description: The total revenue generated by this app in cents
+          type: integer
+      required:
+        - total
+        - developer
+    Review:
+      description: A Review
+      properties:
+        appId:
+          description: The Id of the App that owns this review
+          type: string
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: string
+        description:
+          description: The review's description. Limited to 2000 characters.
+          type: string
+        headline:
+          description: The review's headline. Limited to 50 characters.
+          type: string
+        rating:
+          description: The rating given within this review. The rating is represented as an integer between 100 and 500 (1 - 5 stars)
+          type: integer
+        reportDate:
+          description: The date (in millis) this Review was posted
+          format: int64
+          type: integer
+        reviewId:
+          description: The id for this review.
+          type: string
+        status:
+          $ref: "#/components/schemas/Status"
+        type:
+          description: The type for this review
+          type: string
+        user:
+          $ref: "#/components/schemas/User"
+        userAccount:
+          $ref: "#/components/schemas/UserAccount"
+        userAccountId:
+          description: The id of the user account that posted this review
+          type: string
+        userId:
+          description: The id of the User that posted this review
+          type: string
+      required:
+        - reviewId
+        - headline
+        - description
+        - rating
+        - reportDate
+        - appId
+        - userId
+        - status
+        - customData
+    ReviewPages:
+      description: Pages of review results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of reviews for the current page
+          items:
+            $ref: "#/components/schemas/Review"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    Review_Entry:
+      description: ""
+      properties:
+        date:
+          description: The date (in millis) of when this action was performed
+          format: int64
+          type: integer
+        reviewId:
+          description: The id of the review involved in this action
+          type: string
+      required:
+        - date
+        - reviewId
+    SearchPages:
+      description: Pages of search results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of results for the current page
+          items:
+            $ref: "#/components/schemas/App"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    Stat:
+      description: The statistic value
+      properties:
+        value:
+          description: The statistic value
+          format: int64
+          type: integer
+      required:
+        - value
+    Status:
+      description: The current status of this review
+      properties:
+        profanity:
+          description: A list of profanity found in this review
+          items:
+            $ref: "#/components/schemas/Profanity"
+          type: array
+        reason:
+          description: Text describing the reason for the current status
+          enum:
+            - profanity
+            - spam
+          type: string
+        value:
+          description: The current status value
+          enum:
+            - pending
+            - spam
+            - flagged
+            - approved
+          type: string
+      required:
+        - value
+        - profanity
+        - reason
+    Total:
+      description: The total number of events for a particular field
+      properties:
+        apps:
+          $ref: "#/components/schemas/AppTotal"
+        end:
+          description: The end date for this total (in millis)
+          format: int64
+          type: integer
+        start:
+          description: The start date for this total (in millis)
+          format: int64
+          type: integer
+        totals:
+          $ref: "#/components/schemas/DataTotal"
+      required:
+        - apps
+        - totals
+    Transaction:
+      description: A transaction for an app initiated by a user
+      properties:
+        amount:
+          description: The total amount paid in cents
+          type: integer
+        appId:
+          description: The id of the app involved with this transaction
+          type: string
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: object
+        date:
+          description: The date (in millis) of when this transaction occurred
+          format: int64
+          type: integer
+        developerAmount:
+          description: The total amount paid to the developer in cents
+          type: integer
+        developerId:
+          description: The id of the developer involved with this transaction
+          type: string
+        feeAmount:
+          description: The total amount paid to payment processing fees in cents
+          type: integer
+        marketplaceAmount:
+          description: The total amount paid to the marketplace owner in cents
+          type: integer
+        ownershipId:
+          description: The id for the ownership associated with this transaction
+          type: string
+        transactionId:
+          description: The id for this transaction
+          type: string
+        type:
+          description: The type for this transaction
+          enum:
+            - payment
+            - refund
+          type: string
+        userId:
+          description: The id of the user making the transaction
+          type: string
+      required:
+        - transactionId
+        - ownershipId
+        - type
+        - appId
+        - developerId
+        - userId
+        - date
+        - amount
+    TransactionPages:
+      description: Pages of transaction results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of paymnets for the current page
+          items:
+            $ref: "#/components/schemas/Transaction"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    User:
+      description: A User
+      properties:
+        created:
+          description: The date (in millis) of when this user was created
+          format: int64
+          type: integer
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: object
+        email:
+          description: The user's email
+          type: string
+        name:
+          description: The user's name
+          type: string
+        type:
+          description: The type for this user
+          type: string
+        userId:
+          description: The id of this user
+          type: string
+      required:
+        - userId
+        - created
+        - customData
+    UserAccount:
+      description: A User Account
+      properties:
+        customData:
+          description: A custom JSON object that you can create and attach to this record
+          type: object
+        email:
+          description: The contact email address
+          type: string
+        name:
+          description: The name for the account
+          type: string
+        userAccountId:
+          description: The id of this user account
+          type: string
+        userId:
+          description: The id of this user that this account belongs to
+          type: string
+      required:
+        - userAccountId
+        - userId
+    UserAccountPages:
+      description: Pages of userAccount results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of userAccounts for the current page
+          items:
+            $ref: "#/components/schemas/UserAccount"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    UserPages:
+      description: Pages of user results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of users for the current page
+          items:
+            $ref: "#/components/schemas/User"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    VersionPages:
+      description: Pages of AppVersion results
+      properties:
+        count:
+          description: The total number of results
+          type: integer
+        list:
+          description: An array of apps for the current page
+          items:
+            $ref: "#/components/schemas/AppVersion"
+          type: array
+        pageNumber:
+          description: The current page number for this result set
+          type: integer
+        pages:
+          description: The total number of pages available for this result set
+          type: integer
+      required:
+        - count
+        - list
+    VirusScan:
+      description: The virus scan results for this file
+      properties:
+        finished:
+          description: The date (in milliseconds) when this file finished it's scan
+          format: int64
+          type: integer
+        foundViruses:
+          description: The list of viruses found in this file
+          items:
+            $ref: "#/components/schemas/FoundVirus"
+          type: array
+        started:
+          description: The date (in milliseconds) when this file started it's scan
+          format: int64
+          type: integer
+        status:
+          description: The status of this scan. Can be NOT_SCANNED, CLEAN or DIRTY
+          type: string
+      required:
+        - status
+  securitySchemes:
+    basicAuth:
+      scheme: basic
+      type: http

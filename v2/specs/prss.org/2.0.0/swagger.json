@@ -1,0 +1,963 @@
+{
+  "swagger": "2.0",
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "info": {
+    "description": "MetaPub collects, normalizes and distributes publicly available program, episode, and piece metadata through the public radio system. Backed by ContentDepot and its data model, MetaPub allows producers to supply metadata through various methods:\n\n1. MetaPub Agents that collect producer metadata by \"crawling\" existing public feeds (e.g. C24, BBC) or the producer's production system (e.g. ATC, ME, TED Radio Hour).\n2. Manually enter metadata in the ContentDepot Portal on each program and episode.\n3. Publish/push the metadata to the MetaPub upload API and execute an ingest job.\n\nMetaPub then distributes this data to stations through an electronic program guide (EPG model)\nfor display on various listener devices such as smart phones, tablets, web streams, HD radios, RDBS enabled FM radios, and more. The EPG format is based on the [RadioDNS specifications](https://radiodns.org/developers/documentation/).\n\n## RadioDNS and MetaPub\n\nThe RadioDNS Service and Programme Information Specification ([TS 102 818 v3.1.1](http://www.etsi.org/deliver/etsi_ts/102800_102899/102818/03.01.01_60/ts_102818v030101p.pdf)) defines three primary documents: Service Information, Program Information, and Group Information. These documents, along with the core RadioDNS Hybrid Lookup for Radio Services Specification ([TS 103 270 v1.2.1](http://www.etsi.org/deliver/etsi_ts%5C103200_103299%5C103270%5C01.02.01_60%5Cts_103270v010201p.pdf)) define a system where an end listener device can dynamically discover program metadata and fetch the metadata via Internet Protocol (IP) requests. MetaPub's use of RadioDNS differs slightly in that MetaPub (a.k.a PRSS) acts as the \"service provider\" while the stations and related middleware act as the end devices. While this is not the primary use case of RadioDNS, the flexibility in the specification, service definitions, and DNS resolution allows this model to be easily represented.\n\nThis documentation gives a high level overview of how the RadioDNS specifications will be used by MetaPub, however it is strongly recommended that the related RadioDNS specifications be read for implementation details, definitions, and required XML schemas.\n\n## ContentDepot Drive\n\nContentDepot Drive (CD Drive) provides a private, per customer file storage solution similar to other cloud storage solutions such as Google Drive, Box, and Dropbox. The CD Drive is used to stage content uploads such as metadata files, images, or segment audio before associating the content with specific programs or episodes.\n\nCD Drive content can be referenced using a URI by some operations such as synchronizing metadata. There are two possible CD Drive URI formats supported: ID and hierarchical path. The ID reference takes the form ```cddrive:id:{value}``` where value is the integer ID of the file or folder being referenced. The hierarchical path reference takes the form ```cddrive://{path}``` where path is the full, UNIX style path to the file or folder starting with '/'. For example, two CD Drive URIs pointing to the same file may be ```cddrive:id:12345``` and ```cddrive:///show1/episode2/metadata.xml```. More information about URIs can be found at [Wikipedia](https://en.wikipedia.org/wiki/Uniform_Resource_Identifier).\n\n## Authentication\n\nThe API currently uses OAuth 2.0.  Some operations require specific scopes to limit clients while the ContentDepot backend may also enforce existing user specific permissions.\n",
+    "termsOfService": "http://www.prss.org/terms-use",
+    "title": "MetaPub",
+    "version": "2.0.0",
+    "x-apisguru-categories": [
+      "media"
+    ],
+    "x-origin": [
+      {
+        "format": "swagger",
+        "url": "https://contentdepot.prss.org/api/swagger-v2.yaml",
+        "version": "2.0"
+      }
+    ],
+    "x-providerName": "prss.org",
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg"
+    }
+  },
+  "produces": [
+    "application/json",
+    "application/xml"
+  ],
+  "securityDefinitions": {
+    "cd_oauth2_accessCode": {
+      "authorizationUrl": "/api/oauth2/authorize",
+      "flow": "accessCode",
+      "scopes": {
+        "cddrive:read": "Read from CD Drive",
+        "cddrive:write": "Write to CD Drive",
+        "metapub:read": "Read from MetaPub",
+        "metapub:write": "Write to MetaPub (e.g. metadata synchronization)"
+      },
+      "tokenUrl": "/api/oauth2/token",
+      "type": "oauth2"
+    },
+    "cd_oauth2_implicit": {
+      "authorizationUrl": "/api/oauth2/authorize",
+      "flow": "implicit",
+      "scopes": {
+        "cddrive:read": "Read from CD Drive",
+        "cddrive:write": "Write to CD Drive",
+        "metapub:read": "Read from MetaPub",
+        "metapub:write": "Write to MetaPub (e.g. metadata synchronization)"
+      },
+      "type": "oauth2"
+    }
+  },
+  "tags": [
+    {
+      "description": "Endpoints to access the RadioDNS formatted electronic program guide (EPG) information for stations and middleware.",
+      "externalDocs": {
+        "url": "https://radiodns.org/developers/documentation/"
+      },
+      "name": "RadioDNS"
+    },
+    {
+      "description": "Endpoints to access ContentDepot Drive functionality such as uploading and downloading content files.",
+      "name": "CD Drive"
+    },
+    {
+      "description": "Endpoints to access MetaPub functionality such as synchronizing producer metadata to programs and episodes.",
+      "name": "MetaPub"
+    }
+  ],
+  "paths": {
+    "/api/v2/cddrive/files/content": {
+      "post": {
+        "consumes": [
+          "multipart/form-data"
+        ],
+        "description": "Upload a file to the customer's private CD Drive.",
+        "parameters": [
+          {
+            "description": "If present, the MD5 will be compared against the file received as a message integrity check.",
+            "format": "md5",
+            "in": "header",
+            "name": "Content-MD5",
+            "type": "string"
+          },
+          {
+            "description": "The file content being uploaded.",
+            "in": "formData",
+            "name": "file",
+            "required": true,
+            "type": "file"
+          },
+          {
+            "description": "The name of the file, including extension.",
+            "in": "formData",
+            "maxLength": 255,
+            "minLength": 1,
+            "name": "name",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9 \\._]*[a-zA-Z0-9]$",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The ID of the parent folder or 0 for the root folder.",
+            "format": "int64",
+            "in": "formData",
+            "name": "parent-id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "201": {
+            "description": "The file was created successfully. The response contains the file metadata.",
+            "schema": {
+              "$ref": "#/definitions/CDDriveFile"
+            }
+          },
+          "400": {
+            "description": "The provided Content-MD5 header doesn't match the provided content"
+          },
+          "403": {
+            "description": "Authorization failed, Username or password not found or incorrect."
+          },
+          "404": {
+            "description": "A parent id cannot be found."
+          },
+          "409": {
+            "description": "A name conflict because the file already exists."
+          },
+          "413": {
+            "description": "File is bigger than maximum size of 500 MB."
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "cddrive:write",
+              "cddrive:read"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "cddrive:write",
+              "cddrive:read"
+            ]
+          }
+        ],
+        "summary": "Upload a file.",
+        "tags": [
+          "CD Drive"
+        ]
+      }
+    },
+    "/api/v2/cddrive/files/{file-id}": {
+      "delete": {
+        "description": "Delete a file from the customer's private CD Drive.",
+        "responses": {
+          "204": {
+            "description": "The file was successfully deleted."
+          },
+          "404": {
+            "description": "The file cannot be found."
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "cddrive:read",
+              "cddrive:write"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "cddrive:read",
+              "cddrive:write"
+            ]
+          }
+        ],
+        "summary": "Delete a file.",
+        "tags": [
+          "CD Drive"
+        ]
+      },
+      "get": {
+        "description": "Get the information about a file in the customer's private CD Drive.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "The file information.",
+            "schema": {
+              "$ref": "#/definitions/CDDriveFile"
+            }
+          },
+          "404": {
+            "description": "The file cannot be found."
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "cddrive:read"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "cddrive:read"
+            ]
+          }
+        ],
+        "summary": "Get file information.",
+        "tags": [
+          "CD Drive"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The ID of the file to access.",
+          "format": "int64",
+          "in": "path",
+          "name": "file-id",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    },
+    "/api/v2/cddrive/files/{file-id}/content": {
+      "get": {
+        "description": "Download a file from the customer's private CD Drive.",
+        "parameters": [
+          {
+            "description": "Can be used to limit the range of bytes retrieved. Only a single byte range in the format ```bytes={start-range}-{end-range}``` is supported.",
+            "format": "single byte range",
+            "in": "header",
+            "name": "Range",
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/octet-stream"
+        ],
+        "responses": {
+          "200": {
+            "description": "The file was found and will be returned in the body of the response."
+          },
+          "302": {
+            "description": "The file was found but should be downloaded at the URL presented in the Location header. This return code may be used when the file is available via a CDN or other optimized path.",
+            "headers": {
+              "Location": {
+                "description": "The location the file can be downloaded from",
+                "format": "url",
+                "type": "string"
+              }
+            }
+          },
+          "404": {
+            "description": "The file cannot be found."
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "cddrive:read"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "cddrive:read"
+            ]
+          }
+        ],
+        "summary": "Download a file.",
+        "tags": [
+          "CD Drive"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The ID of the file to download.",
+          "format": "int64",
+          "in": "path",
+          "name": "file-id",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    },
+    "/api/v2/cddrive/folders": {
+      "post": {
+        "description": "Create a new folder in the customer's private CD Drive.",
+        "parameters": [
+          {
+            "description": "the name of the folder",
+            "in": "formData",
+            "maxLength": 255,
+            "minLength": 1,
+            "name": "name",
+            "pattern": "^[a-zA-Z0-9][a-zA-Z0-9 \\._]*[a-zA-Z0-9]$",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The ID of the parent folder or 0 for the root folder.",
+            "format": "int64",
+            "in": "formData",
+            "name": "parent-id",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "The folder information.",
+            "schema": {
+              "$ref": "#/definitions/CDDriveFolder"
+            }
+          },
+          "403": {
+            "description": "Authorization failed, Username or password not found or incorrect."
+          },
+          "404": {
+            "description": "A parent id cannot be found."
+          },
+          "409": {
+            "description": "The folder already exists."
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "cddrive:read",
+              "cddrive:write"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "cddrive:read",
+              "cddrive:write"
+            ]
+          }
+        ],
+        "summary": "Create a folder.",
+        "tags": [
+          "CD Drive"
+        ]
+      }
+    },
+    "/api/v2/cddrive/folders/{folder-id}": {
+      "delete": {
+        "description": "Delete a file from the customer's private CD Drive.",
+        "parameters": [
+          {
+            "default": true,
+            "description": "Flag to indicate if the folder should be deleted if it has items inside of it.",
+            "in": "query",
+            "name": "recursive",
+            "type": "boolean"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "The file was successfully deleted."
+          },
+          "404": {
+            "description": "The file cannot be found."
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "cddrive:read",
+              "cddrive:write"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "cddrive:read",
+              "cddrive:write"
+            ]
+          }
+        ],
+        "summary": "Delete a folder.",
+        "tags": [
+          "CD Drive"
+        ]
+      },
+      "get": {
+        "description": "Get the information about a folder in the customer's private CD Drive.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "The folder information.",
+            "schema": {
+              "$ref": "#/definitions/CDDriveFolder"
+            }
+          },
+          "404": {
+            "description": "The folder cannot be found."
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "cddrive:read"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "cddrive:read"
+            ]
+          }
+        ],
+        "summary": "Get folder information.",
+        "tags": [
+          "CD Drive"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The ID of the folder to get.",
+          "format": "int64",
+          "in": "path",
+          "name": "folder-id",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    },
+    "/api/v2/cddrive/folders/{folder-id}/items": {
+      "get": {
+        "description": "Get the information about a folder in the customer's private CD Drive.",
+        "parameters": [
+          {
+            "default": 0,
+            "description": "The offset into the items to begin the response.",
+            "format": "int32",
+            "in": "query",
+            "name": "offset",
+            "type": "integer"
+          },
+          {
+            "default": 20,
+            "description": "The maximum number of items to return in the response.",
+            "format": "int32",
+            "in": "query",
+            "maximum": 100,
+            "minimum": 1,
+            "name": "limit",
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "The folder information.",
+            "schema": {
+              "properties": {
+                "entries": {
+                  "description": "The item instances.",
+                  "items": {
+                    "$ref": "#/definitions/CDDriveItem"
+                  },
+                  "type": "array"
+                },
+                "limit": {
+                  "description": "The maximum number of items to return.",
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "offset": {
+                  "description": "The start offset into the items.",
+                  "format": "int32",
+                  "type": "integer"
+                },
+                "totalCount": {
+                  "description": "The total number of entries available.",
+                  "format": "int32",
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          },
+          "404": {
+            "description": "The folder cannot be found."
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "cddrive:read"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "cddrive:read"
+            ]
+          }
+        ],
+        "summary": "Get the items in the folder.",
+        "tags": [
+          "CD Drive"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The ID of the folder to get.",
+          "format": "int64",
+          "in": "path",
+          "name": "folder-id",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    },
+    "/api/v2/metapub/program-information/batch": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Create a batch to process the metadata of one or more electronic program guide (EPG) programs using metadata that has been uploaded to the customer's CD Drive. If multiple EPG programs are present in the metadata, they will all be updated, however updates across programs are not atomic. Note that an EPG program maps to the ContentDepot concept of an episode which is also known as a \"program instance\".\n\nA batch operation must be explicitly created rather than the server attempting to detect new metadata in order to allow for all the content to be uploaded including any supporting content like images. A batch operation is accepted and queued for asynchronous processing at a later time. A client can poll the batch periodically to determine when it completes and the resulting state.\n",
+        "parameters": [
+          {
+            "in": "body",
+            "name": "batch",
+            "schema": {
+              "description": "The batch operation definition.",
+              "properties": {
+                "format": {
+                  "description": "The format of the metadata file defining the create or update actions to be performed on one or more EPG programs. For more information on how RadioDNS EPG maps to ContentDepot <a href=\"/api/epg-cd-mapping.html\">click here </a>",
+                  "enum": [
+                    "radiodns"
+                  ],
+                  "type": "string"
+                },
+                "name": {
+                  "description": "An optional human readable name for the batch.",
+                  "type": "string"
+                },
+                "program": {
+                  "description": "The program information to associate the ingested metadata with. This is only required if the metadata format doesn't provide the program title and air date information directly.",
+                  "properties": {
+                    "airDate": {
+                      "format": "dateTime:yyyy-MM-dd'T'HH:mm:ss'Z'",
+                      "type": "string"
+                    },
+                    "title": {
+                      "type": "string"
+                    }
+                  },
+                  "required": [
+                    "title",
+                    "airDate"
+                  ],
+                  "type": "object"
+                },
+                "uri": {
+                  "description": "The URI to the metadata file. Currently only the ```cddrive``` scheme is supported.",
+                  "format": "uri",
+                  "type": "string"
+                }
+              },
+              "required": [
+                "uri",
+                "format"
+              ],
+              "type": "object"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "202": {
+            "description": "The accepted batch information that is queued for processing.",
+            "schema": {
+              "$ref": "#/definitions/ProgramInformationBatch",
+              "externalDocs": {
+                "description": "Find RadioDns to ContentDepot Mapping here",
+                "url": "/api/epg-cd-mapping.html"
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "cddrive:read",
+              "metapub:write"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "cddrive:read",
+              "metapub:write"
+            ]
+          }
+        ],
+        "summary": "Create a batch operation on EPG information.",
+        "tags": [
+          "MetaPub"
+        ]
+      }
+    },
+    "/api/v2/metapub/program-information/batch/{batch-id}": {
+      "get": {
+        "description": "Gets the batch information which can be used to check the status of the operation or retrieve more details if the batch fails.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "The batch information.",
+            "schema": {
+              "$ref": "#/definitions/ProgramInformationBatch"
+            }
+          },
+          "403": {
+            "description": "Authorization failed, Username or password not found or incorrect."
+          },
+          "404": {
+            "description": "The batch is not found."
+          }
+        },
+        "security": [
+          {
+            "cd_oauth2_implicit": [
+              "metapub:read"
+            ]
+          },
+          {
+            "cd_oauth2_accessCode": [
+              "metapub:read"
+            ]
+          }
+        ],
+        "summary": "Get an EPG batch operation.",
+        "tags": [
+          "MetaPub"
+        ]
+      },
+      "parameters": [
+        {
+          "format": "int64",
+          "in": "path",
+          "minimum": 0,
+          "name": "batch-id",
+          "required": true,
+          "type": "integer"
+        }
+      ]
+    },
+    "/radiodns/spi/3.1/GI.xml": {
+      "get": {
+        "description": "The group information (GI) document allows programs to be put into groups such as serials, series, shows, or general themes and provide additional metadata for that group such as a description, links, and a logo. A program in the guide can be linked to its group using the \"memberOf\" field to allow clients to easily link programs together for a given Content Depot Program/Show in the EPG. GI will be published for all Content Depot programs that have the \"publish metadata\" option enabled. By using the group information, clients have the ability to access a single list of all metadata supported program titles, links, images, and descriptions. This information can be used to assist a station when setting up a schedule or it can be used in the end user metadata to provide additional information about the content such as displaying \"other episodes from this program\" or displaying the group, program, and program event images.\n\nCurrently all programs with \"publish metadata\" enabled will be included in the group information even if they are not active in the program guide. This may change in the future if the number of programs grows.\n\nNote that while the location of the GI document isn't expected to change change in the near future, as per the RadioDNS specification the authoritative link to the document is defined in the SI document with the mime value ```application/xml+gi```.\n\nThe response will use standard HTTP cache-control headers to indicate when the document should be refreshed as well as an ETag to allow for lightweight change detection.\n",
+        "produces": [
+          "application/xml"
+        ],
+        "responses": {
+          "200": {
+            "description": "The group information document is returned in the body of the response.",
+            "schema": {
+              "format": "RadioDNS Service Information (SI) as defined in ETSI TS 102 818 v3.1.1 section 8",
+              "type": "string"
+            }
+          }
+        },
+        "summary": "Get the group information document.",
+        "tags": [
+          "RadioDNS"
+        ]
+      }
+    },
+    "/radiodns/spi/3.1/SI.xml": {
+      "get": {
+        "description": "The service information (SI) document holds a definition of services provided by the service provider (e.g. MetaPub), including any relevant metadata and bearer details, such as:\n\n* Names\n* Descriptions\n* Logos\n* Bearers (broadcast and IP)\n\nMetaPub will define an SI document that lists the distribution services provided by PRSS including basic service metadata, logos, and bearers. The current design calls for two IP based bearers to be defined:\n\n* Streams\n    * Bearer ID: prss:streams\n    * Service ID: streams\n* Files\n    * Bearer ID: prss:files\n    * Service ID: files\n\nIt is possible that more than two services will be defined in the future depending on the content size per service and middleware use cases, however the RadioDNS specification supports the introduction and removal of services dynamically as needed.\n\nBased on the RadioDNS specification (section 10.2.4), the SI document will be placed in a defined location on the service website. Using standard HTTP cache mechanisms, the SI document will only need to be fetched and process occasionally.\n\nThe response will use standard HTTP cache-control headers to indicate when the document should be refreshed as well as an ETag to allow for lightweight change detection.\n",
+        "produces": [
+          "application/xml"
+        ],
+        "responses": {
+          "200": {
+            "description": "The service information document is returned in the body of the response.",
+            "schema": {
+              "format": "RadioDNS Service Information (SI) as defined in ETSI TS 102 818 v3.1.1 section 6",
+              "type": "string"
+            }
+          }
+        },
+        "summary": "Get the service information document.",
+        "tags": [
+          "RadioDNS"
+        ]
+      }
+    },
+    "/radiodns/spi/3.1/id/{fqdn}/{sid}/{date}_PI.xml": {
+      "get": {
+        "description": "The program information (PI) document holds the linear and the on-demand schedule of programs for a service over a 24 hour period. This information provides an electronic program guide (EPG) to clients that defines the program metadata such as:\n\n*   Names\n*   Descriptions\n*   Logos\n*   Links\n*   Genres\n*   Program Events (a.k.a. pieces)\n\nUsing the two services defined in the SI document, streams and files, MetaPub will produce two PI files daily, one for each service. Construction of the PI URL is detailed later in this document as well as the RadioDNS specification. Note that while the number of services defined isn't expected to change in the near future, as per the RadioDNS specification the authoritative list of services is defined in the SI document.\n\nEach file will contain 24 hours of program guide information. The current day, the previous day, and the next day will contain detailed program event information (a.k.a. Content Depot pieces) while PI files outside of this range will only contain the program (a.k.a Content Depot episode) level information. This may change in the future with the use of an API key as defined by the RadioDNS specification to identify \"trusted\" clients. If metadata for any program in the guide(s) changes, the PI document will be regenerated. Using standard HTTP cache mechanisms, the PI document for the current day can be fetch frequently (e.g. every 5 minutes) to receive last minute changes while future and past days will only be fetched and processed occasionally (e.g. every two hours).\n\nBy obtaining the full 24 hour guide, clients such as middleware can build a local database/lookup table of program and program event information that allows for more specific program selection based on user configuration, automation events, and other possible inputs. In the event that MetaPub is unreachable for a short period of time, the client has the full guide to prevent any interruption to the on-air broadcast.\n\nThe EPG contains two types of programming, live and on-demand (a.k.a files). A \"live with subsequent file (LWSF)\" program may appear in both the streams and files services EPG data because it will both a live stream and an on-demand file. File programs with multi-day air windows will appear in the PI file on every day that the air window is open. That is, the EPG data for each day contains the information about programming available that day, even if the programming is also available on other days. The program ID can be used to resolve these duplicates down to a single instance when processing multiple services or multiple days of EPG data.\n\nThe response will use standard HTTP cache-control headers to indicate when the document should be refreshed as well as an ETag to allow for lightweight change detection.\n",
+        "produces": [
+          "application/xml"
+        ],
+        "responses": {
+          "200": {
+            "description": "Program information document for the given 24 hour period.",
+            "schema": {
+              "format": "RadioDNS Service Information (SI) as defined in ETSI TS 102 818 v3.1.1 section 7",
+              "type": "string"
+            }
+          },
+          "403": {
+            "description": "Authorization failed, the client Id is incorrect."
+          },
+          "404": {
+            "description": "The program information for the requested day or service cannot be found."
+          }
+        },
+        "summary": "Get the program information document.",
+        "tags": [
+          "RadioDNS"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The fully qualified domain name for the environment where the service is running. The fqdn is defined in the ```radiodns``` element in the SI document in each Content Depot environment.",
+          "in": "path",
+          "name": "fqdn",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "One of the valid service ids defined in the SI document. For example, \"files\" or \"streams\".",
+          "in": "path",
+          "name": "sid",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The PI schedule date to retrieve in format yyyymmdd.",
+          "format": "yyyymmdd",
+          "in": "path",
+          "name": "date",
+          "required": true,
+          "type": "string"
+        },
+        {
+          "description": "The API client Id you received. Contact help desk if you need one.",
+          "in": "header",
+          "name": "x-radiodnsspi-api-key",
+          "required": true,
+          "type": "string"
+        }
+      ]
+    }
+  },
+  "definitions": {
+    "CDDriveFile": {
+      "description": "A file in the CD Drive that contains content.",
+      "properties": {
+        "createdDate": {
+          "description": "The date and time the file was created.",
+          "format": "dateTimed",
+          "type": "string"
+        },
+        "id": {
+          "description": "The ID of the file.",
+          "format": "int64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "lastModifiedDate": {
+          "description": "The date and time the file was last modified.",
+          "format": "dateTime",
+          "type": "string"
+        },
+        "name": {
+          "description": "The name of the file including the extension.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9 \\._]*[a-zA-Z0-9]$",
+          "type": "string"
+        },
+        "parentId": {
+          "description": "The ID of the parent folder or 0 for the root folder.",
+          "format": "int64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "size": {
+          "description": "The size of the file in bytes.",
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "id",
+        "parentId",
+        "createdDate",
+        "lastModifiedDate"
+      ],
+      "type": "object"
+    },
+    "CDDriveFolder": {
+      "description": "A folder in the CD Drive that can contain other items such as files or folders.",
+      "properties": {
+        "createdDate": {
+          "description": "The date and time the folder was created.",
+          "format": "dateTime",
+          "type": "string"
+        },
+        "id": {
+          "description": "The ID of the folder.",
+          "format": "int64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "lastModifiedDate": {
+          "description": "The date and time the folder was last modified. This may only represent a modification to to the folder metadata itself, not to the contents of the folder.",
+          "format": "dateTime",
+          "type": "string"
+        },
+        "name": {
+          "description": "The name of the folder.",
+          "maxLength": 255,
+          "minLength": 1,
+          "pattern": "^[a-zA-Z0-9][a-zA-Z0-9 \\._]*[a-zA-Z0-9]$",
+          "type": "string"
+        },
+        "parentId": {
+          "description": "The ID of the parent folder or 0 for the root folder.",
+          "format": "int64",
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "name",
+        "parentId",
+        "id",
+        "createdDate",
+        "lastModifiedDate"
+      ],
+      "type": "object"
+    },
+    "CDDriveItem": {
+      "description": "A generic reference to an item in the CD Drive such as a file or folder.",
+      "properties": {
+        "id": {
+          "format": "int64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "name": {
+          "type": "string"
+        },
+        "type": {
+          "enum": [
+            "file",
+            "folder"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "name",
+        "type",
+        "id"
+      ],
+      "type": "object"
+    },
+    "ProgramInformationBatch": {
+      "description": "An electronic program guide (EPG) batch operation to create or update metadata on one or more guide programs.",
+      "properties": {
+        "createdDate": {
+          "description": "The date and time the batch was created.",
+          "format": "dateTime",
+          "type": "string"
+        },
+        "finishedDate": {
+          "description": "The date and time the batch finished (either successful or failed).",
+          "format": "dateTime",
+          "type": "string"
+        },
+        "format": {
+          "description": "The format of the metadata file defining the create or update actions to be performed on one or more EPG programs.",
+          "enum": [
+            "radiodns"
+          ],
+          "type": "string"
+        },
+        "id": {
+          "description": "The ID of the batch.",
+          "format": "int64",
+          "minimum": 0,
+          "type": "integer"
+        },
+        "message": {
+          "description": "The human readable success or failure message.",
+          "type": "string"
+        },
+        "name": {
+          "description": "The optional name of the batch for human reference.",
+          "type": "string"
+        },
+        "program": {
+          "description": "The program information to associate the ingested metadata with. This is only required if the metadata format doesn't provide the program title and air date information directly. If this is specified, it will overrite the value specfified in the metadata file. If this is specified, the metadata file should only contain one program.",
+          "properties": {
+            "airDate": {
+              "description": "The airDate for the program in ISO 8601 format.",
+              "format": "dateTime",
+              "type": "string"
+            },
+            "title": {
+              "description": "The title of the program.",
+              "type": "string"
+            }
+          },
+          "required": [
+            "title",
+            "airDate"
+          ],
+          "type": "object"
+        },
+        "status": {
+          "description": "The current processing status.",
+          "enum": [
+            "queued",
+            "processing",
+            "failed",
+            "successful"
+          ],
+          "type": "string"
+        },
+        "uri": {
+          "description": "The URI to the metadata file defining the batch creates/updates.",
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "status",
+        "format",
+        "createdDate"
+      ],
+      "type": "object"
+    }
+  }
+}

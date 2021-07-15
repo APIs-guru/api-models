@@ -1,0 +1,355 @@
+swagger: "2.0"
+schemes:
+  - https
+host: management.azure.com
+info:
+  description: Billing client provides access to billing resources for Azure Web-Direct subscriptions. Other subscription types which were not purchased directly through the Azure web portal are not supported through this preview API.
+  title: BillingClient
+  version: 2017-02-27-preview
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/billing/resource-manager/Microsoft.Billing/preview/2017-02-27-preview/billing.json
+      version: "2.0"
+  x-preferred: false
+  x-providerName: azure.com
+  x-serviceName: billing
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    description: Azure Active Directory OAuth2 Flow.
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+security:
+  - azure_auth:
+      - user_impersonation
+parameters:
+  apiVersionParameter:
+    description: Version of the API to be used with the client request. The current version is 2017-02-27-preview.
+    in: query
+    name: api-version
+    required: true
+    type: string
+  subscriptionIdParameter:
+    description: Azure Subscription ID.
+    in: path
+    name: subscriptionId
+    required: true
+    type: string
+paths:
+  /providers/Microsoft.Billing/operations:
+    get:
+      description: Lists all of the available billing REST API operations.
+      operationId: Operations_List
+      parameters:
+        - $ref: "#/parameters/apiVersionParameter"
+      responses:
+        "200":
+          description: OK. The request has succeeded.
+          schema:
+            $ref: "#/definitions/OperationListResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      tags:
+        - Operations
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/providers/Microsoft.Billing/invoices":
+    get:
+      description: Lists the available invoices for a subscription in reverse chronological order beginning with the most recent invoice. In preview, invoices are available via this API only for invoice periods which end December 1, 2016 or later
+      externalDocs:
+        url: https://go.microsoft.com/fwlink/?linkid=842057
+      operationId: Invoices_List
+      parameters:
+        - $ref: "#/parameters/subscriptionIdParameter"
+        - description: May be used to expand the downloadUrl property within a list of invoices. This enables download links to be generated for multiple invoices at once. By default, downloadURLs are not included when listing invoices.
+          in: query
+          name: $expand
+          required: false
+          type: string
+        - description: May be used to filter invoices by invoicePeriodEndDate. The filter supports 'eq', 'lt', 'gt', 'le', 'ge', and 'and'. It does not currently support 'ne', 'or', or 'not'
+          in: query
+          name: $filter
+          required: false
+          type: string
+        - description: Skiptoken is only used if a previous operation returned a partial result. If a previous response contains a nextLink element, the value of the nextLink element will include a skiptoken parameter that specifies a starting point to use for subsequent calls.
+          in: query
+          name: $skiptoken
+          required: false
+          type: string
+        - description: May be used to limit the number of results to the most recent N invoices.
+          in: query
+          maximum: 100
+          minimum: 1
+          name: $top
+          required: false
+          type: integer
+        - $ref: "#/parameters/apiVersionParameter"
+      responses:
+        "200":
+          description: OK. The request has succeeded.
+          schema:
+            $ref: "#/definitions/InvoicesListResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      tags:
+        - Invoices
+      x-ms-examples:
+        InvoicesExpand:
+          parameters:
+            $expand: downloadUrl
+            $filter: invoicePeriodStartDate le 2017-02-01
+            $top: 1
+            api-version: 2017-02-27
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                value:
+                  - id: /subscriptions/subid/Microsoft.Billing/invoices/invoice-2017-02-05-123456789
+                    name: invoice-2017-02-05-123456789
+                    properties:
+                      downloadUrl:
+                        expiryTime: 2017-02-13T20:46:30Z
+                        url: https://microsoft.com
+                      invoicePeriodEndDate: 2017-02-01
+                      invoicePeriodStartDate: 2017-01-01
+                    type: Microsoft.Billing/invoices
+        InvoicesList:
+          parameters:
+            api-version: 2017-02-27
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                value:
+                  - id: /subscriptions/subid/Microsoft.Billing/invoices/invoice-2017-02-05-123456789
+                    name: invoice-2017-02-05-123456789
+                    properties:
+                      invoicePeriodEndDate: 2017-02-01
+                      invoicePeriodStartDate: 2017-01-01
+                    type: Microsoft.Billing/invoices
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/providers/Microsoft.Billing/invoices/latest":
+    get:
+      description: Gets the most recent invoice. When getting a single invoice, the downloadUrl property is expanded automatically.
+      operationId: Invoices_GetLatest
+      parameters:
+        - $ref: "#/parameters/subscriptionIdParameter"
+        - $ref: "#/parameters/apiVersionParameter"
+      responses:
+        "200":
+          description: OK. The request has succeeded.
+          schema:
+            $ref: "#/definitions/Invoice"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      tags:
+        - Invoices
+      x-ms-examples:
+        InvoicesGetLatest:
+          parameters:
+            api-version: 2017-02-27
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                id: /subscriptions/subid/Microsoft.Billing/invoices/2017-02-05-123456789
+                name: 2017-02-05-123456789
+                properties:
+                  downloadUrl:
+                    expiryTime: 2017-02-13T20:46:30Z
+                    url: https://microsoft.com
+                  invoicePeriodEndDate: 2017-02-01
+                  invoicePeriodStartDate: 2017-01-01
+                type: Microsoft.Billing/invoices
+  "/subscriptions/{subscriptionId}/providers/Microsoft.Billing/invoices/{invoiceName}":
+    get:
+      description: Gets a named invoice resource. When getting a single invoice, the downloadUrl property is expanded automatically.
+      operationId: Invoices_Get
+      parameters:
+        - $ref: "#/parameters/subscriptionIdParameter"
+        - description: The name of an invoice resource.
+          in: path
+          name: invoiceName
+          required: true
+          type: string
+        - $ref: "#/parameters/apiVersionParameter"
+      responses:
+        "200":
+          description: OK. The request has succeeded.
+          schema:
+            $ref: "#/definitions/Invoice"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      tags:
+        - Invoices
+      x-ms-examples:
+        InvoicesGet:
+          parameters:
+            api-version: 2017-02-27
+            invoiceName: 2017-02-05-123456789
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                id: /subscriptions/subid/Microsoft.Billing/invoices/2017-02-05-123456789
+                name: 2017-02-05-123456789
+                properties:
+                  downloadUrl:
+                    expiryTime: 2017-02-13T20:46:30Z
+                    url: https://microsoft.com
+                  invoicePeriodEndDate: 2017-02-01
+                  invoicePeriodStartDate: 2017-01-01
+                type: Microsoft.Billing/invoices
+            default:
+              body:
+                error:
+                  code: UnsupportedSubscriptionType
+                  message: Subscription subid is not supported.
+                  target: subscriptionId
+definitions:
+  DownloadUrl:
+    description: A secure URL that can be used to download a PDF invoice until the URL expires.
+    properties:
+      expiryTime:
+        description: The time in UTC at which this download URL will expire.
+        format: date-time
+        readOnly: true
+        type: string
+      url:
+        description: The URL to the PDF file.
+        readOnly: true
+        type: string
+  ErrorDetails:
+    description: The details of the error.
+    properties:
+      code:
+        description: Error code.
+        readOnly: true
+        type: string
+      message:
+        description: Error message indicating why the operation failed.
+        readOnly: true
+        type: string
+      target:
+        description: The target of the particular error.
+        readOnly: true
+        type: string
+  ErrorResponse:
+    description: Error response indicates that the service is not able to process the incoming request. The reason is provided in the error message.
+    properties:
+      error:
+        $ref: "#/definitions/ErrorDetails"
+    type: object
+  Invoice:
+    allOf:
+      - $ref: "#/definitions/Resource"
+    description: An invoice resource can be used download a PDF version of an invoice.
+    properties:
+      properties:
+        $ref: "#/definitions/InvoiceProperties"
+        x-ms-client-flatten: true
+    type: object
+  InvoiceProperties:
+    description: The properties of the invoice.
+    properties:
+      downloadUrl:
+        $ref: "#/definitions/DownloadUrl"
+        description: A secure link to download the PDF version of an invoice. The link will cease to work after its expiry time is reached.
+      invoicePeriodEndDate:
+        description: The end of the date range covered by the invoice.
+        format: date
+        readOnly: true
+        type: string
+      invoicePeriodStartDate:
+        description: The start of the date range covered by the invoice.
+        format: date
+        readOnly: true
+        type: string
+  InvoicesListResult:
+    description: Result of the request to list invoices. It contains a list of available invoices in reverse chronological order.
+    properties:
+      nextLink:
+        description: the link (url) to the next page of results.
+        readOnly: true
+        type: string
+      value:
+        description: The list of invoices.
+        items:
+          $ref: "#/definitions/Invoice"
+        readOnly: true
+        type: array
+  Operation:
+    description: A Billing REST API operation
+    properties:
+      display:
+        description: The object that represents the operation.
+        properties:
+          operation:
+            description: "Operation type: Read, write, delete, etc."
+            readOnly: true
+            type: string
+          provider:
+            description: "Service provider: Microsoft.Billing"
+            readOnly: true
+            type: string
+          resource:
+            description: "Resource on which the operation is performed: Invoice, etc."
+            readOnly: true
+            type: string
+      name:
+        description: "Operation name: {provider}/{resource}/{operation}"
+        readOnly: true
+        type: string
+    type: object
+  OperationListResult:
+    description: Result of the request to list billing operations. It contains a list of operations and a URL link to get the next set of results.
+    properties:
+      nextLink:
+        description: URL to get the next set of operation list results if there are any.
+        readOnly: true
+        type: string
+      value:
+        description: List of billing operations supported by the Microsoft.Billing resource provider.
+        items:
+          $ref: "#/definitions/Operation"
+        readOnly: true
+        type: array
+  Resource:
+    description: The Resource model definition.
+    properties:
+      id:
+        description: Resource Id
+        readOnly: true
+        type: string
+      name:
+        description: Resource name
+        readOnly: true
+        type: string
+      type:
+        description: Resource type
+        readOnly: true
+        type: string
+    x-ms-azure-resource: true

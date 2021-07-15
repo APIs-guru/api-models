@@ -1,0 +1,566 @@
+openapi: 3.0.0
+servers:
+  - url: http://c19qrserver.local
+  - description: SwaggerHub API Auto Mocking
+    url: https://virtserver.swaggerhub.com/aijaz/QRCodeSigninServer/1.1
+info:
+  description: This is the API for the COVID-19 Contact Tracing QRCode Signin Server
+  title: API for the COVID-19 Tracking QR Code Signin Server.
+  version: "1.1"
+  x-apisguru-categories:
+    - open_data
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/aijaz/qrCodeSigninServer/main/openapi.yaml
+      version: "3.0"
+  x-providerName: c19qrserver.local
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+security:
+  - TokenHeader: []
+tags:
+  - description: Authentication-related endpoints
+    name: Authentication
+  - description: Endpoints related to attendees signing in on the premises
+    name: Attendees signins
+  - description: Endpoints related to changing and resetting passwords
+    name: Passwords
+  - description: Endpoints related to team member user accounts
+    name: Team Members
+paths:
+  /changePassword:
+    post:
+      description: Pass in your old password and your new password
+      requestBody:
+        $ref: "#/components/requestBodies/changePasswordPayload"
+      responses:
+        "200":
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Used for changing your password
+      tags:
+        - Passwords
+  /login:
+    post:
+      description: Submit your email and password to get an API token
+      requestBody:
+        $ref: "#/components/requestBodies/loginPayload"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/loginResponse"
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      security: []
+      summary: Log in to get an API token
+      tags:
+        - Authentication
+  /logout:
+    post:
+      description: Log out by deleting your token off the server.
+      responses:
+        "200":
+          description: Success
+      summary: Log out
+      tags:
+        - Authentication
+  /requestPasswordReset:
+    post:
+      description: |
+        The admin should run this on behalf of a user who forgot their password.  The API will generate a password reset code which the admin should then provide to the user. The user can use their client to reset their password. Normally the password reset code is mailed to the user, but I didn't want to do this in this case because I didn't want to  introduce the complicated dependency of having an SMTP server just for this purpose. Doing it this way makes it easy for people to adopt this  API.
+      requestBody:
+        $ref: "#/components/requestBodies/requestPasswordResetPayload"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/requestPasswordResetResponse"
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Used for requesting a password reset code
+      tags:
+        - Passwords
+  /signin:
+    post:
+      description: Create a new signin record
+      requestBody:
+        $ref: "#/components/requestBodies/signinPayload"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/signinResponse"
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/KeyFailure"
+      tags:
+        - Attendees signins
+  "/signin/{signinId}":
+    delete:
+      description: |
+        Delete a signin record      
+      parameters:
+        - description: The ID of the signin record to be deleted.
+          in: path
+          name: signinId
+          required: true
+          schema:
+            example: 1
+            type: integer
+      responses:
+        "200":
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Delete a signin record
+      tags:
+        - Attendees signins
+    get:
+      description: |
+        Retrieve the information associated with a signin record
+      parameters:
+        - description: The ID of the signin record to be retrieved.
+          in: path
+          name: signinId
+          required: true
+          schema:
+            example: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/signin"
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Retrieve the information associated with a signin record
+      tags:
+        - Attendees signins
+    put:
+      description: |
+        Update a signin record
+      parameters:
+        - description: The ID of the signin record to be retrieved.
+          in: path
+          name: signinId
+          required: true
+          schema:
+            example: 1
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/signinPayload"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userRecord"
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Update a signin record
+      tags:
+        - Attendees signins
+  /signins:
+    get:
+      description: Returns a list of signin objects sorted by signin ID descending.
+      parameters:
+        - description: Return signins with IDs less than this value.
+          in: query
+          name: less_than
+          required: false
+          schema:
+            type: integer
+        - description: Return this many objects
+          in: query
+          name: return_count
+          required: false
+          schema:
+            default: 100
+            maximum: 100
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/signin"
+                type: array
+          description: Successful response
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+        "503":
+          $ref: "#/components/responses/KeyFailure"
+      summary: Get signin info
+      tags:
+        - Attendees signins
+  /user:
+    post:
+      description: Use this endpoint to create a team member (user) record
+      requestBody:
+        $ref: "#/components/requestBodies/createUserPayload"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/createUserResponse"
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Create a user
+      tags:
+        - Team Members
+  "/user/{userId}":
+    delete:
+      description: |
+        To preserve referential integrity in the database, the user account  will not be deleted from the database. Rather, the password will be set to the empty string, effectively preventing that user from logging in. Furthermore, all active sessions for that user will be deleted, as will any password reset tokens. 
+      parameters:
+        - description: The ID of the user record to be deleted.
+          in: path
+          name: userId
+          required: true
+          schema:
+            example: 1
+            type: integer
+      responses:
+        "200":
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Delete a team member's user record
+      tags:
+        - Team Members
+    get:
+      description: |
+        Retrieve the information associated with a user's account
+      parameters:
+        - description: The ID of the user record to be retrieved.
+          in: path
+          name: userId
+          required: true
+          schema:
+            example: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/userRecord"
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Retrieve the information associated with a team member's user record
+      tags:
+        - Team Members
+  /users:
+    get:
+      description: |
+        Retrieve the information associated with all team members' user records
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/userRecord"
+                type: array
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Retrieve the information associated with all team members' user records
+      tags:
+        - Team Members
+  /verifyPasswordChange:
+    post:
+      description: |
+        Another endpoint will generate a password reset code for you. You should  use the client app to submit the reset code along with the new password to change your password.
+      requestBody:
+        $ref: "#/components/requestBodies/passwordResetPayload"
+      responses:
+        "200":
+          description: Success
+        "401":
+          $ref: "#/components/responses/Unauthorized"
+      summary: Used for resetting your password when you forgot it
+      tags:
+        - Passwords
+components:
+  parameters:
+    signinId:
+      description: Signin ID
+      in: query
+      name: id
+      schema:
+        type: integer
+  requestBodies:
+    changePasswordPayload:
+      content:
+        application/json:
+          schema:
+            properties:
+              old_password:
+                description: The old (current) password
+                example: hunter3
+                type: string
+              password:
+                description: The new password
+                example: hunter4
+                type: string
+            title: Sample
+            type: object
+      description: Change Password Payload
+      required: true
+    createUserPayload:
+      content:
+        application/json:
+          schema:
+            properties:
+              admin:
+                description: |
+                  If the user has admin privileges then the user will be able to create password reset requests on behalf of other users, and will also be able to view and edit  the data of other users.
+                example: true
+                type: boolean
+              email:
+                description: The email address of the user record you want to create
+                example: user@example.com
+                type: string
+              name:
+                description: The name of the user record you want to create
+                example: Jane Doe
+                type: string
+              read_only:
+                description: Not used in this version of the API. For future use.
+                example: false
+                type: boolean
+            title: Sample
+            type: object
+      description: Create User Payload
+      required: true
+    loginPayload:
+      content:
+        application/json:
+          schema:
+            properties:
+              email:
+                example: aijaz@example.org
+                type: string
+              password:
+                example: hunter2
+                type: string
+              source:
+                enum:
+                  - iOS
+                  - android
+                  - web
+                type: string
+            title: Sample
+            type: object
+      description: The login payload
+      required: true
+    passwordResetPayload:
+      content:
+        application/json:
+          schema:
+            properties:
+              guid:
+                description: The password reset code
+                example: d5e53b3a-ffc1-4436-b085-04aaed5ec861
+                type: string
+              password:
+                description: The new password
+                example: hunter3
+                type: string
+            title: Sample
+            type: object
+      description: Password Reset Payload
+      required: true
+    requestPasswordResetPayload:
+      content:
+        application/json:
+          schema:
+            properties:
+              email:
+                description: The user whose password you want to reset
+                example: user@example.com
+                type: string
+            title: Sample
+            type: object
+      description: Request Password Reset Payload
+      required: true
+    signinPayload:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/signin"
+  responses:
+    KeyFailure:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/keyFailure"
+      description: Key Failure
+    SigninResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/signinResponse"
+      description: The response that's sent when you successfully create a signin
+    Unauthorized:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/invalidToken"
+      description: Unauthorized
+  schemas:
+    createUserResponse:
+      description: The object that's returned when a user record is created.
+      properties:
+        email:
+          description: The user's email address
+          example: user@example.com
+          type: string
+        guid:
+          description: The user's password reset code
+          example: d5e53b3a-ffc1-4436-b085-04aaed5ec861
+          type: string
+      title: The object that's returned when a user record is created.
+      type: object
+    invalidToken:
+      description: Invalid token
+      properties:
+        message:
+          example: Login Failed
+          type: string
+      title: Invalid Token
+      type: object
+    keyFailure:
+      description: Key Failure
+      properties:
+        message:
+          example: Key Failures
+          type: string
+      title: Key Failure
+      type: object
+    loginResponse:
+      description: Payload of successful login
+      properties:
+        admin:
+          description: True if this user is an admin. False otherwise
+          example: false
+          type: boolean
+        login_id:
+          description: The login id for this user
+          example: 1
+          type: integer
+        name:
+          description: This user's name
+          example: Firstname Lastname
+          type: string
+        read_only:
+          description: True if this user has permissions to write to the database. False otherwise
+          example: false
+          type: boolean
+        token:
+          description: The API key that will be used to authenticate the user.
+          example: dc19b0b2-c0e3-821b-821a-d49e8c428479
+          type: string
+      title: Login Response
+      type: object
+    requestPasswordResetResponse:
+      description: This object contains the password reset code for the user
+      properties:
+        email:
+          description: The user's email address
+          example: user@example.com
+          type: string
+        guid:
+          description: The password reset code
+          example: d5e53b3a-ffc1-4436-b085-04aaed5ec861
+          type: string
+      title: Request Password Reset Response
+      type: object
+    signin:
+      description: Payload of signin object
+      properties:
+        dt:
+          description: The original scan time in number of seconds since 1/1/1970 (GMT)
+          example: 1593409124.23
+          type: number
+        email:
+          description: The person's email
+          example: jqp@example.com
+          type: string
+        id:
+          description: The record id
+          example: 125
+          type: integer
+        name:
+          description: The person's name
+          example: John Q. Public
+          type: string
+        phone:
+          description: The person's phone number
+          example: (111)222-3333
+          type: string
+      required:
+        - name
+        - phone
+      title: Signin Object
+      type: object
+    signinResponse:
+      description: Response when you successfully create a signin record
+      properties:
+        result:
+          example: 1
+          maximum: 1
+          minimum: 1
+          type: integer
+      title: Signin Response
+      type: object
+    userRecord:
+      description: A team member user record
+      properties:
+        admin:
+          description: |
+            If the user has admin privileges then the user will be able to create password reset requests on behalf of other users, and will also be able to view and edit  the data of other users.
+          example: true
+          type: boolean
+        email:
+          description: The user's email address
+          example: user@example.com
+          type: string
+        id:
+          description: The id of the user's record
+          example: 1
+          type: integer
+        name:
+          description: The user's name
+          example: John Doe
+          type: string
+        read_only:
+          description: Not used in this version of the API. For future use.
+          example: false
+          type: boolean
+      title: A team member user record
+      type: object
+  securitySchemes:
+    TokenHeader:
+      description: Token to authorize requests.
+      in: header
+      name: token
+      type: apiKey

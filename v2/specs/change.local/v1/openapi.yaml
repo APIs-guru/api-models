@@ -1,0 +1,385 @@
+openapi: 3.0.1
+servers:
+  - url: http://change.local
+  - url: https://{defaultHost}
+    variables:
+      defaultHost:
+        default: api.getchange.io
+info:
+  title: API V1
+  version: v1
+  x-apisguru-categories:
+    - payment
+  x-origin:
+    - format: openapi
+      url: https://change-api-definition.s3-us-west-1.amazonaws.com/swagger.yaml
+      version: "3.0"
+  x-providerName: change.local
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+paths:
+  /api/v1/donations/carbon_calculate:
+    get:
+      description: Calculates the donation amount (to CarbonFund 501\(c\)3) needed to offset a physical shipment. This calculation depends on the weight, primary transportation method, and distance of the shipment. Provide the distance of the shipment using the origin and destination address, or directly with the number of miles. For convenience, this endpoint also returns the id of the nonprofit CarbonFund, for making a subsequent donation to. See the [Carbon offsets guide](/recipes/carbon-offsets/) for more on using this endpoint.
+      parameters:
+        - description: The origin zip code (US only) of the shipment. If you send this parameter, also send `destination_address`.
+          examples:
+            illinois:
+              summary: An Illinois zip code.
+              value: 60148
+          in: query
+          name: origin_address
+          schema:
+            type: number
+        - description: The destination zip code (US only) of the shipment. If you send this parameter, also send `origin_address`.
+          examples:
+            california:
+              summary: A California zip code.
+              value: 94133
+          in: query
+          name: destination_address
+          schema:
+            type: number
+        - description: The total distance (in miles) of the shipment. You can use this parameter in place of `origin_address` and `destination_address`.
+          in: query
+          name: distance_mi
+          schema:
+            type: number
+        - description: The total weight (in pounds) of the shipment.
+          examples:
+            "3.5":
+              summary: A 3.5 pound shipment.
+              value: 3.5
+          in: query
+          name: weight_lb
+          required: true
+          schema:
+            type: number
+        - description: The primary transportation method of the shipment.
+          examples:
+            air:
+              summary: The shipment will be primarily by plane.
+              value: air
+          in: query
+          name: transportation_method
+          schema:
+            enum:
+              - air
+              - truck
+              - rail
+              - sea
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                amount: 18
+                nonprofit_id: n_l8vRRYrxhw0ei8AMYto5FzU1
+          description: successful
+      security:
+        - basic_auth: []
+      summary: Calculate shipping carbon offset
+  /api/v1/donations/carbon_stats:
+    get:
+      description: Measures your carbon offset impact in relatable terms. Provide the id of a donation to CarbonFund to see stats about that specific donation. If you omit the donation id, this endpoint returns aggregate stats for all of your CarbonFund donations.
+      parameters:
+        - description: The id of a donation to the CarbonFund nonprofit. Ids are returned when a donation is created. If an ID is not provided, the total stats for all donations to CarbonFund are returned.
+          examples:
+            donation:
+              summary: A donation id.
+              value: d_NuYL6M2C1kjecXpWzKVODw7W
+          in: query
+          name: id
+          schema:
+            type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                amount: 107
+                co2_tonnes_offset: 0.107
+                trees: 1.8
+          description: successful
+      security:
+        - basic_auth: []
+      summary: Retrieve carbon offset stats
+  /api/v1/donations/create:
+    post:
+      description: Creates a donation to any nonprofit. CHANGE keeps track of your donations, bills you at the end of the month, and handles the nonprofit payouts for you.
+      parameters:
+        - description: The amount of the donation in cents.
+          examples:
+            five:
+              summary: A $5.00 donation.
+              value: 500
+          in: query
+          name: amount
+          required: true
+          schema:
+            type: string
+        - description: The id of a nonprofit from the CHANGE network.
+          examples:
+            watsi:
+              summary: The id for Watsi (https://watsi.org)
+              value: n_IfEoPCaPqVsFAUI5xl0CBUOx
+          in: query
+          name: nonprofit_id
+          required: true
+          schema:
+            type: string
+        - description: Source of the donation funds. If you are collecting payment from your customer for the donation, use `customer`.
+          examples:
+            customer:
+              summary: A customer-funded donation.
+              value: customer
+          in: query
+          name: funding_source
+          required: true
+          schema:
+            enum:
+              - merchant
+              - customer
+            type: string
+        - description: The customer's zip code. Provide this to unlock geographic insights.
+          examples:
+            valid:
+              summary: A valid zip code.
+              value: "94104"
+          in: query
+          name: zip_code
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                amount: 500
+                external_id: null
+                id: d_ZMHGi4XOLbIZNCcRdNQIYRMD
+                live_mode: true
+                merchant_id: m_ZRXrC36KAICbIBccukOYrpz2
+                nonprofit_id: n_t97eaBKgDzIiZpaB5miAGqmW
+                order_value: null
+                zip_code: "94104"
+          description: Donation successful
+        "400":
+          content:
+            application/json:
+              example:
+                code: nonprofit_invalid
+                detail: nonprofit_id n_invalid is invalid.
+                status: 400
+                title: The nonprofit is invalid. Please reference a nonprofit in the CHANGE network.
+          description: Param `nonprofit_id` invalid
+      security:
+        - basic_auth: []
+      summary: Create a donation
+  /api/v1/donations/crypto_calculate:
+    get:
+      description: Calculates the donation amount (to CarbonFund 501\(c\)3) needed to offset a cryptocurrency transaction. For convenience, this endpoint also returns the id of the nonprofit CarbonFund, for making a subsequent donation to. See the [Carbon offsets guide](/recipes/carbon-offsets/) for more on using this endpoint.
+      parameters:
+        - description: The number of transactions to offset.
+          examples:
+            two:
+              summary: Represents two transactions.
+              value: 2
+          in: query
+          name: count
+          schema:
+            type: number
+        - description: The currency of the transaction.
+          examples:
+            ethereum:
+              summary: The ETH currency.
+              value: eth
+          in: query
+          name: currency
+          required: true
+          schema:
+            enum:
+              - eth
+              - btc
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                amount: 34
+                nonprofit_id: n_l8vRRYrxhw0ei8AMYto5FzU1
+          description: successful
+      security:
+        - basic_auth: []
+      summary: Calculate crypto carbon offset
+  /api/v1/donations/index:
+    get:
+      description: Retrieves a list of donations you've previously made. The donations are returned in order of creation, with the most recent donations appearing first. This endpoint is paginated.
+      parameters:
+        - description: Which page to return. This endpoint is paginated, and returns maximum 30 donations per page.
+          examples:
+            page 1:
+              summary: The first 30 donations.
+              value: "1"
+          in: query
+          name: page
+          schema:
+            type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                donations:
+                  - amount: 234
+                    created_at: 2021-05-05T20:18:05.494Z
+                    customer_funded: true
+                    external_id: null
+                    id: 6236
+                    invoice_id: 3078
+                    merchant_id: 5966
+                    nonprofit_id: 8202
+                    order_value: 2526
+                    public_id: d_U0M2sPsQpsKXx6d3XOInsOu4
+                    region: null
+                    sandbox: false
+                    updated_at: 2021-05-05T20:18:05.494Z
+                    zip_code: 46076-9506
+                  - amount: 335
+                    created_at: 2021-05-05T20:18:05.482Z
+                    customer_funded: true
+                    external_id: null
+                    id: 6235
+                    invoice_id: 3078
+                    merchant_id: 5966
+                    nonprofit_id: 8201
+                    order_value: 2688
+                    public_id: d_nbvCMyqXdFyHvEFn98NZi281
+                    region: null
+                    sandbox: false
+                    updated_at: 2021-05-05T20:18:05.482Z
+                    zip_code: "71778"
+                page: 1
+          description: successful
+      security:
+        - basic_auth: []
+      summary: List your donations
+  /api/v1/donations/show:
+    get:
+      description: Retrieves the details of a donation you've previously made.
+      parameters:
+        - description: The id of a donation. Ids are returned when a donation is created.
+          examples:
+            donation:
+              summary: A donation id.
+              value: d_NuYL6M2C1kjecXpWzKVODw7W
+          in: query
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                amount: 296
+                external_id: null
+                id: d_lrUNd3aQfnwLYzSRu6mrk4ZA
+                live_mode: true
+                merchant_id: m_CgzKWshXuPcI8nPKH8QZoeqL
+                nonprofit_id: n_h3ni9x9pH7OAkHXyghL2wjSZ
+                order_value: 1007
+                zip_code: "51689"
+          description: successful
+      security:
+        - basic_auth: []
+      summary: Retrieve a donation
+  /api/v1/nonprofits/list:
+    get:
+      description: Retrieves a list of nonprofits whose names match the provided name. This endpoint is paginated.
+      parameters:
+        - description: A string to search.
+          examples:
+            some nonprofit:
+              summary: The name of some nonprofit.
+              value: Some Nonprofit
+          in: query
+          name: name
+          schema:
+            type: string
+        - description: The page to return. This endpoint is paginated, and returns up to 30 nonprofits at a time.
+          examples:
+            page 1:
+              summary: The first 30 nonprofits.
+              value: "1"
+          in: query
+          name: page
+          schema:
+            type: number
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                nonprofits:
+                  - address_line: 7510 Sanford Mountain
+                    city: Reicheltown
+                    classification: Y18
+                    ein: "158336879"
+                    icon_url: https://nonprofit-icons.s3-us-west-1.amazonaws.com/Y.png
+                    id: n_Q0Pwyjw5H1GDCviVvJXbXAJF
+                    last_verified_at: null
+                    memo: null
+                    mission: Persistent 24 hour solution
+                    name: SOME NONPROFIT
+                    state: Tennessee
+                    website: http://abshire.info/ellsworth.kris
+                    zip_code: 07815-9329
+                page: 1
+          description: List successful
+      security:
+        - basic_auth: []
+      summary: Search a nonprofit
+  /api/v1/nonprofits/show:
+    get:
+      description: Retrieves information for a nonprofit.
+      parameters:
+        - description: The id of a nonprofit from the CHANGE network.
+          examples:
+            watsi:
+              summary: The id for Watsi (https://watsi.org)
+              value: n_IfEoPCaPqVsFAUI5xl0CBUOx
+          in: query
+          name: id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                address_line: 8236 Leslie Gateway
+                city: Port Jasmineview
+                classification: C62
+                ein: "057310526"
+                icon_url: https://nonprofit-icons.s3-us-west-1.amazonaws.com/C.png
+                id: n_LLWKUimvwSZ9A01gTdFo0uJe
+                memo: null
+                mission: Triple-buffered disintermediate projection
+                name: BERNIER-GIBSON
+                state: New Jersey
+                website: http://ziemann.co/rosalind
+                zip_code: 16409-3215
+          description: Show successful
+      security:
+        - basic_auth: []
+      summary: Show a nonprofit
+components:
+  securitySchemes:
+    basic_auth:
+      scheme: basic
+      type: http

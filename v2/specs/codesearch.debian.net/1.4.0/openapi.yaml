@@ -1,0 +1,186 @@
+openapi: 3.0.1
+servers:
+  - url: https://codesearch.debian.net/api/v1
+info:
+  contact:
+    email: stapelberg@debian.org
+  description: OpenAPI for https://codesearch.debian.net/
+  license:
+    name: Apache 2.0
+    url: http://www.apache.org/licenses/LICENSE-2.0.html
+  title: Debian Code Search
+  version: 1.4.0
+  x-apisguru-categories:
+    - developer_tools
+  x-origin:
+    - format: openapi
+      url: https://codesearch.debian.net/openapi.yaml
+      version: "3.0"
+  x-providerName: codesearch.debian.net
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+externalDocs:
+  description: Get a Debian Code Search API key
+  url: https://codesearch.debian.net/apikeys/
+tags:
+  - description: Code Search
+    name: search
+paths:
+  /search:
+    get:
+      description: |-
+        Performs a search through the full Debian Code Search corpus, blocking until all results are available (might take a few seconds depending on the search query).
+
+        Search results are ordered by their ranking (best results come first).
+      operationId: search
+      parameters:
+        - description: The search query, for example `who knows...` (literal) or `who knows\.\.\.` (regular expression). See https://codesearch.debian.net/faq for more details about which keywords are supported. The regular expression flavor is RE2, see https://github.com/google/re2/blob/master/doc/syntax.txt
+          in: query
+          name: query
+          required: true
+          schema:
+            type: string
+        - description: Whether the query is to be interpreted as a literal (`literal`) instead of as an RE2 regular expression (`regexp`). Literal searches are faster and do not require escaping special characters, regular expression searches are more powerful.
+          in: query
+          name: match_mode
+          schema:
+            default: regexp
+            enum:
+              - literal
+              - regexp
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/SearchResult"
+                type: array
+          description: All search results
+        "403":
+          content: {}
+          description: The x-dcs-apikey header was either not set at all, or contained an invalid (no longer valid?) API key. Please see https://codesearch.debian.net/apikeys/ for obtaining a key.
+      security:
+        - api_key: []
+      summary: Searches through source code
+      tags:
+        - search
+  /searchperpackage:
+    get:
+      description: "The search results are currently sorted arbitrarily, but we intend to sort them by ranking eventually: https://github.com/Debian/dcs/blob/51338e934eb7ee18d00c5c18531c0790a83cb698/cmd/dcs-web/querymanager.go#L719"
+      operationId: searchperpackage
+      parameters:
+        - description: The search query, for example `who knows...` (literal) or `who knows\.\.\.` (regular expression). See https://codesearch.debian.net/faq for more details about which keywords are supported. The regular expression flavor is RE2, see https://github.com/google/re2/blob/master/doc/syntax.txt
+          in: query
+          name: query
+          required: true
+          schema:
+            type: string
+        - description: Whether the query is to be interpreted as a literal (`literal`) instead of as an RE2 regular expression (`regexp`). Literal searches are faster and do not require escaping special characters, regular expression searches are more powerful.
+          in: query
+          name: match_mode
+          schema:
+            default: regexp
+            enum:
+              - literal
+              - regexp
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/PackageSearchResult"
+                type: array
+          description: All search results
+        "403":
+          content: {}
+          description: The x-dcs-apikey header was either not set at all, or contained an invalid (no longer valid?) API key. Please see https://codesearch.debian.net/apikeys/ for obtaining a key.
+      security:
+        - api_key: []
+      summary: Like /search, but aggregates per package
+      tags:
+        - search
+components:
+  parameters:
+    matchModeParam:
+      description: Whether the query is to be interpreted as a literal (`literal`) instead of as an RE2 regular expression (`regexp`). Literal searches are faster and do not require escaping special characters, regular expression searches are more powerful.
+      in: query
+      name: match_mode
+      schema:
+        default: regexp
+        enum:
+          - literal
+          - regexp
+        type: string
+    queryParam:
+      description: The search query, for example `who knows...` (literal) or `who knows\.\.\.` (regular expression). See https://codesearch.debian.net/faq for more details about which keywords are supported. The regular expression flavor is RE2, see https://github.com/google/re2/blob/master/doc/syntax.txt
+      in: query
+      name: query
+      required: true
+      schema:
+        type: string
+  schemas:
+    PackageSearchResult:
+      properties:
+        package:
+          description: The Debian source package for which up to 2 search results have been aggregated in `results`.
+          example: i3-wm_4.18-1
+          type: string
+        results:
+          items:
+            $ref: "#/components/schemas/SearchResult"
+          type: array
+      required:
+        - package
+        - results
+      type: object
+    SearchResult:
+      description: A search result matching the specified query. You can use sources.debian.org to view the file contents. See https://github.com/Debian/dcs/blob/master/cmd/dcs-web/show/show.go for how to construct a sources.debian.org URL from a search result.
+      properties:
+        context:
+          description: The full line containing the search result.
+          example: '        i3Font cursor_font = load_font("cursor", false);'
+          type: string
+        context_after:
+          description: Up to 2 full lines after the search result (see `context`).
+          example:
+            - "        xcb_create_glyph_cursor("
+            - "            xcb_connection,"
+          items:
+            type: string
+          type: array
+        context_before:
+          description: Up to 2 full lines before the search result (see `context`).
+          example:
+            - "    } else {"
+            - "        cursor = xcb_generate_id(xcb_connection);"
+          items:
+            type: string
+          type: array
+        line:
+          description: Line number containing the search result.
+          example: 1313
+          format: uint32
+          type: integer
+        package:
+          description: The Debian source package containing this search result, including the full Debian version number.
+          example: i3-wm_4.18-1
+          type: string
+        path:
+          description: Path to the file containing the this search result, starting with `package`.
+          example: i3bar/src/xcb.c
+          type: string
+      required:
+        - context
+        - line
+        - package
+        - path
+      type: object
+  securitySchemes:
+    api_key:
+      in: header
+      name: x-dcs-apikey
+      type: apiKey

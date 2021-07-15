@@ -1,0 +1,1299 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.nexmo.com/v0.1
+info:
+  contact:
+    email: devrel@vonage.com
+    name: Vonage DevRel
+    url: https://developer.nexmo.com/
+  description: The Conversation API enables you to build conversation features where communication can take place across multiple mediums including IP Messaging, PSTN Voice, SMS and WebRTC Audio and Video. The context of the conversations is maintained though each communication event taking place within a conversation, no matter the medium.
+  title: Conversation API
+  version: 2.0.1
+  x-label: Beta
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/nexmo/api-specification/master/definitions/conversation.yml
+      version: "3.0"
+  x-providerName: nexmo.com
+  x-serviceName: conversation
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+security:
+  - bearerAuth: []
+tags:
+  - description: A conversation is a shared core component that Vonage APIs rely on. Conversations happen over multiple mediums and and can have associated Users through Memberships.
+    name: conversation
+  - description: The concept of a user exists in Vonage APIs, you can associate one with a user in your own application if you choose. A user can have multiple memberships to conversations and can communicate with other users through various different mediums.
+    name: user
+  - description: Memberships connect users with conversations. Each membership has one conversation and one user however a user can have many memberships to conversations just as conversations can have many members.
+    name: member
+  - description: "Events are actions that occur within a conversation. Examples of this includes: Text events from members, or invite events from users"
+    name: event
+  - description: A leg can be a video call, IP call, or PSTN call that users participate in using multiple platforms. With this endpoint you can retrieve the details about all of the legs that took place in your application.
+    name: leg
+  - description: Rtc actions. Any rtc action related (like starting a new rtc connection).
+    name: rtc
+paths:
+  /conversations:
+    get:
+      deprecated: true
+      description: |-
+        This endpoint is **DEPRECATED**. Please use [/v0.2/conversations](/api/conversation.v2#get-conversations).
+
+        List all conversations associated with your application. This endpoint required an admin JWT. To find all conversations for the currently logged in user, see [GET /users/:id/conversations](#getuserConversations)
+      operationId: listConversations
+      parameters:
+        - $ref: "#/components/parameters/date_start"
+        - $ref: "#/components/parameters/date_end"
+        - $ref: "#/components/parameters/page_size"
+        - $ref: "#/components/parameters/record_index"
+        - $ref: "#/components/parameters/order"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  _embedded:
+                    description: A list of conversation objects. See the [get details of a specific conversation](#retrieveConversation) response fields for a description of the nested objects
+                    properties:
+                      conversations:
+                        items:
+                          properties:
+                            _links:
+                              properties:
+                                self:
+                                  properties:
+                                    href:
+                                      $ref: "#/components/schemas/href_conversation"
+                                  type: object
+                              type: object
+                            name:
+                              $ref: "#/components/schemas/name_conversation"
+                            uuid:
+                              $ref: "#/components/schemas/conversation_id"
+                          required:
+                            - uuid
+                            - name
+                            - href
+                          type: object
+                        type: array
+                    required:
+                      - conversations
+                    type: object
+                  _links:
+                    $ref: "#/components/schemas/_links_conversations_list"
+                  count:
+                    description: The total number of records returned by your request.
+                    example: "100"
+                    type: number
+                  page_size:
+                    $ref: "#/components/schemas/page_size"
+                  record_index:
+                    $ref: "#/components/schemas/record_index"
+                required:
+                  - count
+                  - page_size
+                  - record_index
+                  - _links
+                  - _embedded
+                type: object
+          description: List Conversations Response Payload Object.
+      summary: List conversations
+      tags:
+        - conversation
+    post:
+      operationId: createConversation
+      requestBody:
+        $ref: "#/components/requestBodies/Conversation"
+      responses:
+        "200":
+          $ref: "#/components/responses/ConversationLite"
+      summary: Create a conversation
+      tags:
+        - conversation
+  "/conversations/{conversation_id}":
+    delete:
+      operationId: deleteConversation
+      responses:
+        "200":
+          $ref: "#/components/responses/SuccessEmptyJSON"
+      summary: Delete a conversation
+      tags:
+        - conversation
+    get:
+      operationId: retrieveConversation
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                description: Conversation Object
+                properties:
+                  _links:
+                    $ref: "#/components/schemas/_links_conversation"
+                  api_key:
+                    description: The API key for your account
+                    type: string
+                  display_name:
+                    $ref: "#/components/schemas/display_name"
+                  members:
+                    description: Users associated to this conversation as members
+                    items:
+                      properties:
+                        channel:
+                          $ref: "#/components/schemas/channel"
+                        initiator:
+                          $ref: "#/components/schemas/initiator"
+                        member_id:
+                          $ref: "#/components/schemas/member_id"
+                        name:
+                          $ref: "#/components/schemas/name_user"
+                        state:
+                          $ref: "#/components/schemas/member_state"
+                        timestamp:
+                          $ref: "#/components/schemas/timestamp_res_member"
+                        user_id:
+                          $ref: "#/components/schemas/user_id"
+                      type: object
+                    type: array
+                  name:
+                    $ref: "#/components/schemas/name_conversation"
+                  numbers:
+                    properties: {}
+                    type: object
+                  properties:
+                    properties:
+                      video:
+                        example: false
+                        type: boolean
+                    type: object
+                  sequence_number:
+                    description: The last Event ID in this conversation. This ID can be used to [retrieve a specific event](#getEvent)
+                    example: "1"
+                    type: string
+                  timestamp:
+                    $ref: "#/components/schemas/timestamp_res_conversation"
+                  uuid:
+                    $ref: "#/components/schemas/conversation_id"
+                required:
+                  - uuid
+                type: object
+          description: Retrieve a conversation
+      summary: Retrieve a conversation
+      tags:
+        - conversation
+    parameters:
+      - $ref: "#/components/parameters/conversation_id"
+    put:
+      operationId: replaceConversation
+      requestBody:
+        $ref: "#/components/requestBodies/Conversation"
+      responses:
+        "200":
+          $ref: "#/components/responses/ConversationLite"
+      summary: Update a conversation
+      tags:
+        - conversation
+  "/conversations/{conversation_id}/events":
+    get:
+      deprecated: true
+      description: This endpoint is **DEPRECATED**. Please use [/v0.2/events](/api/conversation.v2#get-events).
+      operationId: getEvents
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/event_retrieved"
+                type: array
+          description: Retrieve Events Response Payload Object
+      summary: List events
+      tags:
+        - event
+    parameters:
+      - $ref: "#/components/parameters/conversation_id"
+    post:
+      operationId: createEvent
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: Create New Event Request Payload Object
+              properties:
+                body:
+                  $ref: "#/components/schemas/event_body"
+                from:
+                  $ref: "#/components/schemas/member_id"
+                to:
+                  $ref: "#/components/schemas/member_id"
+                type:
+                  $ref: "#/components/schemas/event_type"
+              required:
+                - type
+                - from
+              type: object
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                description: Create New Event Response Payload Object
+                properties:
+                  href:
+                    $ref: "#/components/schemas/href_event"
+                  id:
+                    $ref: "#/components/schemas/event_id"
+                  timestamp:
+                    $ref: "#/components/schemas/timestamp_res_event"
+                type: object
+          description: Create New Event Response Payload Object
+      summary: Create an event
+      tags:
+        - event
+  "/conversations/{conversation_id}/events/{event_id}":
+    delete:
+      operationId: deleteEvent
+      responses:
+        "200":
+          $ref: "#/components/responses/SuccessEmptyJSON"
+      summary: Delete an event
+      tags:
+        - event
+    get:
+      operationId: getEvent
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/event_retrieved"
+          description: Retrieve an event Content Payload
+      summary: Retrieve an event
+      tags:
+        - event
+    parameters:
+      - $ref: "#/components/parameters/conversation_id"
+      - $ref: "#/components/parameters/event_id"
+  "/conversations/{conversation_id}/members":
+    get:
+      deprecated: true
+      description: This endpoint is **DEPRECATED**. Please use [/v0.2/members](/api/conversation.v2#get-members).
+      operationId: getMembers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    name:
+                      $ref: "#/components/schemas/name_user"
+                    state:
+                      $ref: "#/components/schemas/member_state"
+                    user_id:
+                      $ref: "#/components/schemas/user_id"
+                    user_name:
+                      $ref: "#/components/schemas/name_user"
+                  required:
+                    - user_id
+                    - name
+                    - user_name
+                    - state
+                  type: object
+                type: array
+          description: Members List Object
+      summary: List members
+      tags:
+        - member
+    parameters:
+      - $ref: "#/components/parameters/conversation_id"
+    post:
+      operationId: createMember
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: "Create a Member in invite state "
+              properties:
+                action:
+                  $ref: "#/components/schemas/member_action"
+                channel:
+                  $ref: "#/components/schemas/channel"
+                knocking_id:
+                  $ref: "#/components/schemas/knocker_id"
+                media:
+                  $ref: "#/components/schemas/media"
+                member_id:
+                  $ref: "#/components/schemas/member_id"
+                member_id_inviting:
+                  $ref: "#/components/schemas/member_id_inviting"
+                user_id:
+                  $ref: "#/components/schemas/user_id"
+              required:
+                - user_id
+                - channel
+              type: object
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                properties:
+                  channel:
+                    $ref: "#/components/schemas/channel"
+                  href:
+                    $ref: "#/components/schemas/href_member"
+                  id:
+                    $ref: "#/components/schemas/member_id"
+                  initiator:
+                    $ref: "#/components/schemas/initiator"
+                  state:
+                    $ref: "#/components/schemas/member_state"
+                  timestamp:
+                    $ref: "#/components/schemas/timestamp_res_member"
+                  user_id:
+                    $ref: "#/components/schemas/user_id"
+                type: object
+          description: "Create or invite Member in invite state "
+      summary: Create a member
+      tags:
+        - member
+  "/conversations/{conversation_id}/members/{member_id}":
+    delete:
+      operationId: deleteMember
+      responses:
+        "200":
+          $ref: "#/components/responses/SuccessEmptyJSON"
+      summary: Delete a member
+      tags:
+        - member
+    get:
+      operationId: getMember
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  href:
+                    $ref: "#/components/schemas/href_member"
+                  id:
+                    $ref: "#/components/schemas/member_id"
+          description: Retrieve member payload
+      summary: Retrieve a member
+      tags:
+        - member
+    parameters:
+      - $ref: "#/components/parameters/conversation_id"
+      - $ref: "#/components/parameters/member_id"
+    put:
+      operationId: updateMember
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                action:
+                  $ref: "#/components/schemas/member_action"
+                channel:
+                  $ref: "#/components/schemas/channel"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  href:
+                    $ref: "#/components/schemas/href_member"
+                  id:
+                    $ref: "#/components/schemas/member_id"
+          description: Member retrieved
+      summary: Update a member
+      tags:
+        - member
+  "/conversations/{conversation_id}/record":
+    parameters:
+      - $ref: "#/components/parameters/conversation_id"
+    put:
+      operationId: recordConversation
+      requestBody:
+        $ref: "#/components/requestBodies/RecordConversation"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Record a conversation
+      tags:
+        - conversation
+    servers:
+      - description: Override base path for the PUT /conversations/{conversation_id}/record operation
+        url: https://api.nexmo.com/v1
+  /legs:
+    get:
+      operationId: listLegs
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                description: List Legs Response Payload Object
+                example:
+                  _embedded:
+                    legs:
+                      - _links:
+                          self:
+                            href: https://api.nexmo.com/v0.1/legs/2a71f8a1-b6f1-42b3-9eef-c69729e17513
+                        conversation_uuid: CON-511d076b-9d39-498c-baa7-b7a4bfbd6e32
+                        end_time: ""
+                        from:
+                          type: app
+                        rtc:
+                          session_id: SES-84ebef0d-321a-47e6-8446-f4fcc5ca74b9
+                          state: terminated
+                        start_time: ""
+                        status: completed
+                        to:
+                          type: app
+                        type: app
+                        uuid: 2a71f8a1-b6f1-42b3-9eef-c69729e17513
+                  _links:
+                    self:
+                      href: https://api.nexmo.com/v0.1/legs
+                  count: 1
+                  page_size: 10
+                  record_index: 0
+                properties:
+                  _embedded:
+                    description: A list of conversation objects. See the [get details of a specific conversation](#retrieveConversation) response fields for a description of the nested objects
+                    properties:
+                      legs:
+                        items:
+                          properties:
+                            _embedded:
+                              type: object
+                            _links:
+                              type: object
+                            conversation_uuid:
+                              $ref: "#/components/schemas/conversation_id"
+                            from:
+                              type: object
+                            start_end:
+                              $ref: "#/components/schemas/timestamp_leg_end_time"
+                            start_time:
+                              $ref: "#/components/schemas/timestamp_leg_start_time"
+                            state:
+                              $ref: "#/components/schemas/leg_state"
+                            to:
+                              type: object
+                            type:
+                              $ref: "#/components/schemas/channel_type"
+                            uuid:
+                              $ref: "#/components/schemas/leg_id"
+                          required:
+                            - uuid
+                            - name
+                            - href
+                          type: object
+                        type: array
+                    required:
+                      - legs
+                    type: object
+                  _links:
+                    properties:
+                      self:
+                        properties:
+                          href:
+                            type: string
+                        type: object
+                    required:
+                      - self
+                    type: object
+                  count:
+                    description: The total number of records returned by your request.
+                    example: "100"
+                    type: number
+                  page_size:
+                    $ref: "#/components/schemas/page_size"
+                  record_index:
+                    $ref: "#/components/schemas/record_index"
+                required:
+                  - count
+                  - page_size
+                  - record_index
+                  - _links
+                  - _embedded
+                type: object
+          description: List Legs Successfully
+      summary: List legs
+      tags:
+        - leg
+  "/legs/{leg_id}":
+    delete:
+      operationId: deleteLeg
+      responses:
+        "200":
+          $ref: "#/components/responses/SuccessEmptyJSON"
+      summary: Delete a leg
+      tags:
+        - leg
+    parameters:
+      - $ref: "#/components/parameters/leg_id"
+  /users:
+    get:
+      deprecated: true
+      description: This endpoint is **DEPRECATED**. Please use [/v0.2/users](/api/conversation.v2#get-users).
+      operationId: getUsers
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    href:
+                      $ref: "#/components/schemas/href_user"
+                    id:
+                      $ref: "#/components/schemas/user_id"
+                    name:
+                      $ref: "#/components/schemas/name_user"
+                  type: object
+                type: array
+          description: List of users
+      summary: List users
+      tags:
+        - user
+    post:
+      description: "Note: Users must be created with an admin JWT."
+      operationId: createUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: "Create a Member in invite state "
+              properties:
+                display_name:
+                  $ref: "#/components/schemas/display_name_user"
+                image_url:
+                  $ref: "#/components/schemas/image_url"
+                name:
+                  $ref: "#/components/schemas/name_user"
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  href:
+                    $ref: "#/components/schemas/href_user"
+                  id:
+                    $ref: "#/components/schemas/user_id"
+                type: object
+          description: Create a user response
+      summary: Create a user
+      tags:
+        - user
+  "/users/{user_id}":
+    delete:
+      operationId: deleteUser
+      responses:
+        "200":
+          $ref: "#/components/responses/SuccessEmptyJSON"
+      summary: Delete a user
+      tags:
+        - user
+    get:
+      operationId: getUser
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  href:
+                    example: https://api.nexmo.com/v0.1/users/USR-63f61863-4a51-4f6b-86e1-46edebio0391
+                    type: string
+                  id:
+                    $ref: "#/components/schemas/user_id"
+                  name:
+                    $ref: "#/components/schemas/name_user"
+          description: Retrieve a user
+      summary: Retrieve a user
+      tags:
+        - user
+    parameters:
+      - $ref: "#/components/parameters/user_id"
+    put:
+      operationId: updateUser
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                channels:
+                  $ref: "#/components/schemas/channel"
+                display_name:
+                  $ref: "#/components/schemas/display_name_user"
+                image_url:
+                  $ref: "#/components/schemas/image_url"
+                name:
+                  $ref: "#/components/schemas/name_user"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  href:
+                    $ref: "#/components/schemas/href_user"
+                  id:
+                    $ref: "#/components/schemas/user_id"
+          description: Retrieve a user
+      summary: Update a user
+      tags:
+        - user
+  "/users/{user_id}/conversations":
+    get:
+      operationId: getuserConversations
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  properties:
+                    display_name:
+                      $ref: "#/components/schemas/display_name"
+                    href:
+                      $ref: "#/components/schemas/href"
+                    id:
+                      $ref: "#/components/schemas/conversation_id"
+                    image_url:
+                      $ref: "#/components/schemas/image_url"
+                    member_id:
+                      $ref: "#/components/schemas/member_id"
+                    name:
+                      $ref: "#/components/schemas/name_conversation"
+                    sequence_number:
+                      description: the id of the last event of the conversation (event's id is an incremental number
+                      example: "123"
+                      format: url
+                      type: integer
+                    state:
+                      $ref: "#/components/schemas/member_state"
+                    timestamp:
+                      properties:
+                        created:
+                          $ref: "#/components/schemas/timestamp"
+                      type: object
+                  type: object
+                type: array
+          description: List user conversations
+      summary: List user conversations
+      tags:
+        - user
+    parameters:
+      - $ref: "#/components/parameters/user_id"
+components:
+  parameters:
+    conversation_id:
+      description: Conversation ID
+      example: CON-f972836a-550f-45fa-956c-12a2ab5b7d22
+      in: path
+      name: conversation_id
+      required: true
+      schema:
+        type: string
+    date_end:
+      description: Return the records that occurred before this point in time.
+      in: query
+      name: date_end
+      required: false
+      schema:
+        example: 2018-01-01 12:00:00
+        format: dateTime
+        type: string
+    date_start:
+      description: Return the records that occurred after this point in time.
+      in: query
+      name: date_start
+      required: false
+      schema:
+        example: 2018-01-01 10:00:00
+        format: dateTime
+        type: string
+    event_id:
+      description: Event ID
+      in: path
+      name: event_id
+      required: true
+      schema:
+        type: string
+    leg_id:
+      description: Leg ID
+      in: path
+      name: leg_id
+      required: true
+      schema:
+        type: string
+    member_id:
+      description: Member ID
+      in: path
+      name: member_id
+      required: true
+      schema:
+        type: string
+    order:
+      description: Return the records in ascending or descending order.
+      in: query
+      name: order
+      required: false
+      schema:
+        default: asc
+        enum:
+          - asc
+          - desc
+          - ASC
+          - DESC
+        type: string
+    page_size:
+      description: Return this amount of records in the response
+      in: query
+      name: page_size
+      required: false
+      schema:
+        $ref: "#/components/schemas/page_size"
+    record_index:
+      description: Return calls from this index in the response
+      in: query
+      name: record_index
+      required: false
+      schema:
+        $ref: "#/components/schemas/record_index"
+    user_id:
+      description: User ID
+      in: path
+      name: user_id
+      required: true
+      schema:
+        type: string
+  requestBodies:
+    Conversation:
+      content:
+        application/json:
+          schema:
+            properties:
+              display_name:
+                $ref: "#/components/schemas/display_name"
+              image_url:
+                $ref: "#/components/schemas/image_url"
+              name:
+                $ref: "#/components/schemas/name_conversation"
+              properties:
+                $ref: "#/components/schemas/conversation_properties"
+            type: object
+      description: Conversation Request Payload Object
+    EmptyBody:
+      content:
+        application/json:
+          schema:
+            example: {}
+            type: object
+      description: Conversation Request Payload Object
+      required: true
+    RecordConversation:
+      content:
+        application/json:
+          schema:
+            properties:
+              action:
+                $ref: "#/components/schemas/action"
+              event_method:
+                $ref: "#/components/schemas/event_method"
+              event_url:
+                $ref: "#/components/schemas/event_url"
+              format:
+                $ref: "#/components/schemas/format"
+              split:
+                $ref: "#/components/schemas/split"
+            required:
+              - action
+            type: object
+      description: Record Conversation Request Payload Object
+  responses:
+    ConversationLite:
+      content:
+        application/json:
+          schema:
+            properties:
+              href:
+                $ref: "#/components/schemas/href_conversation"
+              id:
+                $ref: "#/components/schemas/conversation_id"
+            required:
+              - id
+              - href
+            type: object
+      description: Create / Update Conversation Response Payload Object
+    SuccessEmptyJSON:
+      content:
+        application/json:
+          schema:
+            description: Empty JSON payload
+            example: {}
+            type: object
+      description: Success response with empty JSON
+  schemas:
+    _links_conversation:
+      properties:
+        self:
+          properties:
+            href:
+              $ref: "#/components/schemas/href_conversation"
+          type: object
+      type: object
+    _links_conversations_list:
+      description: A series of links between resources in this API in the http://stateless.co/hal_specification.html.
+      properties:
+        self:
+          properties:
+            href:
+              $ref: "#/components/schemas/href_conversations_list"
+          required:
+            - href
+          type: object
+      required:
+        - self
+      type: object
+    action:
+      description: Recording Action
+      enum:
+        - start
+        - stop
+      example: start
+      type: string
+    channel:
+      description: A user who joins a conversation as a member can have one channel per membership type. Channels can be `app`, `phone`, `sip`, `websocket`, or `vbc`
+      properties:
+        from:
+          oneOf:
+            - description: Connect to an App User
+              properties:
+                type:
+                  description: The type of connection. Must be `app`
+                  example: app
+                  type: string
+                user:
+                  description: The username to connect to
+                  example: jamie
+                  type: string
+              required:
+                - type
+                - user
+              type: object
+            - description: Connect to a Phone (PSTN) number
+              properties:
+                number:
+                  description: The phone number to connect to
+                  example: "14155550100"
+                  maxLength: 15
+                  minLength: 7
+                  pattern: \d{7,15}
+                  type: string
+                type:
+                  description: The type of connection. Must be `phone`
+                  example: phone
+                  type: string
+              required:
+                - number
+                - type
+              type: object
+            - description: Connect to a SIP Endpoint
+              properties:
+                type:
+                  description: The type of connection. Must be `sip`
+                  example: sip
+                  type: string
+                uri:
+                  description: The SIP URI to connect to
+                  example: sip:rebekka@sip.example.com
+                  maxLength: 50
+                  minLength: 1
+                  type: string
+              required:
+                - type
+              type: object
+            - description: Connect to a Websocket
+              properties:
+                content-type:
+                  enum:
+                    - audio/l16;rate=8000
+                    - audio/l16;rate=16000
+                  example: audio/l16;rate=16000
+                  type: string
+                headers:
+                  description: Details of the Websocket you want to connect to
+                  properties:
+                    customer_id:
+                      description: This is an example header. You can provide any headers you may need
+                      example: ABC123
+                      type: string
+                  type: object
+                type:
+                  description: The type of connection. Must be `websocket`
+                  example: websocket
+                  type: string
+                uri:
+                  example: wss://example.com/socket
+                  maxLength: 50
+                  minLength: 1
+                  type: string
+              required:
+                - type
+                - content-type
+              type: object
+            - description: Connect to a VBC extension
+              properties:
+                extension:
+                  example: "1234"
+                  type: string
+                type:
+                  description: The type of connection. Must be `vbc`
+                  example: vbc
+                  type: string
+              required:
+                - type
+                - extension
+              type: object
+        leg_id:
+          $ref: "#/components/schemas/leg_id"
+        leg_ids:
+          description: Leg ids associated with this Channel. The first item in the array represents the main active Leg. The second item, if exists, represents a screen-share Leg.
+          items:
+            properties:
+              leg_id:
+                $ref: "#/components/schemas/leg_id"
+          type: array
+        to:
+          oneOf:
+            - $ref: "#/components/schemas/channel/properties/from/oneOf/0"
+            - description: Connect to a Phone (PSTN) number
+              properties:
+                dtmfAnswer:
+                  description: Provide [DTMF digits](https://developer.nexmo.com/voice/voice-api/guides/dtmf) to send when the call is answered
+                  example: p*123#
+                  type: string
+                number:
+                  $ref: "#/components/schemas/channel/properties/from/oneOf/1/properties/number"
+                type:
+                  description: The type of connection. Must be `phone`
+                  example: phone
+                  type: string
+              required:
+                - number
+                - type
+              type: object
+            - $ref: "#/components/schemas/channel/properties/from/oneOf/2"
+            - $ref: "#/components/schemas/channel/properties/from/oneOf/3"
+            - $ref: "#/components/schemas/channel/properties/from/oneOf/4"
+        type:
+          $ref: "#/components/schemas/channel_type"
+      type: object
+    channel_number:
+      description: this can be a phone number or a random string
+      example: a447700900585
+      type: string
+    channel_type:
+      description: Channel type
+      enum:
+        - app
+        - phone
+        - sip
+        - websocket
+        - vbc
+      example: phone
+      type: string
+    conversation_id:
+      description: The unique identifier for this conversation
+      example: CON-63f61863-4a51-4f6b-86e1-46edebio0391
+      type: string
+    conversation_properties:
+      description: Conversation properties
+      properties:
+        ttl:
+          description: Time to leave. After how many seconds an empty conversation is deleted.
+          example: 60
+          type: number
+      type: object
+    display_name:
+      description: The display name for the conversation. It does not have to be unique
+      example: Customer Chat
+      type: string
+    display_name_user:
+      description: A string to be displayed as user name. It does not need to be unique
+      example: My User Name
+      type: string
+    event_body:
+      description: Event Body
+      example:
+        text: My Text
+      type: object
+    event_id:
+      description: Event id. This is a progressive integer
+      example: "5"
+      type: string
+    event_method:
+      default: POST
+      description: The HTTP method used to send event information to event_url.
+      example: POST
+      type: string
+    event_retrieved:
+      description: Retrieve Events Response Payload Object Item
+      properties:
+        body:
+          $ref: "#/components/schemas/event_body"
+        from:
+          $ref: "#/components/schemas/member_id"
+        href:
+          $ref: "#/components/schemas/href_event"
+        id:
+          $ref: "#/components/schemas/event_id"
+        state:
+          $ref: "#/components/schemas/member_state"
+        timestamp:
+          $ref: "#/components/schemas/timestamp_created"
+        to:
+          $ref: "#/components/schemas/member_id"
+        type:
+          $ref: "#/components/schemas/event_type"
+      required:
+        - id
+        - type
+        - body
+        - timestamp
+        - href
+      type: object
+    event_type:
+      description: Event type
+      example: text
+      type: string
+    event_url:
+      description: The webhook endpoint where recording progress events are sent to.
+      example:
+        - https://example.com/event
+      items:
+        format: url
+        type: string
+      type: array
+      x-nexmo-developer-collection-description-shown: true
+    format:
+      default: mp3
+      description: Record the Conversation in a specific format.
+      enum:
+        - mp3
+        - wav
+      example: mp3
+      type: string
+    href:
+      description: A link towards a resources included in Conversation API
+      example: https://api.nexmo.com/v0.1/conversations/CON-63f61863-4a51-4f6b-86e1-46edebio0391
+      format: url
+      type: string
+    href_conversation:
+      description: A link towards a conversation included in Conversation API
+      example: https://api.nexmo.com/v0.1/conversations/CON-63f61863-4a51-4f6b-86e1-46edebio0391
+      format: url
+      type: string
+    href_conversations_list:
+      description: A link towards a conversations list included in Conversation API
+      example: https://api.nexmo.com/v0.1/conversations?page_size=2&record_index=10&
+      format: url
+      type: string
+    href_event:
+      description: A link towards a conversation event included in Conversation API
+      example: https://api.nexmo.com/v0.1/conversations/CON-63f61863-4a51-4f6b-86e1-46edebio0391/events/1
+      format: url
+      type: string
+    href_member:
+      description: A link towards a member included in Conversation API
+      example: https://api.nexmo.com/v0.1/conversations/CON-63f61863-4a51-4f6b-86e1-46edebio0391/members/MEM-63f61863-4a51-4f6b-86e1-46edebio0391
+      format: url
+      type: string
+    href_rtc:
+      description: A link towards a rtc (leg) included in Conversation API
+      example: https://api.nexmo.com/v0.1/conversations/CON-63f61863-4a51-4f6b-86e1-46edebio0391/rtc/7777777777777
+      format: url
+      type: string
+    href_user:
+      description: A link towards a user included in Conversation API
+      example: https://api.nexmo.com/v0.1/users/USR-63f61863-4a51-4f6b-86e1-46edebio0391
+      format: url
+      type: string
+    image_url:
+      description: A link to an image for conversations' and users' avatars
+      example: https://example.com/image.png
+      format: url
+      type: string
+    initiator:
+      properties:
+        joined:
+          properties:
+            isSystem:
+              description: "`true` if the user was invited by an admin JWT. `user_id` and `member_id` will not exist if `true`"
+              type: boolean
+            member_id:
+              $ref: "#/components/schemas/member_id"
+            user_id:
+              $ref: "#/components/schemas/user_id"
+          type: object
+      type: object
+    knocker_id:
+      description: Knocker ID. A knocker is a pre-member of a conversation who does not exist yet
+      example: a972836a-450f-35fa-156c-52a2ab5b7d25
+      type: string
+    leg_id:
+      description: The id of the leg. rtc_id and call_id are leg id
+      example: a595959595959595995
+      type: string
+    leg_state:
+      description: Leg Status
+      enum:
+        - terminated
+      example: terminated
+      type: string
+    media:
+      description: Media Object
+      example:
+        audio_settings:
+          earmuffed: false
+          enabled: false
+          muted: false
+      properties: {}
+      type: object
+    member_action:
+      description: Invite or join a member to a conversation
+      enum:
+        - invite
+        - join
+      example: join
+      type: string
+    member_id:
+      description: Member ID
+      example: MEM-63f61863-4a51-4f6b-86e1-46edebio0391
+      type: string
+    member_id_inviting:
+      description: Member ID of the member that sends the invitation
+      example: MEM-63f61863-4a51-4f6b-86e1-46edebio0391
+      type: string
+    member_state:
+      description: The state that the member is in. Possible values are `invited`, `joined`, `left`, or `unknown`
+      enum:
+        - invited
+        - joined
+        - left
+        - unknown
+      example: invited
+      type: string
+    name:
+      description: Unique name
+      example: my_unique_name
+      type: string
+    name_conversation:
+      description: Unique name for a conversation
+      example: customer_chat
+      type: string
+    name_user:
+      description: Unique name for a user
+      example: my_user_name
+      type: string
+    page_size:
+      default: 10
+      description: The amount of records returned in this response
+      example: 50
+      maximum: 100
+      minimum: 1
+      type: number
+    record_index:
+      default: 0
+      description: Return `page_size` amount of conversations from this index in the response. That is, if your request returns 300 conversations, set `record_index` to 5 in order to return conversations 50 to 59. The default value is 0. That is, the first `page_size` calls.
+      example: 0
+      minimum: 0
+      type: number
+    split:
+      default: conversation
+      description: Record the sent and received audio in separate channels of a stereo recording
+      example: conversation
+      type: string
+    timestamp:
+      description: Timestamp
+      example: 2020-01-01T14:00:00.00Z
+      type: string
+    timestamp_created:
+      description: Time of creation
+      example: 2020-01-01T14:00:00.00Z
+      type: string
+    timestamp_destroyed:
+      description: Time of last update
+      example: 2020-01-01T14:20:00.00Z
+      type: string
+    timestamp_leg_end_time:
+      description: Time of leg end
+      example: 2020-01-01T14:00:00.00Z
+      type: string
+    timestamp_leg_start_time:
+      description: Time of leg start
+      example: 2020-01-01T14:00:00.00Z
+      type: string
+    timestamp_obj_leg:
+      properties:
+        end:
+          $ref: "#/components/schemas/timestamp"
+        request:
+          $ref: "#/components/schemas/timestamp"
+        start:
+          $ref: "#/components/schemas/timestamp_created"
+      type: object
+    timestamp_res_conversation:
+      properties:
+        created:
+          $ref: "#/components/schemas/timestamp_created"
+        destroyed:
+          $ref: "#/components/schemas/timestamp_destroyed"
+        updated:
+          $ref: "#/components/schemas/timestamp_updated"
+      type: object
+    timestamp_res_event:
+      description: Time of event creation
+      example: 2020-01-01T14:00:00.00Z
+      type: string
+    timestamp_res_member:
+      properties:
+        invited:
+          $ref: "#/components/schemas/timestamp"
+        joined:
+          $ref: "#/components/schemas/timestamp"
+        left:
+          $ref: "#/components/schemas/timestamp"
+      type: object
+    timestamp_updated:
+      description: Time of last update
+      example: 2020-01-01T14:05:00.00Z
+      type: string
+    user_id:
+      description: User ID
+      example: USR-63f61863-4a51-4f6b-86e1-46edebio0391
+      type: string
+    user_id_or_user_name:
+      description: user name or user id of the inviter
+      example: someone_else_user_name
+      type: string
+  securitySchemes:
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

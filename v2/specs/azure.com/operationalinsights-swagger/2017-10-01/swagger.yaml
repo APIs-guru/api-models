@@ -1,0 +1,567 @@
+swagger: "2.0"
+schemes:
+  - https
+host: management.azure.com
+info:
+  contact:
+    email: aiapi@microsoft.com
+    name: AIAPI Team
+    url: https://dev.loganalytics.io/support
+  description: This API exposes Azure Log Analytics query capabilities
+  license:
+    name: Microsoft
+    url: https://dev.loganalytics.io/license
+  termsOfService: https://dev.loganalytics.io/tos
+  title: Azure Log Analytics
+  version: 2017-10-01
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/operationalinsights/data-plane/Microsoft.OperationalInsights/preview/2017-10-01/swagger.json
+      version: "2.0"
+  x-providerName: azure.com
+  x-serviceName: operationalinsights-swagger
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    description: Azure Active Directory OAuth2 Flow
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+security:
+  - azure_auth:
+      - user_impersonation
+parameters:
+  apiVersion:
+    default: 2017-10-01
+    description: Client API version.
+    in: query
+    name: apiVersion
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  queryBody:
+    description: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)
+    in: body
+    name: body
+    required: true
+    schema:
+      $ref: "#/definitions/queryBody"
+    x-ms-parameter-location: method
+  queryParam:
+    description: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)
+    in: query
+    name: query
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  resourceGroupName:
+    description: The name of the resource group to get. The name is case insensitive.
+    in: path
+    maxLength: 90
+    minLength: 1
+    name: resourceGroupName
+    pattern: ^[-\w\._\(\)]+$
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  subscriptionId:
+    description: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call.
+    in: path
+    name: subscriptionId
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  timespanParam:
+    description: Optional. The timespan over which to query data. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the query expression.
+    format: duration
+    in: query
+    name: timespan
+    required: false
+    type: string
+    x-ms-parameter-location: method
+  workspaceName:
+    description: Name of the Log Analytics workspace.
+    in: path
+    name: workspaceName
+    required: true
+    type: string
+    x-ms-parameter-location: method
+paths:
+  "/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/Microsoft.OperationalInsights/workspaces/{workspaceName}/query":
+    get:
+      description: Executes an Analytics query for data
+      operationId: Query_Get
+      parameters:
+        - $ref: "#/parameters/subscriptionId"
+        - $ref: "#/parameters/resourceGroupName"
+        - $ref: "#/parameters/workspaceName"
+        - $ref: "#/parameters/queryParam"
+        - $ref: "#/parameters/timespanParam"
+        - $ref: "#/parameters/apiVersion"
+      responses:
+        "200":
+          description: OK. The API call succeeded and the Analytics query result is in the response payload
+          schema:
+            $ref: "#/definitions/queryResults"
+        default:
+          description: An error response object.
+          schema:
+            $ref: "#/definitions/errorResponse"
+      summary: Execute an Analytics query
+      x-ms-examples:
+        cross-workspace:
+          description: A cross workspace query that the type and count of each row per workspace.
+          parameters:
+            apiVersion: 2017-10-01
+            query: union * | where TimeGenerated > ago(1h) | summarize count() by Type, TenantId
+            resourceGroupName: test-rg
+            subscriptionId: c512b59c-4005-40e2-b13d-ac29cfb46af4
+            workspaceName: azure-insights
+            workspaces: draft-test,draft-test-2
+          responses:
+            "200":
+              body:
+                tables:
+                  - columns:
+                      - name: Type
+                        type: string
+                      - name: TenantId
+                        type: string
+                      - name: count_
+                        type: long
+                    name: PrimaryResult
+                    rows:
+                      - - Usage
+                        - 63613592-b6f7-4c3d-a390-22ba13102111
+                        - "1"
+                      - - Usage
+                        - d436f322-a9f4-4aad-9a7d-271fbf66001c
+                        - "1"
+                      - - BillingFact
+                        - 63613592-b6f7-4c3d-a390-22ba13102111
+                        - "1"
+                      - - BillingFact
+                        - d436f322-a9f4-4aad-9a7d-271fbf66001c
+                        - "1"
+                      - - Operation
+                        - 63613592-b6f7-4c3d-a390-22ba13102111
+                        - "7"
+                      - - Operation
+                        - d436f322-a9f4-4aad-9a7d-271fbf66001c
+                        - "5"
+          title: Cross Workspace Query
+        simple-query:
+          description: A simple query that returns query results.
+          parameters:
+            apiVersion: 2017-10-01
+            query: Usage | take 10
+            resourceGroupName: test-rg
+            subscriptionId: c512b59c-4005-40e2-b13d-ac29cfb46af4
+            timespan: PT12H
+            workspaceName: azure-insights
+          responses:
+            "200":
+              body:
+                tables:
+                  - columns:
+                      - name: TenantId
+                        type: string
+                      - name: Computer
+                        type: string
+                      - name: TimeGenerated
+                        type: datetime
+                      - name: SourceSystem
+                        type: string
+                      - name: StartTime
+                        type: datetime
+                      - name: EndTime
+                        type: datetime
+                      - name: ResourceUri
+                        type: string
+                      - name: LinkedResourceUri
+                        type: string
+                      - name: DataType
+                        type: string
+                      - name: Solution
+                        type: string
+                      - name: BatchesWithinSla
+                        type: long
+                      - name: BatchesOutsideSla
+                        type: long
+                      - name: BatchesCapped
+                        type: long
+                      - name: TotalBatches
+                        type: long
+                      - name: AvgLatencyInSeconds
+                        type: real
+                      - name: Quantity
+                        type: real
+                      - name: QuantityUnit
+                        type: string
+                      - name: IsBillable
+                        type: bool
+                      - name: MeterId
+                        type: string
+                      - name: LinkedMeterId
+                        type: string
+                      - name: Type
+                        type: string
+                    name: PrimaryResult
+                    rows:
+                      - - b438b4f6-912a-46d5-9cb1-b44069212abc
+                        - ContosoSQLSrv1
+                        - 2017-08-24T06:59:59Z
+                        - OMS
+                        - 2017-08-24T06:00:00Z
+                        - 2017-08-24T06:59:59Z
+                        - /subscriptions/e4272367-5645-4c4e-9c67-3b74b59a6982/resourcegroups/contosoazurehq/providers/microsoft.operationalinsights/workspaces/contosoretail-it
+                        - null
+                        - Perf
+                        - LogManagement
+                        - "1"
+                        - "0"
+                        - "0"
+                        - "1"
+                        - "1.286"
+                        - "0.076408"
+                        - MBytes
+                        - "true"
+                        - a4e29a95-5b4c-408b-80e3-113f9410566e
+                        - 00000000-0000-0000-0000-000000000000
+                        - Usage
+                      - - b438b4f6-912a-46d5-9cb1-b44069212abc
+                        - Store010Web3
+                        - 2017-08-24T06:59:59Z
+                        - OMS
+                        - 2017-08-24T06:00:00Z
+                        - 2017-08-24T06:59:59Z
+                        - /subscriptions/e4272367-5645-4c4e-9c67-3b74b59a6982/resourcegroups/contosoazurehq/providers/microsoft.operationalinsights/workspaces/contosoretail-it
+                        - null
+                        - Perf
+                        - LogManagement
+                        - "1"
+                        - "0"
+                        - "0"
+                        - "1"
+                        - "1.7"
+                        - "0.106767"
+                        - MBytes
+                        - "true"
+                        - a4e29a95-5b4c-408b-80e3-113f9410566e
+                        - 00000000-0000-0000-0000-000000000000
+                        - Usage
+              headers:
+                x-ms-correlation-request-id: 58a37988-2c05-427a-891f-5e0e1266fcc5
+                x-ms-request-id: 58a37988-2c05-427a-891f-5e0e1266fcc5
+          title: Simple Query
+    post:
+      description: Executes an Analytics query for data. [Here](https://dev.loganalytics.io/documentation/Using-the-API) is an example for using POST with an Analytics query.
+      operationId: Query_Execute
+      parameters:
+        - $ref: "#/parameters/subscriptionId"
+        - $ref: "#/parameters/resourceGroupName"
+        - $ref: "#/parameters/workspaceName"
+        - $ref: "#/parameters/queryBody"
+        - $ref: "#/parameters/apiVersion"
+      responses:
+        "200":
+          description: OK. The API call succeeded and the Analytics query result is in the response payload
+          schema:
+            $ref: "#/definitions/queryResults"
+        default:
+          description: An error response object.
+          schema:
+            $ref: "#/definitions/errorResponse"
+      summary: Execute an Analytics query
+      x-ms-examples:
+        cross-workspace:
+          description: A cross workspace query that the type and count of each row per workspace.
+          parameters:
+            apiVersion: 2017-10-01
+            body:
+              query: union * | where TimeGenerated > ago(1h) | summarize count() by Type, TenantId
+              workspaces:
+                - draft-test
+                - draft-test-2
+            resourceGroupName: test-rg
+            subscriptionId: c512b59c-4005-40e2-b13d-ac29cfb46af4
+            workspaceName: azure-insights
+          responses:
+            "200":
+              body:
+                tables:
+                  - columns:
+                      - name: Type
+                        type: string
+                      - name: TenantId
+                        type: string
+                      - name: count_
+                        type: long
+                    name: PrimaryResult
+                    rows:
+                      - - Usage
+                        - 63613592-b6f7-4c3d-a390-22ba13102111
+                        - "1"
+                      - - Usage
+                        - d436f322-a9f4-4aad-9a7d-271fbf66001c
+                        - "1"
+                      - - BillingFact
+                        - 63613592-b6f7-4c3d-a390-22ba13102111
+                        - "1"
+                      - - BillingFact
+                        - d436f322-a9f4-4aad-9a7d-271fbf66001c
+                        - "1"
+                      - - Operation
+                        - 63613592-b6f7-4c3d-a390-22ba13102111
+                        - "7"
+                      - - Operation
+                        - d436f322-a9f4-4aad-9a7d-271fbf66001c
+                        - "5"
+          title: Cross Workspace Query
+        simple-query:
+          description: A simple query that returns query results.
+          parameters:
+            apiVersion: 2017-10-01
+            body:
+              query: Usage | take 10
+              timespan: PT12H
+            resourceGroupName: test-rg
+            subscriptionId: c512b59c-4005-40e2-b13d-ac29cfb46af4
+            workspaceName: azure-insights
+          responses:
+            "200":
+              body:
+                tables:
+                  - columns:
+                      - name: TenantId
+                        type: string
+                      - name: Computer
+                        type: string
+                      - name: TimeGenerated
+                        type: datetime
+                      - name: SourceSystem
+                        type: string
+                      - name: StartTime
+                        type: datetime
+                      - name: EndTime
+                        type: datetime
+                      - name: ResourceUri
+                        type: string
+                      - name: LinkedResourceUri
+                        type: string
+                      - name: DataType
+                        type: string
+                      - name: Solution
+                        type: string
+                      - name: BatchesWithinSla
+                        type: long
+                      - name: BatchesOutsideSla
+                        type: long
+                      - name: BatchesCapped
+                        type: long
+                      - name: TotalBatches
+                        type: long
+                      - name: AvgLatencyInSeconds
+                        type: real
+                      - name: Quantity
+                        type: real
+                      - name: QuantityUnit
+                        type: string
+                      - name: IsBillable
+                        type: bool
+                      - name: MeterId
+                        type: string
+                      - name: LinkedMeterId
+                        type: string
+                      - name: Type
+                        type: string
+                    name: PrimaryResult
+                    rows:
+                      - - b438b4f6-912a-46d5-9cb1-b44069212abc
+                        - ContosoSQLSrv1
+                        - 2017-08-24T06:59:59Z
+                        - OMS
+                        - 2017-08-24T06:00:00Z
+                        - 2017-08-24T06:59:59Z
+                        - /subscriptions/e4272367-5645-4c4e-9c67-3b74b59a6982/resourcegroups/contosoazurehq/providers/microsoft.operationalinsights/workspaces/contosoretail-it
+                        - null
+                        - Perf
+                        - LogManagement
+                        - "1"
+                        - "0"
+                        - "0"
+                        - "1"
+                        - "1.286"
+                        - "0.076408"
+                        - MBytes
+                        - "true"
+                        - a4e29a95-5b4c-408b-80e3-113f9410566e
+                        - 00000000-0000-0000-0000-000000000000
+                        - Usage
+                      - - b438b4f6-912a-46d5-9cb1-b44069212abc
+                        - Store010Web3
+                        - 2017-08-24T06:59:59Z
+                        - OMS
+                        - 2017-08-24T06:00:00Z
+                        - 2017-08-24T06:59:59Z
+                        - /subscriptions/e4272367-5645-4c4e-9c67-3b74b59a6982/resourcegroups/contosoazurehq/providers/microsoft.operationalinsights/workspaces/contosoretail-it
+                        - null
+                        - Perf
+                        - LogManagement
+                        - "1"
+                        - "0"
+                        - "0"
+                        - "1"
+                        - "1.7"
+                        - "0.106767"
+                        - MBytes
+                        - "true"
+                        - a4e29a95-5b4c-408b-80e3-113f9410566e
+                        - 00000000-0000-0000-0000-000000000000
+                        - Usage
+          title: Simple Query
+definitions:
+  column:
+    description: A column in a table.
+    properties:
+      name:
+        description: The name of this column.
+        type: string
+      type:
+        description: The data type of this column.
+        type: string
+    title: A table column.
+    type: object
+  errorDetail:
+    properties:
+      additionalProperties:
+        type: object
+      code:
+        description: The error's code.
+        type: string
+      message:
+        description: A human readable error message.
+        type: string
+      resources:
+        description: Indicates resources which were responsible for the error.
+        items:
+          type: string
+        type: array
+      target:
+        description: Indicates which property in the request is responsible for the error.
+        type: string
+      value:
+        description: Indicates which value in 'target' is responsible for the error.
+        type: string
+    required:
+      - code
+      - message
+    title: Error details.
+    type: object
+  errorInfo:
+    properties:
+      additionalProperties:
+        type: object
+      code:
+        description: A machine readable error code.
+        type: string
+      details:
+        description: error details.
+        items:
+          $ref: "#/definitions/errorDetail"
+        type: array
+      innererror:
+        $ref: "#/definitions/errorInfo"
+        description: Inner error details if they exist.
+      message:
+        description: A human readable error message.
+        type: string
+    required:
+      - code
+      - message
+    title: The code and message for an error.
+    type: object
+  errorResponse:
+    description: Contains details when the response code indicates an error.
+    properties:
+      error:
+        $ref: "#/definitions/errorInfo"
+        description: The error details.
+    required:
+      - error
+    title: Error details.
+    type: object
+  queryBody:
+    description: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)
+    properties:
+      query:
+        $ref: "#/definitions/queryParam"
+        description: The query to execute.
+      timespan:
+        $ref: "#/definitions/timespanParam"
+        description: Optional. The timespan over which to query data. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the query expression.
+      workspaces:
+        $ref: "#/definitions/workspacesParam"
+        description: A list of workspaces that are included in the query.
+    required:
+      - query
+    type: object
+  queryParam:
+    description: The Analytics query. Learn more about the [Analytics query syntax](https://azure.microsoft.com/documentation/articles/app-insights-analytics-reference/)
+    type: string
+  queryResults:
+    description: Contains the tables, columns & rows resulting from a query.
+    properties:
+      tables:
+        description: The list of tables, columns and rows.
+        items:
+          $ref: "#/definitions/table"
+        type: array
+    required:
+      - tables
+    title: A query response.
+    type: object
+  table:
+    description: Contains the columns and rows for one table in a query response.
+    properties:
+      columns:
+        description: The list of columns in this table.
+        items:
+          $ref: "#/definitions/column"
+        type: array
+      name:
+        description: The name of the table.
+        type: string
+      rows:
+        description: The resulting rows from this query.
+        items:
+          items:
+            type: string
+          type: array
+        type: array
+    required:
+      - name
+      - columns
+      - rows
+    title: A query response table.
+    type: object
+  timespanParam:
+    description: Optional. The timespan over which to query data. This is an ISO8601 time period value.  This timespan is applied in addition to any that are specified in the query expression.
+    type: string
+  workspacesParam:
+    description: Workspace IDs to include in cross-workspace queries.
+    items:
+      type: string
+    type: array

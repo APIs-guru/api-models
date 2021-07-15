@@ -1,0 +1,5971 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.jumpseller.com/v1
+info:
+  contact:
+    x-twitter: jumpseller
+  description: |
+    # Endpoint Structure
+
+    All URLs are in the format: 
+
+    ```text
+    https://api.jumpseller.com/v1/path.json?login=XXXXXX&authtoken=storetoken  
+    ```
+
+    The path is prefixed by the API version and the URL takes as parameters the login (your store specific API login) and your authentication token.
+    <br/><br/>
+    ***
+
+    # Version
+
+    The current version of the API is **v1**.  
+    If we change the API in backward-incompatible ways, we'll increase the version number and maintain stable support for the old urls.
+    <br/><br/>
+    ***
+
+    # Authentication
+
+    The API uses a token-based authentication with a combination of a login key and an auth token. **Both parameters can be found on the left sidebar of the Account section, accessed from the main menu of your Admin Panel**. The auth token of the user can be reset on the same page.
+
+    ![Store Login](/images/support/api/apilogin.png)
+
+    The auth token is a **32 characters** string.
+
+    If you are developing a Jumpseller App, the authentication should be done using [OAuth-2](/support/oauth-2). Please read the article [Build an App](/support/apps) for more information.
+    <br/><br/>
+    ***
+
+    # Curl Examples
+
+    To request all the products at your store, you would append the products index path to the base url to create an URL with the format:  
+
+    ```text
+    https://api.jumpseller.com/v1/products.json?login=XXXXXX&authtoken=XXXXX
+    ```
+
+    In curl, you can invoque that URL with:  
+
+    ```text
+    curl -X GET "https://api.jumpseller.com/v1/products.json?login=XXXXXX&authtoken=XXXXX"
+    ```
+
+    To create a product, you will include the JSON data and specify the MIME Type:  
+
+    ```text
+    curl -X POST -d '{ "product" : {"name": "My new Product!", "price": 100} }' "https://api.jumpseller.com/v1/products.json?login=XXXXXX&authtoken=XXXXX" -H "Content-Type:application/json"
+    ```
+
+    and to update the product identified with 123:  
+
+    ```text
+    curl -X PUT -d '{ "product" : {"name": "My updated Product!", "price": 99} }' "https://api.jumpseller.com/v1/products/123.json?login=XXXXXX&authtoken=XXXXX" -H "Content-Type:application/json"
+    ```
+
+    or delete it:  
+
+    ```text
+    curl -X DELETE "https://api.jumpseller.com/v1/products/123.json?login=XXXXXX&authtoken=XXXXX" -H "Content-Type:application/json"
+    ```
+    <br/><br/>
+    ***
+
+    # PHP Examples
+
+    Create a new Product (POST method)
+
+    ```php
+    $url = 'https://api.jumpseller.com/v1/products.json?login=XXXXX&authtoken=XXXXX;
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array('Content-Type: application/json'));
+
+    curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "POST"); //post method
+    curl_setopt($ch, CURLOPT_POSTFIELDS, '{ "product" : {"name": "My updated Product!", "price": 99} }');
+
+    $result = curl_exec($ch);
+    print_r($result);
+    curl_close($ch);
+    ```
+    <br/><br/>
+    ***
+
+    # Plain JSON only. No XML.
+
+    * We only support JSON for data serialization.
+    * Our node format has no root element.  
+    * We use snake_case to describe attribute keys (like "created_at").  
+    * All empty value are replaced with **null** strings.
+    * All API URLs end in .json to indicate that they accept and return JSON.
+    * POST and PUT methods require you to explicitly state the MIME type of your request's body content as **"application/json"**.
+    <br/><br/>
+    ***
+
+    # Rate Limit
+    You can perform a maximum of:
+
+    + 240 (two hundred forty) requests per minute and
+    + 8 (eight) requests per second 
+
+    If you exceed this limit, you'll get a 403 Forbidden (Rate Limit Exceeded) response for subsequent requests.  
+
+    The rate limits apply by IP address and by store. This means that multiple requests on different stores are not counted towards the same rate limit.
+
+    This limits are necessary to ensure resources are correctly used. Your application should be aware of this limits and retry any unsuccessful request, check the following Ruby stub:
+
+    ```ruby
+    tries = 0; max_tries = 3;
+    begin
+      HTTParty.send(method, uri) # perform an API call.
+      sleep 0.5
+      tries += 1
+    rescue
+      unless tries >= max_tries
+        sleep 1.0 # wait the necessary time before retrying the call again.
+        retry
+      end
+    end
+    ```
+
+    Finally, you can review the Response Headers of each request:
+
+    ```text
+    Jumpseller-PerMinuteRateLimit-Limit: 60  
+    Jumpseller-PerMinuteRateLimit-Remaining: 59 # requests available on the per-second interval  
+    Jumpseller-PerSecondRateLimit-Limit: 2  
+    Jumpseller-PerSecondRateLimit-Remaining: 1 # requests available on the per-second interval
+    ``` 
+
+    to better model your application requests intervals.
+
+    In the event of getting your IP banned, the Response Header `Jumpseller-BannedByRateLimit-Reset` informs you the time when will your ban be reseted.
+    <br/><br/>
+    ***
+
+    # Pagination
+
+    By default we will return 50 objects (products, orders, etc) per page. There is a maximum of 100, using a query string `&limit=100`.
+    If the result set gets paginated it is your responsibility to check the next page for more objects -- you do this by using query strings `&page=2`, `&page=3` and so on.
+
+    ```text
+    https://api.jumpseller.com/v1/products.json?login=XXXXXX&authtoken=XXXXX&page=3&limit=100
+    ```
+    <br/><br/>
+    ***
+
+    # More
+    * [Jumpseller API wrapper](https://gitlab.com/jumpseller-api/ruby) provides a public Ruby abstraction over our API;
+    * [Apps Page](/apps) showcases external integrations with Jumpseller done by technical experts;
+    * [Imgbb API](https://api.imgbb.com/) provides an easy way to upload and temporaly host for images and files.
+    <br/><br/>
+    ***
+    <br/><br/>
+  title: Jumpseller API
+  version: 1.0.0
+  x-apisguru-categories:
+    - ecommerce
+  x-logo:
+    altText: Jumpseller logo
+    href: /
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_jumpseller_profile_image.png
+  x-origin:
+    - format: openapi
+      url: https://api.jumpseller.com/swagger.json
+      version: "3.0"
+  x-providerName: jumpseller.com
+paths:
+  /categories.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+          description: OK
+      summary: Retrieve all Categories.
+      tags:
+        - Categories
+    post:
+      description: Category's permalink is automatically generated from the given category's name.
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        $ref: "#/components/requestBodies/CategoryEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+          description: OK
+      summary: Create a new Category.
+      tags:
+        - Categories
+  /categories/count.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+      summary: Count all Categories.
+      tags:
+        - Categories
+  "/categories/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Category
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Category Not Found.
+      summary: Delete an existing Category.
+      tags:
+        - Categories
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Category
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+          description: The selected Category.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Category Not Found.
+      summary: Retrieve a single Category.
+      tags:
+        - Categories
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Category
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/CategoryEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Category"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Category Not Found.
+      summary: Modify an existing Category.
+      tags:
+        - Categories
+  /checkout_custom_fields.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/PageParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/CheckoutCustomField"
+                type: array
+          description: An array of Checkout Custom Fields
+      summary: Retrieve all Checkout Custom Fields.
+      tags:
+        - Checkout Custom Fields
+    post:
+      description: "Type values can be: input, selection, checkbox, date or text. Area values can be: contact, billing_shipping or other."
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        $ref: "#/components/requestBodies/CheckoutCustomFieldEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutCustomField"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CheckoutCustomField Not Found.
+      summary: Create a new CheckoutCustomField.
+      tags:
+        - Checkout Custom Fields
+  "/checkout_custom_fields/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CheckoutCustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CheckoutCustomField Not Found.
+      summary: Delete an existing CheckoutCustomField.
+      tags:
+        - Checkout Custom Fields
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CheckoutCustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutCustomField"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CheckoutCustomField Not Found.
+      summary: Retrieve a single CheckoutCustomField.
+      tags:
+        - Checkout Custom Fields
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CheckoutCustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/CheckoutCustomFieldEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CheckoutCustomField"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CheckoutCustomField Not Found.
+      summary: Update a CheckoutCustomField.
+      tags:
+        - Checkout Custom Fields
+  /countries.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Country"
+                type: array
+          description: An array of Countries
+      summary: Retrieve all Countries.
+      tags:
+        - Countries
+  "/countries/{country_code}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ISO3166 Country Code
+          in: path
+          name: country_code
+          required: true
+          schema:
+            format: string
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Country"
+          description: A Country information object
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Country Not Found.
+      summary: Retrieve a single Country information.
+      tags:
+        - Countries
+  "/countries/{country_code}/regions.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ISO3166 Country Code
+          in: path
+          name: country_code
+          required: true
+          schema:
+            format: string
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Region"
+                type: array
+          description: An array of Regions from a single Country
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Country Not Found.
+      summary: Retrieve all Regions from a single Country.
+      tags:
+        - Countries
+        - Regions
+  "/countries/{country_code}/regions/{region_code}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ISO3166 Country Code
+          in: path
+          name: country_code
+          required: true
+          schema:
+            format: string
+            type: string
+        - description: Region Code
+          in: path
+          name: region_code
+          required: true
+          schema:
+            format: string
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Region"
+          description: A Region information object
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Country or Region not found.
+      summary: Retrieve a single Region information object.
+      tags:
+        - Countries
+        - Regions
+  /custom_fields.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/CustomField"
+                type: array
+          description: An array of Custom Fields
+      summary: Retrieve all Store's Custom Fields.
+      tags:
+        - Custom Fields
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomFieldEdit"
+        description: Custom Field parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomField"
+          description: OK
+      summary: Create a new Custom Field.
+      tags:
+        - Custom Fields
+  "/custom_fields/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomField Not Found.
+      summary: Delete an existing CustomField.
+      tags:
+        - Custom Fields
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomField"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomField Not Found.
+      summary: Retrieve a single CustomField.
+      tags:
+        - Custom Fields
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomFieldEdit"
+        description: CustomField parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomField"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomField Not Found.
+      summary: Update a CustomField.
+      tags:
+        - Custom Fields
+  "/custom_fields/{id}/select_options.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/CustomFieldSelectOption"
+                type: array
+          description: An array of Custom Fields Select Options
+      summary: Retrieve all Store's Custom Fields.
+      tags:
+        - Custom Field Select Options
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Automatically added
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomFieldSelectOptionEdit"
+        description: Custom Field Select Option parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomFieldSelectOption"
+          description: OK
+      summary: Create a new Custom Field Select Option.
+      tags:
+        - Custom Field Select Options
+  "/custom_fields/{id}/select_options/{custom_field_select_option_id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+        - description: Id of the CustomFieldSelectOption
+          in: path
+          name: custom_field_select_option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomFieldSelectOption Not Found.
+      summary: Delete an existing CustomFieldSelectOption.
+      tags:
+        - Custom Fields
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+        - description: Id of the CustomFieldSelectOption
+          in: path
+          name: custom_field_select_option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomFieldSelectOption"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomFieldSelectOption Not Found.
+      summary: Retrieve a single SelectOption from a CustomField.
+      tags:
+        - Custom Field Select Options
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomField
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+        - description: Id of the CustomFieldSelectOption
+          in: path
+          name: custom_field_select_option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CustomFieldSelectOptionEdit"
+        description: CustomFieldSelectOption parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomFieldSelectOption"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomFieldSelectOption Not Found.
+      summary: Update a SelectOption from a CustomField.
+      tags:
+        - Custom Field Select Options
+  /customer_categories.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/PageParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/CustomerCategory"
+                type: array
+          description: An array of Customer Categories
+      summary: Retrieve all Customer Categories.
+      tags:
+        - Customer Categories
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        $ref: "#/components/requestBodies/CustomerCategoryEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerCategory"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomerCategory Not Found.
+      summary: Create a new CustomerCategory.
+      tags:
+        - Customer Categories
+  "/customer_categories/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomerCategory
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomerCategory Not Found.
+      summary: Delete an existing CustomerCategory.
+      tags:
+        - Customer Categories
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomerCategory
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerCategory"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomerCategory Not Found.
+      summary: Retrieve a single CustomerCategory.
+      tags:
+        - Customer Categories
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomerCategory
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/CustomerCategoryEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerCategory"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomerCategory Not Found.
+      summary: Update a CustomerCategory.
+      tags:
+        - Customer Categories
+  "/customer_categories/{id}/customers.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomerCategory
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/CustomersToCustomerCategory"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomerCategory Not Found.
+      summary: Delete Customers from an existing CustomerCategory.
+      tags:
+        - Customer Categories
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomerCategory
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Customer"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomerCategory Not Found.
+      summary: Retrieves the customers in a CustomerCategory.
+      tags:
+        - Customer Categories
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the CustomerCategory
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/CustomersToCustomerCategory"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Customer"
+                type: array
+          description: Array of Customers in the Customer Category
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: CustomerCategory Not Found.
+      summary: Adds Customers to a CustomerCategory.
+      tags:
+        - Customer Categories
+  /customers.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/PageParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Customer"
+                type: array
+          description: An array of Orders
+      summary: Retrieve all Customers.
+      tags:
+        - Customers
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        $ref: "#/components/requestBodies/CustomerWithPasswordNoID"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Not Found.
+      summary: Create a new Customer.
+      tags:
+        - Customers
+  /customers/count.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+      summary: Count all Customers.
+      tags:
+        - Customers
+  "/customers/email/{email}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Email of the Customer
+          in: path
+          name: email
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Not Found.
+      summary: Retrieve a single Customer by email.
+      tags:
+        - Customers
+  "/customers/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Customer
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Not Found.
+      summary: Delete an existing Customer.
+      tags:
+        - Customers
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Customer
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Not Found.
+      summary: Retrieve a single Customer by id.
+      tags:
+        - Customers
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Customer
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/CustomerWithPasswordNoID"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Customer"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Not Found.
+      summary: Update a new Customer.
+      tags:
+        - Customers
+  "/customers/{id}/fields":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Customer
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/CustomerAdditionalField"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Not Found.
+      summary: Retrieves the Customer Additional Field of a Customer.
+      tags:
+        - Customer Additional Fields
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Customer
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/CustomerAdditionalFieldEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerAdditionalField"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Additional Field Not Found.
+      summary: Adds Customer Additional Fields to a Customer.
+      tags:
+        - Customer Additional Fields
+  "/customers/{id}/fields/{field_id}":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/CustomerIDParam"
+        - description: Id of the Customer Additional Field
+          in: path
+          name: field_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Not Found.
+      summary: Delete a Customer Additional Field.
+      tags:
+        - Customer Additional Fields
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Customer
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+        - description: Id of the Customer Additional Field
+          in: path
+          name: field_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerAdditionalField"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Not Found.
+      summary: Retrieve a single Customer Additional Field.
+      tags:
+        - Customer Additional Fields
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/CustomerIDParam"
+        - description: Id of the Customer Additional Field
+          in: path
+          name: field_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/CustomerAdditionalFieldEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CustomerAdditionalField"
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadParams"
+          description: Customer Additional Field Bad Parameters.
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Customer Additional Field Not Found.
+      summary: Update a Customer Additional Field.
+      tags:
+        - Customer Additional Fields
+  /hooks.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/PageParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Hook"
+                type: array
+          description: An array of Hooks
+      summary: Retrieve all Hooks.
+      tags:
+        - Hooks
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        $ref: "#/components/requestBodies/HookEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hook"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Hook Not Found.
+      summary: Create a new Hook.
+      tags:
+        - Hooks
+  "/hooks/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Hook
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Hook Not Found.
+      summary: Delete an existing Hook.
+      tags:
+        - Hooks
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Hook
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hook"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Hook Not Found.
+      summary: Retrieve a single Hook.
+      tags:
+        - Hooks
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Hook
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/HookEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Hook"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Hook Not Found.
+      summary: Update a Hook.
+      tags:
+        - Hooks
+  /jsapps.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/App"
+          description: OK
+      summary: Retrieve all the Store's JSApps
+      tags:
+        - Apps
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/JSAppEdit"
+        description: JSApp parameters to create
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JSApp"
+          description: OK
+      summary: Create a Store JSApp
+      tags:
+        - Apps
+  "/jsapps/{code}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Code of the App
+          in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: App Not Found.
+      summary: Delete an existing JSApp.
+      tags:
+        - Apps
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Code of the App
+          in: path
+          name: code
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JSApp"
+          description: OK
+      summary: Retrieve a JSApp
+      tags:
+        - Apps
+  /orders.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/PageParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Order"
+                type: array
+          description: An array of Orders
+      summary: Retrieve all Orders.
+      tags:
+        - Orders
+    post:
+      description: Orders created externally keep the given order product's values (bypassing internal promotion or product amounts).
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderCreate"
+        description: Order parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+          description: OK
+      summary: Create a new Order.
+      tags:
+        - Orders
+  "/orders/after/{id}.json":
+    get:
+      description: For example the GET /orders/after/5000 will return Order 5001, 5002, 5003, etc.
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Order
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Order Not Found.
+      summary: Retrieve orders filtered by Order Id.
+      tags:
+        - Orders
+  /orders/count.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+      summary: Count all Orders.
+      tags:
+        - Orders
+  "/orders/status/{status}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Status of the Order used as filter
+          in: path
+          name: status
+          required: true
+          schema:
+            enum:
+              - Abandoned
+              - Canceled
+              - Pending Payment
+              - Paid
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Order"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusInvalid"
+          description: Status Invalid.
+      summary: Retrieve orders filtered by status.
+      tags:
+        - Orders
+  "/orders/{id}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Order
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Order Not Found.
+      summary: Retrieve a single Order.
+      tags:
+        - Orders
+    put:
+      description: Only `status`, `shipment_status`, `tracking_number`, `tracking_company`, `tracking_url`, `additional_information` and `additional_fields` are available for update. An email is send if `shipment_status` changes.
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Order
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderEdit"
+        description: Order parameters to change
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Order"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Order Not Found.
+      summary: Modify an existing Order.
+      tags:
+        - Orders
+  "/orders/{id}/history.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Order
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/OrderHistory"
+                type: array
+          description: An array with Order History
+      summary: Retrieve all Order History.
+      tags:
+        - Orders
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the OrderHistory
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OrderHistoryEdit"
+        description: Order History parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrderHistory"
+          description: OK
+      summary: Create a new Order History Entry.
+      tags:
+        - Orders
+  /pages.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/PageParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Page"
+                type: array
+          description: An array of Pages
+      summary: Retrieve all Pages.
+      tags:
+        - Pages
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        $ref: "#/components/requestBodies/PageModify"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+          description: OK
+      summary: Create a new Page.
+      tags:
+        - Pages
+  /pages/count.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: Total number of pages
+      summary: Count all Pages.
+      tags:
+        - Pages
+  "/pages/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Page
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Page Not Found.
+      summary: Delete an existing Page.
+      tags:
+        - Pages
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Page
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Page Not Found.
+      summary: Retrieve a single Page by id.
+      tags:
+        - Pages
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Page
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/PageModify"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Page"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Page Not Found.
+      summary: Update a Page.
+      tags:
+        - Pages
+  /payment_methods.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/PaymentMethod"
+                type: array
+          description: An array of Payment Methods
+      summary: Retrieve all Store's Payment Methods.
+      tags:
+        - Payment Methods
+  "/payment_methods/{id}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Payment Method
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PaymentMethod"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: PaymentMethod Not Found.
+      summary: Retrieve a single Payment Method.
+      tags:
+        - Payment Methods
+  /products.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LimitParam"
+        - $ref: "#/components/parameters/PageParam"
+        - $ref: "#/components/parameters/LocaleParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Product"
+                type: array
+          description: OK
+      summary: Retrieve all Products.
+      tags:
+        - Products
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LocaleParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductEdit"
+        description: Product parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+          description: OK
+      summary: Create a new Product.
+      tags:
+        - Products
+  "/products/after/{id}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - $ref: "#/components/parameters/LocaleParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Product"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieves Products after the given id.
+      tags:
+        - Products
+  "/products/category/{category_id}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LocaleParam"
+        - description: Category ID of the Product used as filter
+          in: path
+          name: category_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Product"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve Products filtered by category.
+      tags:
+        - Products
+  "/products/category/{category_id}/count.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LocaleParam"
+        - description: Category ID of the Product used as filter
+          in: path
+          name: category_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Category Not Found.
+      summary: Count Products filtered by category.
+      tags:
+        - Products
+  /products/count.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+      summary: Count all Products.
+      tags:
+        - Products
+  /products/search.json:
+    get:
+      description: |-
+        Endpoint example: 
+
+        ```text
+        https://api.jumpseller.com/v1/products/search.json?login=XXXXXX&authtoken=XXXXX&query=test&fields=name,description 
+        ```
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LocaleParam"
+        - description: Text to query for the Product
+          in: query
+          name: query
+          required: true
+          schema:
+            format: string
+            type: string
+        - description: Comma separated values of the fields to query for the Product
+          in: query
+          name: fields
+          required: false
+          schema:
+            enum:
+              - sku
+              - barcode
+              - brand
+              - name
+              - description
+              - variants
+              - option_name
+              - custom_fields
+              - custom_fields_selects
+            format: string
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Product"
+                type: array
+          description: An array of products
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Invalid query.
+      summary: Retrieve a Product List from a query.
+      tags:
+        - Products
+  "/products/status/{status}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LocaleParam"
+        - description: Status of the Product used as filter
+          in: path
+          name: status
+          required: true
+          schema:
+            enum:
+              - available
+              - not-available
+              - disabled
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Product"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusInvalid"
+          description: Status Invalid.
+      summary: Retrieve Products filtered by status.
+      tags:
+        - Products
+  "/products/status/{status}/count.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LocaleParam"
+        - description: Status of the Product used as filter
+          in: path
+          name: status
+          required: true
+          schema:
+            enum:
+              - available
+              - not-available
+              - disabled
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StatusInvalid"
+          description: Status Invalid.
+      summary: Count Products filtered by status.
+      tags:
+        - Products
+  "/products/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Delete an existing Product.
+      tags:
+        - Products
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/LocaleParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve a single Product.
+      tags:
+        - Products
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - $ref: "#/components/parameters/LocaleParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductEdit"
+        description: Product parameters to change
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Modify an existing Product.
+      tags:
+        - Products
+  "/products/{id}/attachments.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Attachment"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve all Product Attachments.
+      tags:
+        - Product Attachments
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AttachmentEdit"
+        description: Product Attachment parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+          description: OK
+      summary: Create a new Product Attachment.
+      tags:
+        - Product Attachments
+  "/products/{id}/attachments/count.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Count all Product Attachments.
+      tags:
+        - Product Attachments
+  "/products/{id}/attachments/{attachment_id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Attachment
+          in: path
+          name: attachment_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Delete a Product Attachment.
+      tags:
+        - Product Attachments
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Attachment
+          in: path
+          name: attachment_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Attachment"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve a single Product Attachment.
+      tags:
+        - Product Attachments
+  "/products/{id}/digital_products.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/DigitalProduct"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve all Product DigitalProducts.
+      tags:
+        - Product DigitalProducts
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DigitalProductEdit"
+        description: Product DigitalProduct parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DigitalProduct"
+          description: OK
+      summary: Create a new Product DigitalProduct.
+      tags:
+        - Product DigitalProducts
+  "/products/{id}/digital_products/count.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Count all Product DigitalProducts.
+      tags:
+        - Product DigitalProducts
+  "/products/{id}/digital_products/{digital_product_id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product DigitalProduct
+          in: path
+          name: digital_product_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Delete a Product DigitalProduct.
+      tags:
+        - Product DigitalProducts
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product DigitalProduct
+          in: path
+          name: digital_product_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DigitalProduct"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve a single Product DigitalProduct.
+      tags:
+        - Product DigitalProducts
+  "/products/{id}/fields.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ProductCustomField"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve all Product Custom Fields
+      tags:
+        - Product Custom Fields
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddProductCustomField"
+        description: Product Custom Field parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Product"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Add an existing Custom Field to a Product .
+      tags:
+        - Product Custom Fields
+  "/products/{id}/fields/count.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Count all Product Custom Fields.
+      tags:
+        - Product Custom Fields
+  "/products/{id}/images.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Image"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve all Product Images.
+      tags:
+        - Product Images
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ImageEdit"
+        description: Product Image parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+          description: OK
+      summary: Create a new Product Image.
+      tags:
+        - Product Images
+  "/products/{id}/images/count.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Count all Product Images.
+      tags:
+        - Product Images
+  "/products/{id}/images/{image_id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Image
+          in: path
+          name: image_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Delete a Product Image.
+      tags:
+        - Product Images
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Image
+          in: path
+          name: image_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Image"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve a single Product Image.
+      tags:
+        - Product Images
+  "/products/{id}/options.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ProductOption"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve all Product Options.
+      tags:
+        - Product Options
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductOptionEdit"
+        description: Product Option parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductOption"
+          description: OK
+      summary: Create a new Product Option.
+      tags:
+        - Product Options
+  "/products/{id}/options/count.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Count all Product Options.
+      tags:
+        - Product Options
+  "/products/{id}/options/{option_id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Option
+          in: path
+          name: option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Delete a Product Option.
+      tags:
+        - Product Options
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Option
+          in: path
+          name: option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductOption"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve a single Product Option.
+      tags:
+        - Product Options
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Option
+          in: path
+          name: option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductOptionEdit"
+        description: Product option parameters to change
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductOption"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Modify an existing Product Option.
+      tags:
+        - Product Options
+  "/products/{id}/options/{option_id}/values.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+        - description: ID of the Product Option
+          in: path
+          name: option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ProductOptionValue"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve all Product Option Values.
+      tags:
+        - Product Option Values
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Option
+          in: path
+          name: option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductOptionValueEdit"
+        description: Product Option Value parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductOptionValue"
+          description: OK
+      summary: Create a new Product Option Value.
+      tags:
+        - Product Option Values
+  "/products/{id}/options/{option_id}/values/count.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+        - description: ID of the Product Option
+          in: path
+          name: option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Count all Product Option Values.
+      tags:
+        - Product Option Values
+  "/products/{id}/options/{option_id}/values/{value_id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Option
+          in: path
+          name: option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+        - description: ID of the Product Option Value
+          in: path
+          name: value_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Delete a Product Option Value.
+      tags:
+        - Product Option Values
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Option
+          in: path
+          name: option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+        - description: ID of the Product Option Value
+          in: path
+          name: value_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductOptionValue"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve a single Product Option Value.
+      tags:
+        - Product Option Values
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Option
+          in: path
+          name: option_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+        - description: Id of the Product Option Value
+          in: path
+          name: value_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ProductOptionValueEdit"
+        description: Product option value parameters to change
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProductOptionValue"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Modify an existing Product Option Value.
+      tags:
+        - Product Option Values
+  "/products/{id}/variants.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Variant"
+                type: array
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve all Product Variants.
+      tags:
+        - Product Variants
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VariantEdit"
+        description: Product Variant parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Variant"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Create a new Product Variant.
+      tags:
+        - Product Variants
+  "/products/{id}/variants/count.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: ID of the Product
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Count"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Count all Product Variants.
+      tags:
+        - Product Variants
+  "/products/{id}/variants/{variant_id}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Variant
+          in: path
+          name: variant_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Variant"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Retrieve a single Product Variant.
+      tags:
+        - Product Variants
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - $ref: "#/components/parameters/ProductIDParam"
+        - description: Id of the Product Variant
+          in: path
+          name: variant_id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VariantEdit"
+        description: Product Variant parameters to change
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Variant"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Product Not Found.
+      summary: Modify an existing Product Variant.
+      tags:
+        - Product Variants
+  /promotions.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: "Promotions' list restriction (default: 50 | max: 200)."
+          in: query
+          name: limit
+          required: false
+          schema:
+            format: integer
+            type: integer
+        - description: "Promotions' list page (default: 1)."
+          in: query
+          name: page
+          required: false
+          schema:
+            format: integer
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Promotion"
+                type: array
+          description: An array of Promotions
+      summary: Retrieve all Promotions.
+      tags:
+        - Promotions
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        $ref: "#/components/requestBodies/PromotionEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Promotion"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Promotion Not Found.
+      summary: Create a new Promotion.
+      tags:
+        - Promotions
+  "/promotions/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Promotion
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Promotion Not Found.
+      summary: Delete an existing Promotion.
+      tags:
+        - Promotions
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Promotion
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Promotion"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Promotion Not Found.
+      summary: Retrieve a single Promotion.
+      tags:
+        - Promotions
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Promotion
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/PromotionEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Promotion"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Promotion Not Found.
+      summary: Update a Promotion.
+      tags:
+        - Promotions
+  /shipping_methods.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ShippingMethod"
+                type: array
+          description: An array of Shipping Methods
+      summary: Retrieve all Store's Shipping Methods.
+      tags:
+        - Shipping Methods
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        $ref: "#/components/requestBodies/ShippingMethodEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShippingMethod"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: ShippingMethod Not Found.
+      summary: Creates a Shipping Method.
+      tags:
+        - Shipping Methods
+  "/shipping_methods/{id}.json":
+    delete:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Shipping Method
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Shipping Method Not Found.
+      summary: Delete an existing Shipping Method.
+      tags:
+        - Shipping Methods
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Shipping Method
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShippingMethod"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: ShippingMethod Not Found.
+      summary: Retrieve a single Shipping Method.
+      tags:
+        - Shipping Methods
+    put:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Shipping Method
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/ShippingMethodEdit"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShippingMethod"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Shipping Method Not Found.
+      summary: Update a Shipping Method.
+      tags:
+        - Shipping Methods
+  /store/info.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Store"
+          description: OK
+      summary: Retrieve Store Information
+      tags:
+        - Stores
+  /store/languages.json:
+    get:
+      description: ""
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Language"
+                type: array
+          description: OK
+      summary: Retrieve Store Languages
+      tags:
+        - Stores
+  /taxes.json:
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Tax"
+                type: array
+          description: An array of Taxes
+      summary: Retrieve all Taxes.
+      tags:
+        - Taxes
+    post:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TaxEdit"
+        description: Tax parameters.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tax"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Tax Not Found.
+      summary: Create a new Tax.
+      tags:
+        - Taxes
+  "/taxes/{id}.json":
+    get:
+      parameters:
+        - $ref: "#/components/parameters/LoginParam"
+        - $ref: "#/components/parameters/AuthtokenParam"
+        - description: Id of the Tax
+          in: path
+          name: id
+          required: true
+          schema:
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tax"
+          description: A Tax information object
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NotFound"
+          description: Tax Not Found.
+      summary: Retrieve a single Tax information.
+      tags:
+        - Taxes
+components:
+  parameters:
+    AuthtokenParam:
+      description: API OAuth token.
+      in: query
+      name: authtoken
+      required: true
+      schema:
+        format: string
+        type: string
+    CustomerIDParam:
+      description: Id of the Customer
+      in: path
+      name: id
+      required: true
+      schema:
+        format: int32
+        type: integer
+    LimitParam:
+      description: List restriction
+      in: query
+      name: limit
+      required: false
+      schema:
+        default: 50
+        format: integer
+        maximum: 200
+        type: integer
+    LocaleParam:
+      description: Locale code of the translation
+      in: query
+      name: locale
+      required: false
+      schema:
+        format: string
+        type: string
+    LoginParam:
+      description: API OAuth login.
+      in: query
+      name: login
+      required: true
+      schema:
+        format: string
+        type: string
+    PageParam:
+      description: List page
+      in: query
+      name: page
+      required: false
+      schema:
+        default: 1
+        format: integer
+        type: integer
+    ProductIDParam:
+      description: Id of the Product
+      in: path
+      name: id
+      required: true
+      schema:
+        format: int32
+        type: integer
+  requestBodies:
+    CategoryEdit:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CategoryEdit"
+      description: Category parameters.
+      required: true
+    CheckoutCustomFieldEdit:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CheckoutCustomFieldEdit"
+      description: CheckoutCustomField parameters.
+      required: true
+    CustomerAdditionalFieldEdit:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CustomerAdditionalFieldEdit"
+      description: Customer Additional Field parameters.
+      required: true
+    CustomerCategoryEdit:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CustomerCategoryEdit"
+      description: CustomerCategory parameters.
+      required: true
+    CustomerWithPasswordNoID:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CustomerWithPasswordNoID"
+      description: Customer parameters.
+      required: true
+    CustomersToCustomerCategory:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/CustomersToCustomerCategory"
+      description: Customer parameters.
+      required: true
+    HookEdit:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/HookEdit"
+      description: Hook parameters.
+      required: true
+    PageModify:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PageModify"
+      description: Page parameters.
+      required: true
+    PromotionEdit:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/PromotionEdit"
+      description: Promotion parameters.
+      required: true
+    ShippingMethodEdit:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ShippingMethodEdit"
+      description: Shipping Method parameters.
+      required: true
+  schemas:
+    AddProductCustomField:
+      properties:
+        field:
+          $ref: "#/components/schemas/AddProductCustomFieldFields"
+      type: object
+    AddProductCustomFieldFields:
+      properties:
+        id:
+          description: Unique identifier of the ProductCustomField (custom_field_id)
+          format: int32
+          type: integer
+        value:
+          description: The value for the ProductCustomField
+          type: string
+      type: object
+    App:
+      properties:
+        apps:
+          items:
+            $ref: "#/components/schemas/AppFields"
+          type: array
+      type: object
+    AppFields:
+      properties:
+        author:
+          description: Author of the app
+          type: string
+        code:
+          description: Code of the app
+          type: string
+        description:
+          description: Description of the app
+          type: string
+        js:
+          default: false
+          description: True if the app is a jsapp
+          type: boolean
+        name:
+          description: Name of the app
+          type: string
+        page:
+          description: Page of the app
+          type: string
+      type: object
+    Attachment:
+      properties:
+        attachment:
+          $ref: "#/components/schemas/AttachmentFields"
+      type: object
+    AttachmentEdit:
+      properties:
+        attachment:
+          $ref: "#/components/schemas/AttachmentEditFields"
+      type: object
+    AttachmentEditFields:
+      properties:
+        filename:
+          description: Filename of the attachment (with file extensison)
+          type: string
+        url:
+          description: "Public accessible URL with the desired file contents. (LIMIT: 100MB)"
+          type: string
+      type: object
+    AttachmentFields:
+      properties:
+        id:
+          description: Unique identifier of the attachment
+          format: int32
+          type: integer
+        url:
+          description: Private URL of the attachment
+          type: string
+      type: object
+    BadParams:
+      properties:
+        message:
+          type: string
+    BillingAddress:
+      properties:
+        address:
+          description: Address of the Customer's Billing Address
+          type: string
+        city:
+          description: City of the Customer's Billing Address
+          type: string
+        country:
+          description: Country code of the Customer's Billing Address (ISO 3166-1 alpha-2)
+          type: string
+        municipality:
+          description: Municipality of the Customer's Billing Address
+          type: string
+        name:
+          description: Name of the Customer's Billing Address
+          type: string
+        postal:
+          description: Postal code of the Customer's Billing Address
+          type: string
+        region:
+          description: Region code of the Customer's Billing Address (Use the FIPS standard - http://www.geonames.org/countries/)
+          type: string
+        surname:
+          description: Surname of the Customer's Billing Address
+          type: string
+        taxid:
+          description: Tax id of the Customer's Billing Address
+          type: string
+    Category:
+      properties:
+        category:
+          $ref: "#/components/schemas/CategoryFields"
+      type: object
+    CategoryEdit:
+      properties:
+        category:
+          $ref: "#/components/schemas/CategoryEditFields"
+      type: object
+    CategoryEditFields:
+      properties:
+        name:
+          description: Name of the Category
+          type: string
+        parent_id:
+          description: Unique identifier of the Parent Category
+          format: int32
+          type: integer
+      type: object
+    CategoryFields:
+      properties:
+        id:
+          description: Unique identifier of the Category
+          format: int32
+          type: integer
+        name:
+          description: Name of the Category
+          type: string
+        parent_id:
+          description: Unique identifier of the Parent Category
+          format: int32
+          type: integer
+        permalink:
+          description: Category unique URL path
+          type: string
+      type: object
+    CheckoutCustomField:
+      properties:
+        checkout_custom_field:
+          $ref: "#/components/schemas/CheckoutCustomFieldFields"
+      type: object
+    CheckoutCustomFieldEdit:
+      properties:
+        checkout_custom_field:
+          $ref: "#/components/schemas/CheckoutCustomFieldEditFields"
+      type: object
+    CheckoutCustomFieldEditFields:
+      properties:
+        area:
+          description: Area of the CheckoutCustomField
+          enum:
+            - contact
+            - billing_shipping
+            - other
+          type: string
+        custom_field_select_options:
+          description: The values for the CheckoutCustomField selection
+          items:
+            type: string
+          type: array
+        deletable:
+          default: false
+          description: True if the CheckoutCustomField can be removed from the store
+          type: boolean
+        label:
+          description: Label given to the CheckoutCustomField
+          type: string
+        position:
+          description: Position of the CheckoutCustomField
+          format: int32
+          type: integer
+        required:
+          default: false
+          description: True if the CheckoutCustomField is mandatory
+          type: boolean
+        type:
+          description: Type of the CheckoutCustomField
+          enum:
+            - text
+            - select
+            - input
+            - checkbox
+            - date
+          type: string
+      type: object
+    CheckoutCustomFieldFields:
+      properties:
+        area:
+          description: Area of the CheckoutCustomField
+          enum:
+            - contact
+            - billing_shipping
+            - other
+          type: string
+        custom_field_select_options:
+          description: The values for the CheckoutCustomField selection
+          items:
+            type: string
+          type: array
+        deletable:
+          default: false
+          description: True if the CheckoutCustomField can be removed from the store
+          type: boolean
+        id:
+          description: Unique identifier of the CheckoutCustomField
+          format: int32
+          type: integer
+        label:
+          description: Label given to the CheckoutCustomField
+          type: string
+        position:
+          description: Position of the CheckoutCustomField
+          format: int32
+          type: integer
+        required:
+          default: false
+          description: True if the CheckoutCustomField is mandatory
+          type: boolean
+        type:
+          description: Type of the CheckoutCustomField
+          enum:
+            - text
+            - select
+            - input
+            - checkbox
+          type: string
+      type: object
+    Count:
+      properties:
+        count:
+          format: int32
+          type: integer
+    Country:
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+    CustomField:
+      properties:
+        custom_field:
+          $ref: "#/components/schemas/CustomFieldFields"
+      type: object
+    CustomFieldEdit:
+      properties:
+        custom_field:
+          $ref: "#/components/schemas/CustomFieldEditFields"
+      type: object
+    CustomFieldEditFields:
+      properties:
+        label:
+          description: Label given to the Custom Field
+          type: string
+        type:
+          description: Type of the Custom Field
+          enum:
+            - text
+            - selection
+            - input
+          type: string
+        values:
+          description: All the possible Values of the Custom Field (for type 'selection')
+          items:
+            type: string
+          type: array
+      type: object
+    CustomFieldFields:
+      properties:
+        id:
+          description: Unique identifier of the Custom Field
+          format: int32
+          type: integer
+        label:
+          description: Label given to the Custom Field
+          type: string
+        type:
+          description: Type of the Custom Field
+          enum:
+            - text
+            - selection
+            - input
+          type: string
+        values:
+          description: All the possible Values of the Custom Field (for type 'selection')
+          items:
+            type: string
+          type: array
+      type: object
+    CustomFieldSelectOption:
+      properties:
+        custom_field_select_option:
+          $ref: "#/components/schemas/CustomFieldSelectOptionFields"
+      type: object
+    CustomFieldSelectOptionEdit:
+      properties:
+        custom_field_select_option:
+          $ref: "#/components/schemas/CustomFieldSelectOptionEditFields"
+      type: object
+    CustomFieldSelectOptionEditFields:
+      properties:
+        value:
+          description: Value given to the Custom Field Select Option
+          type: string
+      type: object
+    CustomFieldSelectOptionFields:
+      properties:
+        id:
+          description: Unique identifier of the Custom Field Select Option
+          format: int32
+          type: integer
+        value:
+          description: Value given to the Custom Field Select Option
+          type: string
+      type: object
+    Customer:
+      properties:
+        customer:
+          $ref: "#/components/schemas/CustomerFields"
+      type: object
+    CustomerAdditionalField:
+      properties:
+        customer_additional_field:
+          $ref: "#/components/schemas/CustomerAdditionalFieldFields"
+      type: object
+    CustomerAdditionalFieldEdit:
+      properties:
+        customer_additional_field:
+          $ref: "#/components/schemas/CustomerAdditionalFieldEditFields"
+      type: object
+    CustomerAdditionalFieldEditFields:
+      properties:
+        checkout_custom_field_id:
+          description: Unique identifier of the Checkout Custom Field
+          format: int32
+          type: integer
+        value:
+          description: Value of the Customer Additional Field
+          type: string
+      type: object
+    CustomerAdditionalFieldFields:
+      properties:
+        area:
+          description: Area of the Customer Additional Field
+          type: string
+        checkout_custom_field_id:
+          description: Unique identifier of the Checkout Custom Field
+          format: int32
+          type: integer
+        customer_id:
+          description: Unique identifier of the Customer
+          format: int32
+          type: integer
+        id:
+          description: Unique identifier of the Customer Additional Field
+          format: int32
+          type: integer
+        label:
+          description: Label of the Customer Additional Field
+          type: string
+        value:
+          description: Value of the Customer Additional Field
+          type: string
+      type: object
+    CustomerCategory:
+      properties:
+        category:
+          $ref: "#/components/schemas/CustomerCategoryFields"
+      type: object
+    CustomerCategoryEdit:
+      properties:
+        category:
+          $ref: "#/components/schemas/CustomerCategoryEditFields"
+      type: object
+    CustomerCategoryEditFields:
+      properties:
+        name:
+          description: Name of the CustomerCategory
+          type: string
+      type: object
+    CustomerCategoryFields:
+      properties:
+        code:
+          description: Code of the CustomerCategory
+          type: string
+        id:
+          description: Unique identifier of the CustomerCategory
+          format: int32
+          type: integer
+        name:
+          description: Name of the CustomerCategory
+          type: string
+      type: object
+    CustomerFields:
+      properties:
+        billing_address:
+          $ref: "#/components/schemas/BillingAddress"
+        customer_additional_fields:
+          items:
+            $ref: "#/components/schemas/CustomerAdditionalField"
+          type: array
+        customer_categories:
+          items:
+            $ref: "#/components/schemas/CustomerCategory"
+          type: array
+        email:
+          description: Email of the Customer
+          type: string
+        id:
+          description: Unique identifier of the Customer
+          format: int32
+          type: integer
+        name:
+          description: Name of the Customer
+          type: string
+        phone:
+          description: Phone of the Customer
+          type: string
+        shipping_address:
+          $ref: "#/components/schemas/ShippingAddress"
+        status:
+          description: Status of the Customer
+          enum:
+            - approved
+            - pending
+            - disabled
+          type: string
+        surname:
+          description: Surname of the Customer
+          type: string
+      type: object
+    CustomerFieldsWithBillingAddressAndShippingAddressFields:
+      properties:
+        billing_address:
+          $ref: "#/components/schemas/BillingAddress"
+        id:
+          description: Unique identifier of the Customer
+          format: int32
+          type: integer
+        shipping_address:
+          $ref: "#/components/schemas/ShippingAddress"
+      type: object
+    CustomerFieldsWithPassword:
+      properties:
+        billing_address:
+          $ref: "#/components/schemas/BillingAddress"
+        email:
+          description: Email of the Customer
+          type: string
+        id:
+          description: Unique identifier of the Customer
+          format: int32
+          type: integer
+        password:
+          description: Password
+          type: string
+        phone:
+          description: Phone of the Customer
+          type: string
+        shipping_address:
+          $ref: "#/components/schemas/ShippingAddress"
+        status:
+          description: Status of the Customer
+          enum:
+            - approved
+            - pending
+            - disabled
+          type: string
+      type: object
+    CustomerFieldsWithPasswordNoID:
+      properties:
+        billing_address:
+          $ref: "#/components/schemas/BillingAddress"
+        customer_category:
+          items:
+            type: integer
+          type: array
+        email:
+          description: Email of the Customer
+          type: string
+        password:
+          description: Password
+          type: string
+        phone:
+          description: Phone of the Customer
+          type: string
+        shipping_address:
+          $ref: "#/components/schemas/ShippingAddress"
+        status:
+          description: Status of the Customer
+          enum:
+            - approved
+            - pending
+            - disabled
+          type: string
+      type: object
+    CustomerToCustomerCategory:
+      properties:
+        email:
+          description: Email of the Customer
+          type: string
+        id:
+          description: Unique identifier of the Customer
+          format: int32
+          type: integer
+      type: object
+    CustomerWithPassword:
+      properties:
+        customer:
+          $ref: "#/components/schemas/CustomerFieldsWithPassword"
+      type: object
+    CustomerWithPasswordNoID:
+      properties:
+        customer:
+          $ref: "#/components/schemas/CustomerFieldsWithPasswordNoID"
+      type: object
+    CustomersToCustomerCategory:
+      properties:
+        customers:
+          items:
+            $ref: "#/components/schemas/CustomerToCustomerCategory"
+          type: array
+      type: object
+    DigitalProduct:
+      properties:
+        digital_product:
+          $ref: "#/components/schemas/DigitalProductFields"
+      type: object
+    DigitalProductEdit:
+      properties:
+        digital_product:
+          $ref: "#/components/schemas/DigitalProductEditFields"
+      type: object
+    DigitalProductEditFields:
+      properties:
+        filename:
+          description: Filename of the digital product (with file extensison)
+          type: string
+        url:
+          description: "Public accessible URL with the desired file contents. (LIMIT: 100MB)"
+          type: string
+      type: object
+    DigitalProductFields:
+      properties:
+        expiration_seconds:
+          description: Time left in seconds before the current private URL expires
+          format: int32
+          type: integer
+        id:
+          description: Unique identifier of the digital product
+          format: int32
+          type: integer
+        url:
+          description: Private URL of the digital product
+          type: string
+      type: object
+    Hook:
+      properties:
+        hook:
+          $ref: "#/components/schemas/HookFields"
+      type: object
+    HookEdit:
+      properties:
+        hook:
+          $ref: "#/components/schemas/HookEditFields"
+      type: object
+    HookEditFields:
+      properties:
+        event:
+          description: Event associated with Hook
+          enum:
+            - order_updated
+            - order_pending_payment
+            - order_paid
+            - order_shipped
+            - order_canceled
+            - order_abandoned
+            - product_created
+            - product_updated
+            - product_deleted
+            - customer_created
+            - customer_updated
+            - customer_deleted
+          type: string
+        url:
+          description: Hook URL to be notified
+          type: string
+      required:
+        - event
+        - url
+      type: object
+    HookFields:
+      properties:
+        created_at:
+          description: Hook creation date
+          type: string
+        event:
+          description: Event associated with Hook
+          type: string
+        id:
+          description: Unique identifier of the Hook
+          format: int32
+          type: integer
+        name:
+          description: Hook name
+          type: string
+        url:
+          description: Hook URL to be notified
+          type: string
+      type: object
+    Id:
+      properties:
+        id:
+          format: int32
+          type: integer
+    Image:
+      properties:
+        image:
+          $ref: "#/components/schemas/ImageFields"
+      type: object
+    ImageEdit:
+      properties:
+        image:
+          $ref: "#/components/schemas/ImageEditFields"
+      type: object
+    ImageEditFields:
+      properties:
+        url:
+          description: Complete URL of the image
+          type: string
+      type: object
+    ImageFields:
+      properties:
+        id:
+          description: Unique identifier of the image
+          format: int32
+          type: integer
+        position:
+          description: Position of the image
+          format: int32
+          type: integer
+        url:
+          description: Complete URL of the image
+          type: string
+      type: object
+    JSApp:
+      properties:
+        element:
+          description: Element of Template to inject HTML
+          type: string
+        template:
+          description: Template of Store Theme to inject HTML
+          type: string
+        url:
+          description: Url of the HTML to inject
+          type: string
+      type: object
+    JSAppEdit:
+      properties:
+        app:
+          $ref: "#/components/schemas/JSApp"
+      type: object
+    Language:
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+    NotFound:
+      properties:
+        message:
+          type: string
+    Order:
+      properties:
+        order:
+          $ref: "#/components/schemas/OrderFields"
+      type: object
+    OrderAdditionalFields:
+      description: Additional field of an order
+      properties:
+        label:
+          description: Label of the additional field
+          format: string
+          type: string
+        value:
+          description: Value of the additional field
+          format: string
+          type: string
+      type: object
+    OrderBillingAddress:
+      properties:
+        address:
+          description: Address of the Order's Billing Address
+          type: string
+        city:
+          description: City of the Order's Billing Address
+          type: string
+        country:
+          description: Country code of the Order's Billing Address (ISO 3166-1 alpha-2)
+          type: string
+        country_name:
+          description: Country name of the Order's Billing Address
+          type: string
+        municipality:
+          description: Municipality of the Order's Billing Address
+          type: string
+        name:
+          description: Name of the Order's Billing Address
+          type: string
+        postal:
+          description: Postal code of the Order's Billing Address
+          type: string
+        region:
+          description: Region code of the Order's Billing Address (Use the FIPS standard - http://www.geonames.org/countries/)
+          type: string
+        street_number:
+          description: Street number of the Order's Billing Address
+          type: number
+        surname:
+          description: Surname of the Order's Billing Address
+          type: string
+    OrderCreate:
+      properties:
+        order:
+          $ref: "#/components/schemas/OrderCreateFields"
+      type: object
+    OrderCreateFields:
+      properties:
+        customer:
+          $ref: "#/components/schemas/CustomerFieldsWithBillingAddressAndShippingAddressFields"
+        products:
+          items:
+            $ref: "#/components/schemas/OrderProductOrderCreate"
+          type: array
+        shipping_method_id:
+          description: Shipping method id
+          format: int32
+          type: integer
+        shipping_method_name:
+          description: Shipping method name e.g. Royal Mail
+          type: string
+        shipping_price:
+          description: Shipping method's price (applicable if shipping_method_name is provided instead of a shipping_method_id)
+          format: float
+          type: number
+        status:
+          description: Status of the Order
+          enum:
+            - Abandoned
+            - Canceled
+            - Pending Payment
+            - Paid
+          type: string
+    OrderEdit:
+      properties:
+        order:
+          $ref: "#/components/schemas/OrderEditFields"
+      type: object
+    OrderEditFields:
+      properties:
+        additional_fields:
+          description: Array of additional fields for the given Order
+          items:
+            $ref: "#/components/schemas/OrderAdditionalFields"
+          type: array
+        additional_information:
+          description: Additional information for the given Order
+          type: string
+        shipment_status:
+          description: Status of the Order Shipping
+          enum:
+            - requested
+            - in_transit
+            - delivered
+            - failed
+            - pickup_available
+          type: string
+        status:
+          description: Status of the Order
+          enum:
+            - Abandoned
+            - Canceled
+            - Pending Payment
+            - Paid
+          type: string
+        tracking_company:
+          description: Shipping Company used for the given Order
+          type: string
+        tracking_number:
+          description: Shipping Tracking Number used for the given Order
+          type: string
+        tracking_url:
+          description: URL to check delivery information for the given Order
+          type: string
+    OrderFields:
+      properties:
+        additional_fields:
+          description: Array of additional fields for the given Order
+          items:
+            $ref: "#/components/schemas/OrderAdditionalFields"
+          type: array
+        additional_information:
+          description: Additional information for the given Order
+          type: string
+        billing_address:
+          $ref: "#/components/schemas/OrderBillingAddress"
+        checkout_url:
+          description: Store Checkout Order URL for the given Order
+          type: string
+        coupons:
+          description: Promotion Coupons used on the given Order
+          type: string
+        created_at:
+          description: Order date
+          type: string
+        currency:
+          description: Currency of the Order
+          type: string
+        customer:
+          $ref: "#/components/schemas/Customer"
+        discount:
+          description: Discount value for the given Order
+          format: float
+          type: number
+        duplicate_url:
+          description: Duplicate Order URL for the given Order
+          type: string
+        id:
+          description: Unique identifier of the Order
+          format: int32
+          type: integer
+        payment_information:
+          description: Payment information for the given Order
+          type: string
+        payment_method_name:
+          description: Payment Method name used e.g. PayPal
+          type: string
+        payment_method_type:
+          description: Payment Method type used e.g. paypal
+          type: string
+        products:
+          items:
+            $ref: "#/components/schemas/OrderProduct"
+          type: array
+        recovery_url:
+          description: Recovery Order URL for the given Order
+          type: string
+        shipment_status:
+          description: Shipment Status for Order Fulfillment.
+          enum:
+            - delivered
+            - requested
+            - in_transit
+            - failed
+            - pickup_available
+          type: string
+        shipping:
+          description: Shipping value for the given Order
+          format: float
+          type: number
+        shipping_address:
+          $ref: "#/components/schemas/OrderShippingAddress"
+        shipping_discount:
+          description: Shipping Discount value for the given order
+          format: float
+          type: number
+        shipping_method_id:
+          description: Shipping method e.g. Royal Mail
+          format: int32
+          type: integer
+        shipping_method_name:
+          description: Shipping method e.g. Royal Mail
+          type: string
+        shipping_tax:
+          description: Shipping Tax value for the given order
+          format: float
+          type: number
+        shipping_taxes:
+          items:
+            $ref: "#/components/schemas/OrderShippingTax"
+          type: array
+        source:
+          $ref: "#/components/schemas/TrafficSource"
+        status:
+          description: Status of the Order
+          enum:
+            - Abandoned
+            - Canceled
+            - Pending Payment
+            - Paid
+          type: string
+        subtotal:
+          description: Subtotal value for the given Order. Excluding taxes, shipping and discounts
+          format: float
+          type: number
+        tax:
+          description: Tax value for the given order
+          format: float
+          type: number
+        total:
+          description: Total value for the given Order. Including taxes, shipping and discounts
+          format: float
+          type: number
+        tracking_company:
+          description: Company Used for Order Fulfillment.
+          type: string
+        tracking_number:
+          description: Tracking Number for Order Fulfillment.
+          type: string
+        tracking_url:
+          description: Tracking URL for Order Fulfillment.
+          type: string
+    OrderHistory:
+      properties:
+        order_history:
+          $ref: "#/components/schemas/OrderHistoryFields"
+      type: object
+    OrderHistoryEdit:
+      properties:
+        order_history:
+          $ref: "#/components/schemas/OrderHistoryEditFields"
+      type: object
+    OrderHistoryEditFields:
+      properties:
+        message:
+          description: Message of the Order History
+          type: string
+      type: object
+    OrderHistoryFields:
+      properties:
+        created_at:
+          description: Creation date of the order history
+          type: string
+        id:
+          description: Unique identifier of the Order History
+          format: int32
+          type: integer
+        message:
+          description: Message of the Order History
+          type: string
+      type: object
+    OrderProduct:
+      properties:
+        discount:
+          description: Discount of the Order Product
+          format: float
+          type: number
+        id:
+          description: Unique identifier of the original Product
+          format: int32
+          type: integer
+        image:
+          description: Image URL of the Order Product
+          type: string
+        name:
+          description: Name of the Order Product
+          type: string
+        price:
+          description: Price of the Order Product
+          format: float
+          type: number
+        qty:
+          description: Price of the Order Product
+          format: int32
+          type: integer
+        sku:
+          description: Stock Keeping Unit of the Order Product
+          type: string
+        taxes:
+          items:
+            $ref: "#/components/schemas/OrderProductTax"
+          type: array
+        variant_id:
+          description: Unique identifier of the original Product Variant
+          format: int32
+          type: integer
+        weight:
+          default: 1
+          description: Weight of the Order Product
+          format: float
+          type: number
+      type: object
+    OrderProductOrderCreate:
+      properties:
+        discount:
+          description: Discount of the Order Product
+          format: float
+          type: number
+        id:
+          description: Unique identifier of the original Product
+          format: int32
+          type: integer
+        price:
+          description: Price of the Order Product
+          format: float
+          type: number
+        qty:
+          description: Price of the Order Product
+          format: int32
+          type: integer
+        variant_id:
+          description: Unique identifier of the original Product Variant
+          format: int32
+          type: integer
+      type: object
+    OrderProductTax:
+      properties:
+        fixed:
+          default: false
+          description: False if rate is a percentage and true if rate is monetary
+          type: boolean
+        id:
+          description: Unique identifier of the Order Product Tax
+          format: int32
+          type: integer
+        name:
+          description: Name of the category that the tax is associated with or the tax name
+          type: string
+        rate:
+          description: Tax rate
+          format: float
+          type: number
+        tax_on_product_price:
+          default: false
+          description: False if tax is not included on product price
+          type: boolean
+      type: object
+    OrderShippingAddress:
+      properties:
+        address:
+          description: Address of the Order's Shipping Address
+          type: string
+        city:
+          description: City of the Order's Shipping Address
+          type: string
+        country:
+          description: Country code of the Order's Shipping Address (ISO 3166-1 alpha-2)
+          type: string
+        country_name:
+          description: Country name of the Order's Shipping Address
+          type: string
+        latitude:
+          description: Latitude of the Order's Shipping Address
+          type: number
+        longitude:
+          description: Longitude of the Order's Shipping Address
+          type: number
+        municipality:
+          description: Municipality of the Order's Shipping Address
+          type: string
+        name:
+          description: Name of the Order's Shipping Address
+          type: string
+        postal:
+          description: Postal code of the Order's Shipping Address
+          type: string
+        region:
+          description: Region code of the Order's Shipping Address (Use the FIPS standard - http://www.geonames.org/countries/)
+          type: string
+        street_number:
+          description: Street number of the Order's Shipping Address
+          type: number
+        surname:
+          description: Surname of the Order's Shipping Address
+          type: string
+    OrderShippingTax:
+      properties:
+        country:
+          description: Code of the associated country
+          type: string
+        fixed:
+          default: false
+          description: False if rate is a percentage and true if rate is monetary
+          type: boolean
+        id:
+          description: Unique identifier of the Order Shipping Tax
+          format: int32
+          type: integer
+        name:
+          description: Tax name
+          type: string
+        rate:
+          description: Tax rate
+          format: float
+          type: number
+        region:
+          description: Code of the associated region
+          type: string
+        tax_on_shipping_price:
+          default: false
+          description: False if shipping tax is not included on shipping price
+          type: boolean
+      type: object
+    Page:
+      properties:
+        page:
+          $ref: "#/components/schemas/PageFields"
+      type: object
+    PageCategory:
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+        position:
+          type: integer
+      type: object
+    PageFields:
+      properties:
+        body:
+          description: Body of the Page
+          type: string
+        categories:
+          description: Page categories to which the Page belongs to
+          items:
+            $ref: "#/components/schemas/PageCategory"
+          type: array
+        id:
+          description: Id of the Page
+          type: integer
+        image:
+          description: Image of the Page
+          properties:
+            id:
+              type: integer
+            url:
+              type: string
+          type: object
+        legal:
+          description: True if it is a legal page
+          type: boolean
+        meta_description:
+          description: Meta description of the Page
+          type: string
+        page_title:
+          description: Meta title of the Page
+          type: string
+        permalink:
+          description: URL of the Page
+          type: string
+        status:
+          description: Status of the Page
+          enum:
+            - public
+            - draft
+            - hidden
+          type: string
+        template:
+          $ref: "#/components/schemas/PageTemplate"
+        title:
+          description: Title of the Page
+          type: string
+      type: object
+    PageModify:
+      properties:
+        page:
+          $ref: "#/components/schemas/PageModifyFields"
+      type: object
+    PageModifyFields:
+      properties:
+        body:
+          description: Body of the Page
+          type: string
+        categories:
+          description: Page categories to which the Page belongs to
+          items:
+            $ref: "#/components/schemas/PageCategory"
+          type: array
+        image:
+          description: Image of the Page
+          properties:
+            id:
+              type: integer
+            url:
+              type: string
+          type: object
+        meta_description:
+          description: Meta description of the Page
+          type: string
+        page_title:
+          description: Meta title of the Page
+          type: string
+        permalink:
+          description: URL of the Page
+          type: string
+        status:
+          description: Status of the Page
+          enum:
+            - public
+            - draft
+            - hidden
+          type: string
+        template:
+          description: ID of the Page template. Use null for the blank layout ('None')
+          type: integer
+        title:
+          description: Title of the Page
+          type: string
+      type: object
+    PageTemplate:
+      description: Template of the Page
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+      type: object
+    PaymentMethod:
+      properties:
+        payment_method:
+          $ref: "#/components/schemas/PaymentMethodFields"
+      type: object
+    PaymentMethodFields:
+      properties:
+        id:
+          description: Unique identifier of the Payment Method
+          format: int32
+          type: integer
+        name:
+          description: Name of the Payment Method
+          type: string
+        type:
+          description: Type of the Payment Method
+          enum:
+            - manual
+            - paypal
+            - pagseguro
+            - moneybookers
+            - webpay_cl
+            - easypay
+            - easypaycc
+            - easypayboleto
+            - ideal_basic
+            - hipay
+            - khipu
+            - mercado_pago
+            - ifthenpay
+            - eupago
+            - stripe
+            - payu
+            - servipag
+          type: string
+      type: object
+    Product:
+      properties:
+        product:
+          $ref: "#/components/schemas/ProductFields"
+      type: object
+    ProductCustomField:
+      properties:
+        field:
+          $ref: "#/components/schemas/ProductCustomFieldFields"
+      type: object
+    ProductCustomFieldFields:
+      properties:
+        custom_field_id:
+          description: Unique identifier of the ProductCustomField
+          format: int32
+          type: integer
+        id:
+          description: Unique identifier of the ProductCustomField value
+          format: int32
+          type: integer
+        label:
+          description: The label for the ProductCustomField
+          type: string
+        type:
+          description: The type of the ProductCustomField
+          type: string
+        value:
+          description: The value for the ProductCustomField
+          type: string
+        value_id:
+          description: The value id for the ProductCustomField
+          type: string
+      type: object
+    ProductEdit:
+      properties:
+        product:
+          $ref: "#/components/schemas/ProductEditFields"
+      type: object
+    ProductEditFields:
+      properties:
+        barcode:
+          description: Barcode of the product
+          type: string
+        categories:
+          items:
+            $ref: "#/components/schemas/CategoryFields"
+          type: array
+        description:
+          description: Description of the product
+          type: string
+        diameter:
+          description: Diameter of the product
+          format: float
+          type: number
+        featured:
+          default: false
+          description: True if the product is featured
+          type: boolean
+        google_product_category:
+          description: Category of a Product based on the Google product taxonomy
+          type: string
+        height:
+          description: Height of the product
+          format: float
+          type: number
+        length:
+          description: Length of the product
+          format: float
+          type: number
+        meta_description:
+          description: SEO meta description of the product
+          type: string
+        name:
+          description: Name of the product
+          type: string
+        package_format:
+          default: box
+          description: Format the product package
+          enum:
+            - box
+            - cylinder
+          type: string
+        page_title:
+          description: SEO title of the product
+          type: string
+        permalink:
+          description: Product unique URL path
+          type: string
+        price:
+          description: Price of the product
+          format: float
+          type: number
+        shipping_required:
+          default: true
+          description: False if the product is digital
+          type: boolean
+        sku:
+          description: Stock Keeping Unit of the product
+          type: string
+        status:
+          default: available
+          description: Status of the product
+          enum:
+            - available
+            - not-available
+            - disabled
+          type: string
+        stock:
+          default: 100
+          description: Quantity in stock for the product
+          format: int32
+          type: integer
+        stock_unlimited:
+          description: True if the Product has unlimited stock
+          type: boolean
+        weight:
+          default: 1
+          description: Weight of the product
+          format: float
+          type: number
+        width:
+          description: Width of the product
+          format: float
+          type: number
+      required:
+        - name
+        - price
+      type: object
+    ProductFields:
+      properties:
+        barcode:
+          description: Barcode of the product
+          type: string
+        categories:
+          items:
+            $ref: "#/components/schemas/CategoryFields"
+          type: array
+        created_at:
+          description: Date of product creation
+          type: string
+        description:
+          description: Description of the product
+          type: string
+        diameter:
+          description: Diameter of the product
+          format: float
+          type: number
+        discount:
+          description: Discount of the product
+          format: float
+          type: number
+        featured:
+          default: false
+          description: True if the product is featured
+          type: boolean
+        google_product_category:
+          description: Category of a Product based on the Google product taxonomy
+          type: string
+        height:
+          description: Height of the product
+          format: float
+          type: number
+        id:
+          description: Unique identifier of the product
+          format: int32
+          type: integer
+        images:
+          items:
+            $ref: "#/components/schemas/ImageFields"
+          type: array
+        length:
+          description: Length of the product
+          format: float
+          type: number
+        name:
+          description: Name of the product
+          type: string
+        package_format:
+          default: box
+          description: Format the product package
+          enum:
+            - box
+            - cylinder
+          type: string
+        permalink:
+          description: Product unique URL path
+          type: string
+        price:
+          description: Price of the product
+          format: float
+          type: number
+        sku:
+          description: Stock Keeping Unit of the product
+          type: string
+        status:
+          default: available
+          description: Status of the product
+          enum:
+            - available
+            - not-available
+            - disabled
+          type: string
+        stock:
+          default: 100
+          description: Quantity in stock for the product
+          format: int32
+          type: integer
+        stock_unlimited:
+          description: True if the Product has unlimited stock
+          type: boolean
+        variants:
+          items:
+            $ref: "#/components/schemas/VariantFields"
+          type: array
+        weight:
+          default: 1
+          description: Weight of the product
+          format: float
+          type: number
+        width:
+          description: Width of the product
+          format: float
+          type: number
+      type: object
+    ProductOption:
+      properties:
+        option:
+          $ref: "#/components/schemas/ProductOptionFields"
+      type: object
+    ProductOptionEdit:
+      properties:
+        option:
+          $ref: "#/components/schemas/ProductOptionEditFields"
+      type: object
+    ProductOptionEditFields:
+      properties:
+        name:
+          description: Name of the product option
+          type: string
+        option_type:
+          description: Type of the product option
+          enum:
+            - option
+            - input
+            - text
+            - file
+          type: string
+        position:
+          description: Position of the product option
+          format: int32
+          type: integer
+      type: object
+    ProductOptionFields:
+      properties:
+        id:
+          description: Unique identifier of the product option
+          format: int32
+          type: integer
+        name:
+          description: Name of the product option
+          type: string
+        option_type:
+          description: Type of the product option
+          enum:
+            - option
+            - input
+            - text
+            - file
+          type: string
+        position:
+          description: Position of the product option
+          format: int32
+          type: integer
+        values:
+          items:
+            $ref: "#/components/schemas/ProductOptionValueFields"
+          type: array
+      type: object
+    ProductOptionValue:
+      properties:
+        value:
+          $ref: "#/components/schemas/ProductOptionValueFields"
+      type: object
+    ProductOptionValueEdit:
+      properties:
+        value:
+          $ref: "#/components/schemas/ProductOptionValueEditFields"
+      type: object
+    ProductOptionValueEditFields:
+      properties:
+        name:
+          description: Name of the product option value
+          type: string
+        position:
+          description: Position of the product option value
+          format: int32
+          type: integer
+      type: object
+    ProductOptionValueFields:
+      properties:
+        id:
+          description: Unique identifier of the product option value
+          format: int32
+          type: integer
+        name:
+          description: Name of the product option value
+          type: string
+        position:
+          description: Position of the product option value
+          format: int32
+          type: integer
+        product_option:
+          $ref: "#/components/schemas/ProductOption"
+        variants:
+          items:
+            $ref: "#/components/schemas/Variant"
+          type: array
+      type: object
+    ProductOptionVariantEdit:
+      properties:
+        name:
+          description: Name of the product option
+          type: string
+        product_option_id:
+          description: Id of the product option
+          format: int32
+          type: integer
+        product_option_position:
+          description: position of product option
+          format: int32
+          type: integer
+        product_option_value_id:
+          description: Id of product option value
+          format: int32
+          type: integer
+        product_value_position:
+          description: position of product option value
+          format: int32
+          type: integer
+        value:
+          description: Value of the product option
+          type: string
+      type: object
+    Promotion:
+      properties:
+        promotion:
+          $ref: "#/components/schemas/PromotionFields"
+      type: object
+    PromotionEdit:
+      properties:
+        promotion:
+          $ref: "#/components/schemas/PromotionEditFields"
+      type: object
+    PromotionEditFields:
+      properties:
+        begins_at:
+          description: Creation date of the promotion (requires 'lasts' param - 'date')
+          type: string
+        buys_at_least:
+          description: Controls the promotion's condition ('none', 'price', 'qty')
+          type: string
+        categories:
+          description: Products Categories where the promotion will be applied (requires 'discount_target' param - 'categories')
+          items:
+            $ref: "#/components/schemas/Id"
+          type: array
+        code:
+          description: Code of the promotion
+          type: string
+        condition_price:
+          description: Minimum order amount to validate the promotion (requires 'buys_at_least' param - 'price')
+          format: float
+          type: number
+        condition_qty:
+          description: Minimum quantity of ordered itens to validate the promotion (requires 'buys_at_least' param - 'qty')
+          format: int32
+          type: integer
+        cumulative:
+          default: false
+          description: True if the promotion can be acumulated with others
+          type: boolean
+        customer_categories:
+          description: Customer Categories to whom the promotion will be applied (requires 'customers' param - 'categories')
+          items:
+            $ref: "#/components/schemas/Id"
+          type: array
+        customers:
+          description: Controls to which customers the promotion will be applied ('all', 'loggedin', 'categories', 'guests')
+          type: string
+        discount_amount_fix:
+          description: Fixed discount amount of the promotion (requires 'type' param - 'fix')
+          format: float
+          type: number
+        discount_amount_percent:
+          description: Percentual discount amount of the promotion (requires 'type' param - 'percentage')
+          format: float
+          type: number
+        discount_target:
+          description: Where the promotion will be applied ('order', 'shipping', 'categories', 'buy_x_get_y)
+          type: string
+        enabled:
+          default: true
+          description: If the promotion is to be temporarily disabled
+          type: boolean
+        expires_at:
+          description: Expiration date of the promotion (requires 'lasts' param - 'date')
+          type: string
+        lasts:
+          description: Controls when the promotion will expire ('none', 'date', 'max_times_used')
+          type: string
+        max_times_used:
+          description: Maximum amount a promotion can be used (requires 'lasts' param - 'max_times_used')
+          format: int32
+          type: integer
+        name:
+          description: Name of the product
+          type: string
+        products:
+          description: Products where the promotion will be applied (requires 'discount_target' param - 'categories' or 'buy_x_get_y')
+          items:
+            $ref: "#/components/schemas/Id"
+          type: array
+        products_x:
+          description: Products required to apply the promotion (requires 'discount_target' param - 'buy_x_get_y')
+          items:
+            $ref: "#/components/schemas/Id"
+          type: array
+        quantity_x:
+          description: Number of sets of products_x needed to be able to apply the promotion (requires 'discount_target' param - 'buy_x_get_y')
+          format: int32
+          type: integer
+        type:
+          description: Controls if the discount will be a fixed area ('fix', 'percentage')
+          type: string
+      type: object
+    PromotionFields:
+      properties:
+        begins_at:
+          description: Creation date of the promotion (requires 'lasts' param - 'date')
+          type: string
+        categories:
+          description: Products Categories where the promotion will be applied (requires 'discount_target' param - 'categories')
+          items:
+            $ref: "#/components/schemas/Id"
+          type: array
+        code:
+          description: Code of the promotion
+          type: string
+        condition_price:
+          description: Minimum order amount to validate the promotion
+          format: float
+          type: number
+        condition_qty:
+          description: Minimum quantity of ordered itens to validate the promotion
+          format: int32
+          type: integer
+        cumulative:
+          default: false
+          description: True if the promotion can be acumulated with others
+          type: boolean
+        customer_categories:
+          description: Customer Categories to whom the promotion will be applied (requires 'customers' param - 'categories')
+          items:
+            $ref: "#/components/schemas/Id"
+          type: array
+        discount_amount_fix:
+          description: Fixed discount amount of the promotion
+          format: float
+          type: number
+        discount_amount_percent:
+          description: Percentual discount amount of the promotion
+          format: float
+          type: number
+        discount_target:
+          description: Where the promotion will be applied ('order', 'shipping', 'categories', 'buy_x_get_y)
+          type: string
+        enabled:
+          default: true
+          description: If the promotion is currently enabled
+          type: boolean
+        expires_at:
+          description: Expiration date of the promotion (requires 'lasts' param - 'date')
+          type: string
+        id:
+          description: Unique identifier of the product
+          format: int32
+          type: integer
+        lasts:
+          description: Controls when the promotion will expire ('none', 'date', 'max_times_used')
+          type: string
+        max_times_used:
+          description: Maximum amount a promotion can be used (requires 'lasts' param - 'max_times_used')
+          format: int32
+          type: integer
+        name:
+          description: Name of the product
+          type: string
+        products:
+          description: Products where the promotion will be applied (requires 'discount_target' param - 'categories' or 'buy_x_get_y')
+          items:
+            $ref: "#/components/schemas/Id"
+          type: array
+        products_x:
+          description: Products required to apply the promotion (requires 'discount_target' param - 'buy_x_get_y')
+          items:
+            $ref: "#/components/schemas/Id"
+          type: array
+        quantity_x:
+          description: Number of sets of products_x needed to be able to apply the promotion (requires 'discount_target' param - 'buy_x_get_y')
+          format: int32
+          type: integer
+        status:
+          description: Status of the promotion ('active', 'expired')
+          type: string
+        times_used:
+          description: Amount of times the promotion was used
+          format: int32
+          type: integer
+      type: object
+    Region:
+      properties:
+        code:
+          type: string
+        name:
+          type: string
+    ShippingAddress:
+      properties:
+        address:
+          description: Address of the Customer's Shipping Address
+          type: string
+        city:
+          description: City of the Customer's Shipping Address
+          type: string
+        country:
+          description: Country code of the Customer's Shipping Address (ISO 3166-1 alpha-2)
+          type: string
+        municipality:
+          description: Municipality of the Customer's Shipping Address
+          type: string
+        name:
+          description: Name of the Customer's Shipping Address
+          type: string
+        postal:
+          description: Postal code of the Customer's Shipping Address
+          type: string
+        region:
+          description: Region code of the Customer's Shipping Address (Use the FIPS standard - http://www.geonames.org/countries/)
+          type: string
+        surname:
+          description: Surname of the Customer's Shipping Address
+          type: string
+    ShippingMethod:
+      properties:
+        shipping_method:
+          $ref: "#/components/schemas/ShippingMethodFields"
+      type: object
+    ShippingMethodEdit:
+      properties:
+        shipping_method:
+          properties:
+            callback_url:
+              description: URL that receives the shipping data and returns rates
+              type: string
+            city:
+              description: City/Municipality name of origin
+              type: string
+            fetch_services_url:
+              description: URL that returns available shipping services
+              type: string
+            name:
+              description: Name of the Shipping Method
+              type: string
+            postal:
+              description: Postal/Zipcode of origin
+              type: string
+            state:
+              description: State/Region code of origin
+              type: string
+            token:
+              description: Token used to authentica on the the fetch_services_url
+              type: string
+          type: object
+      type: object
+    ShippingMethodFields:
+      properties:
+        callback_url:
+          description: URL that receives the shipping data and returns rates
+          type: string
+        city:
+          description: City/Municipality name of origin
+          type: string
+        fetch_services_url:
+          description: URL that returns available shipping services
+          type: string
+        id:
+          description: Unique identifier of the Shipping Method
+          format: int32
+          type: integer
+        name:
+          description: Name of the Shipping Method
+          type: string
+        postal:
+          description: Postal/Zipcode of origin
+          type: string
+        services:
+          items:
+            $ref: "#/components/schemas/ShippingService"
+          type: array
+        state:
+          description: State/Region code of origin
+          type: string
+        type:
+          description: Type of the Shipping Method
+          enum:
+            - free
+            - tables
+            - correiosbr
+            - correos_chile
+            - chilexpress
+            - flat
+            - ups
+            - external
+          type: string
+      type: object
+    ShippingService:
+      properties:
+        id:
+          description: Unique identifier of the Shipping Service
+          format: int32
+          type: integer
+        name:
+          description: Name of the Shipping Service
+          type: string
+        service_code:
+          description: Code of the Shipping Service
+          type: string
+      type: object
+    StatusInvalid:
+      properties:
+        message:
+          type: string
+    Store:
+      properties:
+        address:
+          $ref: "#/components/schemas/StoreAddress"
+        code:
+          description: Store Code
+          type: string
+        country:
+          description: Store Country
+          type: string
+        currency:
+          description: Store Currency
+          type: string
+        email:
+          description: Store Admin Email
+          type: string
+        hooks_token:
+          description: Store Hooks Auth token
+          type: string
+        logo:
+          description: Store Logo URL
+          type: string
+        name:
+          description: Store Name
+          type: string
+        timezone:
+          description: Store Timezone
+          type: string
+        url:
+          description: Store URL
+          type: string
+        weight_unit:
+          description: Store Weight Unit
+          type: string
+      type: object
+    StoreAddress:
+      properties:
+        address:
+          description: Address of the Store's Address
+          type: string
+        city:
+          description: City of the Store's Address
+          type: string
+        country:
+          description: Country of the Store's Address (ISO 3166-1 alpha-2)
+          type: string
+        country_code:
+          description: Country code of the Store's Address
+          type: string
+        postal:
+          description: Postal code of the Store's Address
+          type: string
+        region:
+          description: Region of the Store's Address
+          type: string
+        region_code:
+          description: Region code of the Store's Address
+          type: string
+    Tax:
+      properties:
+        tax:
+          $ref: "#/components/schemas/TaxFields"
+      type: object
+    TaxEdit:
+      properties:
+        tax:
+          $ref: "#/components/schemas/TaxEditFields"
+      type: object
+    TaxEditFields:
+      properties:
+        category_id:
+          description: Unique identifier of the category of the Tax
+          format: int32
+          type: integer
+        country:
+          description: Country where the Tax applies
+          type: string
+        fixed:
+          default: false
+          description: True if the tax has a fixed valued amount
+          type: boolean
+        name:
+          description: Name that identifies tax
+          type: string
+        region:
+          description: Region where the Tax applies
+          type: string
+        shipping:
+          default: false
+          description: True if the tax should be applied to shipping costs
+          type: boolean
+        tax:
+          description: Tax value for the given Tax
+          format: float
+          type: number
+      type: object
+    TaxFields:
+      properties:
+        category_id:
+          description: Unique identifier of the category of the Tax
+          format: int32
+          type: integer
+        country:
+          description: Country name where the Tax applies
+          type: string
+        fixed:
+          default: false
+          description: True if the tax has a fixed valued amount
+          type: boolean
+        id:
+          description: Unique identifier of the Tax
+          format: int32
+          type: integer
+        name:
+          description: Name that identifies tax
+          type: string
+        region:
+          description: Region name where the Tax applies
+          type: string
+        shipping:
+          default: false
+          description: True if the tax should be applied to shipping costs
+          type: boolean
+        tax_amount:
+          description: Tax value for the given Tax
+          format: float
+          type: number
+      type: object
+    TrafficSource:
+      properties:
+        campaign:
+          description: The campaign that referred the customer to the checkout
+          type: string
+        first_page_visited:
+          description: The first url visited by the customer
+          type: string
+        first_page_visited_at:
+          description: The date when the customer visited the first page
+          type: string
+        medium:
+          description: The medium that referred the customer to the checkout
+          type: string
+        referral_code:
+          description: The code that referred the customer to the checkout
+          type: string
+        referral_source:
+          description: The source that referred the customer to the website
+          type: string
+        referral_url:
+          description: The website that referred the customer to the checkout
+          type: string
+        source_name:
+          description: Where the checkout originated
+          type: string
+        user_agent:
+          description: User agent of the referred request to checkout
+          type: string
+    Variant:
+      properties:
+        variant:
+          $ref: "#/components/schemas/VariantFields"
+      type: object
+    VariantEdit:
+      properties:
+        variant:
+          $ref: "#/components/schemas/VariantEditFields"
+      type: object
+    VariantEditFields:
+      properties:
+        image_id:
+          description: Unique identifier of the product image to associate with this variant
+          format: int32
+          type: integer
+        options:
+          items:
+            $ref: "#/components/schemas/ProductOptionVariantEdit"
+          type: array
+        price:
+          description: Price of the product
+          format: float
+          type: number
+        sku:
+          description: Stock Keeping Unit of the Product's Variant
+          type: string
+        stock:
+          default: 100
+          description: Quantity in stock for the Product's Variant
+          format: int32
+          type: integer
+        stock_unlimited:
+          description: True if the Product's Variant has unlimited stock
+          type: boolean
+      type: object
+    VariantFields:
+      properties:
+        id:
+          description: Unique identifier of the product
+          format: int32
+          type: integer
+        image:
+          $ref: "#/components/schemas/ImageFields"
+        options:
+          items:
+            $ref: "#/components/schemas/ProductOptionVariantEdit"
+          type: array
+        price:
+          description: Price of the product
+          format: float
+          type: number
+        sku:
+          description: Stock Keeping Unit of the Product's Variant
+          type: string
+        stock:
+          default: 100
+          description: Quantity in stock for the Product's Variant
+          format: int32
+          type: integer
+        stock_unlimited:
+          description: True if the Product's Variant has unlimited stock
+          type: boolean
+      type: object

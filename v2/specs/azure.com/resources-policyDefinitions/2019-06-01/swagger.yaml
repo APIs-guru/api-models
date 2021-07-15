@@ -1,0 +1,810 @@
+swagger: "2.0"
+schemes:
+  - https
+host: management.azure.com
+info:
+  description: To manage and control access to your resources, you can define customized policies and assign them at a scope.
+  title: PolicyClient
+  version: 2019-06-01
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/resources/resource-manager/Microsoft.Authorization/stable/2019-06-01/policyDefinitions.json
+      version: "2.0"
+  x-preferred: true
+  x-providerName: azure.com
+  x-serviceName: resources-policyDefinitions
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    description: Azure Active Directory OAuth2 Flow
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+security:
+  - azure_auth:
+      - user_impersonation
+parameters:
+  ApiVersionParameter:
+    description: The API version to use for the operation.
+    in: query
+    name: api-version
+    required: true
+    type: string
+  ManagementGroupIdParameter:
+    description: The ID of the management group.
+    in: path
+    name: managementGroupId
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  SubscriptionIdParameter:
+    description: The ID of the target subscription.
+    in: path
+    name: subscriptionId
+    required: true
+    type: string
+paths:
+  /providers/Microsoft.Authorization/policyDefinitions:
+    get:
+      description: This operation retrieves a list of all the built-in policy definitions.
+      operationId: PolicyDefinitions_ListBuiltIn
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: OK - Returns an array of built-in policy definitions.
+          schema:
+            $ref: "#/definitions/PolicyDefinitionListResult"
+      summary: Retrieve built-in policy definitions
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        List built-in policy definitions:
+          parameters:
+            api-version: 2019-06-01
+          responses:
+            "200":
+              body:
+                value:
+                  - id: /providers/Microsoft.Authorization/policyDefinitions/06a78e20-9358-41c9-923c-fb736d382a12
+                    name: 06a78e20-9358-41c9-923c-fb736d382a12
+                    properties:
+                      description: Audit DB level audit setting for SQL databases
+                      displayName: Audit SQL DB Level Audit Setting
+                      mode: All
+                      parameters:
+                        setting:
+                          allowedValues:
+                            - enabled
+                            - disabled
+                          metadata:
+                            displayName: Audit Setting
+                          type: String
+                      policyRule:
+                        if:
+                          equals: Microsoft.Sql/servers/databases
+                          field: type
+                        then:
+                          details:
+                            existenceCondition:
+                              allOf:
+                                - equals: "[parameters('setting')]"
+                                  field: Microsoft.Sql/auditingSettings.state
+                            name: default
+                            type: Microsoft.Sql/servers/databases/auditingSettings
+                          effect: AuditIfNotExists
+                      policyType: BuiltIn
+                    type: Microsoft.Authorization/policyDefinitions
+                  - id: /providers/Microsoft.Authorization/policyDefinitions/7433c107-6db4-4ad1-b57a-a76dce0154a1
+                    name: 7433c107-6db4-4ad1-b57a-a76dce0154a1
+                    properties:
+                      description: This policy enables you to specify a set of storage account SKUs that your organization can deploy.
+                      displayName: Allowed storage account SKUs
+                      mode: All
+                      parameters:
+                        listOfAllowedSKUs:
+                          metadata:
+                            description: The list of SKUs that can be specified for storage accounts.
+                            displayName: Allowed SKUs
+                            strongType: StorageSKUs
+                          type: Array
+                      policyRule:
+                        if:
+                          allOf:
+                            - equals: Microsoft.Storage/storageAccounts
+                              field: type
+                            - not:
+                                field: Microsoft.Storage/storageAccounts/sku.name
+                                in: "[parameters('listOfAllowedSKUs')]"
+                        then:
+                          effect: Deny
+                      policyType: BuiltIn
+                    type: Microsoft.Authorization/policyDefinitions
+                  - id: /providers/Microsoft.Authorization/policyDefinitions/abeed54a-73c5-441d-8a8c-6b5e7a0c299e
+                    name: abeed54a-73c5-441d-8a8c-6b5e7a0c299e
+                    properties:
+                      description: Audit certificates that are stored in Azure Key Vault, that expire within 'X' number of days.
+                      displayName: Audit KeyVault certificates that expire within specified number of days
+                      metadata:
+                        category: KeyVault DataPlane
+                      mode: Microsoft.KeyVault.Data
+                      parameters:
+                        daysToExpire:
+                          metadata:
+                            description: The number of days for a certificate to expire.
+                            displayName: Days to expire
+                          type: Integer
+                      policyRule:
+                        if:
+                          field: Microsoft.KeyVault.Data/vaults/certificates/attributes/expiresOn
+                          lessOrEquals: "[addDays(utcNow(), parameters('daysToExpire'))]"
+                        then:
+                          effect: audit
+                      policyType: BuiltIn
+                    type: Microsoft.Authorization/policyDefinitions
+              headers: {}
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/providers/Microsoft.Authorization/policyDefinitions/{policyDefinitionName}":
+    get:
+      description: This operation retrieves the built-in policy definition with the given name.
+      operationId: PolicyDefinitions_GetBuiltIn
+      parameters:
+        - description: The name of the built-in policy definition to get.
+          in: path
+          name: policyDefinitionName
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: OK - Returns information about the built-in policy definition.
+          schema:
+            $ref: "#/definitions/PolicyDefinition"
+      summary: Retrieves a built-in policy definition.
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        Retrieve a built-in policy definition:
+          parameters:
+            api-version: 2019-06-01
+            policyDefinitionName: 7433c107-6db4-4ad1-b57a-a76dce0154a1
+            subscriptionId: ae640e6b-ba3e-4256-9d62-2993eecfa6f2
+          responses:
+            "200":
+              body:
+                id: /providers/Microsoft.Authorization/policyDefinitions/7433c107-6db4-4ad1-b57a-a76dce0154a1
+                name: 7433c107-6db4-4ad1-b57a-a76dce0154a1
+                properties:
+                  description: This policy enables you to specify a set of storage account SKUs that your organization can deploy.
+                  displayName: Allowed storage account SKUs
+                  mode: All
+                  parameters:
+                    listOfAllowedSKUs:
+                      metadata:
+                        description: The list of SKUs that can be specified for storage accounts.
+                        displayName: Allowed SKUs
+                        strongType: StorageSKUs
+                      type: Array
+                  policyRule:
+                    if:
+                      allOf:
+                        - equals: Microsoft.Storage/storageAccounts
+                          field: type
+                        - not:
+                            field: Microsoft.Storage/storageAccounts/sku.name
+                            in: "[parameters('listOfAllowedSKUs')]"
+                    then:
+                      effect: Deny
+                  policyType: BuiltIn
+                type: Microsoft.Authorization/policyDefinitions
+              headers: {}
+  "/providers/Microsoft.Management/managementgroups/{managementGroupId}/providers/Microsoft.Authorization/policyDefinitions":
+    get:
+      description: This operation retrieves a list of all the policy definitions in a given management group.
+      operationId: PolicyDefinitions_ListByManagementGroup
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/ManagementGroupIdParameter"
+      responses:
+        "200":
+          description: OK - Returns an array of policy definitions.
+          schema:
+            $ref: "#/definitions/PolicyDefinitionListResult"
+      summary: Retrieve policy definitions in a management group
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        List policy definitions by management group:
+          parameters:
+            api-version: 2019-06-01
+            managementGroupId: MyManagementGroup
+          responses:
+            "200":
+              body:
+                value:
+                  - id: /providers/Microsoft.Authorization/policyDefinitions/7433c107-6db4-4ad1-b57a-a76dce0154a1
+                    name: 7433c107-6db4-4ad1-b57a-a76dce0154a1
+                    properties:
+                      description: This policy enables you to specify a set of storage account SKUs that your organization can deploy.
+                      displayName: Allowed storage account SKUs
+                      mode: All
+                      parameters:
+                        listOfAllowedSKUs:
+                          metadata:
+                            description: The list of SKUs that can be specified for storage accounts.
+                            displayName: Allowed SKUs
+                            strongType: StorageSKUs
+                          type: Array
+                      policyRule:
+                        if:
+                          allOf:
+                            - equals: Microsoft.Storage/storageAccounts
+                              field: type
+                            - not:
+                                field: Microsoft.Storage/storageAccounts/sku.name
+                                in: "[parameters('listOfAllowedSKUs')]"
+                        then:
+                          effect: Deny
+                      policyType: BuiltIn
+                    type: Microsoft.Authorization/policyDefinitions
+                  - id: /providers/Microsoft.Management/managementgroups/MyManagementGroup/providers/Microsoft.Authorization/policyDefinitions/ResourceNaming
+                    name: ResourceNaming
+                    properties:
+                      description: Force resource names to begin with 'prefix' and end with 'suffix'
+                      displayName: Naming Convention
+                      metadata:
+                        category: Naming
+                      mode: All
+                      parameters:
+                        prefix:
+                          metadata:
+                            description: Resource name prefix
+                            displayName: Prefix
+                          type: String
+                        suffix:
+                          metadata:
+                            description: Resource name suffix
+                            displayName: Suffix
+                          type: String
+                      policyRule:
+                        if:
+                          not:
+                            field: name
+                            like: "[concat(parameters('prefix'), '*', parameters('suffix'))]"
+                        then:
+                          effect: deny
+                      policyType: Custom
+                    type: Microsoft.Authorization/policyDefinitions
+              headers: {}
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/providers/Microsoft.Management/managementgroups/{managementGroupId}/providers/Microsoft.Authorization/policyDefinitions/{policyDefinitionName}":
+    delete:
+      description: This operation deletes the policy definition in the given management group with the given name.
+      operationId: PolicyDefinitions_DeleteAtManagementGroup
+      parameters:
+        - description: The name of the policy definition to delete.
+          in: path
+          name: policyDefinitionName
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/ManagementGroupIdParameter"
+      responses:
+        "200":
+          description: OK
+        "204":
+          description: No Content
+      summary: Deletes a policy definition in a management group.
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        Delete a policy definition at management group level:
+          parameters:
+            api-version: 2019-06-01
+            managementGroupId: MyManagementGroup
+            policyDefinitionName: ResourceNaming
+          responses:
+            "200":
+              headers: {}
+            "204":
+              headers: {}
+    get:
+      description: This operation retrieves the policy definition in the given management group with the given name.
+      operationId: PolicyDefinitions_GetAtManagementGroup
+      parameters:
+        - description: The name of the policy definition to get.
+          in: path
+          name: policyDefinitionName
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/ManagementGroupIdParameter"
+      responses:
+        "200":
+          description: OK - Returns information about the policy definition.
+          schema:
+            $ref: "#/definitions/PolicyDefinition"
+      summary: Retrieve a policy definition in a management group.
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        Retrieve a policy definition at management group level:
+          parameters:
+            api-version: 2019-06-01
+            managementGroupId: MyManagementGroup
+            policyDefinitionName: ResourceNaming
+          responses:
+            "200":
+              body:
+                id: /providers/Microsoft.Management/managementgroups/MyManagementGroup/providers/Microsoft.Authorization/policyDefinitions/ResourceNaming
+                name: ResourceNaming
+                properties:
+                  description: Force resource names to begin with 'prefix' and end with 'suffix'
+                  displayName: Naming Convention
+                  metadata:
+                    category: Naming
+                  mode: All
+                  parameters:
+                    prefix:
+                      metadata:
+                        description: Resource name prefix
+                        displayName: Prefix
+                      type: String
+                    suffix:
+                      metadata:
+                        description: Resource name suffix
+                        displayName: Suffix
+                      type: String
+                  policyRule:
+                    if:
+                      not:
+                        field: name
+                        like: "[concat(parameters('prefix'), '*', parameters('suffix'))]"
+                    then:
+                      effect: deny
+                  policyType: Custom
+                type: Microsoft.Authorization/policyDefinitions
+              headers: {}
+    put:
+      description: This operation creates or updates a policy definition in the given management group with the given name.
+      operationId: PolicyDefinitions_CreateOrUpdateAtManagementGroup
+      parameters:
+        - description: The name of the policy definition to create.
+          in: path
+          name: policyDefinitionName
+          required: true
+          type: string
+        - description: The policy definition properties.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/PolicyDefinition"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/ManagementGroupIdParameter"
+      responses:
+        "201":
+          description: Created - Returns information about the policy definition.
+          schema:
+            $ref: "#/definitions/PolicyDefinition"
+      summary: Creates or updates a policy definition in a management group.
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        Create or update a policy definition at management group level:
+          parameters:
+            api-version: 2019-06-01
+            managementGroupId: MyManagementGroup
+            parameters:
+              properties:
+                description: Force resource names to begin with given 'prefix' and/or end with given 'suffix'
+                displayName: Enforce resource naming convention
+                metadata:
+                  category: Naming
+                mode: All
+                parameters:
+                  prefix:
+                    metadata:
+                      description: Resource name prefix
+                      displayName: Prefix
+                    type: String
+                  suffix:
+                    metadata:
+                      description: Resource name suffix
+                      displayName: Suffix
+                    type: String
+                policyRule:
+                  if:
+                    not:
+                      field: name
+                      like: "[concat(parameters('prefix'), '*', parameters('suffix'))]"
+                  then:
+                    effect: deny
+            policyDefinitionName: ResourceNaming
+          responses:
+            "201":
+              body:
+                id: /providers/Microsoft.Management/managementgroups/MyManagementGroup/providers/Microsoft.Authorization/policyDefinitions/ResourceNaming
+                name: ResourceNaming
+                properties:
+                  description: Force resource names to begin with 'prefix' and end with 'suffix'
+                  displayName: Naming Convention
+                  metadata:
+                    category: Naming
+                  mode: All
+                  parameters:
+                    prefix:
+                      metadata:
+                        description: Resource name prefix
+                        displayName: Prefix
+                      type: String
+                    suffix:
+                      metadata:
+                        description: Resource name suffix
+                        displayName: Suffix
+                      type: String
+                  policyRule:
+                    if:
+                      not:
+                        field: name
+                        like: "[concat(parameters('prefix'), '*', parameters('suffix'))]"
+                    then:
+                      effect: deny
+                  policyType: Custom
+                type: Microsoft.Authorization/policyDefinitions
+              headers: {}
+  "/subscriptions/{subscriptionId}/providers/Microsoft.Authorization/policyDefinitions":
+    get:
+      description: This operation retrieves a list of all the policy definitions in a given subscription.
+      operationId: PolicyDefinitions_List
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: OK - Returns an array of policy definitions.
+          schema:
+            $ref: "#/definitions/PolicyDefinitionListResult"
+      summary: Retrieves policy definitions in a subscription
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        List policy definitions by subscription:
+          parameters:
+            api-version: 2019-06-01
+            subscriptionId: ae640e6b-ba3e-4256-9d62-2993eecfa6f2
+          responses:
+            "200":
+              body:
+                value:
+                  - id: /providers/Microsoft.Authorization/policyDefinitions/7433c107-6db4-4ad1-b57a-a76dce0154a1
+                    name: 7433c107-6db4-4ad1-b57a-a76dce0154a1
+                    properties:
+                      description: This policy enables you to specify a set of storage account SKUs that your organization can deploy.
+                      displayName: Allowed storage account SKUs
+                      mode: All
+                      parameters:
+                        listOfAllowedSKUs:
+                          metadata:
+                            description: The list of SKUs that can be specified for storage accounts.
+                            displayName: Allowed SKUs
+                            strongType: StorageSKUs
+                          type: Array
+                      policyRule:
+                        if:
+                          allOf:
+                            - equals: Microsoft.Storage/storageAccounts
+                              field: type
+                            - not:
+                                field: Microsoft.Storage/storageAccounts/sku.name
+                                in: "[parameters('listOfAllowedSKUs')]"
+                        then:
+                          effect: Deny
+                      policyType: BuiltIn
+                    type: Microsoft.Authorization/policyDefinitions
+                  - id: /subscriptions/ae640e6b-ba3e-4256-9d62-2993eecfa6f2/providers/Microsoft.Authorization/policyDefinitions/ResourceNaming
+                    name: ResourceNaming
+                    properties:
+                      description: Force resource names to begin with 'prefix' and end with 'suffix'
+                      displayName: Naming Convention
+                      metadata:
+                        category: Naming
+                      mode: All
+                      parameters:
+                        prefix:
+                          metadata:
+                            description: Resource name prefix
+                            displayName: Prefix
+                          type: String
+                        suffix:
+                          metadata:
+                            description: Resource name suffix
+                            displayName: Suffix
+                          type: String
+                      policyRule:
+                        if:
+                          not:
+                            field: name
+                            like: "[concat(parameters('prefix'), '*', parameters('suffix'))]"
+                        then:
+                          effect: deny
+                      policyType: Custom
+                    type: Microsoft.Authorization/policyDefinitions
+                  - id: /subscriptions/ae640e6b-ba3e-4256-9d62-2993eecfa6f2/providers/Microsoft.Authorization/policyDefinitions/AuditSoonToExpireCerts
+                    name: AuditSoonToExpireCerts
+                    properties:
+                      description: Audit certificates that are stored in Azure Key Vault, that expire within 'X' number of days.
+                      displayName: Audit KeyVault certificates that expire within specified number of days
+                      metadata:
+                        category: KeyVault DataPlane
+                      mode: Microsoft.KeyVault.Data
+                      parameters:
+                        daysToExpire:
+                          metadata:
+                            description: The number of days for a certificate to expire.
+                            displayName: Days to expire
+                          type: Integer
+                      policyRule:
+                        if:
+                          field: Microsoft.KeyVault.Data/vaults/certificates/attributes/expiresOn
+                          lessOrEquals: "[addDays(utcNow(), parameters('daysToExpire'))]"
+                        then:
+                          effect: audit
+                      policyType: Custom
+                    type: Microsoft.Authorization/policyDefinitions
+              headers: {}
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/providers/Microsoft.Authorization/policyDefinitions/{policyDefinitionName}":
+    delete:
+      description: This operation deletes the policy definition in the given subscription with the given name.
+      operationId: PolicyDefinitions_Delete
+      parameters:
+        - description: The name of the policy definition to delete.
+          in: path
+          name: policyDefinitionName
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: OK
+        "204":
+          description: No Content
+      summary: Deletes a policy definition in a subscription.
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        Delete a policy definition:
+          parameters:
+            api-version: 2019-06-01
+            policyDefinitionName: ResourceNaming
+            subscriptionId: ae640e6b-ba3e-4256-9d62-2993eecfa6f2
+          responses:
+            "200":
+              headers: {}
+            "204":
+              headers: {}
+    get:
+      description: This operation retrieves the policy definition in the given subscription with the given name.
+      operationId: PolicyDefinitions_Get
+      parameters:
+        - description: The name of the policy definition to get.
+          in: path
+          name: policyDefinitionName
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: OK - Returns information about the policy definition.
+          schema:
+            $ref: "#/definitions/PolicyDefinition"
+      summary: Retrieves a policy definition in a subscription.
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        Retrieve a policy definition:
+          parameters:
+            api-version: 2019-06-01
+            policyDefinitionName: ResourceNaming
+            subscriptionId: ae640e6b-ba3e-4256-9d62-2993eecfa6f2
+          responses:
+            "200":
+              body:
+                id: /subscriptions/ae640e6b-ba3e-4256-9d62-2993eecfa6f2/providers/Microsoft.Authorization/policyDefinitions/ResourceNaming
+                name: ResourceNaming
+                properties:
+                  description: Force resource names to begin with 'prefix' and end with 'suffix'
+                  displayName: Naming Convention
+                  metadata:
+                    category: Naming
+                  mode: All
+                  parameters:
+                    prefix:
+                      metadata:
+                        description: Resource name prefix
+                        displayName: Prefix
+                      type: String
+                    suffix:
+                      metadata:
+                        description: Resource name suffix
+                        displayName: Suffix
+                      type: String
+                  policyRule:
+                    if:
+                      not:
+                        field: name
+                        like: "[concat(parameters('prefix'), '*', parameters('suffix'))]"
+                    then:
+                      effect: deny
+                  policyType: Custom
+                type: Microsoft.Authorization/policyDefinitions
+              headers: {}
+    put:
+      description: This operation creates or updates a policy definition in the given subscription with the given name.
+      operationId: PolicyDefinitions_CreateOrUpdate
+      parameters:
+        - description: The name of the policy definition to create.
+          in: path
+          name: policyDefinitionName
+          required: true
+          type: string
+        - description: The policy definition properties.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/PolicyDefinition"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "201":
+          description: Created - Returns information about the policy definition.
+          schema:
+            $ref: "#/definitions/PolicyDefinition"
+      summary: Creates or updates a policy definition in a subscription.
+      tags:
+        - PolicyDefinitions
+      x-ms-examples:
+        Create or update a policy definition:
+          parameters:
+            api-version: 2019-06-01
+            parameters:
+              properties:
+                description: Force resource names to begin with given 'prefix' and/or end with given 'suffix'
+                displayName: Enforce resource naming convention
+                metadata:
+                  category: Naming
+                mode: All
+                parameters:
+                  prefix:
+                    metadata:
+                      description: Resource name prefix
+                      displayName: Prefix
+                    type: String
+                  suffix:
+                    metadata:
+                      description: Resource name suffix
+                      displayName: Suffix
+                    type: String
+                policyRule:
+                  if:
+                    not:
+                      field: name
+                      like: "[concat(parameters('prefix'), '*', parameters('suffix'))]"
+                  then:
+                    effect: deny
+            policyDefinitionName: ResourceNaming
+            subscriptionId: ae640e6b-ba3e-4256-9d62-2993eecfa6f2
+          responses:
+            "201":
+              body:
+                id: /subscriptions/ae640e6b-ba3e-4256-9d62-2993eecfa6f2/providers/Microsoft.Authorization/policyDefinitions/ResourceNaming
+                name: ResourceNaming
+                properties:
+                  description: Force resource names to begin with 'prefix' and end with 'suffix'
+                  displayName: Naming Convention
+                  metadata:
+                    category: Naming
+                  mode: All
+                  parameters:
+                    prefix:
+                      metadata:
+                        description: Resource name prefix
+                        displayName: Prefix
+                      type: String
+                    suffix:
+                      metadata:
+                        description: Resource name suffix
+                        displayName: Suffix
+                      type: String
+                  policyRule:
+                    if:
+                      not:
+                        field: name
+                        like: "[concat(parameters('prefix'), '*', parameters('suffix'))]"
+                    then:
+                      effect: deny
+                  policyType: Custom
+                type: Microsoft.Authorization/policyDefinitions
+              headers: {}
+definitions:
+  PolicyDefinition:
+    description: The policy definition.
+    properties:
+      id:
+        description: The ID of the policy definition.
+        readOnly: true
+        type: string
+      name:
+        description: The name of the policy definition.
+        readOnly: true
+        type: string
+      properties:
+        $ref: "#/definitions/PolicyDefinitionProperties"
+        description: The policy definition properties.
+        x-ms-client-flatten: true
+      type:
+        description: The type of the resource (Microsoft.Authorization/policyDefinitions).
+        readOnly: true
+        type: string
+    x-ms-azure-resource: true
+  PolicyDefinitionListResult:
+    description: List of policy definitions.
+    properties:
+      nextLink:
+        description: The URL to use for getting the next set of results.
+        type: string
+      value:
+        description: An array of policy definitions.
+        items:
+          $ref: "#/definitions/PolicyDefinition"
+        type: array
+  PolicyDefinitionProperties:
+    description: The policy definition properties.
+    properties:
+      description:
+        description: The policy definition description.
+        type: string
+      displayName:
+        description: The display name of the policy definition.
+        type: string
+      metadata:
+        description: The policy definition metadata.
+        type: object
+      mode:
+        description: The policy definition mode. Some examples are All, Indexed, Microsoft.KeyVault.Data.
+        type: string
+      parameters:
+        description: Required if a parameter is used in policy rule.
+        type: object
+      policyRule:
+        description: The policy rule.
+        type: object
+      policyType:
+        description: The type of policy definition. Possible values are NotSpecified, BuiltIn, and Custom.
+        enum:
+          - NotSpecified
+          - BuiltIn
+          - Custom
+        type: string
+        x-ms-enum:
+          modelAsString: true
+          name: policyType

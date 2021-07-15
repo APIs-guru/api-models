@@ -1,0 +1,2106 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.openfintech.io
+basePath: /v1/
+info:
+  contact:
+    x-twitter: openfintechio
+  description: |
+    # Introduction
+    [OpenFinTech.io](https://openfintech.io) is an open database that comprises of standardized primary data for FinTech industry.<br>
+    It contains such information as geolocation data (countries, cities, regions), organizations, currencies (national, digital, virtual, crypto), banks, digital exchangers, payment providers (PSP), payment methods, etc.<br>
+    It is created for communication of cross-integrated micro-services on "one language". This is achieved through standardization of entity identifiers that are used to exchange information among different services.<br>
+
+    ### UML
+    UML Domain Model diagram you can find [here](https://api.openfintech.io/public_domain_model.png).<br>
+
+    ### Persistence
+    Entities are updated not more than 1 time per day.<br>
+
+    ### Terms and Conditions
+    This *OpenFinTech.io* is made available under the [Open Database License](http://opendatacommons.org/licenses/odbl/1.0/).<br>
+    Any rights in individual contents of the database are licensed under the [Database Contents License](http://opendatacommons.org/licenses/dbcl/1.0/).<br>
+
+    ### Contacts
+    For any questions, please email - info@openfintech.io<br>
+    Or you can contact us at <a href="https://gitter.im/paymaxicom/openfintech.io">Gitter</a><br>
+
+    Powered by [Paymaxi](https://www.paymaxi.com)
+
+    # Get Started
+
+    If you use [POSTMAN](https://www.getpostman.com) or similar program which can operate with swagger`s files - just [download](https://docs.openfintech.io) our spec and [import it](https://www.getpostman.com/docs/importing_swagger). Also you can try live [API demo](https://api.openfintech.io).
+
+    ## Overview
+
+    The OpenFinTech API is organized around [REST](https://en.wikipedia.org/wiki/Representational_state_transfer). Our API has predictable, resource-oriented URLs, and uses HTTP response codes to indicate API errors.<br>
+    API is based on [JSON API](http://jsonapi.org) standard. JSON is returned by all API responses, including errors, although our API libraries convert responses to appropriate language-specific objects.<br>
+    JSON API requires use of the JSON API media type (`application/vnd.api+json`) for exchanging data.<br>
+    ### Additional Request Headers
+    #### ACCEPT HEADER
+    Your requests should always include the header:
+    ```curl
+    Accept: application/vnd.api+json
+    ```
+
+    ## Authentication
+
+    To use OpenFinTech API no needed authorization.
+
+    ## Versioning
+
+    When we make changes to the API, we release new, dated versions. The current version is **2017-08-24**. Read our [API upgrades guide]() to see our API changelog and to learn more about backwards compatibility.
+
+    ## Pagination
+
+    OpenFinTech APIs to retrieve lists of banks, currencies and other resources - paginated to **100** items by default. The pagination information will be included in the list API response under the node name `meta` - contains information about listed objects [`total` - contains information about total count of listed objects, `pages` - count of pages], `links` - contain links to navigate between pages [`first` - link to first page, `prev` - link to previous page, `next` - link to next page, `last` - link to last page].<br>
+    By default first page will be listed. For navigating through pages, use the page parameter (e.g. `page[number]`, `page[size]`).<br>
+    The `page[size]` parameter can be used to set the number of records that you want to receive in the response.<br>
+    The `page[number]` parameter can be used to set needed page number.<br>
+    Example of response:
+    ```json
+    {
+      "meta": {
+        "total": 419,
+        "pages": 42
+      },
+      "links": {
+        "first": "/v1/{path}?page[number]=1&page[size]=10",
+        "prev": "/v1/{path}?page[number]=39&page[size]=10",
+        "next": "/v1/{path}?page[number]=41&page[size]=10",
+        "last": "/v1/{path}?page[number]=42&page[size]=10"
+      }
+    ```
+
+    ### Sorting
+
+    OpenFinTech\`s API supported query parameter to sort result collection [e.g. `?sort=code`]. Information about available parameters may be found in the endpoint description. Positive parameter [e.g. `?sort=code`] points to ascending sorting, negative  [e.g. `?sort=-code`] - to descending sorting. Also, supported multiple sorting parameters [e.g. `?sort=code, -name, id`, etc.]
+    ```curl
+    https://api.openfintech.io/v1/countries?sort=name,-area
+    ```
+
+    ### Filtering
+
+    Filtering provided by unique query key `filter[*filtering_condition*]`. Information about available parameters may be found in the endpoint description.
+    ```curl
+    https://api.openfintech.io/v1/countries?filter[region]=europe
+    ```
+
+    ## Images
+
+    OpenFinTech provides two types of images: icons and logos. To get one of those types you should to use next url pattern:
+    ``` curl
+    https://api.openfintech.io/v1/{path}/{id}/{icon/logo}
+    ```
+    Also, images can be resized by adding next parameters: `h={height}&w={width}`. For example, you want to get organization icon with width equals to 20 pixels:
+    ``` curl
+    https://api.openfintech.io/v1/organizations/{id}/icon?w=20&h=20
+    ```
+    If argument height or width is missing API returns original image with real sizes.
+
+    ## Errors
+
+    API uses conventional HTTP response codes to indicate the success or failure of an API request. In general, codes in the `2xx` range indicate success, codes in the `4xx` range indicate an error that failed given the information provided (e.g., a required parameter was omitted, etc.), and codes in the `5xx` range indicate an error with OpenFinTech's servers (these are rare).
+
+    | Code | Description |
+    |------|-------------|
+    | 200 - OK	| Everything worked as expected. |
+    | 400 - Bad Request |	The request was unacceptable, often due to missing a required parameter. |
+    | 401 - Unauthorized |	No valid API key provided. |
+    | 402 - Request Failed	| The parameters were valid but the request failed. |
+    | 404 - Not Found |	The requested resource doesn't exist. |
+    | 409 - Conflict	| The request conflicts with another request (perhaps due to using the same idempotent key). |
+    | 429 - Too Many Requests |	Too many requests hit the API too quickly. We recommend an exponential backoff of your requests. |
+    | 500, 502, 503, 504 - Server Errors |	Something went wrong on OpenFinTech's end. (These are rare.) |
+  title: OpenFinTech.io
+  version: 2017-08-24
+  x-apisguru-categories:
+    - financial
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_openfintech_profile_image.jpeg
+  x-origin:
+    - format: swagger
+      url: https://docs.openfintech.io/swagger.yaml
+      version: "2.0"
+  x-providerName: openfintech.io
+produces:
+  - application/vnd.api+json
+parameters:
+  "filter[code]":
+    description: Filtering by code.
+    in: query
+    name: filter[code]
+    type: string
+  "filter[name]":
+    description: Filtering by name.
+    in: query
+    name: filter[name]
+    type: string
+  "filter[status]":
+    collectionFormat: csv
+    description: Filtration by status.
+    in: query
+    items:
+      enum:
+        - active
+        - blocked
+        - deleted
+      type: string
+    name: filter[status]
+    type: array
+    uniqueItems: true
+  id:
+    description: Unique ID.
+    in: path
+    name: id
+    required: true
+    type: string
+  "page[number]":
+    description: Current page number.
+    in: query
+    name: page[number]
+    type: integer
+  "page[size]":
+    description: |
+      Page size.<br>*Default value: 100*
+    in: query
+    name: page[size]
+    type: integer
+  "second_filter[status]":
+    collectionFormat: csv
+    description: Filtration by status.
+    in: query
+    items:
+      enum:
+        - active
+        - liquidated
+        - problem
+        - deleted
+      type: string
+    name: filter[status]
+    type: array
+    uniqueItems: true
+tags:
+  - description: Information about countries
+    name: Countries
+  - description: Information about currencies
+    name: Currencies
+  - description: Information about organizations
+    name: Organizations
+  - description: Information about exchangers
+    name: Exchangers
+  - description: Information about banks
+    name: Banks
+  - description: Information about payment methods
+    name: Payment methods
+  - description: Information about deposit methods
+    name: Deposit methods
+  - description: Information about payment providers
+    name: Payment providers
+  - description: Information about merchant industries
+    name: Merchant industries
+paths:
+  /banks:
+    get:
+      description: |
+        Returns list of banks. Each object contains general information about bank such as name and status, also information about bank details and related link to main organization.
+      parameters:
+        - $ref: "#/parameters/page[number]"
+        - $ref: "#/parameters/page[size]"
+        - description: Filtering by banks code.
+          in: query
+          name: filter[sort_code]
+          type: string
+        - $ref: "#/parameters/filter[code]"
+        - $ref: "#/parameters/second_filter[status]"
+        - collectionFormat: csv
+          description: |
+            Sort params:<br>
+
+            | ASC | DESC |
+            |-----|------|
+            | name | -name |
+            | code | -code |
+            | status | -status |
+            | sort_code | -sort_code |
+          in: query
+          items:
+            enum:
+              - name
+              - -name
+              - status
+              - -status
+              - code
+              - -code
+              - sort_code
+              - -sort_code
+            type: string
+          name: sort
+          type: array
+          uniqueItems: true
+      responses:
+        "200":
+          description: List of banks.
+          schema:
+            $ref: "#/definitions/BanksResponse"
+      summary: List of banks
+      tags:
+        - Banks
+  "/banks/{id}":
+    get:
+      description: |
+        Returns bank with specific ID.
+      parameters:
+        - $ref: "#/parameters/id"
+      responses:
+        "200":
+          description: Bank information.
+          schema:
+            $ref: "#/definitions/BankResponse"
+        "404":
+          description: Bank ID is not valid.
+      summary: Bank by ID
+      tags:
+        - Banks
+  /countries:
+    get:
+      description: |
+        Returns all available countries.
+      parameters:
+        - $ref: "#/parameters/page[number]"
+        - $ref: "#/parameters/page[size]"
+        - collectionFormat: csv
+          description: Filtration by region.
+          in: query
+          items:
+            enum:
+              - africa
+              - americas
+              - asia
+              - europe
+              - oceania
+              - polar
+            type: string
+          name: filter[region]
+          type: array
+          uniqueItems: true
+        - collectionFormat: csv
+          description: Filtration by sub region.
+          in: query
+          items:
+            enum:
+              - northern_africa
+              - southern_africa
+              - western_africa
+              - eastern_africa
+              - middle_africa
+              - northern_america
+              - south_america
+              - central_america
+              - caribbean
+              - southern_asia
+              - western_asia
+              - eastern_asia
+              - south_eastern_asia
+              - central_asia
+              - northern_europe
+              - southern_europe
+              - western_europe
+              - eastern_europe
+              - polynesia
+              - australia_and_new_zealand
+              - micronesia
+              - melanesia
+            type: string
+          name: filter[sub_region]
+          type: array
+          uniqueItems: true
+        - collectionFormat: csv
+          description: |
+            Sort params:<br>
+
+            | ASC | DESC |
+            |-----|------|
+            | name | -name |
+            | area | -area |
+            | population | -population |
+            | region | -region |
+            | sub_region | -sub_region |
+          in: query
+          items:
+            enum:
+              - name
+              - -name
+              - area
+              - -area
+              - population
+              - -population
+              - region
+              - -region
+              - sub_region
+              - -sub_region
+            type: string
+          name: sort
+          type: array
+          uniqueItems: true
+      responses:
+        "200":
+          description: List of countries.
+          schema:
+            $ref: "#/definitions/CountriesResponse"
+      summary: List of countries
+      tags:
+        - Countries
+  "/countries/{id}":
+    get:
+      description: |
+        Returns country with specific ID.
+      parameters:
+        - $ref: "#/parameters/id"
+      responses:
+        "200":
+          description: Country informatiion.
+          schema:
+            $ref: "#/definitions/CountryResponse"
+        "404":
+          description: Country ID is not valid.
+      summary: Country by ID
+      tags:
+        - Countries
+  /currencies:
+    get:
+      description: |
+        Returns all available currencies.
+      parameters:
+        - $ref: "#/parameters/page[number]"
+        - $ref: "#/parameters/page[size]"
+        - description: Full text search with name, code, type, code_iso_alpha3, code_jsons_alpha, code_estandards_alpha, category.
+          in: query
+          name: filter[search]
+          type: string
+        - description: Filtering by ISO code.
+          in: query
+          name: filter[code_iso_alpha3]
+          type: string
+        - description: Filtering by ISO number.
+          in: query
+          name: filter[code_iso_numeric3]
+          type: integer
+        - description: Filtering by estandards code.
+          in: query
+          name: filter[code_estandards_alpha]
+          type: string
+        - collectionFormat: csv
+          description: Filtration by currency type.
+          in: query
+          items:
+            enum:
+              - national
+              - digital
+              - virtual
+              - metal
+              - energy
+              - crypto
+              - code
+              - technical
+            type: string
+          name: filter[currency_type]
+          type: array
+          uniqueItems: true
+        - collectionFormat: csv
+          description: Filtration by category.
+          in: query
+          items:
+            enum:
+              - electronic
+              - online_bankings
+              - money_transfers
+              - crypto_exchangers
+              - crypto_currencies
+              - vouchers
+              - cards
+              - cash
+              - games
+              - psps
+              - others
+            type: string
+          name: filter[category]
+          type: array
+          uniqueItems: true
+        - collectionFormat: csv
+          description: |
+            Sort params:<br>
+
+            | ASC | DESC |
+            |-----|------|
+            | name | -name |
+            | type | -type |
+            | category | -category |
+            | code | -code |
+            | code_iso_alpha3 | -code_iso_alpha3 |
+            | code_iso_numeric3 | -code_iso_numeric3 |
+            | code_estandards_alpha | -code_estandards_alpha |
+          in: query
+          items:
+            enum:
+              - name
+              - -name
+              - type
+              - -type
+              - category
+              - -category
+              - code
+              - -code
+              - code_iso_alpha3
+              - -code_iso_alpha3
+              - code_iso_numeric3
+              - -code_iso_numeric3
+              - code_estandards_alpha
+              - -code_estandards_alpha
+            type: string
+          name: sort
+          type: array
+          uniqueItems: true
+      responses:
+        "200":
+          description: List of currencies.
+          schema:
+            $ref: "#/definitions/CurrenciesResponse"
+      summary: List of currencies
+      tags:
+        - Currencies
+  "/currencies/{id}":
+    get:
+      description: |
+        Returns currency with specific ID.
+      parameters:
+        - $ref: "#/parameters/id"
+      responses:
+        "200":
+          description: Currency information.
+          schema:
+            $ref: "#/definitions/CurrencyResponse"
+        "404":
+          description: Currency ID is not valid.
+      summary: Currency by ID
+      tags:
+        - Currencies
+  /deposit-methods:
+    get:
+      description: |
+        Returns list of deposit methods. Each object contains information about deposit method such as name and category, also related link to deposit method issuer (which processing it).
+      parameters:
+        - $ref: "#/parameters/page[number]"
+        - $ref: "#/parameters/page[size]"
+        - description: Full text search with id, name, code, category.
+          in: query
+          name: filter[search]
+          type: string
+        - $ref: "#/parameters/filter[name]"
+        - $ref: "#/parameters/filter[code]"
+        - description: Filtering by processor_name.
+          in: query
+          name: filter[processor_name]
+          type: string
+        - collectionFormat: csv
+          description: Filtering by category.
+          in: query
+          items:
+            enum:
+              - card
+              - alternative
+              - wallet
+              - credit_cards
+              - debit_cards
+              - prepaid_cards
+              - check
+              - invoice
+              - bank_transaction
+              - direct_debits
+              - mobile_carrier_billing
+              - cash_on_delivery
+            type: string
+          name: filter[category]
+          type: array
+          uniqueItems: true
+        - collectionFormat: csv
+          description: |
+            Sort params:<br>
+
+            | ASC | DESC |
+            |-----|------|
+            | name | -name |
+            | code | -code |
+            | processor_name | -processor_name |
+            | category | -category |
+          in: query
+          items:
+            enum:
+              - name
+              - -name
+              - code
+              - -code
+              - processor_name
+              - -processor_name
+              - category
+              - -category
+            type: string
+          name: sort
+          type: array
+          uniqueItems: true
+      responses:
+        "200":
+          description: List of deposit methods.
+          schema:
+            $ref: "#/definitions/DepositMethodsResponse"
+      summary: List of deposit methods
+      tags:
+        - Deposit methods
+  "/deposit-methods/{id}":
+    get:
+      description: |
+        Returns deposit method with specific ID.
+      parameters:
+        - $ref: "#/parameters/id"
+      responses:
+        "200":
+          description: Deposit method information.
+          schema:
+            $ref: "#/definitions/DepositMethodResponse"
+        "404":
+          description: deposit method ID is not valid.
+      summary: Deposit method by ID
+      tags:
+        - Deposit methods
+  /exchangers:
+    get:
+      description: |
+        Returns list of exchange markets. Each object contains general information about exchanger such as name and status, also information about rates export and related link to main organization.<br>
+        Rates export standards is represented by:
+        * [estandards](http://estandards.info)
+        * [jsons](http://jsons.info)
+        * ratex - our internal standard
+      parameters:
+        - $ref: "#/parameters/page[number]"
+        - $ref: "#/parameters/page[size]"
+        - $ref: "#/parameters/filter[name]"
+        - $ref: "#/parameters/filter[status]"
+        - collectionFormat: csv
+          description: |
+            Sort params:<br>
+
+            | ASC | DESC |
+            |-----|------|
+            | name | -name |
+            | status | -status |
+            | wmid | -wmid |
+            | rate_type | -rate_type |
+            | rates_export_standard | <nobr>-rates_export_standard</nobr> |
+          in: query
+          items:
+            enum:
+              - name
+              - -name
+              - status
+              - -status
+              - wmid
+              - -wmid
+              - rate_type
+              - -rate_type
+              - rates_export_standard
+              - -rates_export_standard
+            type: string
+          name: sort
+          type: array
+          uniqueItems: true
+      responses:
+        "200":
+          description: List of exchangers.
+          schema:
+            $ref: "#/definitions/ExchangersResponse"
+      summary: List of exchangers
+      tags:
+        - Exchangers
+  "/exchangers/{id}":
+    get:
+      description: |
+        Returns exchanger with specific ID.
+      parameters:
+        - $ref: "#/parameters/id"
+      responses:
+        "200":
+          description: Exchanger information.
+          schema:
+            $ref: "#/definitions/ExchangerResponse"
+        "404":
+          description: Exchanger ID is not valid.
+      summary: Exchanger by ID
+      tags:
+        - Exchangers
+  /merchant-industries:
+    get:
+      description: |
+        Returns all available merchant fields of activity.
+      parameters:
+        - $ref: "#/parameters/page[number]"
+        - $ref: "#/parameters/page[size]"
+        - $ref: "#/parameters/filter[name]"
+      responses:
+        "200":
+          description: List of Merchant industries.
+          schema:
+            $ref: "#/definitions/MerchantIndustriesResponse"
+      summary: List of merchant industries
+      tags:
+        - Merchant industries
+  "/merchant-industries/{id}":
+    get:
+      description: |
+        Returns merchant industry with specific ID.
+      parameters:
+        - $ref: "#/parameters/id"
+      responses:
+        "200":
+          description: Merchant industry.
+          schema:
+            $ref: "#/definitions/MerchantIndustryResponse"
+        "404":
+          description: Merchant industry ID is not valid.
+      summary: Merchant industry by ID
+      tags:
+        - Merchant industries
+  /organizations:
+    get:
+      description: |
+        This endpoint retrievs the list of organizations present in the system. The data displays general, public information, without reference to the type of activity (for example - name, address, contacts, etc.).
+      parameters:
+        - $ref: "#/parameters/page[number]"
+        - $ref: "#/parameters/page[size]"
+        - description: Full text search with id, name, code.
+          in: query
+          name: filter[search]
+          type: string
+        - $ref: "#/parameters/filter[name]"
+        - $ref: "#/parameters/filter[code]"
+        - $ref: "#/parameters/filter[status]"
+        - description: Filtering by industries.
+          in: query
+          name: filter[industries]
+          type: string
+        - collectionFormat: csv
+          description: |
+            Sort params:<br>
+
+            | ASC | DESC |
+            |-----|------|
+            | name | -name |
+            | code | -code |
+            | status | -status |
+            | description | -description |
+          in: query
+          items:
+            enum:
+              - name
+              - -name
+              - code
+              - -code
+              - status
+              - -status
+              - description
+              - -description
+            type: string
+          name: sort
+          type: array
+          uniqueItems: true
+      responses:
+        "200":
+          description: List of Organizations.
+          schema:
+            $ref: "#/definitions/OrganizationsResponse"
+      summary: List of organizations
+      tags:
+        - Organizations
+  "/organizations/{id}":
+    get:
+      description: |
+        Returns organization with specific ID.
+      parameters:
+        - $ref: "#/parameters/id"
+      responses:
+        "200":
+          description: Organization information.
+          schema:
+            $ref: "#/definitions/OrganizationResponse"
+        "404":
+          description: Organization ID is not valid.
+      summary: Organization by ID
+      tags:
+        - Organizations
+  /payment-methods:
+    get:
+      description: |
+        Returns list of payment methods. Each object contains information about payment method such as name and category, also related link to payment method issuer (which processing it).
+      parameters:
+        - $ref: "#/parameters/page[number]"
+        - $ref: "#/parameters/page[size]"
+        - description: Full text search with id, name, code, category.
+          in: query
+          name: filter[search]
+          type: string
+        - $ref: "#/parameters/filter[name]"
+        - $ref: "#/parameters/filter[code]"
+        - description: Filtering by processor_name.
+          in: query
+          name: filter[processor_name]
+          type: string
+        - collectionFormat: csv
+          description: Filtering by category.
+          in: query
+          items:
+            enum:
+              - card
+              - alternative
+              - wallet
+              - credit_cards
+              - debit_cards
+              - prepaid_cards
+              - check
+              - invoice
+              - bank_transaction
+              - direct_debits
+              - mobile_carrier_billing
+              - cash_on_delivery
+            type: string
+          name: filter[category]
+          type: array
+          uniqueItems: true
+        - collectionFormat: csv
+          description: |
+            Sort params:<br>
+
+            | ASC | DESC |
+            |-----|------|
+            | name | -name |
+            | code | -code |
+            | processor_name | -processor_name |
+            | category | -category |
+          in: query
+          items:
+            enum:
+              - name
+              - -name
+              - code
+              - -code
+              - processor_name
+              - -processor_name
+              - category
+              - -category
+            type: string
+          name: sort
+          type: array
+          uniqueItems: true
+      responses:
+        "200":
+          description: List of payment methods.
+          schema:
+            $ref: "#/definitions/PaymentMethodsResponse"
+      summary: List of payment methods
+      tags:
+        - Payment methods
+  "/payment-methods/{id}":
+    get:
+      description: |
+        Returns payment method with specific ID.
+      parameters:
+        - $ref: "#/parameters/id"
+      responses:
+        "200":
+          description: Payment method information.
+          schema:
+            $ref: "#/definitions/PaymentMethodResponse"
+        "404":
+          description: Payment method ID is not valid.
+      summary: Payment method by ID
+      tags:
+        - Payment methods
+  /payment-providers:
+    get:
+      description: |
+        A payment service provider (PSP) offers shops online services for accepting electronic payments by a variety of payment methods.<br> Endpoint returns list of PSPs. Each object contains: name, type, supported features and sales channels, also related link to available payment methods and main organization.
+      parameters:
+        - $ref: "#/parameters/page[number]"
+        - $ref: "#/parameters/page[size]"
+        - description: Full text search with id, code, name.
+          in: query
+          name: filter[search]
+          type: string
+        - $ref: "#/parameters/filter[name]"
+        - $ref: "#/parameters/filter[code]"
+        - collectionFormat: csv
+          description: Filtering by types.
+          in: query
+          items:
+            enum:
+              - distributor
+              - aggregator
+              - collector
+              - acquirer
+            type: string
+          name: filter[types]
+          type: array
+          uniqueItems: true
+        - collectionFormat: csv
+          description: Filtering by sales channels.
+          in: query
+          items:
+            enum:
+              - e_commerce
+              - in_app
+              - m_commerce
+              - moto
+              - m_pos
+              - pos
+            type: string
+          name: filter[sales_channels]
+          type: array
+          uniqueItems: true
+        - collectionFormat: csv
+          description: Filtering by features.
+          in: query
+          items:
+            enum:
+              - e_commerce
+              - installments
+              - partial_captures
+              - mastercard_secure
+              - american_express_safe_key
+              - a_b_testing
+              - payment_transfer
+              - hosted_payment_page
+              - edcc
+              - multi_lingual
+              - fraud_scrubbing
+              - multi_currency
+              - pay_out_of_winnings
+              - refunds
+              - verified_by_visa
+              - tokenization
+              - recurring_payments
+              - avs
+              - pre_authorisation
+              - chargeback_management
+              - discover_protectbuy
+              - level_iii_data
+              - j_secure_by_jcb
+            type: string
+          name: filter[features]
+          type: array
+          uniqueItems: true
+        - collectionFormat: csv
+          description: |
+            Sort params:<br>
+
+            | ASC | DESC |
+            |-----|------|
+            | name | -name |
+            | code | -code |
+          in: query
+          items:
+            enum:
+              - name
+              - -name
+              - code
+              - -code
+            type: string
+          name: sort
+          type: array
+          uniqueItems: true
+      responses:
+        "200":
+          description: List of Payment providers.
+          schema:
+            $ref: "#/definitions/PaymentProvidersResponse"
+      summary: List of payment providers
+      tags:
+        - Payment providers
+  "/payment-providers/{id}":
+    get:
+      description: |
+        Returns payment provider with specific ID.
+      parameters:
+        - $ref: "#/parameters/id"
+      responses:
+        "200":
+          description: Payment provider.
+          schema:
+            $ref: "#/definitions/PaymentProviderResponse"
+        "404":
+          description: Payment provider ID is not valid.
+      summary: Payment provider by ID
+      tags:
+        - Payment providers
+definitions:
+  ActiveInCountriesRelationship:
+    description: Active in countries
+    properties:
+      data:
+        items:
+          properties:
+            id:
+              example: UA
+              type: string
+            type:
+              example: countries
+              type: string
+          type: object
+        type: array
+      links:
+        properties:
+          related:
+            example: /v1/deposit-methods/dm_fyBYShF7DuOXzeiR/active_in_countries
+            type: string
+        type: object
+    type: object
+  Bank:
+    properties:
+      attributes:
+        $ref: "#/definitions/BankAttributes"
+      id:
+        description: Bank`s ID
+        example: bnk_ROO9xUfcBUwOIsqI
+        type: string
+      links:
+        $ref: "#/definitions/SelfLinks"
+      relationships:
+        $ref: "#/definitions/BankRelationships"
+      type:
+        example: banks
+        type: string
+    type: object
+  BankAttributes:
+    description: Array of bank attributes
+    properties:
+      account_number:
+        type: string
+      bank_code:
+        type: string
+      bic:
+        type: string
+      code:
+        description: Bank`s code
+        example: pat_kb_privatbank
+        type: string
+      iban:
+        type: string
+      name:
+        description: Bank`s name
+        example: Test
+        type: string
+      sort_code:
+        example: 305299
+        type: string
+      status:
+        description: Status [active, liquidated, problem, deleted]
+        example: active
+        type: string
+      vatin:
+        type: string
+    type: object
+  BankOrganization:
+    properties:
+      data:
+        $ref: "#/definitions/BankOrganizationData"
+      links:
+        $ref: "#/definitions/BankOrganizationLinks"
+    type: object
+  BankOrganizationData:
+    properties:
+      id:
+        description: Organization`s ID
+        example: org_qXJX8D9I5VCQjCOH
+        type: string
+      type:
+        example: organizations
+        type: string
+    type: object
+  BankOrganizationLinks:
+    properties:
+      related:
+        example: /v1/banks/bnk_ROO9xUfcBUwOIsqI/organization
+        type: string
+    type: object
+  BankRelationships:
+    properties:
+      organization:
+        $ref: "#/definitions/BankOrganization"
+    type: object
+  BankResponse:
+    properties:
+      data:
+        $ref: "#/definitions/Bank"
+    type: object
+  BanksResponse:
+    properties:
+      data:
+        items:
+          $ref: "#/definitions/Bank"
+        type: array
+      links:
+        $ref: "#/definitions/ResponseLinks"
+      meta:
+        $ref: "#/definitions/ResponseMeta"
+    type: object
+  CountriesResponse:
+    properties:
+      data:
+        items:
+          $ref: "#/definitions/Country"
+        type: array
+      links:
+        $ref: "#/definitions/ResponseLinks"
+      meta:
+        $ref: "#/definitions/ResponseMeta"
+    type: object
+  Country:
+    properties:
+      attributes:
+        $ref: "#/definitions/CountryAttributes"
+      id:
+        description: Country`s ID
+        example: UA
+        type: string
+      links:
+        $ref: "#/definitions/SelfLinks"
+      relationships:
+        $ref: "#/definitions/CountryRelationships"
+      type:
+        example: countries
+        type: string
+    type: object
+  CountryAttributes:
+    properties:
+      area:
+        description: Countryâ€™s area (sq km)
+        example: 603700
+        type: string
+      calling_codes:
+        description: Array of country`s phone codes
+        example:
+          - 380
+        items:
+          type: integer
+        type: array
+      capital:
+        description: Countryâ€™s capital
+        example: Kyiv
+        type: string
+      code_alpha3:
+        description: Country`s ISO alpha3 code
+        example: UKR
+        type: string
+      languages:
+        description: Array of country`s languages
+        example:
+          - uk
+        items:
+          type: string
+        type: array
+      name:
+        description: Country`s name
+        example: Ukraine
+        type: string
+      native_name:
+        description: Country`s nativ name
+        example: Ð£ÐºÑ€Ð°Ñ—Ð½Ð°
+        type: string
+      population:
+        description: Countryâ€™s population
+        example: 42836922
+        type: string
+      region:
+        description: |
+          Countryâ€™s region:<br>
+
+            * Africa
+            * Americas
+            * Asia
+            * Europe
+            * Oceania
+            * Polar
+        example: europe
+        type: string
+      sub_region:
+        description: |
+          Countryâ€™s sub region:<br>
+
+            * Northern Africa
+            * Southern Africa
+            * Western Africa
+            * Eastern Africa
+            * Middle Africa
+            * Northern America
+            * South America
+            * Central America
+            * Caribbean
+            * Southern Asia
+            * Western Asia
+            * Eastern Asia
+            * South-Eastern Asia
+            * Central Asia
+            * Northern Europe
+            * Southern Europe
+            * Western Europe
+            * Eastern Europe
+            * Polynesia
+            * Australia and New Zealand
+            * Micronesia
+            * Melanesia
+        example: eastern_europe
+        type: string
+      timezones:
+        description: Array of country`s timezones (UTC)
+        example:
+          - UTC+02:00
+        items:
+          type: string
+        type: array
+      top_level_domains:
+        description: Array of country`s domains
+        example:
+          - .ua
+        items:
+          type: string
+        type: array
+    type: object
+  CountryRelationships:
+    properties:
+      translations:
+        $ref: "#/definitions/CountryTranslations"
+    type: object
+  CountryResponse:
+    properties:
+      data:
+        $ref: "#/definitions/Country"
+    type: object
+  CountryTranslations:
+    properties:
+      links:
+        $ref: "#/definitions/CountryTranslationsLinks"
+    type: object
+  CountryTranslationsLinks:
+    properties:
+      related:
+        example: /v1/countries/UA/translations
+        type: string
+    type: object
+  CurrenciesResponse:
+    properties:
+      data:
+        items:
+          $ref: "#/definitions/Currency"
+        type: array
+      links:
+        $ref: "#/definitions/ResponseLinks"
+      meta:
+        $ref: "#/definitions/ResponseMeta"
+    type: object
+  Currency:
+    properties:
+      attributes:
+        $ref: "#/definitions/CurrencyAttributes"
+      id:
+        description: Currency ID
+        example: UAH
+        type: string
+      links:
+        $ref: "#/definitions/SelfLinks"
+      relationships:
+        $ref: "#/definitions/CurrencyRelationships"
+      type:
+        example: currencies
+        type: string
+    type: object
+  CurrencyAttributes:
+    description: Array of currencies attributes
+    properties:
+      category:
+        description: Currency category
+        example: others
+        type: string
+      code:
+        description: Currency system code
+        example: UAH
+        type: string
+      code_estandards_alpha:
+        example: none
+        type: string
+      code_iso_alpha3:
+        description: Currency ISO code
+        example: UAH
+        type: string
+      code_iso_numeric3:
+        description: Currency ISO numeric code
+        example: 980
+        type: integer
+      code_json_alpha:
+        example: none
+        type: string
+      created:
+        description: Created date in system (in Unixtime)
+        example: 1486051665
+        type: string
+      currency_type:
+        description: Type of currencies [national, digital, virtual, metal, energy]
+        example: national
+        type: string
+      decimal_e:
+        description: Number of digits after the decimal separator
+        example: 2
+        type: string
+      icon:
+        $ref: "#/definitions/CurrencyAttributesIcon"
+      issuer:
+        description: Currency`s issuer
+        type: string
+      name:
+        description: Currency description
+        example: Hryvnia
+        type: string
+      native_symbol:
+        description: Currencyâ€™s symbol. In general, only for nationals currencies
+        example: â‚´
+        type: string
+      symbol:
+        description: Currencyâ€™s symbol. In general, only for nationals currencies
+        example: â‚´
+        type: string
+    type: object
+  CurrencyAttributesIcon:
+    description: Links to currency icons
+    properties:
+      "16":
+        description: 16x16 icon
+        example: https://i.openfintech.io/currencies/UAH/icon_16.png
+        type: string
+      "32":
+        description: 32x32 icon
+        example: https://i.openfintech.io/currencies/UAH/icon_32.png
+        type: string
+      "64":
+        description: 64x64 icon
+        example: https://i.openfintech.io/currencies/UAH/icon_64.png
+        type: string
+    type: object
+  CurrencyCountries:
+    properties:
+      links:
+        $ref: "#/definitions/CurrencyCountryLinks"
+    type: object
+  CurrencyCountryLinks:
+    properties:
+      related:
+        example: /v1/currencies/UAH/countries
+        type: string
+    type: object
+  CurrencyIssuer:
+    description: |
+      Currency Issuer. 'Only for virtual currency'
+    properties:
+      data:
+        $ref: "#/definitions/CurrencyIssuertData"
+      links:
+        $ref: "#/definitions/CurrencyIssuerLinks"
+    type: object
+  CurrencyIssuerLinks:
+    properties:
+      related:
+        example: /v1/currencies/UAH/issuer
+        type: string
+    type: object
+  CurrencyIssuerOrganization:
+    description: |
+      Issuer.
+    properties:
+      data:
+        $ref: "#/definitions/CurrencyIssuerOrganizationData"
+      links:
+        $ref: "#/definitions/CurrencyIssuerOrganizationLinks"
+    type: object
+  CurrencyIssuerOrganizationData:
+    properties:
+      id:
+        description: Issuer organization ID
+        type: string
+      type:
+        example: currencies
+        type: string
+    type: object
+  CurrencyIssuerOrganizationLinks:
+    properties:
+      related:
+        example: /v1/currencies/UAH/issuer_organization
+        type: string
+    type: object
+  CurrencyIssuertData:
+    properties:
+      id:
+        description: Issuer ID
+        type: string
+      type:
+        example: issuer
+        type: string
+    type: object
+  CurrencyParent:
+    description: |
+      Parent currency. 'Only for virtual currency'
+    properties:
+      data:
+        $ref: "#/definitions/CurrencyParentData"
+      links:
+        $ref: "#/definitions/CurrencyParentLinks"
+    type: object
+  CurrencyParentData:
+    properties:
+      id:
+        description: Parent currency ID
+        example: UAH
+        type: string
+      type:
+        example: currencies
+        type: string
+    type: object
+  CurrencyParentLinks:
+    properties:
+      related:
+        example: /v1/currencies/UAH/parent
+        type: string
+    type: object
+  CurrencyRelationships:
+    properties:
+      countries:
+        $ref: "#/definitions/CurrencyCountries"
+      issuer:
+        $ref: "#/definitions/CurrencyIssuer"
+      issuer_organization:
+        $ref: "#/definitions/CurrencyIssuerOrganization"
+      parent:
+        $ref: "#/definitions/CurrencyParent"
+    type: object
+  CurrencyResponse:
+    properties:
+      data:
+        $ref: "#/definitions/Currency"
+    type: object
+  DepositMethod:
+    properties:
+      attributes:
+        $ref: "#/definitions/DepositMethodAttributes"
+      id:
+        description: Deposit-methods`s ID
+        example: paym_8NBX4V5fAEmqr3PO
+        type: string
+      links:
+        $ref: "#/definitions/SelfLinks"
+      relationships:
+        $ref: "#/definitions/DepositMethodRelationships"
+      type:
+        example: deposit-methods
+        type: string
+    type: object
+  DepositMethodAttributes:
+    description: Array of Deposit-method attributes
+    properties:
+      category:
+        example: wallet
+        type: string
+      code:
+        description: Deposit-method`s code
+        example: justpayewallet
+        type: string
+      name:
+        description: Deposit-method`s name
+        example: TOT Just Pay
+        type: string
+      processor_name:
+        description: Deposit-method`s processor
+        example: TOT Just Pay
+        type: string
+    type: object
+  DepositMethodProcessorData:
+    description: Processor`s Data.
+    properties:
+      data:
+        items:
+          properties:
+            id:
+              description: Processor`s id.
+              example: ppr_zkqg6xJKCIoWjBB9
+              type: string
+            type:
+              description: Processor`s type.
+              example: organizations
+              type: string
+          type: object
+        type: array
+      links:
+        properties:
+          related:
+            example: /v1/payment-methods/pm_QcW80uZ5XefiQYwp/payment-processor
+            type: string
+        type: object
+    type: object
+  DepositMethodRelationships:
+    properties:
+      actiove_in_countries:
+        $ref: "#/definitions/ActiveInCountriesRelationship"
+      currencies:
+        $ref: "#/definitions/CurrencyParent"
+      payment_processor:
+        $ref: "#/definitions/DepositMethodProcessorData"
+      supported_psps:
+        $ref: "#/definitions/SupportedPspsRelationship"
+    type: object
+  DepositMethodResponse:
+    properties:
+      data:
+        $ref: "#/definitions/DepositMethod"
+    type: object
+  DepositMethodsResponse:
+    properties:
+      data:
+        items:
+          $ref: "#/definitions/DepositMethod"
+        type: array
+      links:
+        $ref: "#/definitions/ResponseLinks"
+      meta:
+        $ref: "#/definitions/ResponseMeta"
+    type: object
+  Exchanger:
+    properties:
+      attributes:
+        $ref: "#/definitions/ExchangerAttributes"
+      id:
+        description: Exchanger`s ID
+        example: exch_1oClKBr43J1xxxAa
+        type: string
+      links:
+        $ref: "#/definitions/SelfLinks"
+      relationships:
+        $ref: "#/definitions/ExchangerRelationships"
+      type:
+        example: exchangers
+        type: string
+    type: object
+  ExchangerAttributes:
+    properties:
+      name:
+        description: Exchanger`s name
+        example: Xchange.cc
+        type: string
+      rates_export_standard:
+        example: estandard
+        type: string
+      rates_export_url:
+        example: https://xchange.cc/valuta.xml
+        type: string
+      status:
+        description: Exchanger`s status [active, blocked, deleted]
+        example: active
+        type: string
+      wmid:
+        description: Exchanger`s WebMoney ID
+        example: 612345678901
+        type: integer
+    type: object
+  ExchangerOrganization:
+    properties:
+      data:
+        $ref: "#/definitions/ExchangerOrganizationData"
+      links:
+        $ref: "#/definitions/ExchangerOrganizationLinks"
+    type: object
+  ExchangerOrganizationData:
+    properties:
+      id:
+        description: Organization ID
+        example: org_Dr5Wi728plQ0RPA5
+        type: string
+      type:
+        example: organizations
+        type: string
+    type: object
+  ExchangerOrganizationLinks:
+    properties:
+      related:
+        example: /v1/exchangers/exch_1oClKBr43J1xxxAa/organization
+        type: string
+    type: object
+  ExchangerRelationships:
+    properties:
+      organization:
+        $ref: "#/definitions/ExchangerOrganization"
+    type: object
+  ExchangerResponse:
+    properties:
+      data:
+        $ref: "#/definitions/Exchanger"
+    type: object
+  ExchangersResponse:
+    properties:
+      data:
+        items:
+          $ref: "#/definitions/Exchanger"
+        type: array
+      links:
+        $ref: "#/definitions/ResponseLinks"
+      meta:
+        $ref: "#/definitions/ResponseMeta"
+    type: object
+  MerchantIndustriesResponse:
+    properties:
+      data:
+        items:
+          $ref: "#/definitions/MerchantIndustry"
+        type: array
+      links:
+        $ref: "#/definitions/ResponseLinks"
+      meta:
+        $ref: "#/definitions/ResponseMeta"
+    type: object
+  MerchantIndustry:
+    properties:
+      attributes:
+        $ref: "#/definitions/MerchantIndustryAttributes"
+      id:
+        description: Merchant-industry`s ID
+        example: merchind_Cukwq7LEFXiaRpkZ
+        type: string
+      type:
+        example: merchant-industries
+        type: string
+    type: object
+  MerchantIndustryAttributes:
+    description: Array of Merchant-industry attributes
+    properties:
+      name:
+        description: Merchant-industry`s name
+        example: Airlines
+        type: string
+    type: object
+  MerchantIndustryResponse:
+    properties:
+      data:
+        $ref: "#/definitions/MerchantIndustry"
+    type: object
+  Organization:
+    properties:
+      attributes:
+        $ref: "#/definitions/OrganizationAttributes"
+      id:
+        description: Organization`s ID
+        example: org_RysJXOwKaGT5o1SZ
+        type: string
+      links:
+        $ref: "#/definitions/SelfLinks"
+      relationships:
+        $ref: "#/definitions/OrganizationRelationships"
+      type:
+        example: organizations
+        type: string
+    type: object
+  OrganizationActive:
+    properties:
+      data:
+        example: none
+        items:
+          type: string
+        type: array
+      links:
+        $ref: "#/definitions/OrganizationActiveLinks"
+    type: object
+  OrganizationActiveLinks:
+    properties:
+      related:
+        example: /v1/organizations/org_lK1mIKXO1kHOrTeJ/active_in_countries
+        type: string
+    type: object
+  OrganizationAddress:
+    description: Organization`s address
+    properties:
+      city:
+        example: Kyiv
+        type: string
+      country:
+        example: Ukraine
+        type: string
+      post_code:
+        example: 2184
+        type: integer
+      region:
+        description: |
+          Countryâ€™s region:<br>
+
+            * Africa
+            * Americas
+            * Asia
+            * Europe
+            * Oceania
+            * Polar
+        example: Europe
+        type: string
+      street:
+        example: Obolonska nab
+        type: string
+    type: object
+  OrganizationAttributes:
+    properties:
+      address:
+        $ref: "#/definitions/OrganizationAddress"
+      blog:
+        description: Organization`s blog
+        example: none
+        type: string
+      code:
+        description: Organization`s code
+        example: interkassa
+        type: string
+      contacts:
+        $ref: "#/definitions/OrganizationContacts"
+      description:
+        description: Description
+        example: Payment acceptance system
+        type: string
+      icon:
+        $ref: "#/definitions/OrganizationAttributesIcon"
+      industries:
+        description: Industries
+        example:
+          - psp
+        items:
+          type: string
+        type: array
+      logo:
+        $ref: "#/definitions/OrganizationAttributesLogo"
+      name:
+        description: Organization`s name
+        example: Interkassa
+        type: string
+      site:
+        description: Organization`s site
+        example: https://www.interkassa.com
+        type: string
+      social_profiles:
+        $ref: "#/definitions/OrganizationSocial"
+      status:
+        description: Organization`s status [active, liquidated, deleted]
+        example: active
+        type: string
+      wiki:
+        description: Organization`s wiki
+        example: https://www.interkassa.com/wiki/
+        type: string
+    type: object
+  OrganizationAttributesIcon:
+    description: Links to organization icons
+    properties:
+      "16":
+        description: 16x16 icon
+        example: https://i.openfintech.io/organizations/Interkassa/icon_16.png
+        type: string
+      "32":
+        description: 32x32 icon
+        example: https://i.openfintech.io/organizations/Interkassa/icon_32.png
+        type: string
+      "64":
+        description: 64x64 icon
+        example: https://i.openfintech.io/organizations/Interkassa/icon_64.png
+        type: string
+    type: object
+  OrganizationAttributesLogo:
+    description: Links to organization logos
+    properties:
+      "50":
+        description: 50x50 logo
+        example: https://i.openfintech.io/organizations/Interkassa/logo_50.png
+        type: string
+      "100":
+        description: 100x100 logo
+        example: https://i.openfintech.io/organizations/Interkassa/logo_100.png
+        type: string
+      "150":
+        description: 150x150 logo
+        example: https://i.openfintech.io/organizations/Interkassa/logo_150.png
+        type: string
+    type: object
+  OrganizationContacts:
+    description: Organization`s contacts
+    properties:
+      email:
+        example: support@interkassa.com
+        type: string
+      fax:
+        example: 1234
+        type: string
+      phone:
+        example: 380445859331
+        type: string
+      skype:
+        example: skype.ik
+        type: string
+    type: object
+  OrganizationHq:
+    properties:
+      data:
+        $ref: "#/definitions/OrganizationHqData"
+      links:
+        $ref: "#/definitions/OrganizationHqLinks"
+    type: object
+  OrganizationHqData:
+    properties:
+      id:
+        description: HQ location
+        example: UA
+        type: string
+      type:
+        example: countries
+        type: string
+    type: object
+  OrganizationHqLinks:
+    properties:
+      related:
+        example: /v1/organizations/org_lK1mIKXO1kHOrTeJ/hq_in_country
+        type: string
+    type: object
+  OrganizationRelationships:
+    properties:
+      active_in_countries:
+        $ref: "#/definitions/OrganizationActive"
+      hq_in_country:
+        $ref: "#/definitions/OrganizationHq"
+      source_register_org:
+        $ref: "#/definitions/OrganizationSource"
+    type: object
+  OrganizationResponse:
+    properties:
+      data:
+        $ref: "#/definitions/Organization"
+    type: object
+  OrganizationSocial:
+    description: Social profiles
+    properties:
+      facebook:
+        example: none
+        type: string
+      google_plus:
+        example: none
+        type: string
+      linked_in:
+        example: none
+        type: string
+      twitter:
+        example: none
+        type: string
+      vkontakte:
+        example: none
+        type: string
+    type: object
+  OrganizationSource:
+    properties:
+      data:
+        $ref: "#/definitions/OrganizationSourceData"
+      links:
+        $ref: "#/definitions/OrganizationSourceLinks"
+    type: object
+  OrganizationSourceData:
+    properties:
+      id:
+        type: string
+      type:
+        type: string
+    type: object
+  OrganizationSourceLinks:
+    properties:
+      related:
+        example: /v1/organizations/org_lK1mIKXO1kHOrTeJ/source_register_org
+        type: string
+    type: object
+  OrganizationsResponse:
+    properties:
+      data:
+        items:
+          $ref: "#/definitions/Organization"
+        type: array
+      links:
+        $ref: "#/definitions/ResponseLinks"
+      meta:
+        $ref: "#/definitions/ResponseMeta"
+    type: object
+  PaymentMethod:
+    properties:
+      attributes:
+        $ref: "#/definitions/PaymentMethodAttributes"
+      id:
+        description: Payment-methods`s ID
+        example: paym_8NBX4V5fAEmqr3PO
+        type: string
+      links:
+        $ref: "#/definitions/SelfLinks"
+      relationships:
+        $ref: "#/definitions/PaymentMethodRelationships"
+      type:
+        example: payment-methods
+        type: string
+    type: object
+  PaymentMethodAttributes:
+    description: Array of Payment-method attributes
+    properties:
+      category:
+        example: wallet
+        type: string
+      code:
+        description: Payment-method`s code
+        example: justpayewallet
+        type: string
+      name:
+        description: Payment-method`s name
+        example: TOT Just Pay
+        type: string
+      processor_name:
+        description: Payment-method`s processor
+        example: TOT Just Pay
+        type: string
+    type: object
+  PaymentMethodCurrencies:
+    properties:
+      data:
+        items:
+          type: string
+        type: array
+      links:
+        $ref: "#/definitions/PaymentMethodCurrenciesLinks"
+    type: object
+  PaymentMethodCurrenciesLinks:
+    properties:
+      related:
+        example: /v1/payment-methods/pm_QcW80uZ5XefiQYwp/payment-processor
+        type: string
+    type: object
+  PaymentMethodProcessor:
+    description: Payment-method issuer.
+    properties:
+      data:
+        $ref: "#/definitions/PaymentMethodProcessorData"
+      links:
+        $ref: "#/definitions/PaymentMethodProcessorLinks"
+    type: object
+  PaymentMethodProcessorData:
+    description: Processor`s Data.
+    properties:
+      id:
+        description: Processor`s id.
+        example: ppr_zkqg6xJKCIoWjBB9
+        type: string
+      type:
+        description: Processor`s type.
+        example: payment-method-issuer
+        type: string
+    type: object
+  PaymentMethodProcessorLinks:
+    properties:
+      related:
+        example: /v1/payment-methods/paym_8NBX4V5fAEmqr3PO/payment-processor
+        type: string
+    type: object
+  PaymentMethodRelationships:
+    properties:
+      currencies:
+        $ref: "#/definitions/PaymentMethodCurrencies"
+      payment-processor:
+        $ref: "#/definitions/PaymentMethodProcessor"
+    type: object
+  PaymentMethodResponse:
+    properties:
+      data:
+        $ref: "#/definitions/PaymentMethod"
+    type: object
+  PaymentMethodsResponse:
+    properties:
+      data:
+        items:
+          $ref: "#/definitions/PaymentMethod"
+        type: array
+      links:
+        $ref: "#/definitions/ResponseLinks"
+      meta:
+        $ref: "#/definitions/ResponseMeta"
+    type: object
+  PaymentProvider:
+    properties:
+      attributes:
+        $ref: "#/definitions/PaymentProviderAttributes"
+      id:
+        description: Payment-provider`s ID
+        example: psp_f9VUSVUhsl7Rm0JD
+        type: string
+      links:
+        $ref: "#/definitions/SelfLinks"
+      relationships:
+        $ref: "#/definitions/PaymentProviderRelationships"
+      type:
+        example: payment-providers
+        type: string
+    type: object
+  PaymentProviderAttributes:
+    description: Array of Payment-provider attributes
+    properties:
+      code:
+        description: Payment-provider`s code
+        example: Interkassa
+        type: string
+      features:
+        example: '[ "multi_currency" ]'
+        items:
+          type: string
+        type: array
+      name:
+        description: Payment-provider`s name
+        example: interkassa
+        type: string
+      sales_channels:
+        example: '[ "e_commerce" ]'
+        items:
+          type: string
+        type: array
+      types:
+        example: |-
+          [
+            "aggregator"
+          ]
+        items:
+          type: string
+        type: array
+    type: object
+  PaymentProviderOrganization:
+    properties:
+      data:
+        $ref: "#/definitions/PaymentProviderOrganizationData"
+      links:
+        $ref: "#/definitions/PaymentProviderOrganizationLinks"
+    type: object
+  PaymentProviderOrganizationData:
+    properties:
+      id:
+        description: Organization`s ID
+        example: org_lK1mIKXO1kHOrTeJ
+        type: string
+      type:
+        example: organizations
+        type: string
+    type: object
+  PaymentProviderOrganizationLinks:
+    properties:
+      related:
+        example: /v1/payment-providers/psp_f9VUSVUhsl7Rm0JD/organization
+        type: string
+    type: object
+  PaymentProviderPaymentMethods:
+    properties:
+      data:
+        example: []
+        items:
+          type: string
+        type: array
+      links:
+        $ref: "#/definitions/PaymentProviderPaymentMethodsLinks"
+    type: object
+  PaymentProviderPaymentMethodsLinks:
+    properties:
+      related:
+        example: /v1/payment-providers/psp_f9VUSVUhsl7Rm0JD/payment-methods
+        type: string
+    type: object
+  PaymentProviderRelationships:
+    properties:
+      organization:
+        $ref: "#/definitions/PaymentProviderOrganization"
+      payment-methods:
+        $ref: "#/definitions/PaymentProviderPaymentMethods"
+    type: object
+  PaymentProviderResponse:
+    properties:
+      data:
+        $ref: "#/definitions/PaymentProvider"
+    type: object
+  PaymentProvidersResponse:
+    properties:
+      data:
+        items:
+          $ref: "#/definitions/PaymentProvider"
+        type: array
+      links:
+        $ref: "#/definitions/ResponseLinks"
+      meta:
+        $ref: "#/definitions/ResponseMeta"
+    type: object
+  ResponseLinks:
+    properties:
+      first:
+        description: first page of query
+        example: /v1/{path}?page[number]=1&page[size]=10
+        type: string
+      last:
+        description: last page of query
+        example: /v1/{path}?page[number]=42&page[size]=10
+        type: string
+      next:
+        description: next page in query
+        example: /v1/{path}?page[number]=41&page[size]=10
+        type: string
+      prev:
+        description: previous page in query
+        example: /v1/{path}?page[number]=39&page[size]=10
+        type: string
+    required:
+      - first
+      - last
+    type: object
+  ResponseMeta:
+    properties:
+      pages:
+        description: total pages
+        example: 42
+        type: integer
+      total:
+        description: total objects in query
+        example: 419
+        type: integer
+    type: object
+  SelfLinks:
+    properties:
+      self:
+        example: /v1/{path}/{id}
+        type: string
+    type: object
+  SupportedPspsRelationship:
+    description: Supported psps
+    properties:
+      data:
+        items:
+          properties:
+            id:
+              example: psp_xhaKgsBvEUZzWGIP
+              type: string
+            type:
+              example: payment-providers
+              type: string
+          type: object
+        type: array
+      links:
+        properties:
+          related:
+            example: /v1/deposit-methods/dm_fyBYShF7DuOXzeiR/supported_psps
+            type: string
+        type: object
+    type: object

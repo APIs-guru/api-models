@@ -1,0 +1,366 @@
+swagger: "2.0"
+schemes:
+  - http
+  - https
+host: service.miataru.com
+basePath: /v1
+info:
+  contact:
+    email: info@miataru.com
+    name: Miataru Team
+    url: http://miataru.com
+  description: The Miataru API is very simple and straight forward. Generally you're posting (HTTP POST) a JSON formatted request to a service method locations and you get back a JSON formatted answer. Please take into consideration that this has the request-for-comment status and that it can change while there's work done on client and server applications. Versioning therefore is done by prepending the version number - /v1/ for version 1 - to the method call.
+  license:
+    name: Public Domain
+    url: https://raw.githubusercontent.com/miataru/miataru-protocol-specification/master/LICENSE
+  title: Miataru
+  version: 1.0.0
+  x-apisguru-categories:
+    - location
+  x-logo:
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/http_miataru.com_images_clientapp.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/miataru/miataru-protocol-specification/swagger/miataru-v1/api/swagger/swagger.yaml
+      version: "2.0"
+  x-providerName: miataru.com
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /GetLocation:
+    post:
+      description: To retrieve a specific devices latest known location the /GetLocation method is used. Please note that the MiataruConfig portion is optional. RequestMiataruDeviceID should be the ID of the device the request is sent from (or an identifier like an URL).
+      operationId: getLocation
+      parameters:
+        - description: the complex JSON formatted datastructure to get the location of one or more devices.
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/MiataruGetLocationRequest"
+      produces:
+        - application/json
+      responses:
+        default:
+          description: successful location responses
+          schema:
+            $ref: "#/definitions/MiataruGetLocationResponse"
+      tags:
+        - getLocation
+  "/GetLocationGeoJSON/{deviceID}":
+    get:
+      description: Retrieves a devices Location in GeoJSON format.
+      operationId: getLocationGeoJSON
+      parameters:
+        - default: 7b8e6e0ee5296db345162dc2ef652c1350761823
+          description: the unique device ID of the device the location is requested from
+          in: path
+          name: deviceID
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        default:
+          description: geoJSON formatted device location
+          schema:
+            $ref: "#/definitions/MiataruGetLocationGeoJSONResponse"
+      tags:
+        - getLocation
+  /GetLocationHistory:
+    post:
+      description: Location History is stored on the server only if the client told the server to do so using the “EnableLocationHistory” setting in the Location Update requests. For transitions of enabling/disabling that functionality - Everytime a Location Update is received by the server with “EnableLocationHistory=false” the server removes all stored Location History till that point. There is a server-side setting that controls up to how many Location Updates the server is storing in the Location History before it removes the oldest one. To request the Location History of a particular device the client sends the following POST request to the GetLocationHistory service URL. Please note that the MiataruConfig portion is optional. RequestMiataruDeviceID should be the ID of the device the request is sent from (or an identifier like an URL).
+      operationId: getLocationHistory
+      parameters:
+        - description: the complex JSON formatted datastructure to get the location history of one device
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/MiataruGetLocationHistoryRequest"
+      produces:
+        - application/json
+      responses:
+        default:
+          description: successful location history response
+          schema:
+            $ref: "#/definitions/MiataruGetLocationHistoryResponse"
+      tags:
+        - getLocation
+  /GetVisitorHistory:
+    post:
+      description: Visitor History is stored on the server with every request to the location or location history information of a device. There is a server-side setting that controls up to how many Visitors the server is storing in the Visitor History before it removes the oldest one. To request the Visitor History of a particular device the client sends the following POST request to the GetVisitorHistory service URL.
+      operationId: getVisitorHistory
+      parameters:
+        - description: the complex JSON formatted datastructure to get the visitor history of one device
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/MiataruGetVisitorHistoryRequest"
+      produces:
+        - application/json
+      responses:
+        default:
+          description: visitor history response
+          schema:
+            $ref: "#/definitions/MiataruGetVisitorHistoryResponse"
+      tags:
+        - getVisitorHistory
+  /UpdateLocation:
+    post:
+      description: This method is used to update the location of a device. The device does not need to be known already to the Miataru server but it rather creates a unique identifier for itself in the client application. This unique identifier, or device ID is then used to address this particular device.
+      operationId: updateLocation
+      parameters:
+        - description: the body of this UpdateLocation POST request contains the JSON formatted parameters.
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/MiataruUpdateLocationRequest"
+      produces:
+        - application/json
+      responses:
+        default:
+          description: successful request
+          schema:
+            $ref: "#/definitions/ACK"
+      tags:
+        - updateLocation
+definitions:
+  ACK:
+    properties:
+      MiataruResponse:
+        default: ACK
+        type: string
+      MiataruVerboseResponse:
+        type: string
+    required:
+      - MiataruResponse
+      - MiataruVerboseResponse
+  MiataruGetLocationDevice:
+    properties:
+      Device:
+        default: 7b8e6e0ee5296db345162dc2ef652c1350761823
+        description: the unique device id of a device.
+        type: string
+    required:
+      - Device
+    type: object
+  MiataruGetLocationGeoJSONResponse:
+    properties:
+      geometry:
+        properties:
+          coordinates:
+            items:
+              format: float
+              type: number
+            type: array
+          type:
+            type: string
+        required:
+          - type
+          - coordinates
+        type: object
+      properties:
+        properties:
+          name:
+            type: string
+        required:
+          - name
+        type: object
+      type:
+        type: string
+    required:
+      - geometry
+      - type
+      - properties
+    type: object
+  MiataruGetLocationHistoryRequest:
+    properties:
+      MiataruConfig:
+        description: the configuration for this request. please note that it's optional.
+        properties:
+          RequestMiataruDeviceID:
+            default: 6140c3c0-4a7d-40d2-99ab-39414cac3509
+            description: RequestMiataruDeviceID should be the ID of the device the request is sent from (or an identifier like an URL).
+            type: string
+        required:
+          - RequestMiataruDeviceID
+        type: object
+      MiataruGetLocationHistory:
+        description: one device id for which the location history should be retrieved.
+        properties:
+          Amount:
+            default: "10"
+            description: the maximum number of location history entries that are requested.
+            type: string
+          Device:
+            default: 7b8e6e0ee5296db345162dc2ef652c1350761823
+            description: the device id of which the location history shall be requested
+            type: string
+        required:
+          - Device
+          - Amount
+        type: object
+    required:
+      - MiataruGetLocationHistory
+  MiataruGetLocationHistoryResponse:
+    properties:
+      MiataruLocation:
+        description: holds all location information of a given device or is an empty array if device not found or no location information is stored.
+        items:
+          $ref: "#/definitions/MiataruLocation"
+        type: array
+      MiataruServerConfig:
+        description: holds information about the basic configuration settings on server side.
+        properties:
+          AvailableDeviceLocationUpdates:
+            description: the number of locations stored for this particular device
+            type: string
+          MaximumNumberOfLocationUpdates:
+            description: the amount of locations the server is storing per device at maximum before it will remove the oldest one (FiFo)
+            type: string
+        required:
+          - MaximumNumberOfLocationUpdates
+          - AvailableDeviceLocationUpdates
+        type: object
+    required:
+      - MiataruServerConfig
+      - MiataruLocation
+  MiataruGetLocationRequest:
+    properties:
+      MiataruConfig:
+        description: the configuration for this request. please note that it's optional.
+        properties:
+          RequestMiataruDeviceID:
+            default: 6140c3c0-4a7d-40d2-99ab-39414cac3509
+            description: RequestMiataruDeviceID should be the ID of the device the request is sent from (or an identifier like an URL).
+            type: string
+        required:
+          - RequestMiataruDeviceID
+        type: object
+      MiataruGetLocation:
+        description: one or more devices in an array for which the location should be retrieved.
+        items:
+          $ref: "#/definitions/MiataruGetLocationDevice"
+        type: array
+    required:
+      - MiataruGetLocation
+  MiataruGetLocationResponse:
+    properties:
+      MiataruLocation:
+        items:
+          $ref: "#/definitions/MiataruLocation"
+        type: array
+    required:
+      - MiataruLocation
+    type: object
+  MiataruGetVisitorHistoryRequest:
+    properties:
+      MiataruGetVisitorHistory:
+        properties:
+          Amount:
+            default: "10"
+            description: the maximum number of visitor history entries to be retrieved
+            type: string
+          Device:
+            default: 7b8e6e0ee5296db345162dc2ef652c1350761823
+            description: the device id of which the visitor history is requested
+            type: string
+        required:
+          - Device
+          - Amount
+        type: object
+    required:
+      - MiataruGetVisitorHistory
+  MiataruGetVisitorHistoryResponse:
+    properties:
+      MiataruServerConfig:
+        description: holds information about the server side settings of the visitor history and about the available device related visitor history.
+        properties:
+          AvailableVisitorHistory:
+            description: the number of available visitor history entries for this device. If the client requested more Visitor Updates than there are available the server will return those available.
+            type: string
+          MaximumNumberOfVisitorHistory:
+            description: a server-side setting that controls up to how many Visitors the server is storing in the Visitor History before it removes the oldest one.
+            type: string
+        required:
+          - MaximumNumberOfVisitorHistory
+          - AvailableVisitorHistory
+        type: object
+      MiataruVisitors:
+        description: The server will answer back with an Array of MiataruVisitors if there are Visitors, or an empty array when there are none.
+        items:
+          $ref: "#/definitions/MiataruVisitors"
+        type: array
+    required:
+      - MiataruServerConfig
+      - MiataruVisitors
+  MiataruLocation:
+    properties:
+      Device:
+        default: 7b8e6e0ee5296db345162dc2ef652c1350761823
+        description: the unique id of this device. This needs to be unique as it is the only piece of information directly pointing towards this one device. Generating a GUID per device is recommended.
+        type: string
+      HorizontalAccuracy:
+        default: "50"
+        description: the accuracy of this location update in meters
+        type: string
+      Latitude:
+        default: "41.079351"
+        description: latitude of the position that is reported
+        type: string
+      Longitude:
+        default: "-4.394531"
+        description: longitude of the position that is reported
+        type: string
+      Timestamp:
+        default: "1441360863"
+        description: the javascript timestamp of this location update
+        type: string
+    required:
+      - Device
+      - Timestamp
+      - Longitude
+      - Latitude
+      - HorizontalAccuracy
+    type: object
+  MiataruUpdateLocationRequest:
+    properties:
+      MiataruConfig:
+        description: the configuration for this request.
+        properties:
+          EnableLocationHistory:
+            default: "False"
+            description: If the client tells the server to store a location history the server automatically disables the pre-configured data time-out behavior that removes location data after a given amount of time. Nevertheless the user is limited to the server-side pre-configured amount of location history entries. This is either True or False.
+            type: string
+          LocationDataRetentionTime:
+            default: "30"
+            description: The LocationDataRetentionTime is the amount of minutes the server will keep that Location Data before it is removed/deleted automatically.
+            type: string
+        required:
+          - EnableLocationHistory
+          - LocationDataRetentionTime
+        type: object
+      MiataruLocation:
+        items:
+          $ref: "#/definitions/MiataruLocation"
+        type: array
+    required:
+      - MiataruConfig
+      - MiataruLocation
+  MiataruVisitors:
+    properties:
+      DeviceID:
+        description: the device id of the visiting device. If this is an empty string the deviceID is unknown/was not reported.
+        type: string
+      TimeStamp:
+        description: the javascript timestamp of the visit
+        type: string
+    required:
+      - DeviceID
+      - TimeStamp

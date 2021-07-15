@@ -1,0 +1,426 @@
+swagger: "2.0"
+schemes:
+  - https
+host: azure.local
+info:
+  description: An API for QnAMaker runtime
+  title: QnAMaker Runtime Client
+  version: "4.0"
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/cognitiveservices/data-plane/QnAMaker/stable/v4.0/QnAMakerRuntime.json
+      version: "2.0"
+  x-providerName: azure.com
+  x-serviceName: cognitiveservices-QnAMakerRuntime
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  auth_key:
+    in: header
+    name: Authorization
+    type: apiKey
+security:
+  - auth_key: []
+parameters:
+  GenerateAnswerPayload:
+    description: Post body of the request.
+    in: body
+    name: generateAnswerPayload
+    required: true
+    schema:
+      $ref: "#/definitions/QueryDTO"
+    x-ms-parameter-location: method
+    x-nullable: true
+  KbId:
+    description: Knowledgebase id.
+    in: path
+    name: kbId
+    required: true
+    type: string
+    x-ms-parameter-location: method
+    x-nullable: false
+  RuntimeEndpoint:
+    description: "QnA Maker App Service endpoint (for example: https://{qnaservice-hostname}.azurewebsites.net)."
+    in: path
+    name: RuntimeEndpoint
+    required: true
+    type: string
+    x-ms-parameter-location: client
+    x-ms-skip-url-encoding: true
+  TrainPayload:
+    description: Post body of the request.
+    in: body
+    name: trainPayload
+    required: true
+    schema:
+      $ref: "#/definitions/FeedbackRecordsDTO"
+    x-ms-parameter-location: method
+    x-nullable: true
+paths:
+  "/knowledgebases/{kbId}/generateAnswer":
+    post:
+      operationId: Runtime_GenerateAnswer
+      parameters:
+        - $ref: "#/parameters/KbId"
+        - $ref: "#/parameters/GenerateAnswerPayload"
+      responses:
+        "200":
+          description: GenerateAnswer call response.
+          schema:
+            $ref: "#/definitions/QnASearchResultList"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: GenerateAnswer call to query the knowledgebase.
+      tags:
+        - Knowledgebases
+      x-ms-examples:
+        Successful query:
+          parameters:
+            Authorization: EndpointKey {Primary/Secondary EndpointKey}
+            Content-Type: application/json
+            RuntimeEndpoint: "{RuntimeEndpoint}"
+            generateAnswerPayload:
+              isTest: true
+              question: qna maker and luis
+              scoreThreshold: 20
+              strictFilters:
+                - name: category
+                  value: api
+              top: 6
+              userId: sd53lsY=
+            kbId: 9d091697-fb8c-4ed5-9ac0-35bf8273bfff
+          responses:
+            "200":
+              body:
+                answers:
+                  - answer: There is no direct integration of LUIS with QnA Maker. But, in your bot code, you can use LUIS and QnA Maker together.
+                    id: 20
+                    metadata:
+                      - name: category
+                        value: api
+                    questions:
+                      - How can I integrate LUIS with QnA Maker?
+                    score: 28.54820341616869
+                    source: Custom Editorial
+              headers: {}
+  "/knowledgebases/{kbId}/train":
+    post:
+      operationId: Runtime_Train
+      parameters:
+        - $ref: "#/parameters/KbId"
+        - $ref: "#/parameters/TrainPayload"
+      responses:
+        "204":
+          description: HTTP 204 No Content.
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Train call to add suggestions to the knowledgebase.
+      tags:
+        - Knowledgebases
+      x-ms-examples:
+        Successful query:
+          parameters:
+            Authorization: EndpointKey {Primary/Secondary Endpoint Key}
+            Content-Type: application/json
+            RuntimeEndpoint: "{RuntimeEndpoint}"
+            kbId: 9d091697-fb8c-4ed5-9ac0-35bf8273bfff
+            trainPayload:
+              feedbackRecords:
+                - qnaId: 4
+                  userId: sd53lsY=
+                  userQuestion: qna maker with luis
+          responses:
+            "204": {}
+definitions:
+  ContextDTO:
+    description: Context associated with Qna.
+    properties:
+      isContextOnly:
+        description: |-
+          To mark if a prompt is relevant only with a previous question or not.
+          true - Do not include this QnA as search result for queries without context
+          false - ignores context and includes this QnA in search result
+        type: boolean
+      prompts:
+        description: List of prompts associated with the answer.
+        items:
+          $ref: "#/definitions/PromptDTO"
+        maxItems: 20
+        type: array
+    type: object
+  Error:
+    additionalProperties: false
+    description: The error object. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses.
+    properties:
+      code:
+        $ref: "#/definitions/ErrorCode"
+        description: One of a server-defined set of error codes.
+      details:
+        description: An array of details about specific errors that led to this reported error.
+        items:
+          $ref: "#/definitions/Error"
+        type: array
+      innerError:
+        $ref: "#/definitions/InnerErrorModel"
+        description: An object containing more specific information than the current object about the error.
+      message:
+        description: A human-readable representation of the error.
+        type: string
+      target:
+        description: The target of the error.
+        type: string
+    required:
+      - code
+    type: object
+  ErrorCode:
+    description: Human readable error code.
+    enum:
+      - BadArgument
+      - Forbidden
+      - NotFound
+      - KbNotFound
+      - Unauthorized
+      - Unspecified
+      - EndpointKeysError
+      - QuotaExceeded
+      - QnaRuntimeError
+      - SKULimitExceeded
+      - OperationNotFound
+      - ServiceError
+      - ValidationFailure
+      - ExtractionFailure
+    type: string
+    x-ms-enum:
+      modelAsString: true
+      name: ErrorCodeType
+  ErrorResponse:
+    additionalProperties: false
+    description: Error response. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses.
+    properties:
+      error:
+        allOf:
+          - $ref: "#/definitions/Error"
+        description: The error object.
+    type: object
+  FeedbackRecordDTO:
+    additionalProperties: false
+    description: Active learning feedback record.
+    properties:
+      qnaId:
+        description: The qnaId for which the suggested question is provided as feedback.
+        format: int32
+        type: integer
+      userId:
+        description: Unique identifier for the user.
+        type: string
+      userQuestion:
+        description: The suggested question being provided as feedback.
+        maxLength: 1000
+        type: string
+    type: object
+  FeedbackRecordsDTO:
+    additionalProperties: false
+    description: Active learning feedback records.
+    properties:
+      feedbackRecords:
+        description: List of feedback records.
+        items:
+          $ref: "#/definitions/FeedbackRecordDTO"
+        maxLength: 1000
+        type: array
+    type: object
+  InnerErrorModel:
+    additionalProperties: false
+    description: An object containing more specific information about the error. As per Microsoft One API guidelines - https://github.com/Microsoft/api-guidelines/blob/vNext/Guidelines.md#7102-error-condition-responses.
+    properties:
+      code:
+        description: A more specific error code than was provided by the containing error.
+        type: string
+      innerError:
+        $ref: "#/definitions/InnerErrorModel"
+        description: An object containing more specific information than the current object about the error.
+    type: object
+  MetadataDTO:
+    additionalProperties: false
+    description: Name - value pair of metadata.
+    properties:
+      name:
+        description: Metadata name.
+        maxLength: 100
+        minLength: 1
+        type: string
+      value:
+        description: Metadata value.
+        maxLength: 500
+        minLength: 1
+        type: string
+    required:
+      - name
+      - value
+    type: object
+  PromptDTO:
+    description: Prompt for an answer.
+    properties:
+      displayOrder:
+        description: Index of the prompt - used in ordering of the prompts
+        format: int32
+        type: integer
+      displayText:
+        description: Text displayed to represent a follow up question prompt
+        maxLength: 200
+        type: string
+      qna:
+        allOf:
+          - $ref: "#/definitions/QnADTO"
+        description: QnADTO - Either QnaId or QnADTO needs to be present in a PromptDTO object
+      qnaId:
+        description: Qna id corresponding to the prompt - if QnaId is present, QnADTO object is ignored.
+        format: int32
+        type: integer
+    type: object
+  QnADTO:
+    additionalProperties: false
+    description: Q-A object.
+    properties:
+      answer:
+        description: Answer text
+        maxLength: 25000
+        minLength: 1
+        type: string
+      context:
+        allOf:
+          - $ref: "#/definitions/ContextDTO"
+        description: Context of a QnA
+      id:
+        description: Unique id for the Q-A.
+        format: int32
+        type: integer
+      metadata:
+        description: List of metadata associated with the answer.
+        items:
+          $ref: "#/definitions/MetadataDTO"
+        maxLength: 10
+        type: array
+      questions:
+        description: List of questions associated with the answer.
+        items:
+          type: string
+        maxLength: 100
+        minLength: 1
+        type: array
+      source:
+        description: Source from which Q-A was indexed. eg. https://docs.microsoft.com/en-us/azure/cognitive-services/QnAMaker/FAQs
+        maxLength: 300
+        type: string
+    required:
+      - answer
+      - questions
+    type: object
+  QnASearchResult:
+    additionalProperties: false
+    description: Represents Search Result.
+    properties:
+      answer:
+        description: Answer.
+        type: string
+      context:
+        allOf:
+          - $ref: "#/definitions/ContextDTO"
+        description: Context object of the QnA
+        type: object
+      id:
+        description: Id of the QnA result.
+        format: int32
+        type: integer
+      metadata:
+        description: List of metadata.
+        items:
+          $ref: "#/definitions/MetadataDTO"
+        type: array
+      questions:
+        description: List of questions.
+        items:
+          type: string
+        type: array
+      score:
+        description: Search result score.
+        type: number
+      source:
+        description: Source of QnA result.
+        type: string
+    type: object
+  QnASearchResultList:
+    additionalProperties: false
+    description: Represents List of Question Answers.
+    properties:
+      answers:
+        description: Represents Search Result list.
+        items:
+          $ref: "#/definitions/QnASearchResult"
+        type: array
+    type: object
+  QueryContextDTO:
+    additionalProperties: false
+    description: Context object with previous QnA's information.
+    properties:
+      previousQnaId:
+        description: Previous QnA Id - qnaId of the top result.
+        type: string
+      previousUserQuery:
+        description: Previous user query.
+        type: string
+    type: object
+  QueryDTO:
+    additionalProperties: false
+    description: POST body schema to query the knowledgebase.
+    properties:
+      context:
+        allOf:
+          - $ref: "#/definitions/QueryContextDTO"
+        description: Context object with previous QnA's information.
+      isTest:
+        description: Query against the test index.
+        type: boolean
+      qnaId:
+        description: Exact qnaId to fetch from the knowledgebase, this field takes priority over question.
+        type: string
+      question:
+        description: User question to query against the knowledge base.
+        type: string
+      rankerType:
+        description: Optional field. Set to 'QuestionOnly' for using a question only Ranker.
+        type: string
+      scoreThreshold:
+        description: Threshold for answers returned based on score.
+        type: number
+      strictFilters:
+        description: Find only answers that contain these metadata.
+        items:
+          $ref: "#/definitions/MetadataDTO"
+        type: array
+      top:
+        description: Max number of answers to be returned for the question.
+        format: int32
+        type: integer
+      userId:
+        description: Unique identifier for the user.
+        type: string
+    type: object
+x-ms-parameterized-host:
+  hostTemplate: "{RuntimeEndpoint}/qnamaker"
+  parameters:
+    - $ref: "#/parameters/RuntimeEndpoint"
+  useSchemePrefix: false

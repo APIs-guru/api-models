@@ -1,0 +1,837 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.thesmsworks.co.uk
+basePath: /v1
+info:
+  contact:
+    x-twitter: thesmsworks
+  description: The SMS Works provides a low-cost, reliable SMS API for developers. Pay only for delivered texts, all failed messages are refunded.
+  title: The SMS Works API
+  version: 1.5.0
+  x-apisguru-categories:
+    - messaging
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_thesmsworks_profile_image.jpeg
+  x-origin:
+    - format: swagger
+      url: https://api.thesmsworks.co.uk/api/swagger/swagger.yaml
+      version: "2.0"
+  x-providerName: thesmsworks.co.uk
+consumes:
+  - application/json
+produces:
+  - application/json;charset=UTF-8
+securityDefinitions:
+  JWT:
+    in: header
+    name: Authorization
+    type: apiKey
+paths:
+  /auth/getApiKey:
+    get:
+      description: Utility method. Please generate your API key by following the instructions on your account page at https://thesmsworks.co.uk/user/login
+      operationId: keySecret
+      parameters:
+        - description: Utility method. Please generate your API key by following the instructions on your account page at https://thesmsworks.co.uk/user/login
+          in: query
+          name: customerid
+          required: true
+          type: string
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: "#/definitions/apiKeyResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      tags:
+        - auth
+    x-swagger-router-controller: authentication
+  /auth/token:
+    post:
+      description: Generates a JSON Web Token for including in the Authorization header of all your calls to the API. This only needs to be done once. Generate the customer ID, API Key & Secret required for this call from the API Key tab your account page.
+      operationId: login
+      parameters:
+        - description: API Key & Secret
+          in: body
+          name: credentials
+          required: true
+          schema:
+            $ref: "#/definitions/Login"
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/TokenResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      tags:
+        - auth
+    x-swagger-router-controller: authentication
+  /batch/schedule:
+    post:
+      description: Schedules a batch of SMS messages to be sent at the date time you specify
+      operationId: scheduleBatch
+      parameters:
+        - description: Message properties
+          in: body
+          name: smsMessage
+          required: true
+          schema:
+            $ref: "#/definitions/BatchMessage"
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: "#/definitions/ScheduledBatchResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - batch messages
+    x-swagger-router-controller: smpp-client
+  /batch/send:
+    post:
+      description: Send a single SMS message to multiple recipients
+      operationId: sendBatch
+      parameters:
+        - description: Message properties
+          in: body
+          name: smsMessage
+          required: true
+          schema:
+            $ref: "#/definitions/BatchMessage"
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: "#/definitions/BatchMessageResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - batch messages
+    x-swagger-router-controller: smpp-client
+  "/batch/{batchid}":
+    get:
+      description: Retrieve all messages in a batch with the given batch ID
+      operationId: getBatchById
+      parameters:
+        - description: The ID of the batch you would like returned
+          in: path
+          name: batchid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            items:
+              $ref: "#/definitions/MessageResponse"
+            type: array
+        "404":
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorModel"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - batch messages
+    x-swagger-router-controller: smpp-client
+  "/batches/schedule/{batchid}":
+    delete:
+      description: Cancels a scheduled SMS message
+      operationId: cancelScheduledBatchJob
+      parameters:
+        - description: The ID of the batch you would like returned
+          in: path
+          name: batchid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/CancelledMessageResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - batch messages
+    x-swagger-router-controller: smpp-client
+  /credits/balance:
+    get:
+      description: Returns the number of credits currently available on the account
+      operationId: credits
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/CreditsResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - credits
+    x-swagger-router-controller: account-client
+  /message/flash:
+    post:
+      description: Sends an SMS flash message, which appears on the recipients lock screen
+      operationId: sendFlashMessage
+      parameters:
+        - description: Message properties
+          in: body
+          name: smsMessage
+          required: true
+          schema:
+            $ref: "#/definitions/Message"
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: "#/definitions/SendMessageResponse"
+        "402":
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - messages
+    x-swagger-router-controller: flash
+  /message/schedule:
+    post:
+      description: Schedules an SMS message to be sent at the date-time you specify
+      operationId: scheduleMessage
+      parameters:
+        - description: Message properties
+          in: body
+          name: smsMessage
+          required: true
+          schema:
+            $ref: "#/definitions/Message"
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: "#/definitions/ScheduledMessageResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - messages
+    x-swagger-router-controller: smpp-client
+  /message/send:
+    post:
+      description: Send an SMS Message
+      parameters:
+        - description: Message properties
+          in: body
+          name: smsMessage
+          required: true
+          schema:
+            $ref: "#/definitions/Message"
+      responses:
+        "201":
+          description: Success
+          schema:
+            $ref: "#/definitions/SendMessageResponse"
+        "402":
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - messages
+  /messages:
+    post:
+      description: Retrieve up to 1000 messages matching your search criteria
+      operationId: getMessages
+      parameters:
+        - in: body
+          name: query
+          required: true
+          schema:
+            $ref: "#/definitions/Query"
+      responses:
+        "200":
+          description: Success
+          schema:
+            items:
+              $ref: "#/definitions/MessageResponse"
+            type: array
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - messages
+    x-swagger-router-controller: message-client
+  /messages/failed:
+    post:
+      description: Get failed messages matching your search criteria
+      operationId: getFailedMessages
+      parameters:
+        - in: body
+          name: query
+          required: true
+          schema:
+            $ref: "#/definitions/Query"
+      responses:
+        "200":
+          description: Success
+          schema:
+            items:
+              $ref: "#/definitions/MessageResponse"
+            type: array
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - messages
+    x-swagger-router-controller: message-client
+  /messages/inbox:
+    post:
+      description: Get unread uncoming messages matching your search criteria
+      operationId: getInboxMessages
+      parameters:
+        - in: body
+          name: query
+          required: true
+          schema:
+            $ref: "#/definitions/Query"
+      responses:
+        "200":
+          description: Success
+          schema:
+            items:
+              $ref: "#/definitions/MessageResponse"
+            type: array
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - messages
+    x-swagger-router-controller: message-client
+  "/messages/schedule/{messageid}":
+    delete:
+      description: Cancels a scheduled SMS message
+      operationId: cancelScheduledJob
+      parameters:
+        - description: The ID of the message you would like returned
+          in: path
+          name: messageid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/CancelledMessageResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - messages
+    x-swagger-router-controller: smpp-client
+  "/messages/{messageid}":
+    delete:
+      description: Delete the message with the mathcing messageid
+      operationId: deleteMessage
+      parameters:
+        - description: The ID of the message you would like returned
+          in: path
+          name: messageid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/DeletedMessageResponse"
+        "400":
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorModel"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - messages
+    get:
+      description: Retrieve a logged message by the message ID
+      operationId: getMessageById
+      parameters:
+        - description: The ID of the message you would like returned
+          in: path
+          name: messageid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/MessageResponse"
+        "404":
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorModel"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorModel"
+      security:
+        - JWT: []
+      tags:
+        - messages
+    x-swagger-router-controller: message-client
+  /swagger:
+    x-swagger-pipe: swagger_raw
+  "/utils/errors/{errorcode}":
+    get:
+      description: Returns a sample error object for the given error code. Useful for designing code to react to errors when they occur for real.
+      operationId: getError
+      parameters:
+        - description: The code of the error you would like returned
+          in: path
+          name: errorcode
+          required: true
+          type: string
+      responses:
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ExtendedErrorModel"
+      tags:
+        - utils
+    x-swagger-router-controller: util-client
+  /utils/test:
+    get:
+      description: Returns the customer ID to the caller
+      operationId: test
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/TestResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorModel"
+      tags:
+        - utils
+    x-swagger-router-controller: util-client
+definitions:
+  BatchMessage:
+    description: SMS Message Batch
+    properties:
+      content:
+        description: Message to send to the recipient
+        example: My super awesome batch message
+        type: string
+      deliveryreporturl:
+        description: The url to which we should POST delivery reports to for this message. If none is specified, we'll use the global delivery report URL that you've configured on your account page.
+        example: http://your.domain.com/delivery/report/path
+        type: string
+      destinations:
+        description: Telephone numbers of each of the recipients
+        example:
+          - "447777777777"
+          - "447777777778"
+          - "447777777779"
+        items:
+          type: string
+        type: array
+      schedule:
+        description: Date-time at which to send the batch. This is only used by the batch/schedule service.
+        example: Wed Jul 19 2017 20:26:28 GMT+0100 (BST)
+        type: string
+      sender:
+        description: The sender of the message. Should be no longer than 11 characters for alphanumeric or 15 characters for numeric sender ID's. No spaces or special characters.
+        example: YourCompany
+        type: string
+      tag:
+        description: An identifying label for the message, which you can use to filter and report on messages you've sent later. Ideal for campaigns. A maximum of 280 characters.
+        example: SummerSpecial
+        type: string
+      ttl:
+        description: The number of minutes before the message is deleted. Optional. Omit to prevent delivery report deletion. Integer.
+        example: 10
+        type: number
+    required:
+      - sender
+      - destinations
+      - content
+  BatchMessageResponse:
+    properties:
+      batchid:
+        example: 2586749
+        type: string
+      status:
+        example: SCHEDULED
+        type: string
+    required:
+      - batchid
+      - status
+  CancelledMessageResponse:
+    properties:
+      messageid:
+        example: 5620320
+        type: string
+      status:
+        example: CANCELLED
+        type: string
+    required:
+      - messageid
+      - status
+  CreditsResponse:
+    properties:
+      credits:
+        description: The number of remaining credits on your SMS Works account. Floating point number.
+        example: 180
+        type: number
+    required:
+      - credits
+  DeletedMessageResponse:
+    properties:
+      messageid:
+        example: 5620320
+        type: string
+      status:
+        example: DELETED
+        type: string
+    required:
+      - messageid
+      - status
+  ErrorModel:
+    properties:
+      message:
+        type: string
+    required:
+      - message
+    type: object
+  ExtendedErrorModel:
+    allOf:
+      - $ref: "#/definitions/ErrorModel"
+      - properties:
+          errorCode:
+            description: Numeric code used to identify the error. Integer.
+            type: number
+          permanent:
+            type: boolean
+          status:
+            type: string
+        required:
+          - errorCode
+          - status
+        type: object
+  Login:
+    description: authorisation object
+    properties:
+      customerid:
+        description: Your customer ID, available from your account area at https://thesmsworks.co.uk/user/login
+        type: string
+      key:
+        description: API Key, available from your account area at https://thesmsworks.co.uk/user/login
+        type: string
+      secret:
+        description: API Secret, available from your account area at https://thesmsworks.co.uk/user/login
+        type: string
+  Message:
+    description: SMS message object
+    properties:
+      content:
+        description: Message to send to the recipient. Content can be up to 1280 characters in length. Messages of 160 characters or fewer are charged 1 credit. If your message is longer than 160 characters then it will be broken down in to chunks of 153 characters before being sent to the recipient's handset, and you will be charged 1 credit for each 153 characters. Messages sent to numbers registered outside the UK will be typically charged double credits, but for certain countries may be charged fractions of credits (e.g. 2.5). Please contact us for rates for each country.
+        example: Your super awesome message
+        type: string
+      deliveryreporturl:
+        description: The url to which we should POST delivery reports to for this message. If none is specified, we'll use the global delivery report URL that you've configured on your account page.
+        example: http://your.domain.com/delivery/report/path
+        type: string
+      destination:
+        description: Telephone number of the recipient
+        example: "447777777777"
+        type: string
+      metadata:
+        example:
+          - key: myKey1
+            value: myValue1
+          - key: myKey2
+            value: myValue2
+        items:
+          type: object
+        properties:
+          schema:
+            $ref: "#/definitions/MetaData"
+        type: array
+      responseemail:
+        description: An optional list of email addresses to forward responses to this specific message to. An SMS Works Reply Number is required to use this feature.
+        example:
+          - my.email@mycompany.co.uk
+          - my.other.email@mycompany.co.uk
+        items:
+          type: string
+        type: array
+      schedule:
+        description: Date at which to send the message. This is only used by the message/schedule service and can be left empty for other services.
+        example: Sun Sep 03 2020 15:34:23 GMT+0100 (BST)
+        type: string
+      sender:
+        description: The sender of the message. Should be no longer than 11 characters for alphanumeric or 15 characters for numeric sender ID's. No spaces or special characters.
+        example: YourCompany
+        type: string
+      tag:
+        description: An identifying label for the message, which you can use to filter and report on messages you've sent later. Ideal for campaigns. A maximum of 280 characters.
+        example: SummerSpecial
+        type: string
+      ttl:
+        description: The optional number of minutes before the message is deleted. Optional. Omit to prevent delivery report deletion. Integer.
+        example: 10
+        type: number
+    required:
+      - sender
+      - destination
+      - content
+  MessageResponse:
+    properties:
+      batchid:
+        example: "2586749"
+        type: string
+      content:
+        example: My super awesome message
+        type: string
+      created:
+        example: Wed Jul 19 2017 20:53:46 GMT+0100 (BST)
+        type: string
+      customerid:
+        example: 0fca8c3c-6cbc-11e7-8154-a6006ad3dba0
+        type: string
+      deliveryreporturl:
+        example: https://your.domain.com/delivery/report/path
+        type: string
+      destination:
+        example: "447777777777"
+        type: number
+      failurereason:
+        properties:
+          code:
+            description: Numeric code that defines the error. Integer.
+            example: 34
+            type: number
+          details:
+            example: Handset error
+            type: string
+          permanent:
+            example: false
+            type: boolean
+        type: object
+      id:
+        example: 123456789
+        type: string
+      identifier:
+        example: 7777777777
+        type: string
+      keyword:
+        example: CALRISSIAN
+        type: string
+      messageid:
+        example: 123456789
+        type: string
+      modified:
+        example: Wed Jul 19 2017 20:53:49 GMT+0100 (BST)
+        type: string
+      schedule:
+        example: Wed Jul 19 2017 20:53:45 GMT+0100 (BST)
+        type: string
+      sender:
+        example: YourCompany
+        type: string
+      status:
+        example: DELIVERED
+        type: string
+      tag:
+        example: campaign2
+        type: string
+    required:
+      - content
+      - created
+      - customerid
+      - destination
+      - messageid
+      - modified
+      - schedule
+      - status
+      - sender
+      - tag
+  MetaData:
+    description: Key/value pair that will be returned to you in the API call response.
+    properties:
+      key:
+        description: key of the key/value pair
+        example: myKey
+        type: string
+      value:
+        description: value of the key/value pair
+        example: myValue
+        type: string
+  Query:
+    description: search parameters for querying the message database
+    properties:
+      credits:
+        description: The number of credits used on the message. Floating point number.
+        example: 2
+        type: number
+      destination:
+        description: The phone number of the recipient. Start UK numbers with 44 and drop the leading 0.
+        example: "447777777777"
+        type: string
+      from:
+        description: The date-time from which you would like matching messages
+        example: Wed Jul 12 2017 20:26:28 GMT+0100 (BST)
+        type: string
+      keyword:
+        description: The keyword used in the inbound message
+        example: SKYWALKER
+        type: string
+      metadata:
+        description: An array of objects containing metadata key/value pairs that have been saved on messages.
+        example:
+          - key: myKey1
+            value: myValue1
+          - key: myKey2
+            value: myValue2
+        items:
+          type: object
+        properties:
+          schema:
+            $ref: "#/definitions/MetaData"
+        type: array
+      sender:
+        description: The sender of the message (this can be the configured sender name for an outbound message or the senders phone number for an inbound message).
+        example: YourCompany
+        type: string
+      status:
+        description: The status of the messages you would like returned (either 'SENT', 'DELIVERED', 'EXPIRED', 'UNDELIVERABLE', 'REJECTED' or 'INCOMING')
+        example: SENT
+        type: string
+      to:
+        description: The date-time to which you would like matching messages
+        example: Wed Jul 19 2017 20:26:28 GMT+0100 (BST)
+        type: string
+      unread:
+        description: In queries for incoming messages ('status' is 'INCOMING'), specify whether you explicitly want unread messages (true) or read messages (false). Omit this parameter in other circumstances.
+        type: boolean
+  ScheduledBatchResponse:
+    properties:
+      batchid:
+        example: 3200562
+        type: string
+      status:
+        example: SCHEDULED
+        type: string
+    required:
+      - batchid
+      - status
+  ScheduledMessageResponse:
+    properties:
+      messageid:
+        example: 123456789
+        type: string
+      status:
+        example: SCHEDULED
+        type: string
+    required:
+      - messageid
+      - status
+  SendMessageResponse:
+    properties:
+      credits:
+        description: The number of remaining credits on your SMS Works account. Floating point number.
+        example: 180
+        type: number
+      creditsUsed:
+        description: The number of credits used to send the message. Floating point number.
+        example: 2
+        type: number
+      messageid:
+        example: 123456789
+        type: string
+      status:
+        example: SENT
+        type: string
+    required:
+      - messageid
+      - status
+      - credits
+      - creditsUsed
+  TestResponse:
+    properties:
+      message:
+        type: string
+    required:
+      - message
+  TokenResponse:
+    properties:
+      token:
+        example: JWT eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJPbmxpbmUgSldUIEJ1aWxkZXIiLCJpYXQiOjE1MDA0OTU2NjEsImV4cCI6MTUzMjAzMTY2MSwiYXVkIjoid3d3LmV4YW1wbGUuY29tIiwic3ViIjoianJvY2tldEBleGFtcGxlLmNvbSIsIkdpdmVuTmFtZSI6IkpvaG5ueSIsIlN1cm5hbWUiOiJSb2NrZXQiLCJFbWFpbCI6Impyb2NrZXRAZXhhbXBsZS5jb20iLCJSb2xlIjpbIk1hbmFnZXIiLCJQcm9qZWN0IEFkbWluaXN0cmF0b3IiXX0.BR1BIDy0Mw3R4ilfqAojsnh7bp_pgeX2jfjhhZyaexQ
+        type: string
+    required:
+      - token
+  apiKeyResponse:
+    properties:
+      key:
+        example: 22795661-48a1-442d-92a3-bc2384836fad
+        type: string
+      secret:
+        example: 10045176307448ced2e1b74963d137f2bfaefbdad6fe415df429b64c4d63b856
+        type: string
+    required:
+      - key
+      - secret

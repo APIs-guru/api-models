@@ -1,0 +1,1854 @@
+swagger: "2.0"
+host: www.ebi.ac.uk
+basePath: /Tools/crossbar
+info:
+  contact:
+    email: crossbar_dev@ebi.ac.uk
+    name: API support
+  description: |-
+    # About CROssBAR & data
+    **CROssBAR**: Comprehensive Resource of Biomedical Relations with Deep Learning Applications and Knowledge Graph Representations
+    CROssBAR is a comprehensive system that integrates large-scale biomedical data from various resources e.g UniProt, ChEMBL, Drugbank, EFO, HPO, InterPro & PubChem and stores them in a new NoSQL database, enrich these data with deep learning based prediction of relations between numerous biomedical entities, rigorously analyse the enriched data to obtain biologically meaningful modules and display them to the user via easy to interpret, interactive and heterogeneous knowledge graphs.
+    CROssBAR platform exposes a set of 12 endpoints to query data stored in the CROssBAR database. These endpoints help the user to find data of interest using different parameters provided by the API endpoint.
+    For example,
+    https://www.ebi.ac.uk/tools/crossbar/proteins?accession=A0A023GRW5 -> will provide protein information about accession 'A0A023GRW5' including its interactions, functions, cross-references, variations and more.
+    https://www.ebi.ac.uk/tools/crossbar/activities?moleculeChemblId=CHEMBL465983 -> will provide ChEMBL bio-interactions related information including targets and bio-activity measurements associated with molecule chembl id 'CHEMBL465983'
+
+    **Knowledge graphs**
+    Another use case of CROssBAR's API endpoints is in building knowledge graphs. These endpoints can be *weaved* together (output from one API endpoint fed as input to another API endpoint) programmatically to link nodes like protein, disease, drugs etc. as nodes of the graph. The endpoints are designed to be independent from each other which allows users the flexibility to drive biological networks from any facet e.g drug-centric, disease-centric, gene-centric etc. Our service for knowledge graph construction is available at https://crossbar.kansil.org.
+    An example for the part of the background queries on the CROssBAR API during the construction of a knowledge graph, 
+    (with the aim of keeping the example simple, we have only included the processes related to pathways, genes/proteins and drugs/compounds)
+    In this example, we would like to find bio-active compounds (with a pChEMBL value threshold of at least 6.0) & drugs targeting all proteins belonging to "WNT ligand biogenesis and trafficking" pathway (based on Reactome pathway annotations).
+    This can be achieved by using endpoints listed on this swagger documentation as illustrated in following steps-
+    Find bio-active compounds (with a pChEMBL value threshold of at least 6.0) & drugs targeting all proteins belonging to "WNT ligand biogenesis and trafficking" pathway (based on Reactome annotations)
+    This can be achieved by using endpoints listed on [this swagger documentation](https://www.ebi.ac.uk/tools/crossbar/swagger-ui.html) as illustrated in following steps-
+    1. Get all proteins from “/proteins” API endpoint which have a reactome pathway name equal to "WNT ligand biogenesis and trafficking".
+    2. From the collection of uniprot protein accessions collected from step 1 above, we query “/targets” API endpoint to obtain the ‘target_chembl_id’s of these proteins.
+    3. From the collection of target_chembl_ids collected from step 2 above, we query “/activities” API endpoint with pChEMBL value >=6, to obtain the ’molecule_chembl_id’s of the molecules that we need. 
+    4. From the collection of uniprot protein accessions collected from step 1 above, we find out Drug names and ids from the “/drugs” API endpoint that targets our proteins.
+    5. From the collection of ’molecule_chembl_id’s obtained in step3, we query “/molecules” endpoint to get the compounds that are interacting with the genes/proteins belonging to the “WNT ligand biogenesis and trafficking” pathway.
+  title: CROssBAR Data API
+  version: "1.0"
+  x-apisguru-categories:
+    - open_data
+  x-origin:
+    - format: swagger
+      url: https://www.ebi.ac.uk/Tools/crossbar/v2/api-docs
+      version: "2.0"
+  x-providerName: ebi.ac.uk
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+tags:
+  - description: Chembl Activities Resource
+    name: Activities
+  - description: Chembl Assays Resource
+    name: Assays
+  - description: Drug Resource
+    name: Drugs
+  - description: EFO Resource
+    name: EFO disease terms
+  - description: HPO Resource
+    name: HPO
+  - description: Intact Resource
+    name: Intact
+  - description: Chembl Molecules Resource
+    name: Molecules
+  - description: Protein Resource
+    name: Proteins
+  - description: Pubchem Bioassay Sids Resource
+    name: PubChem Bioassay Sids
+  - description: Pubchem Bioassay Resource
+    name: PubChem Biossays
+  - description: Pubchem Compound Resource
+    name: PubChem Compounds
+  - description: Pubchem Substance Resource
+    name: PubChem Substances
+  - description: Chembl Targets Resource
+    name: Targets
+paths:
+  /activities:
+    get:
+      deprecated: false
+      operationId: getActivitiesUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: assayChemblId
+          in: query
+          items:
+            type: string
+          name: assayChemblId
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: moleculeChemblId
+          in: query
+          items:
+            type: string
+          name: moleculeChemblId
+          required: false
+          type: array
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+        - description: pchemblValue
+          format: double
+          in: query
+          name: pchemblValue
+          required: false
+          type: number
+        - collectionFormat: multi
+          description: targetChemblId
+          in: query
+          items:
+            type: string
+          name: targetChemblId
+          required: false
+          type: array
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Activities"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get ChEMBL activities
+      tags:
+        - Activities
+  /assays:
+    get:
+      deprecated: false
+      operationId: getAssaysUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: assayChemblId
+          in: query
+          items:
+            type: string
+          name: assayChemblId
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: assayOrg
+          in: query
+          items:
+            type: string
+          name: assayOrg
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: assayType
+          in: query
+          items:
+            type: string
+          name: assayType
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: targetChemblId
+          in: query
+          items:
+            type: string
+          name: targetChemblId
+          required: false
+          type: array
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Assays"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get ChEMBL assays
+      tags:
+        - Assays
+  /drugs:
+    get:
+      deprecated: false
+      operationId: getDrugsUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: accession
+          in: query
+          items:
+            type: string
+          name: accession
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: chemblId
+          in: query
+          items:
+            type: string
+          name: chemblId
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: identifier
+          in: query
+          items:
+            type: string
+          name: identifier
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: name
+          in: query
+          items:
+            type: string
+          name: name
+          required: false
+          type: array
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: pubchemCid
+          in: query
+          items:
+            type: string
+          name: pubchemCid
+          required: false
+          type: array
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Drugs"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: drugs collected from Drugbank
+      tags:
+        - Drugs
+  /efo:
+    get:
+      deprecated: false
+      operationId: getEFOUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: doid
+          in: query
+          items:
+            type: string
+          name: doid
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: label
+          in: query
+          items:
+            type: string
+          name: label
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: mesh
+          in: query
+          items:
+            type: string
+          name: mesh
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: oboId
+          in: query
+          items:
+            type: string
+          name: oboId
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: omimId
+          in: query
+          items:
+            type: string
+          name: omimId
+          required: false
+          type: array
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: synonym
+          in: query
+          items:
+            type: string
+          name: synonym
+          required: false
+          type: array
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/EFOEntities"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get EFO diseases data
+      tags:
+        - EFO disease terms
+  /hpo:
+    get:
+      deprecated: false
+      operationId: getHpoUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: genesymbol
+          in: query
+          items:
+            type: string
+          name: genesymbol
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: hpotermname
+          in: query
+          items:
+            type: string
+          name: hpotermname
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: synonym
+          in: query
+          items:
+            type: string
+          name: synonym
+          required: false
+          type: array
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/HpoEntities"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get HPO phenotypes data
+      tags:
+        - HPO
+  /intact:
+    get:
+      deprecated: false
+      operationId: getIntactUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: accession
+          in: query
+          items:
+            type: string
+          name: accession
+          required: false
+          type: array
+        - description: confidence
+          format: double
+          in: query
+          name: confidence
+          required: false
+          type: number
+        - collectionFormat: multi
+          description: gene
+          in: query
+          items:
+            type: string
+          name: gene
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/IntactInteractions"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Molecular Interactions collected from IntAct
+      tags:
+        - Intact
+  /molecules:
+    get:
+      deprecated: false
+      operationId: getMoleculesUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: canonicalSmiles
+          in: query
+          items:
+            type: string
+          name: canonicalSmiles
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: inchiKey
+          in: query
+          items:
+            type: string
+          name: inchiKey
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: moleculeChemblId
+          in: query
+          items:
+            type: string
+          name: moleculeChemblId
+          required: false
+          type: array
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Molecules"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get ChEMBL molecules
+      tags:
+        - Molecules
+  /proteins:
+    get:
+      deprecated: false
+      operationId: getProteinsUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: accession
+          in: query
+          items:
+            type: string
+          name: accession
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: ec
+          in: query
+          items:
+            type: string
+          name: ec
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: fullName
+          in: query
+          items:
+            type: string
+          name: fullName
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: gene
+          in: query
+          items:
+            type: string
+          name: gene
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: go
+          in: query
+          items:
+            type: string
+          name: go
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: interpro
+          in: query
+          items:
+            type: string
+          name: interpro
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: omim
+          in: query
+          items:
+            type: string
+          name: omim
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: orphanet
+          in: query
+          items:
+            type: string
+          name: orphanet
+          required: false
+          type: array
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: pfam
+          in: query
+          items:
+            type: string
+          name: pfam
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: reactome
+          in: query
+          items:
+            type: string
+          name: reactome
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: taxId
+          in: query
+          items:
+            format: int32
+            type: integer
+          name: taxId
+          required: false
+          type: array
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Proteins"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Proteins collected from Uniprot for selective tax ids  HUMAN(9606), MOUSE(10090), RAT(10116), BOVINE(9913), ESCHERICHIA_COLI(83333), SUS_SCROFA(9823), MYCOBACTERIUM_TUBERCULOSIS(83332), ORYCTOLAGUS_CUNICULUS(9986), SACCHAROMYCES_CEREVISIAE(559292), CVHSA(694009) & SARS2(2697049)
+      tags:
+        - Proteins
+  /pubchem/bioassays:
+    get:
+      deprecated: false
+      operationId: getBioassaysUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: accession
+          in: query
+          items:
+            type: string
+          name: accession
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: assayPubchemId
+          in: query
+          items:
+            type: string
+          name: assayPubchemId
+          required: false
+          type: array
+        - default: 1
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: ncbiProteinId
+          in: query
+          items:
+            type: string
+          name: ncbiProteinId
+          required: false
+          type: array
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Bioassays"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get pubchem bioassays
+      tags:
+        - PubChem Biossays
+  /pubchem/bioassays/sids:
+    get:
+      deprecated: false
+      operationId: getBioassaysUsingGET_1
+      parameters:
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - description: outcome
+          in: query
+          name: outcome
+          required: false
+          type: string
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: sids
+          in: query
+          items:
+            type: string
+          name: sids
+          required: false
+          type: array
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Bioassays"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get pubchem bioassays associated to particular substance ids (sid) & outcome
+      tags:
+        - PubChem Bioassay Sids
+  /pubchem/compounds:
+    get:
+      deprecated: false
+      operationId: getCompoundsUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: canonicalSmiles
+          in: query
+          items:
+            type: string
+          name: canonicalSmiles
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: cid
+          in: query
+          items:
+            type: string
+          name: cid
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: inchiKey
+          in: query
+          items:
+            type: string
+          name: inchiKey
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/PubchemCompounds"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get pubchem compounds
+      tags:
+        - PubChem Compounds
+  /pubchem/substances:
+    get:
+      deprecated: false
+      operationId: getSubstancesUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: cid
+          in: query
+          items:
+            type: string
+          name: cid
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: sid
+          in: query
+          items:
+            type: string
+          name: sid
+          required: false
+          type: array
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/PubchemSubstances"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get pubchem substances
+      tags:
+        - PubChem Substances
+  /targets:
+    get:
+      deprecated: false
+      operationId: getTargetsUsingGET
+      parameters:
+        - collectionFormat: multi
+          description: accession
+          in: query
+          items:
+            type: string
+          name: accession
+          required: false
+          type: array
+        - default: 10
+          description: limit
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - default: 0
+          description: page
+          format: int32
+          in: query
+          name: page
+          required: false
+          type: integer
+        - collectionFormat: multi
+          description: targetIds
+          in: query
+          items:
+            type: string
+          name: targetIds
+          required: false
+          type: array
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Targets"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get ChEMBL targets
+      tags:
+        - Targets
+definitions:
+  Activities:
+    properties:
+      activities:
+        items:
+          $ref: "#/definitions/Activity"
+        type: array
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+    title: Activities
+    type: object
+  Activity:
+    properties:
+      assay_chembl_id:
+        type: string
+      data_validity_comment:
+        type: string
+      molecule_chembl_id:
+        type: string
+      pchembl_value:
+        format: double
+        type: number
+      standard_flag:
+        type: boolean
+      standard_relation:
+        type: string
+      standard_units:
+        type: string
+      standard_value:
+        format: double
+        type: number
+      target_chembl_id:
+        type: string
+    title: Activity
+    type: object
+  Assay:
+    properties:
+      assay_chembl_id:
+        type: string
+      assay_id:
+        type: string
+      assay_organism:
+        type: string
+      assay_type:
+        type: string
+      confidence_score:
+        format: double
+        type: number
+      target_chembl_id:
+        type: string
+    title: Assay
+    type: object
+  AssayData:
+    properties:
+      standard_type:
+        type: string
+      standard_units:
+        type: string
+      standard_value:
+        format: double
+        type: number
+    title: AssayData
+    type: object
+  AssayOrganism:
+    properties:
+      db_object_id:
+        type: integer
+      tax_name:
+        type: string
+    title: AssayOrganism
+    type: object
+  Assays:
+    properties:
+      assays:
+        items:
+          $ref: "#/definitions/Assay"
+        type: array
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+    title: Assays
+    type: object
+  BioAssay:
+    properties:
+      activity:
+        format: int32
+        type: integer
+      assay_organisms:
+        items:
+          $ref: "#/definitions/AssayOrganism"
+        type: array
+      assay_pubchem_id:
+        type: integer
+      assay_type:
+        type: string
+      chembl_xref:
+        type: string
+      protein_name:
+        type: string
+      source:
+        type: string
+      target_info:
+        items:
+          $ref: "#/definitions/TargetInfo"
+        type: array
+      target_type_info:
+        items:
+          $ref: "#/definitions/TargetType"
+        type: array
+    title: BioAssay
+    type: object
+  BioAssayMetaData:
+    properties:
+      bioAssay:
+        $ref: "#/definitions/BioAssay"
+      sidRelatedData:
+        items:
+          $ref: "#/definitions/SidRelatedData"
+        type: array
+    title: BioAssayMetaData
+    type: object
+  Bioassays:
+    properties:
+      bioassays:
+        items:
+          $ref: "#/definitions/BioAssayMetaData"
+        type: array
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+    title: Bioassays
+    type: object
+  CrossReferences:
+    properties:
+      ensembl:
+        items:
+          $ref: "#/definitions/Ensembl"
+        type: array
+      go:
+        items:
+          $ref: "#/definitions/Go"
+        type: array
+      interpro:
+        items:
+          $ref: "#/definitions/Interpro"
+        type: array
+      kegg:
+        items:
+          $ref: "#/definitions/Kegg"
+        type: array
+      omim:
+        items:
+          $ref: "#/definitions/Omim"
+        type: array
+      openTargets:
+        items:
+          $ref: "#/definitions/OpenTargets"
+        type: array
+      orphanet:
+        items:
+          $ref: "#/definitions/Orphanet"
+        type: array
+      pdBe:
+        items:
+          $ref: "#/definitions/PDBe"
+        type: array
+      pfam:
+        items:
+          $ref: "#/definitions/Pfam"
+        type: array
+      reactome:
+        items:
+          $ref: "#/definitions/Reactome"
+        type: array
+    title: CrossReferences
+    type: object
+  CrossbarDrug:
+    properties:
+      alogp:
+        format: double
+        type: number
+      canonical_smiles:
+        type: string
+      chembl_id:
+        type: string
+      full_mwt:
+        format: double
+        type: number
+      identifier:
+        type: string
+      inchi_key:
+        type: string
+      kegg_cid:
+        type: string
+      molecule_type:
+        type: string
+      name:
+        type: string
+      pathway:
+        items:
+          $ref: "#/definitions/Pathway"
+        type: array
+      pb_structures:
+        items:
+          type: string
+        type: array
+      polar_surface_area:
+        format: double
+        type: number
+      pubchem_cid:
+        type: string
+      pubchem_sid:
+        type: string
+      standard_inchi:
+        type: string
+      targets:
+        items:
+          $ref: "#/definitions/Target"
+        type: array
+      uniprot_accession:
+        type: string
+    title: CrossbarDrug
+    type: object
+  CrossbarFeature:
+    properties:
+      begin:
+        $ref: "#/definitions/FeaturePosition"
+      category:
+        type: string
+      description:
+        type: string
+      end:
+        $ref: "#/definitions/FeaturePosition"
+      ftId:
+        type: string
+      type:
+        type: string
+    title: CrossbarFeature
+    type: object
+  CrossbarMolecule:
+    properties:
+      alogp:
+        format: double
+        type: number
+      canonical_smiles:
+        type: string
+      chirality:
+        format: double
+        type: number
+      full_mwt:
+        format: double
+        type: number
+      heavy_atoms_count:
+        format: int32
+        type: integer
+      inchi_key:
+        type: string
+      max_phase:
+        format: int32
+        type: integer
+      molecular_species:
+        type: string
+      molecular_type:
+        type: string
+      molecule_chembl_id:
+        type: string
+      parent_chembl_id:
+        type: string
+      pref_name:
+        type: string
+      prodrug:
+        format: double
+        type: number
+      standard_inchi:
+        type: string
+      xrefs:
+        items:
+          $ref: "#/definitions/Xref"
+        type: array
+    title: CrossbarMolecule
+    type: object
+  CrossbarPCCompound:
+    properties:
+      alogp:
+        format: double
+        type: number
+      atom_chiral_count:
+        format: int64
+        type: integer
+      atom_chiral_def_count:
+        format: int64
+        type: integer
+      bond_chiral_count:
+        format: int64
+        type: integer
+      bond_chiral_def_count:
+        format: int64
+        type: integer
+      bond_chiral_undef_count:
+        format: int64
+        type: integer
+      canonical_smiles:
+        type: string
+      cid:
+        type: integer
+      covalent_unit_count:
+        format: int64
+        type: integer
+      finger_print:
+        format: byte
+        type: string
+      full_mwt:
+        format: double
+        type: number
+      heavy_atoms_count:
+        format: int64
+        type: integer
+      inchi_key:
+        type: string
+      isotope_atom_count:
+        format: int64
+        type: integer
+      polar_surface_area:
+        format: double
+        type: number
+      standard_inchi:
+        type: string
+      tautomers_count:
+        format: int64
+        type: integer
+    title: CrossbarPCCompound
+    type: object
+  CrossbarProteinVariation:
+    properties:
+      alternativeSequence:
+        type: string
+      association:
+        items:
+          $ref: "#/definitions/VariationAssociation"
+        type: array
+      begin:
+        $ref: "#/definitions/FeaturePosition"
+      clinicalSignificances:
+        type: string
+      description:
+        type: string
+      end:
+        $ref: "#/definitions/FeaturePosition"
+      evidences:
+        items:
+          $ref: "#/definitions/VariationEvidence"
+        type: array
+      ftId:
+        type: string
+      somaticStatus:
+        format: int64
+        type: integer
+      sourceType:
+        type: string
+      wildType:
+        type: string
+      xrefs:
+        items:
+          $ref: "#/definitions/VariationXref"
+        type: array
+    title: CrossbarProteinVariation
+    type: object
+  CrossbarTarget:
+    properties:
+      accession:
+        type: string
+      target_chembl_id:
+        type: string
+    title: CrossbarTarget
+    type: object
+  Drugs:
+    properties:
+      drugs:
+        items:
+          $ref: "#/definitions/CrossbarDrug"
+        type: array
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+    title: Drugs
+    type: object
+  EFO:
+    properties:
+      description:
+        items:
+          type: string
+        type: array
+      doid:
+        items:
+          type: string
+        type: array
+      icd9:
+        items:
+          type: string
+        type: array
+      label:
+        type: string
+      mesh:
+        items:
+          type: string
+        type: array
+      ncit:
+        items:
+          type: string
+        type: array
+      obo_id:
+        type: string
+      omim:
+        items:
+          type: string
+        type: array
+      short_form:
+        type: string
+      snowmed:
+        items:
+          type: string
+        type: array
+      synonyms:
+        items:
+          type: string
+        type: array
+      umls:
+        items:
+          type: string
+        type: array
+    title: EFO
+    type: object
+  EFOEntities:
+    properties:
+      diseases:
+        items:
+          $ref: "#/definitions/EFO"
+        type: array
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+    title: EFOEntities
+    type: object
+  Ensembl:
+    properties:
+      geneId:
+        type: string
+      id:
+        type: string
+      isoform:
+        type: string
+      proteinSequenceId:
+        type: string
+    title: Ensembl
+    type: object
+  FeaturePosition:
+    properties:
+      ceil:
+        format: int32
+        type: integer
+      floor:
+        format: int32
+        type: integer
+      uncertain:
+        type: boolean
+      unparsed:
+        type: string
+    title: FeaturePosition
+    type: object
+  Features:
+    properties:
+      active_site:
+        items:
+          $ref: "#/definitions/CrossbarFeature"
+        type: array
+      binding_site:
+        items:
+          $ref: "#/definitions/CrossbarFeature"
+        type: array
+      chain:
+        items:
+          $ref: "#/definitions/CrossbarFeature"
+        type: array
+      domain:
+        items:
+          $ref: "#/definitions/CrossbarFeature"
+        type: array
+      mutagen:
+        items:
+          $ref: "#/definitions/CrossbarFeature"
+        type: array
+      region:
+        items:
+          $ref: "#/definitions/CrossbarFeature"
+        type: array
+      top_dom:
+        items:
+          $ref: "#/definitions/CrossbarFeature"
+        type: array
+      variant:
+        items:
+          $ref: "#/definitions/CrossbarFeature"
+        type: array
+    title: Features
+    type: object
+  Fragment:
+    properties:
+      from:
+        format: int32
+        type: integer
+      to:
+        format: int32
+        type: integer
+      type:
+        type: string
+    title: Fragment
+    type: object
+  Gene:
+    properties:
+      id:
+        type: string
+      symbol:
+        type: string
+    title: Gene
+    type: object
+  Go:
+    properties:
+      evidences:
+        items:
+          $ref: "#/definitions/GoEvidence"
+        type: array
+      id:
+        type: string
+      term:
+        type: string
+    title: Go
+    type: object
+  GoEvidence:
+    properties:
+      source_id:
+        type: string
+      source_name:
+        type: string
+    title: GoEvidence
+    type: object
+  HPOEntity:
+    properties:
+      db_references:
+        items:
+          type: string
+        type: array
+      gene:
+        items:
+          $ref: "#/definitions/Gene"
+        type: array
+      hpo_id:
+        type: string
+      synonyms:
+        items:
+          type: string
+        type: array
+      term_name:
+        type: string
+    title: HPOEntity
+    type: object
+  HitPosition:
+    properties:
+      from:
+        format: int32
+        type: integer
+      to:
+        format: int32
+        type: integer
+    title: HitPosition
+    type: object
+  HpoEntities:
+    properties:
+      hpo:
+        items:
+          $ref: "#/definitions/HPOEntity"
+        type: array
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+    title: HpoEntities
+    type: object
+  Intact:
+    properties:
+      confidence:
+        format: double
+        type: number
+      interaction_ac:
+        items:
+          type: string
+        type: array
+      interactor_a:
+        $ref: "#/definitions/Interactor"
+      interactor_b:
+        $ref: "#/definitions/Interactor"
+      method:
+        type: string
+      source_db:
+        type: string
+    title: Intact
+    type: object
+  IntactInteractions:
+    properties:
+      interactions:
+        items:
+          $ref: "#/definitions/Intact"
+        type: array
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+    title: IntactInteractions
+    type: object
+  Interactor:
+    properties:
+      accession:
+        type: string
+      gene:
+        type: string
+    title: Interactor
+    type: object
+  Interpro:
+    properties:
+      entry_id:
+        type: string
+      entry_name:
+        type: string
+      entry_type:
+        type: string
+      fragments:
+        items:
+          $ref: "#/definitions/Fragment"
+        type: array
+      hit_position:
+        $ref: "#/definitions/HitPosition"
+    title: Interpro
+    type: object
+  Kegg:
+    properties:
+      id:
+        type: string
+    title: Kegg
+    type: object
+  Molecules:
+    properties:
+      molecules:
+        items:
+          $ref: "#/definitions/CrossbarMolecule"
+        type: array
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+    title: Molecules
+    type: object
+  Omim:
+    properties:
+      _id:
+        type: string
+      type:
+        type: string
+    title: Omim
+    type: object
+  OpenTargets:
+    properties:
+      id:
+        type: string
+    title: OpenTargets
+    type: object
+  Orphanet:
+    properties:
+      disease:
+        type: string
+      id:
+        type: string
+    title: Orphanet
+    type: object
+  PDBe:
+    properties:
+      chains:
+        type: string
+      id:
+        type: string
+      method:
+        type: string
+      resolution:
+        type: string
+    title: PDBe
+    type: object
+  PageMeta:
+    properties:
+      currentElements:
+        format: int64
+        type: integer
+      currentPage:
+        format: int32
+        type: integer
+      limit:
+        format: int32
+        type: integer
+      totalElements:
+        format: int64
+        type: integer
+      totalPages:
+        format: int32
+        type: integer
+    title: PageMeta
+    type: object
+  Pathway:
+    properties:
+      category:
+        type: string
+      name:
+        type: string
+    title: Pathway
+    type: object
+  Pfam:
+    properties:
+      entryName:
+        type: string
+      id:
+        type: string
+    title: Pfam
+    type: object
+  Protein:
+    properties:
+      accession:
+        type: string
+      chromosome:
+        type: string
+      crossreferences:
+        $ref: "#/definitions/CrossReferences"
+      ec_numbers:
+        items:
+          type: string
+        type: array
+      features:
+        $ref: "#/definitions/Features"
+      full_name:
+        type: string
+      genes:
+        items:
+          type: string
+        type: array
+      interactions:
+        items:
+          $ref: "#/definitions/ProteinInteraction"
+        type: array
+      length:
+        format: double
+        type: number
+      mass:
+        format: double
+        type: number
+      tax_id:
+        format: int32
+        type: integer
+      variations:
+        items:
+          $ref: "#/definitions/CrossbarProteinVariation"
+        type: array
+    title: Protein
+    type: object
+  ProteinInteraction:
+    properties:
+      id:
+        type: string
+      interaction_type:
+        type: string
+      interactors:
+        items:
+          type: string
+        type: array
+    title: ProteinInteraction
+    type: object
+  Proteins:
+    properties:
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+      proteins:
+        items:
+          $ref: "#/definitions/Protein"
+        type: array
+    title: Proteins
+    type: object
+  PubchemCompounds:
+    properties:
+      compounds:
+        items:
+          $ref: "#/definitions/CrossbarPCCompound"
+        type: array
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+    title: PubchemCompounds
+    type: object
+  PubchemSubstances:
+    properties:
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+      substances:
+        items:
+          $ref: "#/definitions/Substance"
+        type: array
+    title: PubchemSubstances
+    type: object
+  Reactome:
+    properties:
+      id:
+        type: string
+      pathwayName:
+        type: string
+    title: Reactome
+    type: object
+  SidRelatedData:
+    properties:
+      assay_data:
+        items:
+          $ref: "#/definitions/AssayData"
+        type: array
+      assay_pubchem_id:
+        type: integer
+      outcome:
+        type: string
+      sid:
+        type: integer
+      standard_relation:
+        type: string
+    title: SidRelatedData
+    type: object
+  Substance:
+    properties:
+      chembl_cmpd_xref:
+        type: string
+      cids:
+        items:
+          type: integer
+        type: array
+      sid:
+        type: integer
+    title: Substance
+    type: object
+  Target:
+    properties:
+      accessions:
+        items:
+          type: string
+        type: array
+      action:
+        items:
+          type: string
+        type: array
+      id:
+        type: string
+      name:
+        type: string
+      organism:
+        type: string
+    title: Target
+    type: object
+  TargetInfo:
+    properties:
+      ncbi_protein_id:
+        type: integer
+      target_chembl_id:
+        type: string
+      uniprot_accession:
+        type: string
+    title: TargetInfo
+    type: object
+  TargetType:
+    properties:
+      molecule_type:
+        type: string
+      value:
+        format: int32
+        type: integer
+    title: TargetType
+    type: object
+  Targets:
+    properties:
+      pageMeta:
+        $ref: "#/definitions/PageMeta"
+      targets:
+        items:
+          $ref: "#/definitions/CrossbarTarget"
+        type: array
+    title: Targets
+    type: object
+  VariationAssociation:
+    properties:
+      description:
+        type: string
+      evidences:
+        items:
+          $ref: "#/definitions/VariationEvidence"
+        type: array
+      name:
+        type: string
+      xrefs:
+        items:
+          $ref: "#/definitions/VariationXref"
+        type: array
+    title: VariationAssociation
+    type: object
+  VariationEvidence:
+    properties:
+      source:
+        $ref: "#/definitions/VariationEvidenceSource"
+    title: VariationEvidence
+    type: object
+  VariationEvidenceSource:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    title: VariationEvidenceSource
+    type: object
+  VariationXref:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    title: VariationXref
+    type: object
+  Xref:
+    properties:
+      id:
+        type: string
+      source:
+        type: string
+    title: Xref
+    type: object

@@ -1,0 +1,279 @@
+swagger: "2.0"
+schemes:
+  - http
+basePath: /v1
+info:
+  title: Reimbursements API
+  version: "1.0"
+  x-apisguru-categories:
+    - financial
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_linuxfoundation.org_wp-content_uploads_lf_yoast.jpg
+  x-origin:
+    - format: swagger
+      url: https://api-gw.dev.platform.linuxfoundation.org/reimbursement-service/swagger.json
+      version: "2.0"
+  x-providerName: linuxfoundation.org
+  x-serviceName: reimbursement
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  ApiKeyAuth:
+    description: |
+      For accessing the API a valid API Key must be passed in all the queries in the 'X-API-KEY' header.
+    in: header
+    name: X-API-Key
+    type: apiKey
+security:
+  - ApiKeyAuth: []
+responses:
+  error:
+    description: Server Error
+    schema:
+      $ref: "#/definitions/error-response"
+  invalid-request:
+    description: Invalid Request
+    schema:
+      $ref: "#/definitions/error-response"
+  not-found:
+    description: Not Found
+    schema:
+      $ref: "#/definitions/error-response"
+  ok:
+    description: OK
+  unauthorized:
+    description: Unauthorized
+    schema:
+      $ref: "#/definitions/error-response"
+tags:
+  - name: reimbursement
+paths:
+  /api-docs:
+    get:
+      operationId: getDoc
+      produces:
+        - text/html
+      responses:
+        "200":
+          $ref: "#/responses/ok"
+      security: []
+      summary: Get swagger documentation
+      tags:
+        - docs
+  /health:
+    get:
+      operationId: healthCheck
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/health"
+        "503":
+          description: Service Unavailable
+          schema:
+            $ref: "#/definitions/health"
+      security: []
+      summary: Get API Health Status
+  "/reimbursement/{projectId}":
+    parameters:
+      - in: path
+        name: projectId
+        required: true
+        type: string
+    patch:
+      description: Update an existing Reimbursement policy
+      operationId: updateReimbursement
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/policy-update-input"
+      responses:
+        "200":
+          $ref: "#/responses/ok"
+        "400":
+          $ref: "#/responses/invalid-request"
+        "401":
+          $ref: "#/responses/unauthorized"
+        "404":
+          $ref: "#/responses/not-found"
+        "500":
+          $ref: "#/responses/error"
+      summary: Update Reimbursement
+      tags:
+        - reimbursement
+    post:
+      description: Create a new Reimbursement policy
+      operationId: createReimbursement
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            allOf:
+              - $ref: "#/definitions/policy-create-input"
+              - $ref: "#/definitions/policy-update-input"
+      responses:
+        "200":
+          $ref: "#/responses/ok"
+        "400":
+          $ref: "#/responses/invalid-request"
+        "401":
+          $ref: "#/responses/unauthorized"
+        "500":
+          $ref: "#/responses/error"
+      summary: Create Reimbursement
+      tags:
+        - reimbursement
+  /reset:
+    post:
+      description: Reset an existing policy to match with templatePolicy
+      operationId: resetPolicy
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/policy-reset-input"
+      responses:
+        "200":
+          $ref: "#/responses/ok"
+        "400":
+          $ref: "#/responses/invalid-request"
+        "401":
+          $ref: "#/responses/unauthorized"
+        "500":
+          $ref: "#/responses/error"
+      summary: Reset Policy
+definitions:
+  contact:
+    description: Contact information
+    properties:
+      EmailAddress:
+        example: BugsBunny@example.org
+        type: string
+      Name:
+        example: Bugs Bunny
+        type: string
+    title: Contact
+    type: object
+  error-response:
+    description: Standard error format
+    properties:
+      Code:
+        description: Error Code
+        example: 401
+        format: int64
+        type: number
+      Message:
+        description: Error Message
+        example: Unauthorized
+        type: string
+    title: Error Response
+    type: object
+  health:
+    properties:
+      BuildTimeStamp:
+        description: Time the service was built and deployed
+        example: 2019-06-06_02:59:49PM
+        type: string
+      Githash:
+        description: hash of the latest Git commit of the service at time of building
+        example: 62009963c9e1cedaf7a24649208983163f8c439e
+        type: string
+      Healths:
+        items:
+          $ref: "#/definitions/health-status"
+        type: array
+      Status:
+        description: Confirmation that the service is doing well
+        example: healthy
+        type: string
+      TimeStamp:
+        description: Current server time
+        example: 2019-06-07 15:37:43.131125775 +0000 UTC m=+0.257970409
+        type: string
+    title: Health
+    type: object
+  health-status:
+    properties:
+      Duration:
+        description: Service response time
+        type: string
+      Error:
+        description: Service Name
+        type: string
+      Healthy:
+        description: Service is healthy?
+        type: boolean
+      Name:
+        description: Service Name
+        type: string
+      TimeStamp:
+        description: Service's server time
+        example: 2019-06-07 15:37:43.131120884 +0000 UTC m=+0.257965506
+        type: string
+    title: Health Status
+    type: object
+  policy-create-input:
+    description: Reimbursement creation information
+    properties:
+      ProjectName:
+        example: The Looney Tunes Show
+        type: string
+    required:
+      - ProjectName
+    title: Policy Create
+    type: object
+  policy-reset-input:
+    description: Expensify policy reset information
+    properties:
+      PolicyID:
+        description: Unique ID of the policy to reset
+        example: F11B6C1D67DC6A3D
+        type: string
+      TemplatePolicyID:
+        description: Unique ID of the template policy to copy from
+        example: F11B6C1D67DC6A3D
+        type: string
+    required:
+      - PolicyID
+    title: Policy Reset
+    type: object
+  policy-update-input:
+    description: Reimbursement update information
+    properties:
+      Beneficiaries:
+        example:
+          - EmailAddress: DaffyDuck@example.org
+            Name: Daffy Duck
+          - EmailAddress: PorkyPig@example.org
+            Name: Porky Pik
+        items:
+          $ref: "#/definitions/contact"
+        type: array
+      Categories:
+        example:
+          - Anvils
+          - Carrots
+          - Travel
+        items:
+          type: string
+        type: array
+      EntityType:
+        example: other
+        type: string
+      Owner:
+        $ref: "#/definitions/contact"
+      ProjectURL:
+        example: https://funding.dev.platform.linuxfoundation.org/projects/asp-net
+        type: string
+    required:
+      - Categories
+      - Owner
+      - ProjectURL
+    title: Policy Update
+    type: object

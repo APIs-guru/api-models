@@ -1,0 +1,546 @@
+openapi: 3.0.0
+servers:
+  - description: Production
+    url: https://apps.gov.bc.ca/pub/geomark
+  - description: Test
+    url: https://test.apps.gov.bc.ca/pub/geomark
+  - description: Delivery
+    url: https://delivery.apps.gov.bc.ca/pub/geomark
+info:
+  contact:
+    email: IDDDBCLS@Victoria1.gov.bc.ca
+    name: DataBC
+    url: http://data.gov.bc.ca/
+  description: |-
+    The Geomark Web Service allows you to create and share geographic areas of interest over the web in a variety of formats and coordinate systems. This service is especially helpful when you need to share an area of interest with people who require that the data be in a different format, or they use different mapping software. 
+
+    Please note that you may experience issues when submitting requests to the delivery or test environment if using this [OpenAPI specification](https://github.com/bcgov/api-specs/tree/master/geomark) in other API console viewers.
+  license:
+    name: Open Government License - British Columbia
+    url: https://www2.gov.bc.ca/gov/content?id=A519A56BC2BF44E4A008B33FCF527F61
+  termsOfService: https://www2.gov.bc.ca/gov/content?id=D1EE0A405E584363B205CD4353E02C88
+  title: GeoMark Web Service REST API
+  version: 4.1.2
+  x-apisguru-categories:
+    - open_data
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_avatars1.githubusercontent.com_u_916280.jpeg
+  x-origin:
+    - converter:
+        url: https://github.com/mermade/oas-kit
+        version: 7.0.4
+      format: openapi
+      url: https://raw.githubusercontent.com/bcgov/api-specs/master/geomark/geomark.json
+      version: "3.0"
+  x-providerName: gov.bc.ca
+  x-serviceName: geomark
+externalDocs:
+  description: Geomark Web Service
+  url: https://www2.gov.bc.ca/gov/content?id=F6BAF45131954020BCFD2EBCC456F084
+tags:
+  - name: create
+  - name: boundingBox
+  - name: feature
+  - name: info
+  - name: parts
+  - name: point
+paths:
+  /geomarks/copy:
+    post:
+      description: The source geomarks can be specified by with the geomarkUrl parameter.  Repeat the parameter if sourcing from multiple geomarks
+      parameters:
+        - description: One or more geomark URLs or identifiers to create the new geomark from.
+          example: https://apps.gov.bc.ca/pub/geomark/geomarks/gm-abcdefghijklmnopqrstuv0bcislands
+          in: query
+          name: geomarkUrl
+          required: true
+          schema:
+            type: string
+        - description: The file format the geomark info resource should be returned using.
+          example: json
+          in: query
+          name: resultFormat
+          required: false
+          schema:
+            enum:
+              - json
+              - xml
+              - kml
+              - kmz
+              - shp
+              - shpz
+              - geojson
+              - gml
+              - wkt
+            type: string
+        - description: Select this option to allow overlapping geometries
+          in: query
+          name: allowOverlap
+          required: false
+          schema:
+            default: false
+            enum:
+              - false
+              - true
+            type: boolean
+        - description: The callback function a JSON result format would be wrapped in to support Ajax requests.
+          in: query
+          name: callback
+          required: false
+          schema:
+            type: string
+        - description: The optional external URL to redirect the user to when the geomark is created rather than showing the geomark info page. The geomarkId and geomarkUrl query string parameters will be added to the redirectUrl so that the target application gets a reference to the geomark.
+          in: query
+          name: redirectUrl
+          required: false
+          schema:
+            type: string
+        - description: The url to redirect if the geomark could not be created. The URL will include a <fieldName>_Error parameter with the error message for the field that caused the error.
+          in: query
+          name: failureRedirectUrl
+          required: false
+          schema:
+            type: string
+        - description: The amount to buffer the geometry in metres, must only contain numerical digits (e.g 10). Leave blank and no buffer will be added to input geometries. If blank then any Point, LineString, MultiPoint and MultiLineString geometries will be ignored.
+          in: query
+          name: bufferMetres
+          required: false
+          schema:
+            type: integer
+        - description: If bufferMetres is specified, The style of buffer to use for joins between the line segments for lines and polygons.
+          in: query
+          name: bufferJoin
+          required: false
+          schema:
+            default: ROUND
+            enum:
+              - ROUND
+              - MITRE
+              - BEVEL
+            type: string
+        - description: If bufferMetres is specified, The style of buffer to use at the ends of a buffered line.
+          in: query
+          name: bufferCap
+          required: false
+          schema:
+            default: ROUND
+            enum:
+              - ROUND
+              - SQUARE
+              - FLAT
+            type: string
+        - description: If bufferMetres is specified, the maximum ratio of distance from the original geometry to a mitre buffer point and the buffer amount. If the ratio is greater than this a bevel will be used instead. This prevents infinite distances when the angle between the two lines at a join is small. Must be > 0.
+          in: query
+          name: bufferMitreLimit
+          required: false
+          schema:
+            default: 5
+            type: integer
+        - description: If bufferMetres is specified, the number of line segments used in each quadrant to approximate the curve for round end-cap and join styles. Must be > 0.
+          in: query
+          name: bufferSegments
+          required: false
+          schema:
+            default: 8
+            type: integer
+      responses:
+        "400":
+          description: Couldn't create geomark.
+        "500":
+          description: Internal Server Error.
+      summary: Create a new geomark by copying the geometries from one or more existing geomarks from the current server.
+      tags:
+        - create
+  /geomarks/new:
+    post:
+      description: Create a new geomark from the geometries read from the 'body' parameter or file.
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                allowOverlap:
+                  default: false
+                  description: When multiple=true select this option to allow overlapping geometries
+                  enum:
+                    - false
+                    - true
+                  type: boolean
+                body:
+                  description: The binary or character content representing the geometry or geometries
+                  type: string
+                bufferCap:
+                  default: ROUND
+                  description: If bufferMetres is specified, The style of buffer to use at the ends of a buffered line.
+                  enum:
+                    - ROUND
+                    - SQUARE
+                    - FLAT
+                  type: string
+                bufferJoin:
+                  default: ROUND
+                  description: If bufferMetres is specified, The style of buffer to use for joins between the line segments for lines and polygons.
+                  enum:
+                    - ROUND
+                    - MITRE
+                    - BEVEL
+                  type: string
+                bufferMetres:
+                  description: The amount to buffer the geometry in metres, must only contain numerical digits (e.g 10). Leave blank and no buffer will be added to input geometries. If blank then any Point, LineString, MultiPoint and MultiLineString geometries will be ignored.
+                  type: integer
+                bufferMitreLimit:
+                  default: 5
+                  description: If bufferMetres is specified, the maximum ratio of distance from the original geometry to a mitre buffer point and the buffer amount. If the ratio is greater than this a bevel will be used instead. This prevents infinite distances when the angle between the two lines at a join is small. Must be > 0.
+                  type: integer
+                bufferSegments:
+                  default: 8
+                  description: If bufferMetres is specified, the number of line segments used in each quadrant to approximate the curve for round end-cap and join styles. Must be > 0.
+                  type: integer
+                callback:
+                  description: The callback function a JSON result format would be wrapped in to support Ajax requests.
+                  type: string
+                failureRedirectUrl:
+                  description: The url to redirect if the geomark could not be created. The URL will include a <fieldName>_Error parameter with the error message for the field that caused the error.
+                  type: string
+                format:
+                  description: The file format name extension of the input geometry.
+                  enum:
+                    - json
+                    - xml
+                    - kml
+                    - kmz
+                    - shp
+                    - shpz
+                    - geojson
+                    - gml
+                    - wkt
+                  type: string
+                multiple:
+                  default: false
+                  description: Boolean flag indicating if multiple geometries are to be used for the geomark (true) or only a single geometry from the first geometry (false).
+                  enum:
+                    - false
+                    - true
+                  type: boolean
+                redirectUrl:
+                  description: The optional external URL to redirect the user to when the geomark is created rather than showing the geomark info page. The geomarkId and geomarkUrl query string parameters will be added to the redirectUrl so that the target application gets a reference to the geomark.
+                  type: string
+                resultFormat:
+                  description: The file format the geomark info resource should be returned using.
+                  enum:
+                    - json
+                    - xml
+                    - kml
+                    - kmz
+                    - shp
+                    - shpz
+                    - geojson
+                    - gml
+                    - wkt
+                  type: string
+                srid:
+                  default: 4326
+                  description: The srid of the coordinate system the input geometries are in. If the file includes a coordinate system definition that will be used.
+                  enum:
+                    - 4326
+                    - 3005
+                    - 3857
+                    - 26907
+                    - 26908
+                    - 26909
+                    - 26910
+                    - 26911
+                  type: integer
+              type: object
+      responses:
+        "302":
+          description: If the geomark was created and a redirectUrl was specified then the response will redirect to the redirectUrl with the query string parameters geomarkId and geomarkUrl of the created geomark. If the geomark was created and a redirectUrl was NOT specified then the response will redirect to the geomark info resource of the created geomark. If resultFormat was specified then the redirect will be to the geomark info resource for that file format. If the resultFormat was 'json' and a callback was specified the the callback query string parameter will be added to the URL. If there was an error creating the geomark and a failureRedirectUrl was specified then the response will be redirected to the failureRedirectUrl with a <fieldName>_Error query string parameter with the error message. Otherwise one of the 400 status codes below will be returned.
+        "400":
+          description: Couldn't create geomark.
+        "500":
+          description: Internal Server Error.
+      summary: Create a new geomark
+      tags:
+        - create
+  "/geomarks/{geomarkId}.{fileFormatExtension}":
+    get:
+      description: The attribution can be downloaded as a info file format. The download files can then be processed by a client application to access the geomark info fields and to get the URLs to the geometry download resources.
+      parameters:
+        - description: The unique identifier for the geomark.
+          example: gm-abcdefghijklmnopqrstuv0bcislands
+          in: path
+          name: geomarkId
+          required: true
+          schema:
+            type: string
+        - description: The file format name extension used to represent the geomark download.
+          example: json
+          in: path
+          name: fileFormatExtension
+          required: true
+          schema:
+            enum:
+              - json
+              - xml
+              - kml
+              - kmz
+              - shp
+              - shpz
+              - geojson
+              - gml
+              - wkt
+            type: string
+        - description: The srid of the coordinate system the geometry should be converted to.
+          in: query
+          name: srid
+          required: false
+          schema:
+            default: 4326
+            enum:
+              - 4326
+              - 3005
+              - 3857
+              - 26907
+              - 26908
+              - 26909
+              - 26910
+              - 26911
+            type: integer
+      responses:
+        "200":
+          description: The geomark will be returned in the body of the HTTP response encoded in the requested file format.
+        "400":
+          description: Coordinate system with srid = <srid> is not supported.
+        "404":
+          description: The geomark <geomarkId> could not be found.
+        "500":
+          description: Internal Server Error.
+      summary: Get information about a particular geomark
+      tags:
+        - info
+  "/geomarks/{geomarkId}/boundingBox.{fileFormatExtension}":
+    get:
+      description: The source geomarks can be specified by with the geomarkUrl parameter.  Repeat the parameter if sourcing from multiple geomarks
+      parameters:
+        - description: The unique identifier for the geomark
+          example: gm-abcdefghijklmnopqrstuv0bcislands
+          in: path
+          name: geomarkId
+          required: true
+          schema:
+            type: string
+        - description: The file format name extension used to represent the geomark download.
+          example: json
+          in: path
+          name: fileFormatExtension
+          required: true
+          schema:
+            enum:
+              - json
+              - xml
+              - kml
+              - kmz
+              - shp
+              - shpz
+              - geojson
+              - gml
+              - wkt
+            type: string
+        - description: The srid of the coordinate system the geometry should be converted to.
+          in: query
+          name: srid
+          required: false
+          schema:
+            default: 4326
+            enum:
+              - 4326
+              - 3005
+              - 3857
+              - 26907
+              - 26908
+              - 26909
+              - 26910
+              - 26911
+            type: integer
+      responses:
+        "200":
+          description: The geomark will be returned in the body of the HTTP response encoded in the requested file format.
+        "400":
+          description: Coordinate system with srid = <srid> is not supported.
+        "404":
+          description: The geomark <geomarkId> could not be found.
+        "500":
+          description: Internal Server Error.
+      summary: Gets the bounding box of the geomark
+      tags:
+        - boundingBox
+  "/geomarks/{geomarkId}/feature.{fileFormatExtension}":
+    get:
+      description: The geomark feature resource returns a single spatial feature with either a single (Point, LineString, Polygon) or multi-part geometry (MultiPoint, MultiLineString, MultiPolygon) and the geomark attribution.  The geometry and attribution can be downloaded as a spatial download file format in a supported coordinate system. The download files can then be used in a desktop GIS application (e.g. ArcMap), Google Earth or a web mapping application.
+      parameters:
+        - description: The unique identifier for the geomark
+          example: gm-abcdefghijklmnopqrstuv0bcislands
+          in: path
+          name: geomarkId
+          required: true
+          schema:
+            type: string
+        - description: The file format name extension used to represent the geomark download.
+          example: json
+          in: path
+          name: fileFormatExtension
+          required: true
+          schema:
+            enum:
+              - json
+              - xml
+              - kml
+              - kmz
+              - shp
+              - shpz
+              - geojson
+              - gml
+              - wkt
+            type: string
+        - description: The srid of the coordinate system the geometry should be converted to.
+          in: query
+          name: srid
+          required: false
+          schema:
+            default: 4326
+            enum:
+              - 4326
+              - 3005
+              - 3857
+              - 26907
+              - 26908
+              - 26909
+              - 26910
+              - 26911
+            type: integer
+      responses:
+        "200":
+          description: The geomark will be returned in the body of the HTTP response encoded in the requested file format.
+        "400":
+          description: Coordinate system with srid = <srid> is not supported.
+        "404":
+          description: The geomark <geomarkId> could not be found.
+        "500":
+          description: Internal Server Error.
+      summary: Get the feature and attribution of the geomark
+      tags:
+        - feature
+  "/geomarks/{geomarkId}/parts.{fileFormatExtension}":
+    get:
+      description: The geomark parts resource returns a one or more spatial features. One for each part of the Geomark's geomerty. Each part contains a single (Point, LineString, Polygon) geometry and the geomark attribution.
+      parameters:
+        - description: The unique identifier for the geomark
+          example: gm-abcdefghijklmnopqrstuv0bcislands
+          in: path
+          name: geomarkId
+          required: true
+          schema:
+            type: string
+        - description: The file format name extension used to represent the geomark download.
+          example: json
+          in: path
+          name: fileFormatExtension
+          required: true
+          schema:
+            enum:
+              - json
+              - xml
+              - kml
+              - kmz
+              - shp
+              - shpz
+              - geojson
+              - gml
+              - wkt
+            type: string
+        - description: The srid of the coordinate system the geometry should be converted to.
+          in: query
+          name: srid
+          required: false
+          schema:
+            default: 4326
+            enum:
+              - 4326
+              - 3005
+              - 3857
+              - 26907
+              - 26908
+              - 26909
+              - 26910
+              - 26911
+            type: integer
+      responses:
+        "200":
+          description: The geomark will be returned in the body of the HTTP response encoded in the requested file format.
+        "400":
+          description: Coordinate system with srid = <srid> is not supported.
+        "404":
+          description: The geomark <geomarkId> could not be found.
+        "500":
+          description: Internal Server Error.
+      summary: Get the individual geometries within a multi-part geometry
+      tags:
+        - parts
+  "/geomarks/{geomarkId}/point.{fileFormatExtension}":
+    get:
+      description: The geomark point resource returns a single spatial feature with a single Point and the geomark attribution.  The point geometry will be created from the first geometry part of the Geomark. Point geomarks will return the first Point part in the geomark.  LineString geomarks will return the first coordinate of the first LineString part in the geomark. Polygon geomarks will return the centroid or another point inside the first Polygon part in the geomark. The geometry and attribution can be downloaded as a spatial download file format in a supported coordinate system. The download files can then be used in a desktop GIS application (e.g. ArcMap), Google Earth or a web mapping application.
+      parameters:
+        - description: The unique identifier for the geomark.
+          example: gm-abcdefghijklmnopqrstuv0bcislands
+          in: path
+          name: geomarkId
+          required: true
+          schema:
+            type: string
+        - description: The file format name extension used to represent the geomark download.
+          example: json
+          in: path
+          name: fileFormatExtension
+          required: true
+          schema:
+            enum:
+              - json
+              - xml
+              - kml
+              - kmz
+              - shp
+              - shpz
+              - geojson
+              - gml
+              - wkt
+            type: string
+        - description: The srid of the coordinate system the geometry should be converted to.
+          in: query
+          name: srid
+          required: false
+          schema:
+            default: 4326
+            enum:
+              - 4326
+              - 3005
+              - 3857
+              - 26907
+              - 26908
+              - 26909
+              - 26910
+              - 26911
+            type: integer
+      responses:
+        "200":
+          description: The geomark will be returned in the body of the HTTP response encoded in the requested file format.
+        "400":
+          description: Coordinate system with srid = <srid> is not supported.
+        "404":
+          description: The geomark <geomarkId> could not be found.
+        "500":
+          description: Internal Server Error.
+      summary: Gets a single spatial point representative of the geomark.
+      tags:
+        - point
+components:
+  schemas: {}

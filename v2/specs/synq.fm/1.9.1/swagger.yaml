@@ -1,0 +1,359 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.synq.fm
+basePath: /v1
+info:
+  description: |-
+    * [Sign up for a developer API key!](https://www.synq.fm/register)
+    * [SYNQ API Guide](/)
+  title: SYNQ Video
+  version: 1.9.1
+  x-apisguru-categories:
+    - media
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_pbs.twimg.com_profile_images_894535623213809664_lp7hTlgk_400x400.jpg
+  x-origin:
+    - format: swagger
+      url: https://docs.synq.fm/swagger/api.json
+      version: "2.0"
+  x-providerName: synq.fm
+consumes:
+  - multipart/form-data
+  - application/x-www-form-urlencoded
+responses:
+  ErrorResponse:
+    description: An error occurred
+    schema:
+      $ref: "#/definitions/ErrorObject"
+  VideoObjectResponse:
+    description: A video object, containing all metadata members.
+    schema:
+      $ref: "#/definitions/VideoObject"
+paths:
+  /video/create:
+    post:
+      description: Create a new video, optionally setting some metadata fields. You may optionally set some of the metadata associated with the video. Only fields inside the "userdata" field can be set.
+      operationId: create
+      parameters:
+        - in: formData
+          name: api_key
+          required: true
+          type: string
+        - description: Additional metadata that will be associated with the video
+          in: formData
+          name: userdata
+          required: false
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          $ref: "#/responses/VideoObjectResponse"
+        "400":
+          $ref: "#/responses/ErrorResponse"
+      summary: Create a new video, optionally setting some metadata fields.
+      tags:
+        - video
+  /video/details:
+    post:
+      description: Return details about a video. You may optionally request that only some of the metadata fields are returned.
+      operationId: details
+      parameters:
+        - in: formData
+          name: api_key
+          required: true
+          type: string
+        - description: ID of the video to retrieve the metadata from
+          in: formData
+          name: video_id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          $ref: "#/responses/VideoObjectResponse"
+        "400":
+          $ref: "#/responses/ErrorResponse"
+      summary: Return details about a video.
+      tags:
+        - video
+  /video/query:
+    post:
+      description: Find videos matching any criteria, by running a JavaScript function over each video object. A detailed tutorial on how to use this functionality is available on the [documentation page](https://www.synq.fm/queries-video-api/).
+      operationId: query
+      parameters:
+        - in: formData
+          name: api_key
+          required: true
+          type: string
+        - description: JavaScript code to be run over each video object, to determine what should be returend.
+          in: formData
+          name: filter
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: An array of arbitrary elements, up to one element for each video object
+          schema:
+            items:
+              type: object
+            type: array
+        "400":
+          $ref: "#/responses/ErrorResponse"
+      summary: Perform a JavaScript query to return video objects matching any desired criteria.
+      tags:
+        - video
+  /video/stream:
+    post:
+      description: Returns a stream url that you can stream to from your broadcasting software, and a playback url people can use to watch the stream.
+      operationId: stream
+      parameters:
+        - in: formData
+          name: api_key
+          required: true
+          type: string
+        - description: The ID of the video you want to stream to. The video needs to have been previously created.
+          in: formData
+          name: video_id
+          required: true
+          type: string
+      produces:
+        - text/plain
+      responses:
+        "200":
+          description: A JSON object with urls for streaming.
+          schema:
+            properties:
+              playback_url:
+                example: http://stmr1.synq.fm:8081/abr/58a6657b73039192a1000006/playlist.m3u8
+                type: string
+              stream_url:
+                example: rtmp://stmr1.synq.fm:1935/live/58a6657b73039192a1000006?publishsign=aWQ9NTc4N2I5MDI5MzRjY2RlMjcwMDAwMDA4JnNpZ249VTJCTU84bTRPS0R6OW9NanRUdkVLUT09JmlwPTg5LjE5MS4yNi41Nw==
+                type: string
+            required:
+              - stream_url
+              - playback_url
+            title: StreamInformationObject
+            type: object
+        "400":
+          $ref: "#/responses/ErrorResponse"
+      summary: Returns urls for streaming.
+      tags:
+        - video
+  /video/update:
+    post:
+      description: Update a video's metadata through JavaScript code. Only fields inside the "userdata" object can be set.
+      operationId: update
+      parameters:
+        - in: formData
+          name: api_key
+          required: true
+          type: string
+        - description: The ID of the video whose metadata will be updated
+          in: formData
+          name: video_id
+          required: true
+          type: string
+        - description: JavaScript code to execute on the video object.
+          in: formData
+          name: source
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          $ref: "#/responses/VideoObjectResponse"
+        "400":
+          $ref: "#/responses/ErrorResponse"
+      summary: Update a video's metadata.
+      tags:
+        - video
+  /video/upload:
+    post:
+      description: |+
+        Return parameters needed for uploading a video file to Amazon Simple Storage Service. See http://docs.aws.amazon.com/AmazonS3/latest/API/sigv4-post-example.html as well as the language-specific code-examples.
+        #### *Example request*
+        ```shell
+        curl -s https://api.synq.fm/v1/video/upload \
+          -F api_key=${SYNQ_API_KEY} \
+          -F video_id=2d81c30ce62f4dfdb501dbca96c7ae56
+        ```
+
+        #### *Example response*
+        ```json
+        {
+          "action": "https://synqfm.s3.amazonaws.com/",
+          "AWSAccessKeyId": "AKIAIP77Y7MMX3ITZMFA",
+          "Content-Type": "video/mp4",
+          "Policy": "eyJleHBpcmF0aW9uIiA6ICIyMDE2LTA0LTIyVDE5OjAyOjI2LjE3MloiLCAiY29uZGl0aW9ucyIgOiBbeyJidWNrZXQiIDogInN5bnFmbSJ9LCB7ImFjbCIgOiAicHVibGljLXJlYWQifSwgWyJzdGFydHMtd2l0aCIsICIka2V5IiwgInByb2plY3RzLzZlLzYzLzZlNjNiNzUyYTE4NTRkZGU4ODViNWNjNDcyZWRmNTY5L3VwbG9hZHMvdmlkZW9zLzJkLzgxLzJkODFjMzBjZTYyZjRkZmRiNTAxZGJjYTk2YzdhZTU2Lm1wNCJdLCBbInN0YXJ0cy13aXRoIiwgIiRDb250ZW50LVR5cGUiLCAidmlkZW8vbXA0Il0sIFsiY29udGVudC1sZW5ndGgtcmFuZ2UiLCAwLCAxMDk5NTExNjI3Nzc2XV19",
+          "Signature": "ysqDemlKXKr6hKzVFP0hCGgf/cs=",
+          "acl": "public-read",
+          "key": "projects/6e/63/6e63b752a1854dde885b5cc472edf569/uploads/videos/2d/81/2d81c30ce62f4dfdb501dbca96c7ae56.mp4"
+        }
+        ```
+
+        To upload the file, you can then make a multipart POST request to the URL in `action`, and for all the other parameters returned, set them as form parameters.
+
+        Given the parameters above, you would upload a file `test.mp4` using cURL like this:
+
+        ```shell
+        curl -s https://synqfm.s3.amazonaws.com/ \
+          -F AWSAccessKeyId="AKIAIP77Y7MMX3ITZMFA" \
+          -F Content-Type="video/mp4" \
+          -F Policy="eyJleHBpcmF0aW9uIiA6ICIyMDE2LTA0LTIyVDE5OjAyOjI2LjE3MloiLCAiY29uZGl0aW9ucyIgOiBbeyJidWNrZXQiIDogInN5bnFmbSJ9LCB7ImFjbCIgOiAicHVibGljLXJlYWQifSwgWyJzdGFydHMtd2l0aCIsICIka2V5IiwgInByb2plY3RzLzZlLzYzLzZlNjNiNzUyYTE4NTRkZGU4ODViNWNjNDcyZWRmNTY5L3VwbG9hZHMvdmlkZW9zLzJkLzgxLzJkODFjMzBjZTYyZjRkZmRiNTAxZGJjYTk2YzdhZTU2Lm1wNCJdLCBbInN0YXJ0cy13aXRoIiwgIiRDb250ZW50LVR5cGUiLCAidmlkZW8vbXA0Il0sIFsiY29udGVudC1sZW5ndGgtcmFuZ2UiLCAwLCAxMDk5NTExNjI3Nzc2XV19" \
+          -F Signature="ysqDemlKXKr6hKzVFP0hCGgf/cs=" \
+          -F acl="public-read" \
+          -F key="projects/6e/63/6e63b752a1854dde885b5cc472edf569/uploads/videos/2d/81/2d81c30ce62f4dfdb501dbca96c7ae56.mp4" \
+          -F file="@my_video_file.mp4"
+        ```
+
+      operationId: upload
+      parameters:
+        - in: formData
+          name: api_key
+          required: true
+          type: string
+        - description: The ID of the video you are going to upload into. The video needs to have been previously created.
+          in: formData
+          name: video_id
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: An object containing all parameters needed for uploading the file.
+          schema:
+            $ref: "#/definitions/UploadParameterObject"
+        "400":
+          $ref: "#/responses/ErrorResponse"
+      summary: Return parameters needed for uploading a video file.
+      tags:
+        - video
+  /video/uploader:
+    post:
+      description: Returns an embeddable url, that contains an uploader widget that allows you to easily upload any mp4. Great way to simplify the uploading process for end users.
+      operationId: uploader
+      parameters:
+        - in: formData
+          name: api_key
+          required: true
+          type: string
+        - description: The ID of the video you are going to upload into. The video needs to have been previously created.
+          in: formData
+          name: video_id
+          required: true
+          type: string
+        - default: 2 hours
+          description: How long the uploader widget works for. Anything from '30 minutes' to '2 days'.
+          in: formData
+          name: timeout
+          required: false
+          type: string
+      produces:
+        - text/plain
+      responses:
+        "200":
+          description: A JSON object with an embeddable url to an uploader page/widget.
+          schema:
+            properties:
+              uploader_url:
+                example: https://uploader.synq.fm/uploader/5920d3dfe2dc4b36bd83df6f37ae9bc1?token=18d3bfa5aa4046df9202e6b5ac74760a
+                type: string
+            title: UploaderInformationObject
+            type: object
+        "400":
+          $ref: "#/responses/ErrorResponse"
+      summary: Return embeddable url to an uploader widget
+      tags:
+        - video
+definitions:
+  ErrorObject:
+    example:
+      message: A lengthy, human-readable description of the error that has occurred.
+      name: Some error occurred.
+      url: http://docs.synq.fm/api/v1/error/some_error_code
+    properties:
+      details:
+        type: object
+      message:
+        type: string
+      name:
+        type: string
+      url:
+        type: string
+    required:
+      - url
+      - name
+      - message
+    title: ErrorObject
+    type: object
+  StreamConfigurationObject:
+    properties:
+      rtmp_host:
+        example: ec2-54-171-205-23.eu-west-1.compute.amazonaws.com
+        type: string
+      rtmp_key:
+        example: live/ce29d1cb5da48a564d2c9f62be7ade06
+        type: string
+      rtmp_port:
+        example: "1935"
+        type: string
+      rtmp_url:
+        example: rtmp://ec2-54-171-205-23.eu-west-1.compute.amazonaws.com:1935/live/ce29d1cb5da48a564d2c9f62be7ade06
+        type: string
+    title: StreamConfigurationObject
+    type: object
+  UploadParameterObject:
+    properties:
+      AWSAccessKeyId:
+        type: string
+      Content-Type:
+        type: string
+      Policy:
+        type: string
+      Signature:
+        type: string
+      acl:
+        type: string
+      action:
+        type: string
+      key:
+        type: string
+    title: UploadParameterObject
+    type: object
+  VideoObject:
+    example:
+      created_at: 2017-03-07T12:03:34.477Z
+      state: created
+      updated_at: 2017-03-07T12:03:34.477Z
+      userdata: {}
+      video_id: 5747740852d14db58f47a5858f0bbcf7
+    properties:
+      created_at:
+        type: string
+      input:
+        type: object
+      outputs:
+        type: object
+      state:
+        type: string
+      updated_at:
+        type: string
+      userdata:
+        type: object
+      video_id:
+        type: string
+    required:
+      - video_id
+      - state
+      - userdata
+      - created_at
+      - updated_at
+    title: VideoObject
+    type: object

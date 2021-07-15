@@ -1,0 +1,363 @@
+swagger: "2.0"
+schemes:
+  - https
+basePath: /BDSS-API
+info:
+  description: Bulk Data Storage System (BDSS) allows the public to discover, search, and download patent and trademark data in bulk form.
+  title: Bulk Data Storage System Services
+  version: 1.0.0
+  x-origin:
+    - format: swagger
+      url: https://bulkdata.uspto.gov/BDSS-API/swagger
+      version: "2.0"
+  x-providerName: uspto.gov
+  x-serviceName: bdss
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+produces:
+  - application/json
+tags:
+  - name: products
+paths:
+  /products/all/latest:
+    get:
+      description: Use this GET to retrieve latest released bulk data products. Note that there is one file per product. The response includes product fields such as title, description, frequency, and level.
+      operationId: getProductsWithLatestProductFiles
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful operation.
+        "404":
+          description: Unexpected error accessing metadata.
+        "500":
+          description: Internal server error.
+      summary: Returns all products with Latest Files.
+      tags:
+        - products
+  "/products/byname/{productName}":
+    get:
+      description: |-
+        Use this GET to search for bulk data services by product name or description. An error message will be returned if the product cannot be found by name. Note that product name is not case sensitive. You can enter full or partial name of an existing product to receive bulk data services. Default values for field names are as follows
+        - if both years are not defined, toYear will be set equal to current year, fromYear will be set equal to previous year
+        - if fromYear is defined, toYear will be set equal to fromYear+1
+        - if fromMonth not defined, current month will be used
+        - if toMonth not defined, it will be set equal to fromMonth
+        - if fromDay is not defined, it will be set equal to current day (today)
+        - if toDay is not defined, it will be set to the last day of toMonth/toYear
+      operationId: getProductsByName
+      parameters:
+        - description: Name of the product, for example, "Trademark"
+          in: path
+          name: productName
+          required: true
+          type: string
+        - description: Year from when the product files are needed, for example, 1999.
+          format: int32
+          in: query
+          name: fromYear
+          required: false
+          type: integer
+        - description: Year until when the product files are needed, for example, 2000.
+          format: int32
+          in: query
+          name: toYear
+          required: false
+          type: integer
+        - description: Month from when the product files are needed, for example, 01.
+          format: int32
+          in: query
+          name: fromMonth
+          required: false
+          type: integer
+        - description: Month until when the product files are needed, for example, 12.
+          format: int32
+          in: query
+          name: toMonth
+          required: false
+          type: integer
+        - description: Day from when the product files are needed, for example, 01.
+          format: int32
+          in: query
+          name: fromDay
+          required: false
+          type: integer
+        - description: Day until when the product files are needed, for example, 31.
+          format: int32
+          in: query
+          name: toDay
+          required: false
+          type: integer
+        - default: "false"
+          description: Boolean flag to indicate if product hierarchy needs to be return in the response. By default it doesn't return the hierarchy in the response.
+          in: query
+          name: hierarchy
+          required: false
+          type: string
+        - default: 20
+          description: Max. number of files to retrieve, per product. Set value to -1 to get all files
+          format: int32
+          in: query
+          name: maxFiles
+          required: false
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful operation.
+        "404":
+          description: Unexpected error accessing metadata.
+        "500":
+          description: Internal server error.
+      summary: Returns files associated with products (of level PRODUCT) based on their full or partial names.
+      tags:
+        - products
+  /products/popular:
+    get:
+      description: Use this GET to retrieve these bulk data files by their popularity. The response includes product fields such as title, description, frequency, and level.
+      operationId: getPopulartProducts
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful operation.
+        "404":
+          description: Unexpected error accessing metadata.
+        "500":
+          description: Internal server error.
+      summary: Returns popular products along with latest files.
+      tags:
+        - products
+  /products/tree:
+    get:
+      description: |-
+        Use this GET to retrieve short name and parent/child relationships for bulk data products. Short names are unique IDs of the products and should be used in other GETs where {shortName} parameter is required
+        Use this GET to perform initial exploration of the existing products hierarchy
+        Short names are unique IDs of the products and should be used in other GETs where {shortName} parameter is required
+      operationId: getProductsTree
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful operation.
+        "404":
+          description: Unexpected error accessing metadata.
+        "500":
+          description: Internal server error.
+      summary: Returns products' hierarchical tree.
+      tags:
+        - products
+  "/products/tree/{shortName}":
+    get:
+      description: Use this GET to search for bulk data products by their short names. This works almost like products/tree GET, the difference is that it returns subtree data starting from a particular tree node (i.e. the GET returns all children if parent short name is entered). If a product cannot be found by its short name (has to be exact match and is not case sensitive), then an error message will appear in response body.
+      operationId: getProductSubTree
+      parameters:
+        - description: Short name of the product, for example, "PTISSD"
+          in: path
+          name: shortName
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful operation.
+        "404":
+          description: Product not found.
+        "500":
+          description: Internal server error.
+      summary: Returns products' hierarchical subtree.
+      tags:
+        - products
+  "/products/{shortName}":
+    get:
+      description: |-
+        Use this GET to search for bulk data products by their short names and description. Note that "From" and "To" dates can be inputted separately as year/month/day values or as a single date string in format "YYYY-MM-DD".
+        If all values are entered, single date strings have a higher priority
+        For the list of default values rules, see GET /products/byname/{productName} above
+      operationId: getProductsByShortName
+      parameters:
+        - description: Short name  of the product, for example, "PTGRSP"
+          in: path
+          name: shortName
+          required: true
+          type: string
+        - description: Year from when the product files are needed, for example, 1999.
+          format: int32
+          in: query
+          name: fromYear
+          required: false
+          type: integer
+        - description: Year until when the product files are needed, for example, 2000.
+          format: int32
+          in: query
+          name: toYear
+          required: false
+          type: integer
+        - description: Month from when the product files are needed, for example, 01.
+          format: int32
+          in: query
+          name: fromMonth
+          required: false
+          type: integer
+        - description: Month until when the product files are needed, for example, 12.
+          format: int32
+          in: query
+          name: toMonth
+          required: false
+          type: integer
+        - description: Day from when the product files are needed, for example, 01.
+          format: int32
+          in: query
+          name: fromDay
+          required: false
+          type: integer
+        - description: Day until when the product files are needed, for example, 31.
+          format: int32
+          in: query
+          name: toDay
+          required: false
+          type: integer
+        - description: Year from when the product files are needed, for example, 1999-01-01.
+          in: query
+          name: fromDate
+          required: false
+          type: string
+        - description: Year until when the product files are needed, for example, 2001-12-31.
+          in: query
+          name: toDate
+          required: false
+          type: string
+        - default: "false"
+          description: "Boolean flag (possible values: true and false) to indicate if product hierarchy needs to be return in the response. By default it doesn't return the hierarchy in the response."
+          in: query
+          name: hierarchy
+          required: false
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful operation.
+        "404":
+          description: Product not found.
+        "500":
+          description: Internal server error.
+      summary: Returns products along with their associated files by short names.
+      tags:
+        - products
+  "/products/{shortName}/latest":
+    get:
+      description: Use this GET to search for latest released bulk data products by their short names and release year. The return response will include the latest files within the year specified.  An error message will be returned if product(s) cannot be found for the year specified
+      operationId: getLatestProductFilesByProductIdAndTime
+      parameters:
+        - description: Short name of the product, for example, "PTGRSP"
+          in: path
+          name: shortName
+          required: true
+          type: string
+        - description: Year of the product files  needed, for example, 2001.
+          format: int32
+          in: query
+          name: year
+          required: false
+          type: integer
+        - default: "false"
+          description: "Boolean flag (possible values: true and false) to indicate if product hierarchy needs to be return in the response. By default it doesn't return the hierarchy in the response."
+          in: query
+          name: hierarchy
+          required: false
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Successful operation.
+        "404":
+          description: Product not found.
+        "500":
+          description: Internal server error.
+      summary: Returns products along with their latest files by short names.
+      tags:
+        - products
+definitions:
+  ProductFileModel:
+    properties:
+      fileDownloadUrl:
+        type: string
+      fileFromTime:
+        type: string
+      fileIdentifier:
+        format: int32
+        type: integer
+      fileLinkPath:
+        format: uri
+        type: string
+      fileName:
+        type: string
+      fileReleaseDate:
+        type: string
+      fileSize:
+        type: integer
+      fileToTime:
+        type: string
+      fileType:
+        type: string
+    type: object
+  ProductModel:
+    description: Product Model
+    properties:
+      numberOfFiles:
+        format: int64
+        type: integer
+      parentProduct:
+        $ref: "#/definitions/ProductModel"
+      productDesc:
+        type: string
+      productFiles:
+        items:
+          $ref: "#/definitions/ProductFileModel"
+        type: array
+      productFrequency:
+        type: string
+      productFromDate:
+        type: string
+      productIdentifier:
+        format: int32
+        type: integer
+      productLevel:
+        description: Represents the Level in the Product hierarchy.
+        enum:
+          - available
+          - pending
+          - sold
+        type: string
+      productLinkPath:
+        format: uri
+        type: string
+      productShortName:
+        type: string
+      productTitle:
+        type: string
+      productToDate:
+        type: string
+    type: object
+  ProductModelShort:
+    description: Product Model, short version, with the list of child products
+    properties:
+      productChildren:
+        items:
+          $ref: "#/definitions/ProductModelShort"
+        type: array
+      productLinkPath:
+        format: uri
+        type: string
+      productShortName:
+        type: string
+      productTitle:
+        type: string
+    type: object

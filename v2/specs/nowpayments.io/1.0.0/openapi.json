@@ -1,0 +1,803 @@
+{
+  "openapi": "3.0.3",
+  "servers": [
+    {
+      "url": "https://api.nowpayments.io"
+    }
+  ],
+  "info": {
+    "contact": {},
+    "description": "NOWPayments is a non-custodial cryptocurrency payment processing platform. Accept payments in a wide range of cryptos and get them instantly converted into a coin of your choice and sent to your wallet. Keeping it simple – no excess.\n\n# Sandbox\nBefore production usage, you can test our API using the Sandbox. Details are [here](https://documenter.getpostman.com/view/7907941/T1LSCRHC)\n\n# Authentication\nTo use the NOWPayments API you should do the following:\n\n  * Sign up at [nowpayments.io](https://nowpayments.io)\n  * Specify your outcome wallet\n  * Generate an API key\n\n# API Documentation\n\n## Instant Payments Notifications\nIPN (Instant payment notifications, or callbacks) are used to notify you when transaction status is changed.\nTo use them, you should complete the following steps:\n\n1. Generate and save the IPN Secret key in Store Settings tab at the Dashboard.\n\n2. Insert your URL address where you want to get callbacks in create_payment request. The parameter name is ipn\\_callback\\_url. You will receive payment updates (statuses) to this URL address.\n\n3. You will receive all the parameters at  the URL address you specified in (2) by POST request.\nThe POST request will contain the *x-nowpayments-sig* parameter in the header.\nThe body of the request is similiar to a [get payment status](https://documenter.getpostman.com/view/7907941/S1a32n38?version=latest#0b77a8e3-2344-4760-a0bd-247da067db6d) response body.\nExample:\n{\"payment_id\":5077125051,\"payment_status\":\"waiting\",\"pay_address\":\"0xd1cDE08A07cD25adEbEd35c3867a59228C09B606\",\"price_amount\":170,\"price_currency\":\"usd\",\"pay_amount\":155.38559757,\"actually_paid\":0,\"pay_currency\":\"mana\",\"order_id\":\"2\",\"order_description\":\"Apple Macbook Pro 2019 x 1\",\"purchase_id\":\"6084744717\",\"created_at\":\"2021-04-12T14:22:54.942Z\",\"updated_at\":\"2021-04-12T14:23:06.244Z\",\"outcome_amount\":1131.7812095,\"outcome_currency\":\"trx\"}\n\n4. Sort all the parameters from the POST request in alphabetical order.\n\n5. Convert them to string using\n[JSON.stringify](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/JSON/stringify) (params, Object.keys(params).sort()) or the same function.\n\n6. Sign a string with an IPN-secret key with HMAC and sha-512 key\n\n7. Compare the signed string from the previous step with the x-nowpayments-sig , which is stored in the header of the callback request.\nIf these strings are similar it is a success.\nOtherwise, contact us on support@nowpayments.io to solve the problem.\n\nExample of creating a signed string at Node.JS\n\n    const hmac = crypto.createHmac('sha512', notificationsKey);\n    hmac.update(JSON.stringify(params, Object.keys(params).sort()));\n    const signature = hmac.digest('hex');\n\nExample of comparing signed strings in PHP\n\n    function check_ipn_request_is_valid()\n        {\n            $error_msg = \"Unknown error\";\n            $auth_ok = false;\n            $request_data = null;\n            \n \n            if (isset($_SERVER['HTTP_X_NOWPAYMENTS_SIG']) && !empty($_SERVER['HTTP_X_NOWPAYMENTS_SIG'])) {\n                $recived_hmac = $_SERVER['HTTP_X_NOWPAYMENTS_SIG'];\n \n                $request_json = file_get_contents('php://input');\n                $request_data = json_decode($request_json, true);\n                ksort($request_data);\n                $sorted_request_json = json_encode($request_data);\n \n                if ($request_json !== false && !empty($request_json)) {\n                    $hmac = hash_hmac(\"sha512\", $sorted_request_json, trim($this->ipn_secret));\n \n                    if ($hmac == $recived_hmac) {\n                        $auth_ok = true;\n                    } else {\n                        $error_msg = 'HMAC signature does not match';\n                    }\n                } else {\n                    $error_msg = 'Error reading POST data';\n                }\n            } else {\n                $error_msg = 'No HMAC signature sent.';\n            }\n    \n        }\n    \n## Recurrent payment notifications\nIf an error is detected, the payment is flagged and will receive additional recurrent notifications (number of recurrent notifications can be changed in your Store Settings-> Instant Payment Notifications).\n\nIf an error is received again during processing of the payment, recurrent notifications will be initiated again.\n\nExample: \"Timeout\" is set to 1 minute and \"Number of recurrent notifications\" is set to 3.\n\nOnce an error is detected, you will receive 3 notifications at 1 minute intervals.\n\n## Several payments for one order\nIf you want to create several payments for one Order you should do the following:\n\n  * Create a payment for the full order amount.\n  * Save \"purchase_id\" which will be in \"create_payment\" response\n  * Create next payment or payments with this \"purchase_id\" in \"create_payment\" request.\n  * **Only works for partially_paid payments**\n\nIt may be useful if you want to give your customers opportunity to pay a full order with several payments, for example, one part in BTC and one part in ETH. Also, if your customer accidentally paid you only part of a full amount, you can automatically ask them to make another payment.\n\n## Packages\n\nPlease find our out-of-the box packages for easy integration below:\n\n[JavaScript package](https://www.npmjs.com/package/@nowpaymentsio/nowpayments-api-js)\n\nMore coming soon!\n\n## Payments",
+    "title": "NOWPayments API",
+    "version": "1.0.0",
+    "x-apisguru-categories": [
+      "financial"
+    ],
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_pbs.twimg.com_profile_images_1351091723833909248_9Jqk2Tiu_400x400.jpg"
+    },
+    "x-origin": [
+      {
+        "format": "postman",
+        "url": "https://www.postman.com/collections/7907941-9f217404-4263-42ad-b6b1-03a3d95b7d22-S1a32n38",
+        "version": "2.x"
+      }
+    ],
+    "x-providerName": "nowpayments.io"
+  },
+  "tags": [],
+  "paths": {
+    "/v1/estimate": {
+      "get": {
+        "description": "This is a method for calculating the approximate price in cryptocurrency for a given value in Fiat currency. You will need to provide the initial cost in the Fiat currency (amount, currency_from) and the necessary cryptocurrency (currency_to)\nCurrently following fiat currencies are available: usd, eur, nzd, brl, gbp.",
+        "operationId": "3.GetEstimatedPrice",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "amount",
+            "schema": {
+              "example": "3999.5000",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "currency_from",
+            "schema": {
+              "example": "usd",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "currency_to",
+            "schema": {
+              "example": "btc",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "3. Get estimated price": {
+                    "value": {
+                      "amount_from": 3999.5,
+                      "currency_from": "usd",
+                      "currency_to": "btc",
+                      "estimated_amount": 0.17061637
+                    }
+                  }
+                },
+                "schema": {
+                  "properties": {
+                    "amount_from": {
+                      "example": 3999.5,
+                      "type": "number"
+                    },
+                    "currency_from": {
+                      "example": "usd",
+                      "type": "string"
+                    },
+                    "currency_to": {
+                      "example": "btc",
+                      "type": "string"
+                    },
+                    "estimated_amount": {
+                      "example": 0.17061637,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "3. Get estimated price",
+            "headers": {
+              "CF-Cache-Status": {
+                "schema": {
+                  "example": "DYNAMIC",
+                  "type": "string"
+                }
+              },
+              "CF-RAY": {
+                "schema": {
+                  "example": "605abb081ca11669-ARN",
+                  "type": "string"
+                }
+              },
+              "Connection": {
+                "schema": {
+                  "example": "keep-alive",
+                  "type": "string"
+                }
+              },
+              "Content-Encoding": {
+                "schema": {
+                  "example": "br",
+                  "type": "string"
+                }
+              },
+              "Date": {
+                "schema": {
+                  "example": "Tue, 22 Dec 2020 15:03:37 GMT",
+                  "type": "string"
+                }
+              },
+              "Expect-CT": {
+                "schema": {
+                  "example": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+                  "type": "string"
+                }
+              },
+              "NEL": {
+                "schema": {
+                  "example": "{\"report_to\":\"cf-nel\",\"max_age\":604800}",
+                  "type": "string"
+                }
+              },
+              "Report-To": {
+                "schema": {
+                  "example": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report?s=Be6PnrVenND3qBzQJTWszI2slyEd9pXNhEyFMkukSYUC1m3om7zFPg%2BQq%2F6xT2ridpvoQiRE5q8CWGblOvjJ7%2Bup%2B3ZwGuN7TNvHk04WYiWIlRk%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+                  "type": "string"
+                }
+              },
+              "Server": {
+                "schema": {
+                  "example": "cloudflare",
+                  "type": "string"
+                }
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "example": "max-age=15768000",
+                  "type": "string"
+                }
+              },
+              "Transfer-Encoding": {
+                "schema": {
+                  "example": "chunked",
+                  "type": "string"
+                }
+              },
+              "Vary": {
+                "schema": {
+                  "example": "Origin",
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "example": "nosniff",
+                  "type": "string"
+                }
+              },
+              "X-DNS-Prefetch-Control": {
+                "schema": {
+                  "example": "off",
+                  "type": "string"
+                }
+              },
+              "X-Download-Options": {
+                "schema": {
+                  "example": "noopen",
+                  "type": "string"
+                }
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "example": "SAMEORIGIN",
+                  "type": "string"
+                }
+              },
+              "X-XSS-Protection": {
+                "schema": {
+                  "example": "1; mode=block",
+                  "type": "string"
+                }
+              },
+              "cf-request-id": {
+                "schema": {
+                  "example": "072c9339110000166928295000000001",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "3. Get estimated price"
+      }
+    },
+    "/v1/min-amount": {
+      "get": {
+        "description": "Get the minimum payment amount for a specific pair.\n\nYou can provide both currencies in the pair or just currency_from, and we will calculate the minimum payment amount for currency_from and currency which you have specified as the outcome in the Store Settings.\n\nIn the case of several outcome wallets we will calculate the minimum amount in the same way we route your payment to a specific wallet.",
+        "operationId": "6.GetTheMinimumPaymentAmount",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "currency_from",
+            "schema": {
+              "example": "eth",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "currency_to",
+            "schema": {
+              "example": "trx",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "6. Get the minimum payment amount": {
+                    "value": {
+                      "currency_from": "eth",
+                      "currency_to": "trx",
+                      "min_amount": 0.0098927
+                    }
+                  }
+                },
+                "schema": {
+                  "properties": {
+                    "currency_from": {
+                      "example": "eth",
+                      "type": "string"
+                    },
+                    "currency_to": {
+                      "example": "trx",
+                      "type": "string"
+                    },
+                    "min_amount": {
+                      "example": 0.0098927,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "6. Get the minimum payment amount",
+            "headers": {
+              "CF-Cache-Status": {
+                "schema": {
+                  "example": "DYNAMIC",
+                  "type": "string"
+                }
+              },
+              "CF-RAY": {
+                "schema": {
+                  "example": "605abd48af901669-ARN",
+                  "type": "string"
+                }
+              },
+              "Connection": {
+                "schema": {
+                  "example": "keep-alive",
+                  "type": "string"
+                }
+              },
+              "Content-Encoding": {
+                "schema": {
+                  "example": "br",
+                  "type": "string"
+                }
+              },
+              "Date": {
+                "schema": {
+                  "example": "Tue, 22 Dec 2020 15:05:09 GMT",
+                  "type": "string"
+                }
+              },
+              "Expect-CT": {
+                "schema": {
+                  "example": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+                  "type": "string"
+                }
+              },
+              "NEL": {
+                "schema": {
+                  "example": "{\"report_to\":\"cf-nel\",\"max_age\":604800}",
+                  "type": "string"
+                }
+              },
+              "Report-To": {
+                "schema": {
+                  "example": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report?s=JE3EB5TyT0ppi%2B%2FTPlGcGUDcr2ry9EL%2BhHtpB8%2BYtZMjD087RoOl6UD9284JzS7VANH4ZivF8A7jHMl42n8GLxJL1u7fyKvugNSiViphSjgmGKc%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+                  "type": "string"
+                }
+              },
+              "Server": {
+                "schema": {
+                  "example": "cloudflare",
+                  "type": "string"
+                }
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "example": "max-age=15768000",
+                  "type": "string"
+                }
+              },
+              "Transfer-Encoding": {
+                "schema": {
+                  "example": "chunked",
+                  "type": "string"
+                }
+              },
+              "Vary": {
+                "schema": {
+                  "example": "Origin",
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "example": "nosniff",
+                  "type": "string"
+                }
+              },
+              "X-DNS-Prefetch-Control": {
+                "schema": {
+                  "example": "off",
+                  "type": "string"
+                }
+              },
+              "X-Download-Options": {
+                "schema": {
+                  "example": "noopen",
+                  "type": "string"
+                }
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "example": "SAMEORIGIN",
+                  "type": "string"
+                }
+              },
+              "X-XSS-Protection": {
+                "schema": {
+                  "example": "1; mode=block",
+                  "type": "string"
+                }
+              },
+              "cf-request-id": {
+                "schema": {
+                  "example": "072c94a16a0000166954256000000001",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "6. Get the minimum payment amount"
+      }
+    },
+    "/v1/payment/": {
+      "get": {
+        "description": "Returns the entire list of all transactions, created with certain API key.\nThe list of optional parameters:\n- limit - number of records in one page. (possible values: from 1 to 500)\n- page - the page number you want to get (possible values: from 0 to **page count - 1**)\n- sortBy - sort the received list by a paramenter. Set to **created_at** by default (possible values: payment_id, payment_status, pay_address, price_amount, price_currency, pay_amount, actually_paid, pay_currency, order_id, order_description, purchase_id, outcome_amount, outcome_currency)\n- orderBy - display the list in ascending or descending order. Set to **asc** by default (possible values: asc, desc)\n- dateFrom - select the displayed period start date (date format: YYYY-MM-DD or yy-MM-ddTHH:mm:ss.SSSZ).\n- dateTo - select the displayed period end date (date format: YYYY-MM-DD or yy-MM-ddTHH:mm:ss.SSSZ).",
+        "operationId": "7.GetListOfPayments",
+        "parameters": [
+          {
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "example": "10",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "page",
+            "schema": {
+              "example": "0",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "sortBy",
+            "schema": {
+              "example": "created_at",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "orderBy",
+            "schema": {
+              "example": "asc",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dateFrom",
+            "schema": {
+              "example": "2020-01-01",
+              "type": "string"
+            }
+          },
+          {
+            "in": "query",
+            "name": "dateTo",
+            "schema": {
+              "example": "2021-01-01",
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "7.Get list of payments": {
+                    "value": {
+                      "data": [
+                        {
+                          "actually_paid": 180,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 178.9005,
+                          "outcome_currency": "trx",
+                          "pay_address": "TNDFkiSmBQorNFacb3735q8MnT29sn8BLn",
+                          "pay_amount": 165.652609,
+                          "pay_currency": "trx",
+                          "payment_id": 5524759814,
+                          "payment_status": "finished",
+                          "price_amount": 5,
+                          "price_currency": "usd",
+                          "purchase_id": "4944856743"
+                        },
+                        {
+                          "actually_paid": 0,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 164.6248468,
+                          "outcome_currency": "trx",
+                          "pay_address": "TVKHbLc47BnMbdE7QN4X5Q1FtyZLGGiTo8",
+                          "pay_amount": 165.652609,
+                          "pay_currency": "trx",
+                          "payment_id": 5867063509,
+                          "payment_status": "expired",
+                          "price_amount": 5,
+                          "price_currency": "usd",
+                          "purchase_id": "5057851130"
+                        },
+                        {
+                          "actually_paid": 0,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 0.1687052,
+                          "outcome_currency": "btc",
+                          "pay_address": "3EZ2uTdVDAMFXTfc6uLDDKR6o8qKBZXVkj",
+                          "pay_amount": 0.17070286,
+                          "pay_currency": "btc",
+                          "payment_id": 5745459419,
+                          "payment_status": "waiting",
+                          "price_amount": 3999.5,
+                          "price_currency": "usd",
+                          "purchase_id": "5837122679"
+                        },
+                        {
+                          "actually_paid": 0,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 0.8019402,
+                          "outcome_currency": "btc",
+                          "pay_address": "394UZCUdx3NN8VDsCZW8c6AzP7cXEXA8Xq",
+                          "pay_amount": 0.8102725,
+                          "pay_currency": "btc",
+                          "payment_id": 4650948408,
+                          "payment_status": "waiting",
+                          "price_amount": 3999.5,
+                          "price_currency": "usd",
+                          "purchase_id": "5094859409"
+                        },
+                        {
+                          "actually_paid": 0,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 988.9016296,
+                          "outcome_currency": "bcd",
+                          "pay_address": "3EWJaZBaRWbPjSBTpgFcvxpnXLJzFDCHqW",
+                          "pay_amount": 993.87178656,
+                          "pay_currency": "bcd",
+                          "payment_id": 5605634688,
+                          "payment_status": "expired",
+                          "price_amount": 500,
+                          "price_currency": "usd",
+                          "purchase_id": "5817305007"
+                        },
+                        {
+                          "actually_paid": 0,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 1.8451261,
+                          "outcome_currency": "bch",
+                          "pay_address": "qzkshdh94vhdcyuejjf8ltcy2cl246hw0c68t36z69",
+                          "pay_amount": 1.85459941,
+                          "pay_currency": "bch",
+                          "payment_id": 5241856814,
+                          "payment_status": "expired",
+                          "price_amount": 500,
+                          "price_currency": "usd",
+                          "purchase_id": "5941190675"
+                        },
+                        {
+                          "actually_paid": 0,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 56.151958,
+                          "outcome_currency": "btg",
+                          "pay_address": "AYyecr8WKVpj2PNonjyUpn9sCHFyFMLdN1",
+                          "pay_amount": 56.4344495,
+                          "pay_currency": "btg",
+                          "payment_id": 5751462089,
+                          "payment_status": "expired",
+                          "price_amount": 500,
+                          "price_currency": "usd",
+                          "purchase_id": "6229667127"
+                        },
+                        {
+                          "actually_paid": 0,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 489.9433465,
+                          "outcome_currency": "dai",
+                          "pay_address": "0x6C3E920D0fdAF45c75b6c00f25Aa6a58429d4efB",
+                          "pay_amount": 496.84604252,
+                          "pay_currency": "dai",
+                          "payment_id": 6100223670,
+                          "payment_status": "expired",
+                          "price_amount": 500,
+                          "price_currency": "usd",
+                          "purchase_id": "5376931412"
+                        },
+                        {
+                          "actually_paid": 0,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 0.025819,
+                          "outcome_currency": "btc",
+                          "pay_address": "3C85TUuBKEkoZZsTawiJhYZtVVLgE4GWqj",
+                          "pay_amount": 0.02596608,
+                          "pay_currency": "btc",
+                          "payment_id": 4460859238,
+                          "payment_status": "expired",
+                          "price_amount": 500,
+                          "price_currency": "usd",
+                          "purchase_id": "5652098489"
+                        },
+                        {
+                          "actually_paid": 0,
+                          "order_description": "Apple Macbook Pro 2019 x 1",
+                          "order_id": "RGDBP-21314",
+                          "outcome_amount": 153789.0997188,
+                          "outcome_currency": "doge",
+                          "pay_address": "DLmK6vLURgHoWVZrQztthSqV71CBePG5k5",
+                          "pay_amount": 154569.92936569,
+                          "pay_currency": "doge",
+                          "payment_id": 4948632928,
+                          "payment_status": "expired",
+                          "price_amount": 500,
+                          "price_currency": "usd",
+                          "purchase_id": "4811984625"
+                        }
+                      ],
+                      "limit": 10,
+                      "page": 0,
+                      "pagesCount": 6,
+                      "total": 59
+                    }
+                  }
+                },
+                "schema": {
+                  "properties": {
+                    "data": {
+                      "items": {
+                        "properties": {
+                          "actually_paid": {
+                            "example": 180,
+                            "type": "number"
+                          },
+                          "order_description": {
+                            "example": "Apple Macbook Pro 2019 x 1",
+                            "type": "string"
+                          },
+                          "order_id": {
+                            "example": "RGDBP-21314",
+                            "type": "string"
+                          },
+                          "outcome_amount": {
+                            "example": 178.9005,
+                            "type": "number"
+                          },
+                          "outcome_currency": {
+                            "example": "trx",
+                            "type": "string"
+                          },
+                          "pay_address": {
+                            "example": "TNDFkiSmBQorNFacb3735q8MnT29sn8BLn",
+                            "type": "string"
+                          },
+                          "pay_amount": {
+                            "example": 165.652609,
+                            "type": "number"
+                          },
+                          "pay_currency": {
+                            "example": "trx",
+                            "type": "string"
+                          },
+                          "payment_id": {
+                            "example": 5524759814,
+                            "type": "number"
+                          },
+                          "payment_status": {
+                            "example": "finished",
+                            "type": "string"
+                          },
+                          "price_amount": {
+                            "example": 5,
+                            "type": "number"
+                          },
+                          "price_currency": {
+                            "example": "usd",
+                            "type": "string"
+                          },
+                          "purchase_id": {
+                            "example": "4944856743",
+                            "type": "string"
+                          }
+                        },
+                        "type": "object"
+                      },
+                      "type": "array"
+                    },
+                    "limit": {
+                      "example": 10,
+                      "type": "number"
+                    },
+                    "page": {
+                      "example": 0,
+                      "type": "number"
+                    },
+                    "pagesCount": {
+                      "example": 6,
+                      "type": "number"
+                    },
+                    "total": {
+                      "example": 59,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                }
+              }
+            },
+            "description": "7.Get list of payments",
+            "headers": {
+              "CF-Cache-Status": {
+                "schema": {
+                  "example": "DYNAMIC",
+                  "type": "string"
+                }
+              },
+              "CF-RAY": {
+                "schema": {
+                  "example": "605abddd7db41669-ARN",
+                  "type": "string"
+                }
+              },
+              "Connection": {
+                "schema": {
+                  "example": "keep-alive",
+                  "type": "string"
+                }
+              },
+              "Content-Encoding": {
+                "schema": {
+                  "example": "br",
+                  "type": "string"
+                }
+              },
+              "Date": {
+                "schema": {
+                  "example": "Tue, 22 Dec 2020 15:05:33 GMT",
+                  "type": "string"
+                }
+              },
+              "Expect-CT": {
+                "schema": {
+                  "example": "max-age=604800, report-uri=\"https://report-uri.cloudflare.com/cdn-cgi/beacon/expect-ct\"",
+                  "type": "string"
+                }
+              },
+              "NEL": {
+                "schema": {
+                  "example": "{\"report_to\":\"cf-nel\",\"max_age\":604800}",
+                  "type": "string"
+                }
+              },
+              "Report-To": {
+                "schema": {
+                  "example": "{\"endpoints\":[{\"url\":\"https:\\/\\/a.nel.cloudflare.com\\/report?s=4Sj25uNN8wdCtby0RbHx%2FbSLll68tMBpk%2FVG%2BQxVvo3wGnCf6Zu1DPFpwjsTBVasLRcoOsZVemVR6eVlvGP3HF9uJ1VOuaj%2Be9TCiwikq16Y5Vg%3D\"}],\"group\":\"cf-nel\",\"max_age\":604800}",
+                  "type": "string"
+                }
+              },
+              "Server": {
+                "schema": {
+                  "example": "cloudflare",
+                  "type": "string"
+                }
+              },
+              "Strict-Transport-Security": {
+                "schema": {
+                  "example": "max-age=15768000",
+                  "type": "string"
+                }
+              },
+              "Transfer-Encoding": {
+                "schema": {
+                  "example": "chunked",
+                  "type": "string"
+                }
+              },
+              "Vary": {
+                "schema": {
+                  "example": "Origin",
+                  "type": "string"
+                }
+              },
+              "X-Content-Type-Options": {
+                "schema": {
+                  "example": "nosniff",
+                  "type": "string"
+                }
+              },
+              "X-DNS-Prefetch-Control": {
+                "schema": {
+                  "example": "off",
+                  "type": "string"
+                }
+              },
+              "X-Download-Options": {
+                "schema": {
+                  "example": "noopen",
+                  "type": "string"
+                }
+              },
+              "X-Frame-Options": {
+                "schema": {
+                  "example": "SAMEORIGIN",
+                  "type": "string"
+                }
+              },
+              "X-XSS-Protection": {
+                "schema": {
+                  "example": "1; mode=block",
+                  "type": "string"
+                }
+              },
+              "cf-request-id": {
+                "schema": {
+                  "example": "072c94fe6c00001669e783e000000001",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "summary": "7. Get list of payments"
+      }
+    }
+  }
+}

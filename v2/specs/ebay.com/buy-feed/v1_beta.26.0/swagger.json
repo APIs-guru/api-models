@@ -1,0 +1,1328 @@
+{
+  "swagger": "2.0",
+  "schemes": [
+    "https"
+  ],
+  "host": "api.ebay.com",
+  "basePath": "/buy/feed/v1_beta",
+  "info": {
+    "contact": {
+      "name": "eBay Inc,",
+      "x-twitter": "ebay"
+    },
+    "description": "Note: This is a (Limited Release) API available only to select developers approved by business units. The Feed API provides the ability to download TSV_GZIP feed files containing eBay items and an hourly snapshot file of the items that have changed within an hour for a specific category, date and marketplace. In addition to the API, there is an open source Feed SDK written in Java that downloads, combines files into a single file when needed, and unzips the entire feed file. It also lets you specify field filters to curate the items in the file.",
+    "license": {
+      "name": "eBay API License Agreement",
+      "url": "https://go.developer.ebay.com/api-license-agreement"
+    },
+    "title": "Item Feed Service",
+    "version": "v1_beta.26.0",
+    "x-apisguru-categories": [
+      "ecommerce"
+    ],
+    "x-logo": {
+      "backgroundColor": "#FFFFFF",
+      "url": "https://api.apis.guru/v2/cache/logo/https_twitter.com_ebay_profile_image.jpeg"
+    },
+    "x-origin": [
+      {
+        "format": "swagger",
+        "url": "https://developer.ebay.com/api-docs/master/buy/feed/openapi/2/buy_feed_v1_beta_oas2.json",
+        "version": "2.0"
+      }
+    ],
+    "x-providerName": "ebay.com",
+    "x-serviceName": "buy-feed"
+  },
+  "securityDefinitions": {
+    "Client Credentials": {
+      "description": "The security definitions for this API. Please check individual operations for applicable scopes.",
+      "flow": "application",
+      "scopes": {
+        "https://api.ebay.com/oauth/api_scope/buy.item.feed": "View curated feeds of eBay items"
+      },
+      "tokenUrl": "https://api.ebay.com/identity/v1/oauth2/token",
+      "type": "oauth2"
+    }
+  },
+  "paths": {
+    "/item": {
+      "get": {
+        "description": "This method lets you download a TSV_GZIP (tab separated value gzip) Item feed file. The feed file contains all the items from all the child categories of the specified category. The first line of the file is the header, which labels the columns and indicates the order of the values on each line. Each header is described in the Response fields section. There are two types of item feed files generated: A daily Item feed file containing all the newly listed items for a specific category, date, and marketplace (feed_scope = NEWLY_LISTED) A weekly Item Bootstrap feed file containing all the items in a specific category and marketplace (feed_scope = ALL_ACTIVE) Note: Filters are applied to the feed files. For details, see Feed File Filters. When curating the items returned, be sure to code as if these filters are not applied as they can be changed or removed in the future. URLs for this method Production URL: https://api.ebay.com/buy/feed/v1_beta/item? Sandbox URL: https://api.sandbox.ebay.com/buy/feed/v1_beta/item? Downloading feed files Item feed files are binary gzip files. If the file is larger than 100 MB, the download must be streamed in chunks. You specify the size of the chunks in bytes using the Range request header. The Content-range response header indicates where in the full resource this partial chunk of data belongs and the total number of bytes in the file. For more information about using these headers, see Retrieving a gzip feed file. In addition to the API, there is an open source Feed SDK written in Java that downloads, combines files into a single file when needed, and unzips the entire feed file. It also lets you specify field filters to curate the items in the file. Note: The response is always a TSV_GZIP file. However for documentation purposes, the response is shown as JSON fields so that the value returned in each column can be explained. The order of the response fields, shows you the order of the columns in the feed file. Restrictions For a list of supported sites and other restrictions, see API Restrictions.",
+        "operationId": "getItemFeed",
+        "parameters": [
+          {
+            "description": "The ID of the eBay marketplace where the item is hosted. Note: This value is case sensitive. For example: &nbsp;&nbsp;X-EBAY-C-MARKETPLACE-ID = EBAY_US For a list of supported sites see, API Restrictions.",
+            "in": "header",
+            "name": "X-EBAY-C-MARKETPLACE-ID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "This header specifies the range in bytes of the chunks of the gzip file being returned. Format: bytes=startpos-endpos For example, the following retrieves the first 10 MBs of the feed file. &nbsp;&nbsp;Range bytes=0-10485760 For more information about using this headers, see Retrieving a gzip feed file. Maximum: 100 MB (10MB in the Sandbox)",
+            "in": "header",
+            "name": "Range",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Specifies the type of feed file to return. Valid Values: NEWLY_LISTED - Returns the daily Item feed file containing all Good 'Til Cancelled items that were listed on the day specified by the date parameter in the category specified by the category_id parameter. /item?feed_scope=NEWLY_LISTED&amp;category_id=15032&amp;date=20170925 ALL_ACTIVE - Returns the weekly Item Bootstrap feed file containing all the Good 'Til Cancelled items in the category specified by the category_id parameter. Note: Bootstrap files are generated every Tuesday and the file is available on Wednesday. However, the exact time the file is available can vary so we recommend you download the Bootstrap file on Thursday. The items in the file are the items that were in the specified category on Sunday. /item?feed_scope=ALL_ACTIVE&amp;category_id=15032",
+            "in": "query",
+            "name": "feed_scope",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "An eBay top-level category ID of the items to be returned in the feed file. The list of eBay category IDs changes over time and category IDs are not the same across all the eBay marketplaces. To get a list of the top-level categories for a marketplaces, you can use the Taxonomy API getCategoryTree method. This method retrieves the complete category tree for the marketplace. The top-level categories are identified by the categoryTreeNodeLevel field. For example: &nbsp;&nbsp;&quot;categoryTreeNodeLevel&quot;: 1 For details see Get Categories for Buy APIs. Restriction: Must be a top-level (L1) category",
+            "in": "query",
+            "name": "category_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The date of the daily Item feed file (feed_scope=NEWLY_LISTED) you want. The date is required only for the daily Item feed file. If you specify a date for the Item Bootstrap file (feed_scope=ALL_ACTIVE), the date is ignored and the latest file is returned. The date the Item Bootstrap feed file was generated is returned in the Last-Modified response header. The Item feed files are generated every day and there are 14 daily files available. Note: The daily Item feed files are available each day after 9AM MST (US Mountain Standard Time), which is -7 hours UTC time. There is a 48 hour latency when generating the Item feed files. This means you can download the file for July 10th on July 12 after 9AM MST. Note: For categories with a large number of items, the latency can be up to 72 hours. Format: yyyyMMdd Requirements: Required when feed_scope=NEWLY_LISTED Must be within 3-14 days in the past",
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json",
+          "text/tab-separated-values"
+        ],
+        "responses": {
+          "200": {
+            "description": "Partial Content",
+            "headers": {
+              "Content-range": {
+                "description": "The content-range response header indicates where in the full resource this partial chunk of data belongs. It returns the lower and upper values in bytes (specified by the Range header) of the chunk and the total size of the file being downloaded in bytes. Maximum range: 100 MB The following is an example of a content-range response, where 0-10 is the lower and upper limit in bytes and 1000 is the total size of the file in bytes. &nbsp;&nbsp;0-10/1000 The following example of a content-range response indicates the value of the Range header is invalid and a 416 status code is returned. &nbsp;&nbsp; */1000 For more information and examples, see Retrieving a gzip feed file.",
+                "type": "string"
+              },
+              "Last-Modified": {
+                "description": "Returns the generated date of the feed file, which will be the latest file available. For example: Last-Modified&nbsp;&nbsp;Wed, 21 Oct 2015 07:28:00 GMT",
+                "type": "string"
+              }
+            },
+            "schema": {
+              "$ref": "#/definitions/ItemResponse"
+            }
+          },
+          "204": {
+            "description": "No Content <br />This code is returned when there are no items that meet the criteria for this feed file. See <a href=\"/api-docs/buy/static/api-feed.html#feed-filters\">Feed File Filters</a> for details."
+          },
+          "206": {
+            "description": "Partial Content",
+            "headers": {
+              "Content-range": {
+                "description": "The content-range response header indicates where in the full resource this partial chunk of data belongs. It returns the lower and upper values in bytes (specified by the Range header) of the chunk and the total size of the file being downloaded in bytes. Maximum range: 100 MB The following is an example of a content-range response, where 0-10 is the lower and upper limit in bytes and 1000 is the total size of the file in bytes. &nbsp;&nbsp;0-10/1000 The following example of a content-range response indicates the value of the Range header is invalid and a 416 status code is returned. &nbsp;&nbsp; */1000 For more information and examples, see Retrieving a gzip feed file.",
+                "type": "string"
+              },
+              "Last-Modified": {
+                "description": "Returns the generated date of the feed file, which will be the latest file available. For example: Last-Modified&nbsp;&nbsp;Wed, 21 Oct 2015 07:28:00 GMT",
+                "type": "string"
+              }
+            },
+            "schema": {
+              "$ref": "#/definitions/ItemResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "x-response-codes": {
+              "errors": {
+                "13000": {
+                  "category": "REQUEST",
+                  "description": "The request contains data that is invalid. Correct the request and submit the call again. For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13003": {
+                  "category": "REQUEST",
+                  "description": "The 'feed_scope' {feed_scope} submitted is invalid. Valid values: {feedScopes}",
+                  "domain": "API_FEED"
+                },
+                "13004": {
+                  "category": "REQUEST",
+                  "description": "The 'category_id' {category_id} submitted is invalid. See the API documentation for help on how to find category IDs.",
+                  "domain": "API_FEED"
+                },
+                "13005": {
+                  "category": "REQUEST",
+                  "description": "The 'date' {feedDate} submitted is invalid. Valid values: {earliestDate} to {latestDate} in the past. The format is yyyyMMdd.",
+                  "domain": "API_FEED"
+                },
+                "13007": {
+                  "category": "REQUEST",
+                  "description": "The feed file requested cannot be found. It is possible the file requested is in the process of being generated. Either change the date or try the call again later.",
+                  "domain": "API_FEED"
+                },
+                "13009": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'feed_scope' query parameter is missing. Valid values: {feedScopes}",
+                  "domain": "API_FEED"
+                },
+                "13010": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'category_id' query parameter is missing.",
+                  "domain": "API_FEED"
+                },
+                "13011": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'date' query parameter is missing. Valid values: {earliestDate} to {latestDate} days in the past. The format is yyyyMMdd.",
+                  "domain": "API_FEED"
+                },
+                "13012": {
+                  "category": "REQUEST",
+                  "description": "The marketplace Id {marketplaceId} is invalid. Valid values: {allowedMarketplaces}",
+                  "domain": "API_FEED"
+                },
+                "13013": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'X-EBAY-C-MARKETPLACE-ID' header is missing. Valid values: {allowedMarketplaces}",
+                  "domain": "API_FEED"
+                },
+                "13014": {
+                  "category": "REQUEST",
+                  "description": "The marketplace Id {marketplaceId} is not supported. Valid values: {allowedMarketplaces}",
+                  "domain": "API_FEED"
+                },
+                "13015": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'Range' request header is missing. For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13016": {
+                  "category": "REQUEST",
+                  "description": "The 'Range' request header format is invalid. Format: 'bytes=start position-end position'.  For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13017": {
+                  "category": "REQUEST",
+                  "description": "The 'Range' header is invalid. Please verify that the start and end positions are correct. For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13018": {
+                  "category": "REQUEST",
+                  "description": "The start position in the range header is invalid.",
+                  "domain": "API_FEED"
+                },
+                "13019": {
+                  "category": "REQUEST",
+                  "description": "The end position in the range header is invalid.",
+                  "domain": "API_FEED"
+                },
+                "13022": {
+                  "category": "REQUEST",
+                  "description": "The 'category_id' {category_id} submitted is not supported.",
+                  "domain": "API_FEED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "x-response-codes": {
+              "errors": {
+                "13023": {
+                  "category": "BUSINESS",
+                  "description": "Insufficient permissions to access this API for the marketplace {marketplaceId}. Please contact eBay Technical Support for further assistance.",
+                  "domain": "API_FEED"
+                },
+                "13024": {
+                  "category": "BUSINESS",
+                  "description": "Insufficient permissions to access this API for the category {category_id}. Please contact eBay Technical Support for further assistance.",
+                  "domain": "API_FEED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Conflict"
+          },
+          "416": {
+            "description": "Range not satisfiable"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "x-response-codes": {
+              "errors": {
+                "13006": {
+                  "category": "APPLICATION",
+                  "description": "There was a problem with an eBay internal system or process. Wait a few minutes and retry the call. If that doesn't work, contact eBay Support.",
+                  "domain": "API_FEED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Client Credentials": [
+              "https://api.ebay.com/oauth/api_scope/buy.item.feed"
+            ]
+          }
+        ],
+        "tags": [
+          "item"
+        ]
+      }
+    },
+    "/item_group": {
+      "get": {
+        "description": "This method lets you download a TSV_GZIP (tab separated value gzip) Item Group feed file. An item group is an item that has various aspect differences, such as color, size, storage capacity, etc. There are two types of item group feed files generated: A daily Item Group feed file containing the item group variation information associated with items returned in the Item feed file for a specific day, category, and marketplace. (feed_scope = NEWLY_LISTED) A weekly Item Group Bootstrap feed file containing all the item group variation information associated with items returned in the Item Bootstrap feed file for all the items in a specific category. (feed_scope = ALL_ACTIVE) Note: Filters are applied to the feed files. For details, see Feed File Filters. When curating the items returned, be sure to code as if these filters are not applied as they can be changed or removed in the future. The contents of these feed files are based on the contents of the corresponding daily Item or Item Bootstrap feed file. When a new Item or Item Bootstrap feed file is generated, the service reads the file and if an item in the file has a primaryItemGroupId value, which indicates the item is part of an item group, it uses that value to return the item group (parent item) information for that item in the corresponding Item Group or Item Group Bootstrap feed file. This information includes the name/value pair of the aspects of the items in this group returned in the variesByLocalizedAspects column. For example, if the item was a shirt some of the variation names could be Size, Color, etc. Also the images for the various aspects are returned in the additionalImageUrls column. The first line in any feed file is the header, which labels the columns and indicates the order of the values on each line. Each header is described in the Response fields section. Combining the Item Group and Item feed files The Item Group or Item Group Bootstrap feed file contains details about the item group (parent item), including the item group ID itemGroupId. You match the value of itemGroupId from the Item Group feed file with the value of primaryItemGroupId from the corresponding daily Item or Item Bootstrap feed file. URLs for this method Production URL: https://api.ebay.com/buy/feed/v1_beta/item_group? Sandbox URL: https://api.sandbox.ebay.com/buy/feed/v1_beta/item_group? Downloading feed files Item Group feed files are binary gzip files. If the file is larger than 100 MB, the download must be streamed in chunks. You specify the size of the chunks in bytes using the Range request header. The content-range response header indicates where in the full resource this partial chunk of data belongs and the total number of bytes in the file. For more information about using these headers, see Retrieving a gzip feed file. Note: The response is always only a TSV_GZIP file. However for documentation purposes, the response is shown as JSON fields so that the value returned in each column can be explained. The order of the response fields, shows you the order of the columns in the feed file. Restrictions For a list of supported sites and other restrictions, see API Restrictions.",
+        "operationId": "getItemGroupFeed",
+        "parameters": [
+          {
+            "description": "The ID of the eBay marketplace where the item is hosted. Note: This value is case sensitive. For example: &nbsp;&nbsp;X-EBAY-C-MARKETPLACE-ID = EBAY_US For a list of supported sites see, API Restrictions.",
+            "in": "header",
+            "name": "X-EBAY-C-MARKETPLACE-ID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "This header specifies the range in bytes of the chunks of the gzip file being returned. Format: bytes=startpos-endpos For example, the following retrieves the first 10 MBs of the feed file. &nbsp;&nbsp;Range bytes=0-10485760 For more information about using this headers, see Retrieving a gzip feed file. Maximum: 100 MB (10MB in the Sandbox)",
+            "in": "header",
+            "name": "Range",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Specifies the type of file to return. Valid Values: NEWLY_LISTED - Returns the Item Group feed file containing the item group variation information for items in the daily Item feed file that were associated with an item group. The items in this type of Item feed file are items that were listed on the day specified by the date parameter in the category specified by the category_id parameter. /item_group?feed_scope=NEWLY_LISTED&amp;category_id=15032&amp;date=20170925 ALL_ACTIVE - Returns the weekly Item Group Bootstrap file containing the item group variation information for items in the weekly Item Bootstrap feed file that were associated with an item group. The items are Good 'Til Cancelled items in the category specified by the category_id parameter. Note: Bootstrap files are generated every Tuesday and the file is available on Wednesday. However, the exact time the file is available can vary so we recommend you download the Bootstrap file on Thursday. The item groups in the file are for the items that were in the specified category on Sunday. /item_group?feed_scope=ALL_ACTIVE&amp;category_id=15032",
+            "in": "query",
+            "name": "feed_scope",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "An eBay top-level category ID of the items to be returned in the feed file. The list of eBay category IDs changes over time and category IDs are not the same across all the eBay marketplaces. To get a list of the top-level categories for a marketplaces, you can use the Taxonomy API getCategoryTree method. This method retrieves the complete category tree for the marketplace. The top-level categories are identified by the categoryTreeNodeLevel field. For example: &nbsp;&nbsp;&quot;categoryTreeNodeLevel&quot;: 1 For details see Get Categories for Buy APIs. Restriction: Must be a top-level category",
+            "in": "query",
+            "name": "category_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The date of the daily Item Group feed file (feed_scope=NEWLY_LISTED) you want. The date is required only for the daily Item Group feed file. If you specify a date for the Item Group Bootstrap file (feed_scope=ALL_ACTIVE), the date is ignored and the latest file is returned. The date the Item Group Bootstrap feed file was generated is returned in the Last-Modified response header. The Item Group feed files are generated every day and there are 14 daily files available. There is a 48 hour latency when generating the files. This means on July 10, the latest feed file you can download is July 8. Note: The generated files are stored using MST (US Mountain Standard Time), which is -7 hours UTC time. Format: yyyyMMdd Requirement: Requirements: Required only when feed_scope=NEWLY_LISTED Must be within 3-14 days in the past",
+            "in": "query",
+            "name": "date",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json",
+          "text/tab-separated-values"
+        ],
+        "responses": {
+          "200": {
+            "description": "Partial Content",
+            "headers": {
+              "Content-range": {
+                "description": "The content-range response header indicates where in the full resource this partial chunk of data belongs. It returns the lower and upper values in bytes (specified by the Range header) of the chunk and the total size of the file being downloaded in bytes. Maximum range: 100 MB The following is an example of a content-range response, where 0-10 is the lower and upper limit in bytes and 1000 is the total size of the file in bytes. &nbsp;&nbsp;0-10/1000 The following example of a content-range response indicates the value of the Range header is invalid and a 416 status code is returned. &nbsp;&nbsp; */1000 For more information and examples, see Retrieving a gzip feed file.",
+                "type": "string"
+              },
+              "Last-Modified": {
+                "description": "Returns the generated date of the feed file, which will be the latest file available. For example: Last-Modified&nbsp;&nbsp;Wed, 21 Oct 2015 07:28:00 GMT",
+                "type": "string"
+              }
+            },
+            "schema": {
+              "$ref": "#/definitions/ItemGroupResponse"
+            }
+          },
+          "204": {
+            "description": "No Content <br />This code is returned when there are no items that meet the criteria for this feed file. See <a href=\"/api-docs/buy/static/api-feed.html#feed-filters\">Feed File Filters</a> for details."
+          },
+          "206": {
+            "description": "Partial Content",
+            "headers": {
+              "Content-range": {
+                "description": "The content-range response header indicates where in the full resource this partial chunk of data belongs. It returns the lower and upper values in bytes (specified by the Range header) of the chunk and the total size of the file being downloaded in bytes. Maximum range: 100 MB The following is an example of a content-range response, where 0-10 is the lower and upper limit in bytes and 1000 is the total size of the file in bytes. &nbsp;&nbsp;0-10/1000 The following example of a content-range response indicates the value of the Range header is invalid and a 416 status code is returned. &nbsp;&nbsp; */1000 For more information and examples, see Retrieving a gzip feed file.",
+                "type": "string"
+              },
+              "Last-Modified": {
+                "description": "Returns the generated date of the feed file, which will be the latest file available. For example: Last-Modified&nbsp;&nbsp;Wed, 21 Oct 2015 07:28:00 GMT",
+                "type": "string"
+              }
+            },
+            "schema": {
+              "$ref": "#/definitions/ItemGroupResponse"
+            }
+          },
+          "400": {
+            "description": "Bad request",
+            "x-response-codes": {
+              "errors": {
+                "13000": {
+                  "category": "REQUEST",
+                  "description": "The request contains data that is invalid. Correct the request and submit the call again. For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13003": {
+                  "category": "REQUEST",
+                  "description": "The 'feed_scope' {feed_scope} submitted is invalid. Valid values: {feedScopes}",
+                  "domain": "API_FEED"
+                },
+                "13004": {
+                  "category": "REQUEST",
+                  "description": "The 'category_id' {category_id} submitted is invalid. See the API documentation for help on how to find category IDs.",
+                  "domain": "API_FEED"
+                },
+                "13005": {
+                  "category": "REQUEST",
+                  "description": "The 'date' {feedDate} submitted is invalid. Valid values: {earliestDate} to {latestDate} in the past. The format is yyyyMMdd.",
+                  "domain": "API_FEED"
+                },
+                "13007": {
+                  "category": "REQUEST",
+                  "description": "The feed file requested cannot be found. It is possible the file requested is in the process of being generated. Either change the date or try the call again later.",
+                  "domain": "API_FEED"
+                },
+                "13009": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'feed_scope' query parameter is missing. Valid values: {feedScopes}",
+                  "domain": "API_FEED"
+                },
+                "13010": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'category_id' query parameter is missing.",
+                  "domain": "API_FEED"
+                },
+                "13011": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'date' query parameter is missing. Valid values: {earliestDate} to {latestDate} days in the past. The format is yyyyMMdd.",
+                  "domain": "API_FEED"
+                },
+                "13012": {
+                  "category": "REQUEST",
+                  "description": "The marketplace Id {marketplaceId} is invalid. Valid values: {allowedMarketplaces}",
+                  "domain": "API_FEED"
+                },
+                "13013": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'X-EBAY-C-MARKETPLACE-ID' header is missing. Valid values: {allowedMarketplaces}",
+                  "domain": "API_FEED"
+                },
+                "13014": {
+                  "category": "REQUEST",
+                  "description": "The marketplace Id {marketplaceId} is not supported. Valid values: {allowedMarketplaces}",
+                  "domain": "API_FEED"
+                },
+                "13015": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'Range' request header is missing. For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13016": {
+                  "category": "REQUEST",
+                  "description": "The 'Range' request header format is invalid. Format: 'bytes=start position-end position'.  For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13017": {
+                  "category": "REQUEST",
+                  "description": "The 'Range' header is invalid. Please verify that the start and end positions are correct. For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13018": {
+                  "category": "REQUEST",
+                  "description": "The start position in the range header is invalid.",
+                  "domain": "API_FEED"
+                },
+                "13019": {
+                  "category": "REQUEST",
+                  "description": "The end position in the range header is invalid.",
+                  "domain": "API_FEED"
+                },
+                "13022": {
+                  "category": "REQUEST",
+                  "description": "The 'category_id' {category_id} submitted is not supported.",
+                  "domain": "API_FEED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "x-response-codes": {
+              "errors": {
+                "13023": {
+                  "category": "BUSINESS",
+                  "description": "Insufficient permissions to access this API for the marketplace {marketplaceId}. Please contact eBay Technical Support for further assistance.",
+                  "domain": "API_FEED"
+                },
+                "13024": {
+                  "category": "BUSINESS",
+                  "description": "Insufficient permissions to access this API for the category {category_id}. Please contact eBay Technical Support for further assistance.",
+                  "domain": "API_FEED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Conflict"
+          },
+          "416": {
+            "description": "Range not satisfiable"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "x-response-codes": {
+              "errors": {
+                "13006": {
+                  "category": "APPLICATION",
+                  "description": "There was a problem with an eBay internal system or process. Wait a few minutes and retry the call. If that doesn't work, contact eBay Support.",
+                  "domain": "API_FEED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Client Credentials": [
+              "https://api.ebay.com/oauth/api_scope/buy.item.feed"
+            ]
+          }
+        ],
+        "tags": [
+          "item_group"
+        ]
+      }
+    },
+    "/item_snapshot": {
+      "get": {
+        "description": "The Hourly Snapshot feed file is generated each hour every day for most categories. This method lets you download an Hourly Snapshot TSV_GZIP (tab-separated value gzip) feed file containing the details of all the items that have changed within the specified day and hour for a specific category. This means to generate the 8AM file of items that have changed from 8AM and 8:59AM, the service starts at 9AM. You can retrieve the 8AM snapshot file at 10AM. Snapshot feeds now include new listings. You can check itemCreationDate to identify listings that were newly created within the specified hour. Note: Filters are applied to the feed files. For details, see Feed File Filters. When curating the items returned, be sure to code as if these filters are not applied as they can be changed or removed in the future. You can use the response from this method to update the item details of items stored in your database. By looking at the value of itemSnapshotDate for a given item, you will be able to tell which information is the latest. Important: When the value of the availability column is UNAVAILABLE, only the itemId and availability columns are populated. URLs for this method Production URL: https://api.ebay.com/buy/feed/v1_beta/item_snapshot? Sandbox URL: https://api.sandbox.ebay.com/buy/feed/v1_beta/item_snapshot? Downloading feed files Hourly snapshot feed files are binary gzip files. If the file is larger than 100 MB, the download must be streamed in chunks. You specify the size of the chunks in bytes using the Range request header. The Content-range response header indicates where in the full resource this partial chunk of data belongs and the total number of bytes in the file. For more information about using these headers, see Retrieving a gzip feed file. Note: The response is always a TSV_GZIP file. However for documentation purposes, the response is shown as JSON fields so that the value returned in each column can be explained. The order of the response fields, shows you the order of the columns in the feed file. Restrictions For a list of supported sites and other restrictions, see API Restrictions.",
+        "operationId": "getItemSnapshotFeed",
+        "parameters": [
+          {
+            "description": "The ID of the eBay marketplace where the item is hosted. Note: This value is case sensitive. For example: &nbsp;&nbsp;X-EBAY-C-MARKETPLACE-ID = EBAY_US For a list of supported sites see, API Restrictions.",
+            "in": "header",
+            "name": "X-EBAY-C-MARKETPLACE-ID",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "This header specifies the range in bytes of the chunks of the gzip file being returned. Format: bytes=startpos-endpos For example, the following retrieves the first 10 MBs of the feed file. &nbsp;&nbsp;Range bytes=0-10485760 For more information about using this headers, see Retrieving a gzip feed file. Maximum: 100 MB (10MB in the Sandbox)",
+            "in": "header",
+            "name": "Range",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "An eBay top-level category ID of the items to be returned in the feed file. The list of eBay category IDs changes over time and category IDs are not the same across all the eBay marketplaces. To get a list of the top-level categories for a marketplace, you can use the Taxonomy API getCategoryTree method. This method retrieves the complete category tree for the marketplace. The top-level categories are identified by the categoryTreeNodeLevel field. For example: &nbsp;&nbsp;&quot;categoryTreeNodeLevel&quot;: 1 For details see Get Categories for Buy APIs. Restriction: Must be a top-level category",
+            "in": "query",
+            "name": "category_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The date and hour of the snapshot feed file you want. Each file contains the items that changed within the hour in the specified category. So, the 9AM file contains the items that changed between 9AM and 9:59AM on the day specified. It takes 2 hours to generate a snapshot file, which means to get the file for 9AM the earliest you could submit the call is at 11AM. There are 7 days of Hourly Snapshot feed files available. Note: The Feed API uses GMT, so you must convert your local time to GMT. For example, if you lived in California and wanted the September 15th 7pm file, you would submit the following call: item_snapshot?category_id=625&amp;snapshot_date=2017-09-16T02:00:00.000Z Format: UTC format (yyyy-MM-ddThh:00:00.000Z) Files are generated on the hour, so minutes and seconds are always zeros.",
+            "in": "query",
+            "name": "snapshot_date",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json",
+          "text/tab-separated-values"
+        ],
+        "responses": {
+          "200": {
+            "description": "Partial Content",
+            "headers": {
+              "Content-range": {
+                "description": "The content-range response header indicates where in the full resource this partial chunk of data belongs. It returns the lower and upper values in bytes (specified by the Range header) of the chunk and the total size of the file being downloaded in bytes. Maximum range: 100 MB The following is an example of a content-range response, where 0-10 is the lower and upper limit in bytes and 1000 is the total size of the file in bytes. &nbsp;&nbsp;0-10/1000 The following example of a content-range response indicates the value of the Range header is invalid and a 416 status code is returned. &nbsp;&nbsp; */1000 For more information and examples, see Retrieving a gzip feed file.",
+                "type": "string"
+              },
+              "Last-Modified": {
+                "description": "Returns the generated date of the feed file, which will be the latest file available. For example: Last-Modified&nbsp;&nbsp;Wed, 21 Oct 2015 07:28:00 GMT",
+                "type": "string"
+              }
+            },
+            "schema": {
+              "$ref": "#/definitions/ItemSnapshotResponse"
+            }
+          },
+          "204": {
+            "description": "No Content <br />This code is returned when there are no items that meet the criteria for this feed file. See <a href=\"/api-docs/buy/static/api-feed.html#feed-filters\">Feed File Filters</a> for details."
+          },
+          "206": {
+            "description": "Partial Content",
+            "headers": {
+              "Content-range": {
+                "description": "The content-range response header indicates where in the full resource this partial chunk of data belongs. It returns the lower and upper values in bytes (specified by the Range header) of the chunk and the total size of the file being downloaded in bytes. Maximum range: 100 MB The following is an example of a content-range response, where 0-10 is the lower and upper limit in bytes and 1000 is the total size of the file in bytes. &nbsp;&nbsp;0-10/1000 The following example of a content-range response indicates the value of the Range header is invalid and a 416 status code is returned. &nbsp;&nbsp; */1000 For more information and examples, see Retrieving a gzip feed file.",
+                "type": "string"
+              },
+              "Last-Modified": {
+                "description": "Returns the generated date of the feed file, which will be the latest file available. For example: Last-Modified&nbsp;&nbsp;Wed, 21 Oct 2015 07:28:00 GMT",
+                "type": "string"
+              }
+            },
+            "schema": {
+              "$ref": "#/definitions/ItemSnapshotResponse"
+            }
+          },
+          "400": {
+            "description": "Bad Request",
+            "x-response-codes": {
+              "errors": {
+                "13000": {
+                  "category": "REQUEST",
+                  "description": "The request contains data that is invalid. Correct the request and submit the call again. For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13004": {
+                  "category": "REQUEST",
+                  "description": "The 'category_id' {category_id} submitted is invalid. See the API documentation for help on how to find category IDs.",
+                  "domain": "API_FEED"
+                },
+                "13007": {
+                  "category": "REQUEST",
+                  "description": "The feed file requested cannot be found. It is possible the file requested is in the process of being generated. Either change the date or try the call again later.",
+                  "domain": "API_FEED"
+                },
+                "13010": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'category_id' query parameter is missing.",
+                  "domain": "API_FEED"
+                },
+                "13012": {
+                  "category": "REQUEST",
+                  "description": "The marketplace Id {marketplaceId} is invalid. Valid values: {allowedMarketplaces}",
+                  "domain": "API_FEED"
+                },
+                "13013": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'X-EBAY-C-MARKETPLACE-ID' header is missing. Valid values: {allowedMarketplaces}",
+                  "domain": "API_FEED"
+                },
+                "13014": {
+                  "category": "REQUEST",
+                  "description": "The marketplace Id {marketplaceId} is not supported. Valid values: {allowedMarketplaces}",
+                  "domain": "API_FEED"
+                },
+                "13015": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'Range' request header is missing. For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13016": {
+                  "category": "REQUEST",
+                  "description": "The 'Range' request header format is invalid. Format: 'bytes=start position-end position'.  For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13017": {
+                  "category": "REQUEST",
+                  "description": "The 'Range' header is invalid. Please verify that the start and end positions are correct. For help, see the API Reference documentation for this call.",
+                  "domain": "API_FEED"
+                },
+                "13018": {
+                  "category": "REQUEST",
+                  "description": "The start position in the range header is invalid.",
+                  "domain": "API_FEED"
+                },
+                "13019": {
+                  "category": "REQUEST",
+                  "description": "The end position in the range header is invalid.",
+                  "domain": "API_FEED"
+                },
+                "13020": {
+                  "category": "REQUEST",
+                  "description": "The mandatory 'snapshot_date' query parameter is missing.",
+                  "domain": "API_FEED"
+                },
+                "13021": {
+                  "category": "REQUEST",
+                  "description": "The 'snapshot_date' query parameter is invalid.Valid format is 'yyyy-MM-ddTHH:mm:ss'",
+                  "domain": "API_FEED"
+                },
+                "13022": {
+                  "category": "REQUEST",
+                  "description": "The 'category_id' {category_id} submitted is not supported.",
+                  "domain": "API_FEED"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden",
+            "x-response-codes": {
+              "errors": {
+                "13023": {
+                  "category": "BUSINESS",
+                  "description": "Insufficient permissions to access this API for the marketplace {marketplaceId}. Please contact eBay Technical Support for further assistance.",
+                  "domain": "API_FEED"
+                },
+                "13024": {
+                  "category": "BUSINESS",
+                  "description": "Insufficient permissions to access this API for the category {category_id}. Please contact eBay Technical Support for further assistance.",
+                  "domain": "API_FEED"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Not found"
+          },
+          "409": {
+            "description": "Conflict"
+          },
+          "416": {
+            "description": "Range not satisfiable"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "x-response-codes": {
+              "errors": {
+                "13006": {
+                  "category": "APPLICATION",
+                  "description": "There was a problem with an eBay internal system or process. Wait a few minutes and retry the call. If that doesn't work, contact eBay Support.",
+                  "domain": "API_FEED"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "Client Credentials": [
+              "https://api.ebay.com/oauth/api_scope/buy.item.feed"
+            ]
+          }
+        ],
+        "tags": [
+          "item_snapshot"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "Item": {
+      "description": "The type that defines the columns returned in the <b>Item</b> feed file.",
+      "properties": {
+        "acceptedPaymentMethods": {
+          "description": "Indicates the credit card service that will be used to process the transaction. If this column contains PAYPAL, you can use the Buy Order API to checkout and purchase the item. If this column is empty, you must use another method for checkout.",
+          "type": "string"
+        },
+        "additionalImageUrls": {
+          "description": "A pipe separated (|) list of URLs for the additional images of the item. These images are in addition to the primary image, which is returned in the imageUrl column. Note: This column can contain multiple values.",
+          "type": "string"
+        },
+        "additionalShippingCostPerUnit": {
+          "description": "Any per item additional shipping costs for a multi-item purchase. For example, let's say the shipping cost for a power cord is $3. But for an additional cord, the shipping cost is only $1. So if you bought 3 cords, the shippingCost would be $3 and this value would be $2 ($1 for each additional item).",
+          "type": "string"
+        },
+        "alerts": {
+          "description": "A pipe-separated list of alerts available for the item. For example, if the DELAYED_DELIVERY alert was returned for an item, it would indicate a delay in shipping by the seller.",
+          "type": "string"
+        },
+        "availability": {
+          "description": "An enumeration value representing the item's availability (possibility of being purchased). Values: AVAILABLE TEMPORARILY_UNAVAILABLE UNAVAILABLE Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:AvailabilityEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "availabilityThreshold": {
+          "description": "This column has a value only when the seller sets their 'display item quantity' preference to Display &quot;More than 10 available&quot; in your listing (if applicable). The value of this column will be &quot;10&quot;, which is the threshold value. Code so that your app gracefully handles any future changes to this value.",
+          "type": "integer"
+        },
+        "availabilityThresholdType": {
+          "description": "This column has a value only when the seller sets their Display Item Quantity preference to Display &quot;More than 10 available&quot; in your listing (if applicable). The value of this column will be MORE_THAN. This indicates that the seller has more than the 'Display Item Quantity', which is 10, in stock for this item. The following are the Display Item Quantity preferences the seller can set. Display &quot;More than 10 available&quot; in your listing (if applicable) If the seller enables this preference, this column will have a value as long as there are more than 10 of this item in inventory. If the quantity is equal to 10 or drops below 10, this column will be null and the estimated quantity of the item is returned in the estimatedAvailableQuantity column. Display the exact quantity in your items If the seller enables this preference, the availabilityThresholdType and availabilityThreshold columns will be null and the estimated quantity of the item is returned in the estimatedAvailableQuantity column. Note: Because the quantity of an item can change several times within a second, it is impossible to return the exact quantity. Code so that your app gracefully handles any future changes to these preferences. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:AvailabilityThresholdEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "brand": {
+          "description": "The name brand of the item, such as Nike, Apple, etc.",
+          "type": "string"
+        },
+        "buyingOptions": {
+          "description": "A comma-separated list of the purchase options available for the item, such as FIXED_PRICE, AUCTION. FIXED_PRICE - Returned for fixed-price items (non-auction) AUCTION - Returned for auction items without Buy It Now feature FIXED_PRICE and AUCTION - Returned for auction items enabled with the Buy It Now feature Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "category": {
+          "description": "The label of the category. For example: Toys &amp; Hobbies|Action Figures|Comic Book Heroes",
+          "type": "string"
+        },
+        "categoryId": {
+          "description": "The ID of the category of the item. For example: The ID for Toys &amp; Hobbies|Action Figures|Comic Book Heroes is 158671.",
+          "type": "string"
+        },
+        "condition": {
+          "description": "The text describing the condition of the item. For a list of condition names, see Item Condition IDs and Names. Note: In all eBay marketplaces, Condition ID 2000 now maps to an item condition of 'Certified Refurbished', and not 'Manufacturer Refurbished'. To list an item as 'Certified Refurbished', a seller must be pre-qualified by eBay for this feature. Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "conditionId": {
+          "description": "The identifier of the condition of the item. For example, 1000 is the identifier for NEW. For a list of condition names and IDs, see Item Condition IDs and Names. Note: In all eBay marketplaces, Condition ID 2000 now maps to an item condition of 'Certified Refurbished', and not 'Manufacturer Refurbished'. To list an item as 'Certified Refurbished', a seller must be pre-qualified by eBay for this feature. Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "deliveryOptions": {
+          "description": "A comma-separated list of available delivery options. This column lets you filter out items than cannot be shipped to the buyer. Valid Values: SHIP_TO_HOME, SELLER_ARRANGED_LOCAL_PICKUP, IN_STORE_PICKUP, and PICKUP_DROP_OFF. Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:DeliveryOptionsEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "discountAmount": {
+          "description": "The calculated amount of the discount (originalPriceValue - priceValue). For example, if originalPriceValue is 70 and priceValue is 56, this value would be 14. Note: The currency shown in originalPriceCurrency is used for both discountAmount and originalPriceCurrency.",
+          "type": "string"
+        },
+        "discountPercentage": {
+          "description": "The calculated discount percentage. For example, if originalPriceValue is 70 and discountAmount is 14, this value will be 20.",
+          "type": "string"
+        },
+        "energyEfficiencyClass": {
+          "description": "Indicates the European energy efficiency rating (EEK) of the item. Data is returned in this column only if the seller specified the energy efficiency rating. The rating is a set of energy efficiency classes from A to G, where 'A' is the most energy efficient and 'G' is the least efficient. This rating helps buyers choose between various models. To retrieve the manufacturer's specifications for this item, when they are available, use the getItem method in the Browse API. The information is returned in the productFicheWebUrl field.",
+          "type": "string"
+        },
+        "epid": {
+          "description": "The eBay product identifier of a product from the eBay product catalog. You can use this value in the Browse API search method to retrieve items for this product and in the Marketing API methods to retrieve 'also viewed' and 'also bought' products to encourage up-selling and cross-selling.",
+          "type": "string"
+        },
+        "estimatedAvailableQuantity": {
+          "description": "The estimated number of this item that are available for purchase. Because the quantity of an item can change several times within a second, it is impossible to return the exact quantity. So instead of returning quantity, the estimated availability of the item is returned.",
+          "type": "integer"
+        },
+        "gtin": {
+          "description": "The unique Global Trade Item Number of the item as defined by https://www.gtin.info. This can be a UPC (Universal Product Code), EAN (European Article Number), or an ISBN (International Standard Book Number) value.",
+          "type": "string"
+        },
+        "imageAlteringProhibited": {
+          "description": "A boolean that indicates whether the images can be altered. If the value is true, you cannot modify the image. Note: Due to image licensing agreements and other legal concerns, modification (including resizing) of some images is strictly prohibited. These images are for display as-is only.",
+          "type": "boolean"
+        },
+        "imageUrl": {
+          "description": "The URL to the primary image of the item. This is the URL of the largest image available based on what the seller submitted.",
+          "type": "string"
+        },
+        "inferredBrand": {
+          "description": "The name brand for the item, such as Nike or Apple, which has been programmatically determined by eBay. To identify the product, this is always used along with MPN. If the seller provided a brand for the item, the seller's value is returned in the brand column.",
+          "type": "string"
+        },
+        "inferredEpid": {
+          "description": "The ePID (eBay Product ID of a product in the eBay product catalog) for the item, which has been programmatically determined by eBay using the item's title, aspects, and other data. If the seller actually provided an ePID at listing time for the item, the ePID value is returned in the epid column instead.",
+          "type": "string"
+        },
+        "inferredGtin": {
+          "description": "The GTIN (Global Trade Item Number) of the product as defined by https://www.gtin.info, which as been programmatically determined by eBay. This can be a UPC (Universal Product Code), EAN (European Article Number), or an ISBN (International Standard Book Number) value. If the seller provided a GTIN for the item, the seller's value is returned in the gtin column.",
+          "type": "string"
+        },
+        "inferredLocalizedAspects": {
+          "description": "A semicolon separated list of the name/value pairs for the aspects of the item, which are BASE64 encoded. These aspects have been programmatically determined by eBay. If the seller provided aspects for the item, the seller's values are returned in the localizedAspects column. The aspect label is separated by a pipe (|), the aspect name and value are separated by a colon (:) and the name/value pairs are separated by a semicolon (;). Example without Label &nbsp;&nbsp; Encoded Format: &nbsp;&nbsp;&nbsp;encodedName:encodedValue;encodedName:encodedValue;encodedName:encodedValue &nbsp;&nbsp; Encoded Example (The delimiters are emphasized): &nbsp;&nbsp;&nbsp;U2l6ZQ==:WEw=;Q29sb3I=:UmVk;U2xlZXZlcw==:TG9uZw== &nbsp;&nbsp; Decoded: &nbsp;&nbsp;&nbsp;Size:XL;Color:Red;Sleeves:Long Example with Label &nbsp;&nbsp; Encoded Format: &nbsp;&nbsp;&nbsp;encodedLabel|encodedName:encodedValue;encodedName:encodedValue;encodedLabel| &nbsp;&nbsp; Encoded Example (The delimiters are emphasized): &nbsp;&nbsp;&nbsp;UHJvZHVjdCBJZGVudGlmaWVycw==|R1RJTg==:MDE5MDE5ODA2NjYzMw==;QlJBTkQ=:QXBwbGU=;UHJvZHVjdCBLZXkgRmVhdHVyZXM=|TW9kZWw=:aVBob25lIDc= &nbsp;&nbsp; Decoded: &nbsp;&nbsp;&nbsp;Product Identifiers|GTIN:0190198066633;BRAND:Apple;Product Key Features|Model:iPhone 7 Note: The separators ( | : ; ) are not encoded. You must decode each label, name, and value separately. You cannot decode the entire string. For more information, see Encoded Aspects in the Buying Integration Guide.",
+          "type": "string"
+        },
+        "inferredMpn": {
+          "description": "The MPN (Manufacturer's Part Number) for the item, which has been programmatically determined by eBay. To identify the product, this is always used along with brand. If the seller provided a MPN for the item, the seller's value is returned in the mpn column.",
+          "type": "string"
+        },
+        "itemEndDate": {
+          "description": "A timestamp indicating when the item's sale period will end based on its start date and duration. For Good 'Til Cancelled items, no value is returned in this column. Format: UTC (yyyy-MM-ddThh:mm:ss.sssZ).",
+          "type": "string"
+        },
+        "itemId": {
+          "description": "The unique identifier of an item in eBay RESTful format. An example would be v1|1**********2|4**********2.",
+          "type": "string"
+        },
+        "itemLocationCountry": {
+          "description": "The country where the item is physically located.",
+          "type": "string"
+        },
+        "legacyItemId": {
+          "description": "The unique identifier of the eBay listing that contains the item. This is the traditional/legacy ID that is often seen in the URL of the listing View Item page.",
+          "type": "string"
+        },
+        "lengthUnitOfMeasure": {
+          "description": "The unit of measurement used for the package dimensions, such as INCH, FEET, CENTIMETER, or METER. Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:LengthUnitOfMeasureEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "localizedAspects": {
+          "description": "A semicolon separated list of the name/value pairs for the aspects of the item, which are BASE64 encoded. The aspect label is separated by a pipe (|), the aspect name and value are separated by a colon (:) and the name/value pairs are separated by a semicolon (;). Example without Label &nbsp;&nbsp; Encoded Format: &nbsp;&nbsp;&nbsp;encodedName:encodedValue;encodedName:encodedValue;encodedName:encodedValue &nbsp;&nbsp; Encoded Example (The delimiters are emphasized): &nbsp;&nbsp;&nbsp;U2l6ZQ==:WEw=;Q29sb3I=:UmVk;U2xlZXZlcw==:TG9uZw== &nbsp;&nbsp; Decoded: &nbsp;&nbsp;&nbsp;Size:XL;Color:Red;Sleeves:Long Example with Label &nbsp;&nbsp; Encoded Format: &nbsp;&nbsp;&nbsp;encodedLabel|encodedName:encodedValue;encodedName:encodedValue;encodedLabel| &nbsp;&nbsp; Encoded Example (The delimiters are emphasized): &nbsp;&nbsp;&nbsp;UHJvZHVjdCBJZGVudGlmaWVycw==|R1RJTg==:MDE5MDE5ODA2NjYzMw==;QlJBTkQ=:QXBwbGU=;UHJvZHVjdCBLZXkgRmVhdHVyZXM=|TW9kZWw=:aVBob25lIDc= &nbsp;&nbsp; Decoded: &nbsp;&nbsp;&nbsp;Product Identifiers|GTIN:0190198066633;BRAND:Apple;Product Key Features|Model:iPhone 7 Note: The separators ( | : ; ) are not encoded. You must decode each label, name, and value separately. You cannot decode the entire string. For more information, see Encoded Aspects in the Buying Integration Guide.",
+          "type": "string"
+        },
+        "lotSize": {
+          "description": "The number of items in a lot. In other words, a lot size is the number of items that are being sold together. A lot is a set of two or more items included in a single listing that must be purchased together in a single order line item. All the items in the lot are the same but there can be multiple items in a single lot, such as the package of batteries shown in the example below. For example: Item Lot Definition Lot Size A package of 24 AA batteries A box of 10 packages 10 A P235/75-15 Goodyear tire 4 tires 4 Fashion Jewelry Rings Package of 100 assorted rings 100 Note: Lots are not supported in all categories.",
+          "type": "integer"
+        },
+        "mpn": {
+          "description": "The manufacturer part number, which is a number that is used in combination with brand to identify a product.",
+          "type": "string"
+        },
+        "originalPriceCurrency": {
+          "description": "The currency of the originalPriceValue of the item and the discountAmount. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/bas:CurrencyCodeEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "originalPriceValue": {
+          "description": "The original selling price of the item. This lets you surface a strikethrough price for the item.",
+          "type": "string"
+        },
+        "packageHeight": {
+          "description": "The height of the shipping package that contains the item.",
+          "type": "string"
+        },
+        "packageLength": {
+          "description": "The length of the shipping package that contains the item.",
+          "type": "string"
+        },
+        "packageWeight": {
+          "description": "The weight of the package that contains the item.",
+          "type": "string"
+        },
+        "packageWidth": {
+          "description": "The width of the shipping package that contains the item.",
+          "type": "string"
+        },
+        "priceCurrency": {
+          "description": "The currency used for the price of the item. Generally, this is the currency used by the country of the eBay site offering the item. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/bas:CurrencyCodeEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "priceValue": {
+          "description": "The price of the item, which can be a discounted price. If it is discounted, information about the discount is returned in the originalPriceValue, originalPriceCurrency, discountAmount, and discountPercentage columns. Note: The price includes the value-added tax (VAT) for applicable jurisdictions when requested from supported marketplaces. In this case, users must pass the X-EBAY-C-MARKETPLACE-ID request header specifying the supported marketplace (such as EBAY_GB) to see the VAT-inclusive pricing. For more information on VAT, refer to VAT Obligations in the EU.",
+          "type": "string"
+        },
+        "primaryItemGroupId": {
+          "description": "The unique identifier for the item group that contains this item. An item group is an item that has various aspect differences, such as color, size, storage capacity, etc.",
+          "type": "string"
+        },
+        "primaryItemGroupType": {
+          "description": "The item group type. Supported value: SELLER_DEFINED_VARIATIONS, indicates that the item group was created by the seller. Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "qualifiedPrograms": {
+          "description": "A pipe separated list of the qualified programs available for the item. Currently, the only qualified program returned is EBAY_PLUS. Note: The EBAY_PLUS program is supported only on the EBAY_DE and EBAY_AU marketplaces. This means the qualifiedPrograms column will be populated only in feed files for these marketplaces. Program Values: EBAY_PLUS",
+          "type": "string"
+        },
+        "quantityUsedForEstimate": {
+          "description": "The number of items used when calculating the estimation information.",
+          "type": "integer"
+        },
+        "refundMethod": {
+          "description": "An enumeration value that indicates how a buyer is refunded when an item is returned. Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:RefundMethodEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "returnMethod": {
+          "description": "An enumeration value that indicates the alternative methods for a full refund when an item is returned. This column will have data if the seller offers the buyer an item replacement or exchange instead of a monetary refund. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:ReturnMethodEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "returnPeriodUnit": {
+          "description": "An enumeration value that indicates the period of time being used to measure the duration, such as business days, months, or years. TimeDurationUnitEnum is a common type shared by multiple eBay APIs and fields to express the time unit, but for return period duration, this value will always be DAY. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/bas:TimeDurationUnitEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "returnPeriodValue": {
+          "description": "The amount of days that the buyer has to return the item after the purchase date. For example, if this value is '30', the return period is 30 days.",
+          "type": "integer"
+        },
+        "returnShippingCostPayer": {
+          "description": "The party responsible for the return shipping costs when an item is returned. Valid Values: BUYER or SELLER Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:ReturnShippingCostPayerEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "returnsAccepted": {
+          "description": "Indicates whether the seller accepts returns for the item.",
+          "type": "boolean"
+        },
+        "sellerAccountType": {
+          "description": "A string value that specifies whether the seller is a business or an individual. This is determined when the seller registers with eBay. If the seller registers for a business account, the value returned in this field will be BUSINESS. If the seller registers for a private account, the value returned in this field will be INDIVIDUAL. Note: This designation is required by the tax laws in some countries. This field is returned only on the following sites: EBAY_AT, EBAY_BE, EBAY_CH, EBAY_DE, EBAY_ES, EBAY_FR, EBAY_GB, EBAY_IE, EBAY_IT, and EBAY_PL. Code so that your app gracefully handles any future changes to this list. Valid Values: BUSINESS or INDIVIDUAL",
+          "type": "string"
+        },
+        "sellerFeedbackPercentage": {
+          "description": "The percentage of the seller's total positive feedback.",
+          "type": "string"
+        },
+        "sellerFeedbackScore": {
+          "description": "The feedback score of the seller. This value is based on the ratings from eBay members that bought items from this seller.",
+          "type": "string"
+        },
+        "sellerItemRevision": {
+          "description": "An identifier generated/incremented when a seller revises the item. There are two types of item revisions: Seller changes, such as changing the title eBay system changes, such as changing the quantity when an item is purchased This ID is changed only when the seller makes a change to the item.",
+          "type": "string"
+        },
+        "sellerTrustLevel": {
+          "description": "An enumeration value representing the eBay status of the seller. Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:SellerTrustLevelEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "sellerUsername": {
+          "description": "The seller's eBay user name.",
+          "type": "string"
+        },
+        "shipToExcludedRegions": {
+          "description": "A pipe (|) separated alphabetical list of the geographic countries and regions where the item cannot be shipped. These countries and regions refine (restrict) the shipToIncludedRegions list. The COUNTRY: list is separated from the REGION: list with a semicolon (;). Format Example: COUNTRY:US|BM|GL|MX|PM;REGION:AFRICA|ASIA|CENTRAL_AMERICA_AND_CARIBBEAN|EUROPE|MIDDLE_EAST|OCEANIA|SOUTH_AMERICA|SOUTHEAST_ASIA; Country Values: The two-letter ISO 3166 standard code of the country. Region Values: AFRICA, AMERICAS, ANTARCTIC, ARCTIC, ASIA, AUSTRALIA, CENTRAL_AMERICA_AND_CARIBBEAN, EUROPE, EURO_UNION, GREATER_CHINA, MIDDLE_EAST, NORTH_AMERICA, OCEANIA, REST_OF_ASIA, SOUTHEAST_ASIA, SOUTH_AMERICA, WORLDWIDE Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "shipToIncludedRegions": {
+          "description": "A pipe (|) separated alphabetical list of the geographic countries and regions where the seller will ship the item. If a region is specified, you will need to subtract any countries and regions returned in the shipToExcludedRegions column to fully understand where the seller will ship. The COUNTRY: list is separated from the REGION: list with a semicolon (;). Format Example: COUNTRY:US|BM|GL|MX|PM;REGION:AFRICA|ASIA|CENTRAL_AMERICA_AND_CARIBBEAN|EUROPE|MIDDLE_EAST|OCEANIA|SOUTH_AMERICA|SOUTHEAST_ASIA; Country Values: The two-letter ISO 3166 standard code of the country. Region Values: AFRICA, AMERICAS, ANTARCTIC, ARCTIC, ASIA, AUSTRALIA, CENTRAL_AMERICA_AND_CARIBBEAN, EUROPE, EURO_UNION, GREATER_CHINA, MIDDLE_EAST, NORTH_AMERICA, OCEANIA, REST_OF_ASIA, SOUTHEAST_ASIA, SOUTH_AMERICA, WORLDWIDE Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "shippingCarrierCode": {
+          "description": "The name of the shipping provider, such as FedEx, or USPS.",
+          "type": "string"
+        },
+        "shippingCost": {
+          "description": "The final shipping cost for all the items after all discounts are applied. Note: The price includes the value-added tax (VAT) for applicable jurisdictions when requested from supported marketplaces. In this case, users must pass the X-EBAY-C-MARKETPLACE-ID request header specifying the supported marketplace (such as EBAY_GB) to see the VAT-inclusive pricing. For more information on VAT, refer to VAT Obligations in the EU.",
+          "type": "string"
+        },
+        "shippingCostType": {
+          "description": "Indicates the class of the shipping cost. Valid Values: FIXED or CALCULATED.",
+          "type": "string"
+        },
+        "shippingServiceCode": {
+          "description": "The type of shipping service. For example, USPS First Class.",
+          "type": "string"
+        },
+        "shippingType": {
+          "description": "The type of a shipping option, such as EXPEDITED, ONE_DAY, STANDARD, ECONOMY, PICKUP, etc.",
+          "type": "string"
+        },
+        "title": {
+          "description": "The seller created title of the item. This text is an escaped string when special characters are present, using the following rules: Double quotes (&quot;) and backslashes (\\) in the Title are escaped with a backslash (\\) character If there are any tabs (\\t), double quotes (&quot;), or backslashes (\\) in the Title, the entire Title will be wrapped in double quotes. For example Before: Misty Rainforest Modern Masters 2017 MTG Magic Fetch Land Free Ship W\\Tracking Marvel Legends HULK 8&quot; Figure Avengers Age of Ultron Studios 6&quot; Series After: &quot;Misty Rainforest Modern Masters 2017 MTG Magic Fetch Land Free Ship W\\\\ Tracking&quot; &quot;Marvel Legends HULK 8\\&quot; Figure Avengers Age of Ultron Studios 6\\&quot; Series&quot;",
+          "type": "string"
+        },
+        "tyreLabelImageUrl": {
+          "description": "The URL to the image that shows the information on the tyre label.",
+          "type": "string"
+        },
+        "unitPrice": {
+          "description": "This is the price per unit for the item. Some European countries require listings for certain types of products to include the price per unit so buyers can accurately compare prices. For example: &quot;unitPricingMeasure&quot;: &quot;100g&quot;, &quot;unitPrice&quot;: { &nbsp;&nbsp;&quot;value&quot;: &quot;7.99&quot;, &nbsp;&nbsp;&quot;currency&quot;: &quot;GBP&quot;",
+          "type": "string"
+        },
+        "unitPricingMeasure": {
+          "description": "The designation, such as size, weight, volume, count, etc., that was used to specify the quantity of the item. This helps buyers compare prices. For example, the following tells the buyer that the item is 7.99 per 100 grams. &quot;unitPricingMeasure&quot;: &quot;100g&quot;, &quot;unitPrice&quot;: { &nbsp;&nbsp;&quot;value&quot;: &quot;7.99&quot;, &nbsp;&nbsp;&quot;currency&quot;: &quot;GBP&quot;",
+          "type": "string"
+        },
+        "weightUnitOfMeasure": {
+          "description": "The unit of measurement used for the package weight, such as POUND, KILOGRAM, OUNCE, or GRAM. Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:WeightUnitOfMeasureEnum'>eBay API documentation</a>",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ItemGroup": {
+      "description": "The type that defines the columns returned in the <b>Item Group</b> feed file.",
+      "properties": {
+        "additionalImageUrls": {
+          "description": "A pipe separated (|) list of URLs for the additional images for the item group. These images are in addition to the primary image, which is returned in the imageUrl column. Note: This column can contain multiple values.",
+          "type": "string"
+        },
+        "imageAlteringProhibited": {
+          "description": "A boolean that indicates whether the images can be altered. If the value is true, you cannot modify the image. Note: Due to image licensing agreements and other legal concerns, modification (including resizing) of some images is strictly prohibited. These images are for display as-is only.",
+          "type": "boolean"
+        },
+        "imageUrl": {
+          "description": "The URL to the primary image of the item. The other images of the item group are returned in the additionalImageUrls column.",
+          "type": "string"
+        },
+        "itemGroupId": {
+          "description": "The unique identifier for the item group. This ID is returned in the primaryItemGroupId column of the Item Feed file.",
+          "type": "string"
+        },
+        "itemGroupType": {
+          "description": "The item group type. For example: SELLER_DEFINED_VARIATIONS, indicates that the item group was created by the seller. Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "title": {
+          "description": "The seller created title of the item group. This text is an escaped string when special characters are present, using the following rules: Double quotes (&quot;) and backslashes (\\) in the Title are escaped with a backslash (\\) character If there are any tabs (\\t), double quotes (&quot;), or backslashes (\\) in the Title, the entire Title will be wrapped in double quotes. For example Before: Misty Rainforest Modern Masters 2017 MTG Magic Fetch Land Free Ship W\\Tracking Marvel Legends HULK 8&quot; Figure Avengers Age of Ultron Studios 6&quot; Series After: &quot;Misty Rainforest Modern Masters 2017 MTG Magic Fetch Land Free Ship W\\\\ Tracking&quot; &quot;Marvel Legends HULK 8\\&quot; Figure Avengers Age of Ultron Studios 6\\&quot; Series&quot;",
+          "type": "string"
+        },
+        "variesByLocalizedAspects": {
+          "description": "A pipe separated (|) list of the aspect (variation) names for this item group. The aspect name is BASE64 encoded. Note: This column can contain multiple values. &nbsp;&nbsp; Encoded Format: &nbsp;&nbsp;&nbsp;aspectName|aspectName &nbsp;&nbsp; Encoded Example (The delimiters are emphasized): &nbsp;&nbsp;&nbsp;Q29sb3I=|U2l6ZQ== &nbsp;&nbsp; Decoded: &nbsp;&nbsp;&nbsp;Color|Size",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ItemGroupResponse": {
+      "description": "The type that defines the array for the items returned in the <b>Item Group</b> feed file.",
+      "properties": {
+        "itemGroups": {
+          "description": "The container for the array of items groups returned by the getItemGroupFeed method. The data in the file is tab separated and the first row is the header, which labels the columns and indicates the order of the values for each item. The header labels match the fields that are described in the Response fields section.",
+          "items": {
+            "$ref": "#/definitions/ItemGroup"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ItemResponse": {
+      "description": "The type that defines the array for the items returned in the <b>Item</b> feed file. ",
+      "properties": {
+        "items": {
+          "description": "The container for the array of items returned by the getItemFeed method. The data in the file is tab separated and the first row is the header, which labels the columns and indicates the order of the values on each line. The header labels match the fields that are described in the Response fields section.",
+          "items": {
+            "$ref": "#/definitions/Item"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "ItemSnapshot": {
+      "description": "The type that defines the columns returned in the <b>Hourly Snapshot</b> feed file.  <p>  <b>Note: </b> When the value of the <b> availability</b> column is <code>UNAVAILABLE</code>, only the <b>itemId</b> and <b> availability</b> columns are populated.  </p> ",
+      "properties": {
+        "acceptedPaymentMethods": {
+          "description": "Indicates the credit card service that will be used to process the transaction. If this column contains PAYPAL, you can use the Buy Order API to checkout and purchase the item. If this column is empty, you must use another method for checkout.",
+          "type": "string"
+        },
+        "additionalImageUrls": {
+          "description": "A pipe separated (|) list of URLs for the additional images of the item. These images are in addition to the primary image, which is returned in the imageUrl column. Note: This column can contain multiple values.",
+          "type": "string"
+        },
+        "additionalShippingCostPerUnit": {
+          "description": "Any per item additional shipping costs for a multi-item purchase. For example, let's say the shipping cost for a power cord is $3. But for an additional cord, the shipping cost is only $1. So if you bought 3 cords, the shippingCost would be $3 and this value would be $2 ($1 for each additional item).",
+          "type": "string"
+        },
+        "alerts": {
+          "description": "A pipe-separated list of alerts available for the item. For example, if the DELAYED_DELIVERY alert was returned for an item, it would indicate a delay in shipping by the seller.",
+          "type": "string"
+        },
+        "availability": {
+          "description": "An enumeration value representing the item's availability (possibility of being purchased). Values: AVAILABLE TEMPORARILY_UNAVAILABLE UNAVAILABLE Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:AvailabilityEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "availabilityThreshold": {
+          "description": "This column has a value only when the seller sets their 'display item quantity' preference to Display &quot;More than 10 available&quot; in your listing (if applicable). The value of this column will be &quot;10&quot;, which is the threshold value. Code so that your app gracefully handles any future changes to this value.",
+          "type": "integer"
+        },
+        "availabilityThresholdType": {
+          "description": "This column has a value only when the seller sets their Display Item Quantity preference to Display &quot;More than 10 available&quot; in your listing (if applicable). The value of this column will be MORE_THAN. This indicates that the seller has more than the 'Display Item Quantity', which is 10, in stock for this item. The following are the Display Item Quantity preferences the seller can set. Display &quot;More than 10 available&quot; in your listing (if applicable) If the seller enables this preference, this column will have a value as long as there are more than 10 of this item in inventory. If the quantity is equal to 10 or drops below 10, this column will be null and the estimated quantity of the item is returned in the estimatedAvailableQuantity column. Display the exact quantity in your items If the seller enables this preference, the availabilityThresholdType and availabilityThreshold columns will be null and the estimated quantity of the item is returned in the estimatedAvailableQuantity column. Note: Because the quantity of an item can change several times within a second, it is impossible to return the exact quantity. Code so that your app gracefully handles any future changes to these preferences. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:AvailabilityThresholdEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "brand": {
+          "description": "The name brand of the item, such as Nike, Apple, etc.",
+          "type": "string"
+        },
+        "buyingOptions": {
+          "description": "A comma separated list of the purchase options available for the item, such as FIXED_PRICE, AUCTION. Code so that your app gracefully handles any future changes to this list. Note: This column can contain multiple values.",
+          "type": "string"
+        },
+        "category": {
+          "description": "The label of the category of the item. For example: Toys &amp; Hobbies|Action Figures|Comic Book Heroes .",
+          "type": "string"
+        },
+        "categoryId": {
+          "description": "The ID of the category of the item. For example: The ID for Toys &amp; Hobbies|Action Figures|Comic Book Heroes is 158671.",
+          "type": "string"
+        },
+        "condition": {
+          "description": "The text describing the condition of the item, such as New or Used. For a list of condition names, see Item Condition IDs and Names. Note: In all eBay marketplaces, Condition ID 2000 now maps to an item condition of 'Certified Refurbished', and not 'Manufacturer Refurbished'. To list an item as 'Certified Refurbished', a seller must be pre-qualified by eBay for this feature. Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "conditionId": {
+          "description": "The identifier of the condition of the item. For example, 1000 is the identifier for NEW. For a list of condition names and IDs, see Item Condition IDs and Names. Note: In all eBay marketplaces, Condition ID 2000 now maps to an item condition of 'Certified Refurbished', and not 'Manufacturer Refurbished'. To list an item as 'Certified Refurbished', a seller must be pre-qualified by eBay for this feature. Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "deliveryOptions": {
+          "description": "A comma-separated list of available delivery options. This column lets you filter out items than cannot be shipped to the buyer. Valid Values: SHIP_TO_HOME, SELLER_ARRANGED_LOCAL_PICKUP, IN_STORE_PICKUP, and PICKUP_DROP_OFF. Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:DeliveryOptionsEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "discountAmount": {
+          "description": "The calculated amount of the discount (originalPriceValue - priceValue). For example, if originalPriceValue is 70 and priceValue is 56, this value would be 14. Note: The currency shown in originalPriceCurrency is used for both discountAmount and originalPriceCurrency.",
+          "type": "string"
+        },
+        "discountPercentage": {
+          "description": "The calculated discount percentage. For example, if originalPriceValue is 70 and discountAmount is 14, this value will be 20.",
+          "type": "string"
+        },
+        "energyEfficiencyClass": {
+          "description": "Indicates the European energy efficiency rating (EEK) of the item. This field is returned only if the seller specified the energy efficiency rating. The rating is a set of energy efficiency classes from A to G, where 'A' is the most energy efficient and 'G' is the least efficient. This rating helps buyers choose between various models. To retrieve the manufacturer's specifications for this item, when they are available, use the getItem method in the Browse API. The information is returned in the productFicheWebUrl field.",
+          "type": "string"
+        },
+        "epid": {
+          "description": "The eBay product identifier of a product from the eBay product catalog. You can use this value in the Browse API search method to retrieve items for this product and in the Marketing API methods to retrieve 'also viewed' and 'also bought' products to encourage up-selling and cross-selling.",
+          "type": "string"
+        },
+        "estimatedAvailableQuantity": {
+          "description": "The estimated number of this item that are available for purchase. Because the quantity of an item can change several times within a second, it is impossible to return the exact quantity. So instead of returning quantity, the estimated availability of the item is returned.",
+          "type": "integer"
+        },
+        "gtin": {
+          "description": "The unique Global Trade Item Number of the item as defined by https://www.gtin.info. This can be a UPC (Universal Product Code), EAN (European Article Number), or an ISBN (International Standard Book Number) value.",
+          "type": "string"
+        },
+        "imageAlteringProhibited": {
+          "description": "A boolean that indicates whether the images can be altered. If the value is true, you cannot modify the image. Note: Due to image licensing agreements and other legal concerns, modification (including resizing) of some images is strictly prohibited. These images are for display as-is only.",
+          "type": "boolean"
+        },
+        "imageUrl": {
+          "description": "The URL to the primary image of the item. This is the URL of the largest image available based on what the seller submitted.",
+          "type": "string"
+        },
+        "inferredEpid": {
+          "description": "The ePID (eBay Product ID of a product in the eBay product catalog) for the item, which has been programmatically determined by eBay using the item's title, aspects, and other data. If the seller actually provided an ePID at listing time for the item, the ePID value is returned in the epid column instead.",
+          "type": "string"
+        },
+        "itemCreationDate": {
+          "description": "A timestamp indicating when the item was created. The format is UTC (yyyy-MM-ddThh:mm:ss.sssZ).",
+          "type": "string"
+        },
+        "itemEndDate": {
+          "description": "A timestamp indicating when the item's sale period will end based on its start date and duration. For Good 'Tail Cancelled items, no value is returned in this column. Format: UTC (yyyy-MM-ddThh:mm:ss.sssZ).",
+          "type": "string"
+        },
+        "itemId": {
+          "description": "The unique identifier of an item in eBay RESTful format. An example would be v1|1**********2|4**********2.",
+          "type": "string"
+        },
+        "itemLocationCountry": {
+          "description": "The country where the item is physically located.",
+          "type": "string"
+        },
+        "itemSnapshotDate": {
+          "description": "This timestamp denotes the date and time the changes for that item were picked up and added to the snapshot feed file. For example, let's say you have a snapshot feed file and also ran the getItem method. When you compare the same item information from the two sources, you see that the price in the getItem method response is different from the price in the snapshot feed file. By knowing the date and time you submitted the getItem method, you can use the itemSnapshotDate data to determine which price is the most current for this item.",
+          "type": "string"
+        },
+        "legacyItemId": {
+          "description": "The unique identifier of the eBay listing that contains the item. This is the traditional/legacy ID that is often seen in the URL of the listing View Item page.",
+          "type": "string"
+        },
+        "localizedAspects": {
+          "description": "A semicolon separated list of the name/value pairs for the aspects of the item, which are BASE64 encoded. The aspect label is separated by a pipe (|), the aspect name and value are separated by a colon (:) and the name/value pairs are separated by a semicolon (;). Example without Label &nbsp;&nbsp; Encoded Format: &nbsp;&nbsp;&nbsp;encodedName:encodedValue;encodedName:encodedValue;encodedName:encodedValue &nbsp;&nbsp; Encoded Example (The delimiters are emphasized): &nbsp;&nbsp;&nbsp;U2l6ZQ==:WEw=;Q29sb3I=:UmVk;U2xlZXZlcw==:TG9uZw== &nbsp;&nbsp; Decoded: &nbsp;&nbsp;&nbsp;Size:XL;Color:Red;Sleeves:Long Example with Label &nbsp;&nbsp; Encoded Format: &nbsp;&nbsp;&nbsp;encodedLabel|encodedName:encodedValue;encodedName:encodedValue;encodedLabel| &nbsp;&nbsp; Encoded Example (The delimiters are emphasized): &nbsp;&nbsp;&nbsp;UHJvZHVjdCBJZGVudGlmaWVycw==|R1RJTg==:MDE5MDE5ODA2NjYzMw==;QlJBTkQ=:QXBwbGU=;UHJvZHVjdCBLZXkgRmVhdHVyZXM=|TW9kZWw=:aVBob25lIDc= &nbsp;&nbsp; Decoded: &nbsp;&nbsp;&nbsp;Product Identifiers|GTIN:0190198066633;BRAND:Apple;Product Key Features|Model:iPhone 7 Note: The separators ( | : ; ) are not encoded. You must decode each label, name, and value separately. You cannot decode the entire string. For more information, see Encoded Aspects in the Buying Integration Guide.",
+          "type": "string"
+        },
+        "lotSize": {
+          "description": "The number of items in a lot. In other words, a lot size is the number of items that are being sold together. A lot is a set of two or more items included in a single listing that must be purchased together in a single order line item. All the items in the lot are the same but there can be multiple items in a single lot, such as the package of batteries shown in the example below. Item Lot Definition Lot Size A package of 24 AA batteries A box of 10 packages 10 A P235/75-15 Goodyear tire 4 tires 4 Fashion Jewelry Rings Package of 100 assorted rings 100 Note: Lots are not supported in all categories.",
+          "type": "integer"
+        },
+        "mpn": {
+          "description": "The manufacturer part number, which is a number that is used in combination with brand to identify a product.",
+          "type": "string"
+        },
+        "originalPriceCurrency": {
+          "description": "The currency of the originalPriceValue of the item and the discountAmount. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/bas:CurrencyCodeEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "originalPriceValue": {
+          "description": "The original selling price of the item. This lets you surface a strikethrough price for the item.",
+          "type": "string"
+        },
+        "priceCurrency": {
+          "description": "The currency used for the price of the item. Generally, this is the currency used by the country of the eBay site offering the item. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/bas:CurrencyCodeEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "priceValue": {
+          "description": "The price of the item, which can be a discounted price. Note: The price includes the value-added tax (VAT) for applicable jurisdictions when requested from supported marketplaces. In this case, users must pass the X-EBAY-C-MARKETPLACE-ID request header specifying the supported marketplace (such as EBAY_GB) to see the VAT-inclusive pricing. For more information on VAT, refer to VAT Obligations in the EU.",
+          "type": "string"
+        },
+        "primaryItemGroupId": {
+          "description": "The unique identifier for the item group that contains this item. An item group is an item that has various aspect differences, such as color, size, storage capacity, etc.",
+          "type": "string"
+        },
+        "primaryItemGroupType": {
+          "description": "The item group type. Supported value: SELLER_DEFINED_VARIATIONS, indicates that the item group was created by the seller. Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "qualifiedPrograms": {
+          "description": "A pipe separated list of the qualified programs available for the item, such as EBAY_PLUS. eBay Plus is a premium account option for buyers, which provides benefits such as fast free domestic shipping and free returns on selected items. Top-Rated eBay sellers must opt in to eBay Plus to be able to offer the program on qualifying listings. Sellers must commit to next-day delivery of those items. Note: eBay Plus is available only to buyers in Germany, Austria, and Australia marketplaces.",
+          "type": "string"
+        },
+        "quantityUsedForEstimate": {
+          "description": "The number of items used when calculating the shipping estimation information.",
+          "type": "integer"
+        },
+        "refundMethod": {
+          "description": "An enumeration value representing how a buyer is refunded when an item is returned. Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:RefundMethodEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "returnMethod": {
+          "description": "An enumeration value that indicates the alternative methods for a full refund when an item is returned. This column will have data if the seller offers the buyer an item replacement or exchange instead of a monetary refund. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:ReturnMethodEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "returnPeriodUnit": {
+          "description": "An enumeration value that indicates the period of time being used to measure the duration, such as business days, months, or years. TimeDurationUnitEnum is a common type shared by multiple eBay APIs and fields to express the time unit, but for return period duration, this value will always be DAY. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/bas:TimeDurationUnitEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "returnPeriodValue": {
+          "description": "The amount of days that the buyer has to return the item after the purchase date. For example, if this value is 30, the return period is 30 days.",
+          "type": "integer"
+        },
+        "returnShippingCostPayer": {
+          "description": "An enumeration value that indicates the party responsible for the return shipping costs when an item is returned. Valid Values: BUYER or SELLER Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:ReturnShippingCostPayerEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "returnsAccepted": {
+          "description": "Indicates whether the seller accepts returns for the item.",
+          "type": "boolean"
+        },
+        "sellerAccountType": {
+          "description": "A string value that specifies whether the seller is a business or an individual. This is determined when the seller registers with eBay. If the seller registers for a business account, the value returned in this field will be BUSINESS. If the seller registers for a private account, the value returned in this field will be INDIVIDUAL. Note: This designation is required by the tax laws in some countries. This field is returned only on the following sites: EBAY_AT, EBAY_BE, EBAY_CH, EBAY_DE, EBAY_ES, EBAY_FR, EBAY_GB, EBAY_IE, EBAY_IT, and EBAY_PL. Code so that your app gracefully handles any future changes to this list. Valid Values: BUSINESS or INDIVIDUAL",
+          "type": "string"
+        },
+        "sellerFeedbackPercentage": {
+          "description": "The percentage of the seller's total positive feedback.",
+          "type": "string"
+        },
+        "sellerFeedbackScore": {
+          "description": "The feedback score of the seller. This value is based on the ratings from eBay members that bought items from this seller.",
+          "type": "string"
+        },
+        "sellerItemRevision": {
+          "description": "An identifier generated/incremented when a seller revises the item. There are two types of item revisions: Seller changes, such as changing the title eBay system changes, such as changing the quantity when an item is purchased This ID is changed only when the seller makes a change to the item.",
+          "type": "string"
+        },
+        "sellerTrustLevel": {
+          "description": "An enumeration value representing the eBay status of the seller. Code so that your app gracefully handles any future changes to this list. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/feed/types/api:SellerTrustLevelEnum'>eBay API documentation</a>",
+          "type": "string"
+        },
+        "sellerUsername": {
+          "description": "The seller's eBay user name.",
+          "type": "string"
+        },
+        "shipToExcludedRegions": {
+          "description": "A pipe (|) separated alphabetical list of the geographic countries and regions where the item cannot be shipped. These countries and regions refine (restrict) the shipToIncludedRegions list. The COUNTRY: list is separated from the REGION: list with a semicolon (;). Format Example: COUNTRY:US|BM|GL|MX|PM;REGION:AFRICA|ASIA|CENTRAL_AMERICA_AND_CARIBBEAN|EUROPE|MIDDLE_EAST|OCEANIA|SOUTH_AMERICA|SOUTHEAST_ASIA; Country Values: The two-letter ISO 3166 standard code of the country. Region Values: AFRICA, AMERICAS, ANTARCTIC, ARCTIC, ASIA, AUSTRALIA, CENTRAL_AMERICA_AND_CARIBBEAN, EUROPE, EURO_UNION, GREATER_CHINA, MIDDLE_EAST, NORTH_AMERICA, OCEANIA, REST_OF_ASIA, SOUTHEAST_ASIA, SOUTH_AMERICA, WORLDWIDE Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "shipToIncludedRegions": {
+          "description": "A pipe (|) separated alphabetical list of the geographic countries and regions where the seller will ship the item. If a region is specified, you will need to subtract any countries and regions returned in the shipToExcludedRegions column to fully understand where the seller will ship. The COUNTRY: list is separated from the REGION: list with a semicolon (;). Format Example: COUNTRY:US|BM|GL|MX|PM;REGION:AFRICA|ASIA|CENTRAL_AMERICA_AND_CARIBBEAN|EUROPE|MIDDLE_EAST|OCEANIA|SOUTH_AMERICA|SOUTHEAST_ASIA; Country Values: The two-letter ISO 3166 standard code of the country. Region Values: AFRICA, AMERICAS, ANTARCTIC, ARCTIC, ASIA, AUSTRALIA, CENTRAL_AMERICA_AND_CARIBBEAN, EUROPE, EURO_UNION, GREATER_CHINA, MIDDLE_EAST, NORTH_AMERICA, OCEANIA, REST_OF_ASIA, SOUTHEAST_ASIA, SOUTH_AMERICA, WORLDWIDE Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "shippingCarrierCode": {
+          "description": "The name of the shipping provider, such as FedEx, or USPS.",
+          "type": "string"
+        },
+        "shippingCost": {
+          "description": "The final shipping cost for all the items after all discounts are applied. Note: The price includes the value-added tax (VAT) for applicable jurisdictions when requested from supported marketplaces. In this case, users must pass the X-EBAY-C-MARKETPLACE-ID request header specifying the supported marketplace (such as EBAY_GB) to see the VAT-inclusive pricing. For more information on VAT, refer to VAT Obligations in the EU.",
+          "type": "string"
+        },
+        "shippingCostType": {
+          "description": "Indicates the class of the shipping cost. Valid Values: FIXED or CALCULATED Code so that your app gracefully handles any future changes to this list.",
+          "type": "string"
+        },
+        "shippingServiceCode": {
+          "description": "The type of shipping service. For example, USPS First Class.",
+          "type": "string"
+        },
+        "shippingType": {
+          "description": "The type of a shipping option, such as EXPEDITED, ONE_DAY, STANDARD, ECONOMY, PICKUP, etc.",
+          "type": "string"
+        },
+        "title": {
+          "description": "The seller created title of the item. This text is an escaped string when special characters are present, using the following rules: Double quotes (&quot;) and backslashes (\\) in the Title are escaped with a backslash (\\) character If there are any tabs (\\t), double quotes (&quot;), or backslashes (\\) in the Title, the entire Title will be wrapped in double quotes. For example Before: Misty Rainforest Modern Masters 2017 MTG Magic Fetch Land Free Ship W\\Tracking Marvel Legends HULK 8&quot; Figure Avengers Age of Ultron Studios 6&quot; Series After: &quot;Misty Rainforest Modern Masters 2017 MTG Magic Fetch Land Free Ship W\\\\ Tracking&quot; &quot;Marvel Legends HULK 8\\&quot; Figure Avengers Age of Ultron Studios 6\\&quot; Series&quot;",
+          "type": "string"
+        },
+        "tyreLabelImageUrl": {
+          "description": "The URL to the image that shows the information on the tyre label.",
+          "type": "string"
+        },
+        "unitPrice": {
+          "description": "This is the price per unit for the item. Some European countries require listings for certain types of products to include the price per unit so buyers can accurately compare prices. For example: &quot;unitPricingMeasure&quot;: &quot;100g&quot;, &quot;unitPrice&quot;: { &nbsp;&nbsp;&quot;value&quot;: &quot;7.99&quot;, &nbsp;&nbsp;&quot;currency&quot;: &quot;GBP&quot;",
+          "type": "string"
+        },
+        "unitPricingMeasure": {
+          "description": "The designation, such as size, weight, volume, count, etc., that was used to specify the quantity of the item. This helps buyers compare prices. For example, the following tells the buyer that the item is 7.99 per 100 grams. &quot;unitPricingMeasure&quot;: &quot;100g&quot;, &quot;unitPrice&quot;: { &nbsp;&nbsp;&quot;value&quot;: &quot;7.99&quot;, &nbsp;&nbsp;&quot;currency&quot;: &quot;GBP&quot;",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "ItemSnapshotResponse": {
+      "description": "The type that defines the array for the items returned in the <b>Hourly Snapshot</b> feed file.",
+      "properties": {
+        "items": {
+          "description": "The container for the array of items returned by the getItemSnapshotFeed method. Note: When the value of the availability column is UNAVAILABLE, only the itemId and availability columns are populated.",
+          "items": {
+            "$ref": "#/definitions/ItemSnapshot"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

@@ -1,0 +1,189 @@
+openapi: 3.0.0
+servers:
+  - url: https://openbanking.org.uk
+  - url: /open-banking/v3.1
+info:
+  contact:
+    email: ServiceDesk@openbanking.org.uk
+    name: Service Desk
+  description: Swagger for Event Notification API Specification - TPP Endpoints
+  license:
+    name: open-licence
+    url: https://www.openbanking.org.uk/open-licence
+  termsOfService: https://www.openbanking.org.uk/terms
+  title: Event Notification API Specification - TPP Endpoints
+  version: 3.1.7
+  x-apisguru-categories:
+    - financial
+  x-logo:
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_avatars0.githubusercontent.com_u_23359225.png
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/OpenBankingUK/read-write-api-specs/master/dist/openapi/event-notifications-openapi.yaml
+      version: "3.0"
+  x-providerName: openbanking.org.uk
+  x-serviceName: event-notifications-openapi
+paths:
+  /event-notifications:
+    post:
+      operationId: CreateEventNotification
+      parameters:
+        - $ref: "#/components/parameters/x-fapi-financial-id-Param"
+        - $ref: "#/components/parameters/x-fapi-interaction-id-Param"
+      requestBody:
+        content:
+          application/jwt:
+            schema:
+              format: base64
+              type: string
+        description: Create an Callback URI
+        required: true
+      responses:
+        "202":
+          description: Accepted
+      summary: Send an event notification
+      tags:
+        - Event Notification
+components:
+  parameters:
+    x-fapi-financial-id-Param:
+      description: The unique id of the ASPSP to which the request is issued. The unique id will be issued by OB.
+      in: header
+      name: x-fapi-financial-id
+      required: true
+      schema:
+        type: string
+    x-fapi-interaction-id-Param:
+      description: An RFC4122 UID used as a correlation id.
+      in: header
+      name: x-fapi-interaction-id
+      required: false
+      schema:
+        type: string
+  schemas:
+    OBEvent1:
+      additionalProperties: false
+      description: Events.
+      properties:
+        urn:uk:org:openbanking:events:resource-update:
+          $ref: "#/components/schemas/OBEventResourceUpdate1"
+      required:
+        - urn:uk:org:openbanking:events:resource-update
+      type: object
+    OBEventLink1:
+      additionalProperties: false
+      description: Resource links to other available versions of the resource.
+      minProperties: 1
+      properties:
+        link:
+          description: Resource link.
+          type: string
+        version:
+          description: Resource version.
+          maxLength: 10
+          minLength: 1
+          type: string
+      required:
+        - version
+        - link
+      type: object
+    OBEventNotification1:
+      additionalProperties: false
+      description: The resource-update event.
+      properties:
+        aud:
+          description: Audience.
+          maxLength: 128
+          minLength: 1
+          type: string
+        events:
+          $ref: "#/components/schemas/OBEvent1"
+        iat:
+          description: "Issued At. "
+          format: int32
+          minimum: 0
+          type: integer
+        iss:
+          description: Issuer.
+          type: string
+        jti:
+          description: JWT ID.
+          maxLength: 128
+          minLength: 1
+          type: string
+        sub:
+          description: Subject
+          format: uri
+          type: string
+        toe:
+          description: Time of Event.
+          format: int32
+          minimum: 0
+          type: integer
+        txn:
+          description: Transaction Identifier.
+          maxLength: 128
+          minLength: 1
+          type: string
+      required:
+        - iss
+        - iat
+        - jti
+        - aud
+        - sub
+        - txn
+        - toe
+        - events
+      type: object
+    OBEventResourceUpdate1:
+      additionalProperties: false
+      description: Resource-Update Event.
+      properties:
+        subject:
+          $ref: "#/components/schemas/OBEventSubject1"
+      required:
+        - subject
+      type: object
+    OBEventSubject1:
+      additionalProperties: false
+      description: The resource-update event.
+      properties:
+        http://openbanking.org.uk/rid:
+          description: Resource Id for the updated resource.
+          maxLength: 128
+          minLength: 1
+          type: string
+        http://openbanking.org.uk/rlk:
+          description: Resource links to other available versions of the resource.
+          items:
+            $ref: "#/components/schemas/OBEventLink1"
+          minItems: 1
+          type: array
+        http://openbanking.org.uk/rty:
+          description: Resource Type for the updated resource.
+          maxLength: 128
+          minLength: 1
+          type: string
+        subject_type:
+          description: "Subject type for the updated resource. "
+          maxLength: 128
+          minLength: 1
+          type: string
+      required:
+        - subject_type
+        - http://openbanking.org.uk/rid
+        - http://openbanking.org.uk/rty
+        - http://openbanking.org.uk/rlk
+      type: object
+  securitySchemes:
+    TPPOAuth2Security:
+      description: TPP client credential authorisation flow with the ASPSP
+      flows:
+        clientCredentials:
+          scopes:
+            accounts: Ability to read Accounts information
+            fundsconfirmations: Ability to confirm funds
+            payments: Generic payment scope
+          tokenUrl: https://authserver.example/token
+      type: oauth2

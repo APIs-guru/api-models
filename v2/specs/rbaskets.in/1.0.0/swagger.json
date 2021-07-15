@@ -1,0 +1,1309 @@
+{
+  "swagger": "2.0",
+  "schemes": [
+    "https"
+  ],
+  "host": "rbaskets.in",
+  "basePath": "/",
+  "info": {
+    "contact": {
+      "name": "darklynx",
+      "url": "https://github.com/darklynx"
+    },
+    "description": "RESTful API of [Request Baskets](https://rbaskets.in) service.\n\nRequest Baskets is an open source project of a service to collect HTTP requests and inspect them via RESTful\nAPI or web UI.\n\nCheck out the [project page](https://github.com/darklynx/request-baskets) for more detailed description.\n",
+    "license": {
+      "name": "MIT",
+      "url": "https://github.com/darklynx/request-baskets/blob/master/LICENSE"
+    },
+    "title": "Request Baskets API",
+    "version": "1.0.0",
+    "x-apisguru-categories": [
+      "developer_tools",
+      "monitoring"
+    ],
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_raw.githubusercontent.com_darklynx_request-baskets_master_doc_logo.svg"
+    },
+    "x-origin": [
+      {
+        "format": "swagger",
+        "url": "https://raw.githubusercontent.com/darklynx/request-baskets/master/doc/api-swagger.yaml",
+        "version": "2.0"
+      }
+    ],
+    "x-providerName": "rbaskets.in"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "basket_token": {
+      "description": "Basket assigned secure token",
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    },
+    "service_token": {
+      "description": "Service master token",
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    }
+  },
+  "tags": [
+    {
+      "description": "Service information",
+      "name": "service"
+    },
+    {
+      "description": "Manage baskets",
+      "name": "baskets"
+    },
+    {
+      "description": "Configure basket responses",
+      "name": "responses"
+    },
+    {
+      "description": "Manage collected requests",
+      "name": "requests"
+    }
+  ],
+  "paths": {
+    "/api/baskets": {
+      "get": {
+        "description": "Fetches a list of basket names managed by service. Require master token.",
+        "parameters": [
+          {
+            "description": "Maximum number of basket names to return; default 20",
+            "in": "query",
+            "name": "max",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "description": "Number of basket names to skip; default 0",
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "description": "Query string to filter result, only those basket names that match the query will be included in response",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK. Returns list of available baskets.",
+            "schema": {
+              "$ref": "#/definitions/Baskets"
+            }
+          },
+          "204": {
+            "description": "No Content. No baskets available for specified limits"
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing master token"
+          }
+        },
+        "security": [
+          {
+            "service_token": []
+          }
+        ],
+        "summary": "Get baskets",
+        "tags": [
+          "baskets"
+        ]
+      }
+    },
+    "/api/baskets/{name}": {
+      "delete": {
+        "description": "Permanently deletes this basket and all collected requests.",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content. Basket is deleted"
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Delete basket",
+        "tags": [
+          "baskets"
+        ]
+      },
+      "get": {
+        "description": "Retrieves configuration settings of this basket.",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK. Returns basket configuration",
+            "schema": {
+              "$ref": "#/definitions/Config"
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Get basket settings",
+        "tags": [
+          "baskets"
+        ]
+      },
+      "post": {
+        "description": "Creates a new basket with this name.",
+        "parameters": [
+          {
+            "description": "The name of new basket",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Basket configuration",
+            "in": "body",
+            "name": "config",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Config"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created. Indicates that basket is successfully created",
+            "schema": {
+              "$ref": "#/definitions/Token"
+            }
+          },
+          "400": {
+            "description": "Bad Request. Failed to parse JSON into basket configuration object."
+          },
+          "403": {
+            "description": "Forbidden. Indicates that basket name conflicts with reserved paths; e.g. `baskets`, `web`, etc."
+          },
+          "409": {
+            "description": "Conflict. Indicates that basket with such name already exists"
+          },
+          "422": {
+            "description": "Unprocessable Entity. Basket configuration is not valid."
+          }
+        },
+        "summary": "Create new basket",
+        "tags": [
+          "baskets"
+        ]
+      },
+      "put": {
+        "description": "Updates configuration settings of this basket.\n\nSpecial configuration parameters for request forwarding:\n  * `insecure_tls` controls certificate verification when forwarding requests. Setting this parameter to `true`\n  allows to forward collected HTTP requests via HTTPS protocol even if the forward end-point is configured with\n  self-signed TLS/SSL certificate. **Warning:** enabling this feature has known security implications.\n  * `expand_path` changes the logic of constructing taget URL when forwarding requests. If this parameter is\n  set to `true` the forward URL path will be expanded when original HTTP request contains compound path. For\n  example, a basket with name **server1** is configured to forward all requests to `http://server1.intranet:8001/myservice`\n  and it has received an HTTP request like `GET http://baskets.example.com/server1/component/123/events?status=OK`\n  then depending on `expand_path` settings the request will be forwarded to:\n    * `true` => `GET http://server1.intranet:8001/myservice/component/123/events?status=OK`\n    * `false` => `GET http://server1.intranet:8001/myservice?status=OK`\n",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "New configuration to apply",
+            "in": "body",
+            "name": "config",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Config"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content. Basket configuration is updated"
+          },
+          "400": {
+            "description": "Bad Request. Failed to parse JSON into basket configuration object."
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          },
+          "422": {
+            "description": "Unprocessable Entity. Basket configuration is not valid."
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Update basket settings",
+        "tags": [
+          "baskets"
+        ]
+      }
+    },
+    "/api/baskets/{name}/requests": {
+      "delete": {
+        "description": "Deletes all requests collected by this basket.",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content. Basket requests are cleared"
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Delete all requests",
+        "tags": [
+          "requests"
+        ]
+      },
+      "get": {
+        "description": "Fetches collection of requests collected by this basket.",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Maximum number of requests to return; default 20",
+            "in": "query",
+            "name": "max",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "description": "Number of requests to skip; default 0",
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "description": "Query string to filter result, only requests that match the query will be included in response",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Defines what is taken into account when filtering is applied: `body` - search in content body of collected requests,\n`query` - search among query parameters of collected requests, `headers` - search among request header values,\n`any` - search anywhere; default `any`\n",
+            "enum": [
+              "any",
+              "body",
+              "query",
+              "headers"
+            ],
+            "in": "query",
+            "name": "in",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK. Returns list of basket requests.",
+            "schema": {
+              "$ref": "#/definitions/Requests"
+            }
+          },
+          "204": {
+            "description": "No Content. No requests found for specified limits"
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Get collected requests",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/api/baskets/{name}/responses/{method}": {
+      "get": {
+        "description": "Retrieves information about configured response of the basket. Service will reply with this response to any\nHTTP request sent to the basket with appropriate HTTP method.\n\nIf nothing is configured, the default response is HTTP 200 - OK with empty content.\n",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The HTTP method this response is configured for",
+            "enum": [
+              "GET",
+              "HEAD",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "CONNECT",
+              "OPTIONS",
+              "TRACE"
+            ],
+            "in": "path",
+            "name": "method",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK. Returns configured response information",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Get response settings",
+        "tags": [
+          "responses"
+        ]
+      },
+      "put": {
+        "description": "Allows to configure HTTP response of this basket. The service will reply with configured response to any HTTP\nrequest sent to the basket with appropriate HTTP method.\n\nIf nothing is configured, the default response is HTTP 200 - OK with empty content.\n",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The HTTP method this response is configured for",
+            "enum": [
+              "GET",
+              "HEAD",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "CONNECT",
+              "OPTIONS",
+              "TRACE"
+            ],
+            "in": "path",
+            "name": "method",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "HTTP response configuration",
+            "in": "body",
+            "name": "response",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content. Response configuration is updated"
+          },
+          "400": {
+            "description": "Bad Request. Failed to parse JSON into response configuration object."
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          },
+          "422": {
+            "description": "Unprocessable Entity. Response configuration is not valid."
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Update response settings",
+        "tags": [
+          "responses"
+        ]
+      }
+    },
+    "/api/stats": {
+      "get": {
+        "description": "Get service statistics about baskets and collected HTTP requests. Require master token.",
+        "parameters": [
+          {
+            "description": "Maximum number of basket names to return; default 5",
+            "in": "query",
+            "name": "max",
+            "required": false,
+            "type": "integer"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK. Returns service statistics.",
+            "schema": {
+              "$ref": "#/definitions/ServiceStats"
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing master token"
+          }
+        },
+        "security": [
+          {
+            "service_token": []
+          }
+        ],
+        "summary": "Get baskets statistics",
+        "tags": [
+          "baskets"
+        ]
+      }
+    },
+    "/api/version": {
+      "get": {
+        "description": "Get service version.",
+        "responses": {
+          "200": {
+            "description": "OK. Returns service version.",
+            "schema": {
+              "$ref": "#/definitions/Version"
+            }
+          }
+        },
+        "summary": "Get service version",
+        "tags": [
+          "service"
+        ]
+      }
+    },
+    "/baskets": {
+      "get": {
+        "deprecated": true,
+        "description": "Fetches a list of basket names managed by service. Require master token.",
+        "parameters": [
+          {
+            "description": "Maximum number of basket names to return; default 20",
+            "in": "query",
+            "name": "max",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "description": "Number of basket names to skip; default 0",
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "description": "Query string to filter result, only those basket names that match the query will be included in response",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK. Returns list of available baskets.",
+            "schema": {
+              "$ref": "#/definitions/Baskets"
+            }
+          },
+          "204": {
+            "description": "No Content. No baskets available for specified limits"
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing master token"
+          }
+        },
+        "security": [
+          {
+            "service_token": []
+          }
+        ],
+        "summary": "Get baskets",
+        "tags": [
+          "baskets"
+        ]
+      }
+    },
+    "/baskets/{name}": {
+      "delete": {
+        "deprecated": true,
+        "description": "Permanently deletes this basket and all collected requests.",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content. Basket is deleted"
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Delete basket",
+        "tags": [
+          "baskets"
+        ]
+      },
+      "get": {
+        "deprecated": true,
+        "description": "Retrieves configuration settings of this basket.",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK. Returns basket configuration",
+            "schema": {
+              "$ref": "#/definitions/Config"
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Get basket settings",
+        "tags": [
+          "baskets"
+        ]
+      },
+      "post": {
+        "deprecated": true,
+        "description": "Creates a new basket with this name.",
+        "parameters": [
+          {
+            "description": "The name of new basket",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Basket configuration",
+            "in": "body",
+            "name": "config",
+            "required": false,
+            "schema": {
+              "$ref": "#/definitions/Config"
+            }
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Created. Indicates that basket is successfully created",
+            "schema": {
+              "$ref": "#/definitions/Token"
+            }
+          },
+          "400": {
+            "description": "Bad Request. Failed to parse JSON into basket configuration object."
+          },
+          "403": {
+            "description": "Forbidden. Indicates that basket name conflicts with reserved paths; e.g. `baskets`, `web`, etc."
+          },
+          "409": {
+            "description": "Conflict. Indicates that basket with such name already exists"
+          },
+          "422": {
+            "description": "Unprocessable Entity. Basket configuration is not valid."
+          }
+        },
+        "summary": "Create new basket",
+        "tags": [
+          "baskets"
+        ]
+      },
+      "put": {
+        "deprecated": true,
+        "description": "Updates configuration settings of this basket.\n\nSpecial configuration parameters for request forwarding:\n  * `insecure_tls` controls certificate verification when forwarding requests. Setting this parameter to `true`\n  allows to forward collected HTTP requests via HTTPS protocol even if the forward end-point is configured with\n  self-signed TLS/SSL certificate. **Warning:** enabling this feature has known security implications.\n  * `expand_path` changes the logic of constructing taget URL when forwarding requests. If this parameter is\n  set to `true` the forward URL path will be expanded when original HTTP request contains compound path. For\n  example, a basket with name **server1** is configured to forward all requests to `http://server1.intranet:8001/myservice`\n  and it has received an HTTP request like `GET http://baskets.example.com/server1/component/123/events?status=OK`\n  then depending on `expand_path` settings the request will be forwarded to:\n    * `true` => `GET http://server1.intranet:8001/myservice/component/123/events?status=OK`\n    * `false` => `GET http://server1.intranet:8001/myservice?status=OK`\n",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "New configuration to apply",
+            "in": "body",
+            "name": "config",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Config"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content. Basket configuration is updated"
+          },
+          "400": {
+            "description": "Bad Request. Failed to parse JSON into basket configuration object."
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          },
+          "422": {
+            "description": "Unprocessable Entity. Basket configuration is not valid."
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Update basket settings",
+        "tags": [
+          "baskets"
+        ]
+      }
+    },
+    "/baskets/{name}/requests": {
+      "delete": {
+        "deprecated": true,
+        "description": "Deletes all requests collected by this basket.",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content. Basket requests are cleared"
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Delete all requests",
+        "tags": [
+          "requests"
+        ]
+      },
+      "get": {
+        "deprecated": true,
+        "description": "Fetches collection of requests collected by this basket.",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Maximum number of requests to return; default 20",
+            "in": "query",
+            "name": "max",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "description": "Number of requests to skip; default 0",
+            "in": "query",
+            "name": "skip",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "description": "Query string to filter result, only requests that match the query will be included in response",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Defines what is taken into account when filtering is applied: `body` - search in content body of collected requests,\n`query` - search among query parameters of collected requests, `headers` - search among request header values,\n`any` - search anywhere; default `any`\n",
+            "enum": [
+              "any",
+              "body",
+              "query",
+              "headers"
+            ],
+            "in": "query",
+            "name": "in",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK. Returns list of basket requests.",
+            "schema": {
+              "$ref": "#/definitions/Requests"
+            }
+          },
+          "204": {
+            "description": "No Content. No requests found for specified limits"
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Get collected requests",
+        "tags": [
+          "requests"
+        ]
+      }
+    },
+    "/baskets/{name}/responses/{method}": {
+      "get": {
+        "deprecated": true,
+        "description": "Retrieves information about configured response of the basket. Service will reply with this response to any\nHTTP request sent to the basket with appropriate HTTP method.\n\nIf nothing is configured, the default response is HTTP 200 - OK with empty content.\n",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The HTTP method this response is configured for",
+            "enum": [
+              "GET",
+              "HEAD",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "CONNECT",
+              "OPTIONS",
+              "TRACE"
+            ],
+            "in": "path",
+            "name": "method",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "OK. Returns configured response information",
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Get response settings",
+        "tags": [
+          "responses"
+        ]
+      },
+      "put": {
+        "deprecated": true,
+        "description": "Allows to configure HTTP response of this basket. The service will reply with configured response to any HTTP\nrequest sent to the basket with appropriate HTTP method.\n\nIf nothing is configured, the default response is HTTP 200 - OK with empty content.\n",
+        "parameters": [
+          {
+            "description": "The basket name",
+            "in": "path",
+            "name": "name",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The HTTP method this response is configured for",
+            "enum": [
+              "GET",
+              "HEAD",
+              "POST",
+              "PUT",
+              "PATCH",
+              "DELETE",
+              "CONNECT",
+              "OPTIONS",
+              "TRACE"
+            ],
+            "in": "path",
+            "name": "method",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "HTTP response configuration",
+            "in": "body",
+            "name": "response",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Response"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "No Content. Response configuration is updated"
+          },
+          "400": {
+            "description": "Bad Request. Failed to parse JSON into response configuration object."
+          },
+          "401": {
+            "description": "Unauthorized. Invalid or missing basket token"
+          },
+          "404": {
+            "description": "Not Found. No basket with such name"
+          },
+          "422": {
+            "description": "Unprocessable Entity. Response configuration is not valid."
+          }
+        },
+        "security": [
+          {
+            "basket_token": []
+          }
+        ],
+        "summary": "Update response settings",
+        "tags": [
+          "responses"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "BasketInfo": {
+      "properties": {
+        "last_request_date": {
+          "description": "Date and time of last request processed through this basket in Unix time ms.\nformat (number of milliseconds elapsed since January 1, 1970 UTC).\n\nIf no requests were collected by this basket `0` is returned.\n",
+          "example": 1550106301288,
+          "format": "int64",
+          "type": "integer"
+        },
+        "name": {
+          "description": "Basket name",
+          "example": "basket22",
+          "type": "string"
+        },
+        "requests_count": {
+          "description": "Current number of collected HTTP requests held by basket",
+          "example": 62,
+          "type": "integer"
+        },
+        "requests_total_count": {
+          "description": "Total number of all HTTP requests passed through this basket",
+          "example": 315,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "Baskets": {
+      "properties": {
+        "count": {
+          "description": "Total number of baskets in the system; not present if query is applied",
+          "example": 118,
+          "type": "integer"
+        },
+        "has_more": {
+          "description": "Indicates if there are more baskets to fetch",
+          "example": true,
+          "type": "boolean"
+        },
+        "names": {
+          "description": "Collection of basket names",
+          "example": [
+            "basket22",
+            "mybasket",
+            "test123"
+          ],
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        }
+      },
+      "required": [
+        "names",
+        "has_more"
+      ],
+      "type": "object"
+    },
+    "Config": {
+      "properties": {
+        "capacity": {
+          "description": "Baskets capacity, defines maximum number of requests to store",
+          "example": 250,
+          "type": "integer"
+        },
+        "expand_path": {
+          "description": "If set to `true` the forward URL path will be expanded when original HTTP request contains compound path.",
+          "example": true,
+          "type": "boolean"
+        },
+        "forward_url": {
+          "description": "URL to forward all incoming requests of the basket, `empty` value disables forwarding",
+          "example": "https://myservice.example.com/events-collector",
+          "type": "string"
+        },
+        "insecure_tls": {
+          "description": "If set to `true` the certificate verification will be disabled if forward URL indicates HTTPS scheme.\n**Warning:** enabling this feature has known security implications.\n",
+          "example": false,
+          "type": "boolean"
+        },
+        "proxy_response": {
+          "description": "If set to `true` this basket behaves as a full proxy: responses from underlying service configured in `forward_url`\nare passed back to clients of original requests. The configuration of basket responses is ignored in this case.\n",
+          "example": false,
+          "type": "boolean"
+        }
+      },
+      "type": "object"
+    },
+    "Headers": {
+      "additionalProperties": {
+        "description": "Collection of header values",
+        "items": {
+          "type": "string"
+        },
+        "type": "array"
+      },
+      "description": "Map of HTTP headers, key represents name, value is array of values",
+      "example": {
+        "Accept": [
+          "application/json",
+          "application/xml"
+        ],
+        "Connection": [
+          "close"
+        ],
+        "Content-Type": [
+          "application/json"
+        ]
+      },
+      "type": "object"
+    },
+    "Request": {
+      "properties": {
+        "body": {
+          "description": "Content of request body",
+          "example": "user=abc_test&status=200",
+          "type": "string"
+        },
+        "content_length": {
+          "description": "Content length of request",
+          "example": 24,
+          "type": "integer"
+        },
+        "date": {
+          "description": "Date and time of request in Unix time ms. format (number of milliseconds elapsed since January 1, 1970 UTC)",
+          "example": 1550300604712,
+          "format": "int64",
+          "type": "integer"
+        },
+        "headers": {
+          "$ref": "#/definitions/Headers"
+        },
+        "method": {
+          "description": "HTTP method of request",
+          "example": "POST",
+          "type": "string"
+        },
+        "path": {
+          "description": "URL path of request",
+          "example": "/basket1/data",
+          "type": "string"
+        },
+        "query": {
+          "description": "Query parameters of request",
+          "example": "name=basket1&version=12",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "Requests": {
+      "properties": {
+        "count": {
+          "description": "Current number of collected requests hold by basket; not present if query is applied",
+          "example": 200,
+          "type": "integer"
+        },
+        "has_more": {
+          "description": "Indicates if there are more requests collected by basket to fetch",
+          "example": true,
+          "type": "boolean"
+        },
+        "requests": {
+          "description": "Collection of collected requests",
+          "items": {
+            "$ref": "#/definitions/Request"
+          },
+          "type": "array"
+        },
+        "total_count": {
+          "description": "Total number of all requests passed through this basket; not present if query is applied",
+          "example": 3023,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "requests",
+        "has_more"
+      ],
+      "type": "object"
+    },
+    "Response": {
+      "properties": {
+        "body": {
+          "description": "Content of response body",
+          "example": "Success",
+          "type": "string"
+        },
+        "headers": {
+          "$ref": "#/definitions/Headers"
+        },
+        "is_template": {
+          "description": "If set to `true` the body is treated as [HTML template](https://golang.org/pkg/html/template) that accepts\ninput from request parameters.\n",
+          "example": false,
+          "type": "boolean"
+        },
+        "status": {
+          "description": "The HTTP status code to reply with",
+          "example": 200,
+          "type": "integer"
+        }
+      },
+      "type": "object"
+    },
+    "ServiceStats": {
+      "properties": {
+        "avg_basket_size": {
+          "description": "Average size of a basket in the system, empty baskets are not taken into account",
+          "example": 217,
+          "type": "integer"
+        },
+        "baskets_count": {
+          "description": "Total number of baskets managed by service",
+          "example": 28,
+          "type": "integer"
+        },
+        "empty_baskets_count": {
+          "description": "Number of empty baskets",
+          "example": 12,
+          "type": "integer"
+        },
+        "max_basket_size": {
+          "description": "Size of the biggest basket that processed the top most number of HTTP requests",
+          "example": 1027,
+          "type": "integer"
+        },
+        "requests_count": {
+          "description": "Number of HTTP requests currently stored by service",
+          "example": 5120,
+          "type": "integer"
+        },
+        "requests_total_count": {
+          "description": "Total number of HTTP requests processed by service",
+          "example": 21847,
+          "type": "integer"
+        },
+        "top_baskets_recent": {
+          "description": "Collection of top baskets recently active",
+          "items": {
+            "$ref": "#/definitions/BasketInfo"
+          },
+          "type": "array"
+        },
+        "top_baskets_size": {
+          "description": "Collection of top basket by size",
+          "items": {
+            "$ref": "#/definitions/BasketInfo"
+          },
+          "type": "array"
+        }
+      },
+      "type": "object"
+    },
+    "Token": {
+      "properties": {
+        "token": {
+          "description": "Secure token to manage the basket, generated by system",
+          "example": "MJeIzgE1D6aze...",
+          "type": "string"
+        }
+      },
+      "required": [
+        "token"
+      ],
+      "type": "object"
+    },
+    "Version": {
+      "properties": {
+        "commit": {
+          "description": "Git commit this service is build from",
+          "example": "4cc08434223ff04fbe2e45f2f6eeb9b0a39a279e",
+          "type": "string"
+        },
+        "commit_short": {
+          "description": "Short form of git commit this service is build from",
+          "example": "4cc0843",
+          "type": "string"
+        },
+        "name": {
+          "description": "Service name",
+          "example": "request-baskets",
+          "type": "string"
+        },
+        "source_code": {
+          "description": "URL of the source code repository",
+          "example": "https://github.com/darklynx/request-baskets",
+          "type": "string"
+        },
+        "version": {
+          "description": "Service version",
+          "example": "v1.0.0",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    }
+  }
+}

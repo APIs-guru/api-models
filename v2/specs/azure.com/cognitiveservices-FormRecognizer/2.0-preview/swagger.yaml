@@ -1,0 +1,1175 @@
+swagger: "2.0"
+schemes:
+  - https
+host: azure.local
+info:
+  description: Extracts information from forms and images into structured data.
+  title: Form Recognizer Client
+  version: 2.0-preview
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/cognitiveservices/data-plane/FormRecognizer/preview/v2.0/FormRecognizer.json
+      version: "2.0"
+  x-preferred: true
+  x-providerName: azure.com
+  x-serviceName: cognitiveservices-FormRecognizer
+  x-tags:
+    - Azure
+    - Microsoft
+securityDefinitions:
+  apim_key:
+    in: header
+    name: Ocp-Apim-Subscription-Key
+    type: apiKey
+security:
+  - apim_key: []
+parameters:
+  Endpoint:
+    description: "Supported Cognitive Services endpoints (protocol and hostname, for example: https://westus2.api.cognitive.microsoft.com)."
+    in: path
+    name: endpoint
+    required: true
+    type: string
+    x-ms-parameter-location: client
+    x-ms-skip-url-encoding: true
+  FileStream:
+    description: .json, .pdf, .jpg, .png or .tiff type file stream.
+    in: body
+    name: fileStream
+    schema:
+      $ref: "#/definitions/SourceDataStream"
+    x-ms-parameter-location: method
+paths:
+  /custom/models:
+    get:
+      consumes: []
+      description: Get information about all custom models
+      operationId: GetCustomModels
+      parameters:
+        - default: full
+          description: Specify whether to return summary or full list of models.
+          enum:
+            - full
+            - summary
+          in: query
+          name: op
+          required: false
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/Models"
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: List Custom Models
+      x-ms-examples:
+        List custom models:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            op: full
+          responses:
+            "200":
+              body:
+                modelList:
+                  - createdDateTime: 2019-05-01T10:53:21Z
+                    lastUpdatedDateTime: 2019-05-01T10:53:23Z
+                    modelId: f973e3c1-1148-43bb-bea8-49d0603ab3a8
+                    status: ready
+                  - createdDateTime: 2019-05-01T10:53:21Z
+                    lastUpdatedDateTime: 2019-05-01T10:53:23Z
+                    modelId: f973e3c1-0001-43bb-bea8-49d0603ab3a8
+                    status: ready
+                nextLink: ""
+                summary:
+                  count: 5
+                  lastUpdatedDateTime: 2019-05-01T10:53:21Z
+                  limit: 5000
+      x-ms-pageable:
+        itemName: modelList
+        nextLinkName: nextLink
+    post:
+      consumes:
+        - application/json
+      description: Create and train a custom model. The request must include a source parameter that is either an externally accessible Azure storage blob container Uri (preferably a Shared Access Signature Uri) or valid path to a data folder in a locally mounted drive. When local paths are specified, they must follow the Linux/Unix path format and be an absolute path rooted to the input mount configuration setting value e.g., if '{Mounts:Input}' configuration setting value is '/input' then a valid source path would be '/input/contosodataset'. All data to be trained is expected to be under the source folder or sub folders under it. Models are trained using documents that are of the following content type - 'application/pdf', 'image/jpeg', 'image/png', 'image/tiff'. Other type of content is ignored.
+      operationId: TrainCustomModelAsync
+      parameters:
+        - description: Training request parameters.
+          in: body
+          name: trainRequest
+          required: true
+          schema:
+            $ref: "#/definitions/TrainRequest"
+      responses:
+        "201":
+          description: Request is queued successfully.
+          headers:
+            Location:
+              description: Location and ID of the model being trained. The status of model training is specified in the status property at the model location.
+              type: string
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Train Custom Model
+      x-ms-examples:
+        Train custom model:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            trainRequest:
+              source: /input/data1
+          responses:
+            "201":
+              headers:
+                Location: "{endpoint}/formrecognizer/v2.0-preview/custom/models/{modelId}"
+        Train custom model with subfolder filter options:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            trainRequest:
+              source: /input/data1
+              sourceFilter:
+                includeSubFolders: false
+                prefix: ""
+              useLabelFile: false
+          responses:
+            "201":
+              headers:
+                Location: "{endpoint}/formrecognizer/v2.0-preview/custom/models/{modelId}"
+  "/custom/models/{modelId}":
+    delete:
+      consumes: []
+      description: Mark model for deletion. Model artifacts will be permanently removed within a predetermined period.
+      operationId: DeleteCustomModel
+      parameters:
+        - description: Model identifier.
+          format: uuid
+          in: path
+          name: modelId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "204":
+          description: Successfully marked model for deletion. Model artifacts will be removed within a predefined time period.
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Delete Custom Model
+      x-ms-examples:
+        Delete custom model:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            modelId: "{Model Id}"
+          responses:
+            "204": {}
+    get:
+      consumes: []
+      description: Get detailed information about a custom model.
+      operationId: GetCustomModel
+      parameters:
+        - description: Model identifier.
+          format: uuid
+          in: path
+          name: modelId
+          required: true
+          type: string
+        - default: false
+          description: Include list of extracted keys in model information.
+          in: query
+          name: includeKeys
+          required: false
+          type: boolean
+          x-nullable: false
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/Model"
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Get Custom Model
+      x-ms-examples:
+        Get custom model:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            modelId: "{Model Id}"
+          responses:
+            "200":
+              body:
+                keys:
+                  clusters:
+                    "0":
+                      - Invoice
+                      - "123112313"
+                    "1":
+                      - "Please remit payment to:"
+                      - Microsoft
+                modelInfo:
+                  createdDateTime: 2019-05-01T10:53:21Z
+                  lastUpdatedDateTime: 2019-05-01T10:53:23Z
+                  modelId: f973e3c1-1148-43bb-bea8-49d0603ab3a8
+                  status: ready
+                trainResult:
+                  averageModelAccuracy: 0
+                  errors: []
+                  fields: []
+                  trainingDocuments: []
+  "/custom/models/{modelId}/analyze":
+    post:
+      consumes:
+        - application/pdf
+        - application/json
+        - image/jpeg
+        - image/png
+        - image/tiff
+      description: Extract key-value pairs, tables, and semantic values from a given document. The input document must be of one of the supported content types - 'application/pdf', 'image/jpeg', 'image/png' or 'image/tiff'. Alternatively, use 'application/json' type to specify the location (Uri or local path) of the document to be analyzed.
+      operationId: AnalyzeWithCustomModel
+      parameters:
+        - description: Model identifier.
+          format: uuid
+          in: path
+          name: modelId
+          required: true
+          type: string
+        - default: false
+          description: Include text lines and element references in the result.
+          in: query
+          name: includeTextDetails
+          required: false
+          type: boolean
+          x-nullable: false
+        - $ref: "#/parameters/FileStream"
+      responses:
+        "202":
+          description: Request is queued successfully.
+          headers:
+            Operation-Location:
+              description: URL containing the resultId used to track the progress and obtain the result of the analyze operation.
+              type: string
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Analyze Form
+      x-ms-examples:
+        Analyze form with custom model:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            modelId: "{Model Id}"
+          responses:
+            "202":
+              headers:
+                Operation-Location: "{endpoint}/formrecognizer/v2.0-preview/custom/models/{modelId}/analyzeResults/{resultId}"
+  "/custom/models/{modelId}/analyzeResults/{resultId}":
+    get:
+      consumes: []
+      description: Obtain current status and the result of the analyze form operation.
+      operationId: GetAnalyzeFormResult
+      parameters:
+        - description: Model identifier.
+          format: uuid
+          in: path
+          name: modelId
+          required: true
+          type: string
+        - description: Analyze operation result identifier.
+          format: uuid
+          in: path
+          name: resultId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/AnalyzeOperationResult"
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Get Analyze Form Result
+      x-ms-examples:
+        Get analyze form result:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            modelId: "{model Id}"
+            resultId: "{result Id}"
+          responses:
+            "200":
+              body:
+                analyzeResult:
+                  documentResults: []
+                  errors: []
+                  pageResults: []
+                  readResults: []
+                  version: v2.0
+                createdDateTime: 2019-05-01T10:53:21Z
+                lastUpdatedDateTime: 2019-05-01T10:53:23Z
+                status: running
+  /layout/analyze:
+    post:
+      consumes:
+        - application/pdf
+        - application/json
+        - image/jpeg
+        - image/png
+        - image/tiff
+      description: Extract text and layout information from a given document. The input document must be of one of the supported content types - 'application/pdf', 'image/jpeg', 'image/png' or 'image/tiff'. Alternatively, use 'application/json' type to specify the location (Uri or local path) of the document to be analyzed.
+      operationId: AnalyzeLayoutAsync
+      parameters:
+        - $ref: "#/parameters/FileStream"
+      produces:
+        - application/json
+      responses:
+        "202":
+          description: Request is queued successfully.
+          headers:
+            Operation-Location:
+              description: URL containing the resultId used to track the progress and obtain the result of the analyze operation.
+              type: string
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Analyze Layout
+      x-ms-examples:
+        Analyze layout:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            language: en
+          responses:
+            "202":
+              headers:
+                Operation-Location: "{endpoint}/formrecognizer/v2.0-preview/layout/analyzeResults/{resultId}"
+  "/layout/analyzeResults/{resultId}":
+    get:
+      consumes: []
+      description: Track the progress and obtain the result of the analyze layout operation
+      operationId: GetAnalyzeLayoutResult
+      parameters:
+        - description: Analyze operation result identifier.
+          format: uuid
+          in: path
+          name: resultId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/AnalyzeOperationResult"
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Get Analyze Layout Result
+      x-ms-examples:
+        Get analyze layout result:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            modelId: "{model Id}"
+            resultId: "{result Id}"
+          responses:
+            "200":
+              body:
+                analyzeResult:
+                  pageResults: []
+                  readResults: []
+                  version: v2.0
+                createdDateTime: 2019-05-01T10:53:21Z
+                lastUpdatedDateTime: 2019-05-01T10:53:23Z
+                status: succeeded
+  /prebuilt/receipt/analyze:
+    post:
+      consumes:
+        - application/pdf
+        - application/json
+        - image/jpeg
+        - image/png
+        - image/tiff
+      description: Extract field text and semantic values from a given receipt document. The input document must be of one of the supported content types - 'application/pdf', 'image/jpeg', 'image/png' or 'image/tiff'. Alternatively, use 'application/json' type to specify the location (Uri or local path) of the document to be analyzed.
+      operationId: AnalyzeReceiptAsync
+      parameters:
+        - default: false
+          description: Include text lines and element references in the result.
+          in: query
+          name: includeTextDetails
+          required: false
+          type: boolean
+          x-nullable: false
+        - $ref: "#/parameters/FileStream"
+      produces:
+        - application/json
+      responses:
+        "202":
+          description: Request is queued successfully.
+          headers:
+            Operation-Location:
+              description: URL containing the resultId used to track the progress and obtain the result of the analyze operation.
+              type: string
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Analyze Receipt
+      x-ms-examples:
+        Analyze receipt:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+          responses:
+            "202":
+              headers:
+                Operation-Location: "{endpoint}/formrecognizer/v2.0-preview/prebuilt/receipt/analyzeResults/{resultId}"
+  "/prebuilt/receipt/analyzeResults/{resultId}":
+    get:
+      consumes: []
+      description: Track the progress and obtain the result of the analyze receipt operation.
+      operationId: GetAnalyzeReceiptResult
+      parameters:
+        - description: Analyze operation result identifier.
+          format: uuid
+          in: path
+          name: resultId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/AnalyzeOperationResult"
+        default:
+          description: Response entity accompanying non-successful responses containing additional details about the error.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Get Analyze Receipt Result
+      x-ms-examples:
+        Get analyze receipt result:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+            endpoint: "{endpoint}"
+            modelId: "{model Id}"
+            resultId: "{result Id}"
+          responses:
+            "200":
+              body:
+                analyzeResult:
+                  documentResults: []
+                  errors: []
+                  pageResults: []
+                  readResults: []
+                  version: v2.0
+                createdDateTime: 2019-05-01T10:53:21Z
+                lastUpdatedDateTime: 2019-05-01T10:53:23Z
+                status: running
+definitions:
+  AnalyzeOperationResult:
+    description: Status and result of the queued analyze operation.
+    properties:
+      analyzeResult:
+        $ref: "#/definitions/AnalyzeResult"
+        description: Results of the analyze operation.
+      createdDateTime:
+        description: Date and time (UTC) when the analyze operation was submitted.
+        format: date-time
+        type: string
+        x-nullable: false
+      lastUpdatedDateTime:
+        description: Date and time (UTC) when the status was last updated.
+        format: date-time
+        type: string
+        x-nullable: false
+      status:
+        $ref: "#/definitions/OperationStatus"
+        description: Operation status.
+    required:
+      - status
+      - createdDateTime
+      - lastUpdatedDateTime
+    type: object
+  AnalyzeResult:
+    description: Analyze operation result.
+    properties:
+      documentResults:
+        description: Document-level information extracted from the input.
+        items:
+          $ref: "#/definitions/DocumentResult"
+        type: array
+      errors:
+        description: List of errors reported during the analyze operation.
+        items:
+          $ref: "#/definitions/ErrorInformation"
+        type: array
+      pageResults:
+        description: Page-level information extracted from the input.
+        items:
+          $ref: "#/definitions/PageResult"
+        type: array
+      readResults:
+        description: Text extracted from the input.
+        items:
+          $ref: "#/definitions/ReadResult"
+        type: array
+      version:
+        description: Version of schema used for this result.
+        type: string
+    required:
+      - version
+      - readResults
+    type: object
+  BoundingBox:
+    description: Quadrangle bounding box, with coordinates specified relative to the top-left of the original image. The eight numbers represent the four points, clockwise from the top-left corner relative to the text orientation. For image, the (x, y) coordinates are measured in pixels. For PDF, the (x, y) coordinates are measured in inches.
+    items:
+      type: number
+      x-nullable: false
+    maxItems: 8
+    minItems: 8
+    type: array
+  Confidence:
+    description: Confidence value.
+    maximum: 1
+    minimum: 0
+    type: number
+    x-nullable: false
+  DataTable:
+    description: Information about the extracted table contained in a page.
+    properties:
+      cells:
+        description: List of cells contained in the table.
+        items:
+          $ref: "#/definitions/DataTableCell"
+        type: array
+      columns:
+        description: Number of columns.
+        minimum: 1
+        type: integer
+        x-nullable: false
+      rows:
+        description: Number of rows.
+        minimum: 1
+        type: integer
+        x-nullable: false
+    required:
+      - rows
+      - columns
+      - cells
+    type: object
+  DataTableCell:
+    description: Information about the extracted cell in a table.
+    properties:
+      boundingBox:
+        $ref: "#/definitions/BoundingBox"
+        description: Bounding box of the cell.
+      columnIndex:
+        description: Column index of the cell.
+        minimum: 0
+        type: integer
+        x-nullable: false
+      columnSpan:
+        default: 1
+        description: Number of columns spanned by this cell.
+        minimum: 1
+        type: integer
+        x-nullable: false
+      confidence:
+        $ref: "#/definitions/Confidence"
+        description: Confidence value.
+      elements:
+        description: When includeTextDetails is set to true, a list of references to the text elements constituting this table cell.
+        items:
+          $ref: "#/definitions/ElementReference"
+        type: array
+      isFooter:
+        default: false
+        description: Is the current cell a footer cell?
+        type: boolean
+        x-nullable: false
+      isHeader:
+        default: false
+        description: Is the current cell a header cell?
+        type: boolean
+        x-nullable: false
+      rowIndex:
+        description: Row index of the cell.
+        minimum: 0
+        type: integer
+        x-nullable: false
+      rowSpan:
+        default: 1
+        description: Number of rows spanned by this cell.
+        minimum: 1
+        type: integer
+        x-nullable: false
+      text:
+        description: Text content of the cell.
+        type: string
+    required:
+      - rowIndex
+      - columnIndex
+      - text
+      - boundingBox
+      - confidence
+    type: object
+  DocumentResult:
+    description: A set of extracted fields corresponding to the input document.
+    properties:
+      docType:
+        description: Document type.
+        type: string
+      fields:
+        additionalProperties:
+          $ref: "#/definitions/FieldValue"
+        description: Dictionary of named field values.
+        type: object
+      pageRange:
+        description: First and last page number where the document is found.
+        items:
+          minimum: 1
+          type: integer
+          x-nullable: false
+        maxItems: 2
+        minItems: 2
+        type: array
+    required:
+      - docType
+      - pageRange
+      - fields
+  ElementReference:
+    description: Reference to a line or word.
+    type: string
+  ErrorInformation:
+    properties:
+      code:
+        type: string
+      message:
+        type: string
+    required:
+      - code
+      - message
+    type: object
+  ErrorResponse:
+    properties:
+      error:
+        $ref: "#/definitions/ErrorInformation"
+    required:
+      - error
+    type: object
+  FieldValue:
+    description: Recognized field value.
+    properties:
+      boundingBox:
+        $ref: "#/definitions/BoundingBox"
+        description: Bounding box of the field value, if appropriate.
+      confidence:
+        $ref: "#/definitions/Confidence"
+        description: Confidence score.
+      elements:
+        description: When includeTextDetails is set to true, a list of references to the text elements constituting this field.
+        items:
+          $ref: "#/definitions/ElementReference"
+        type: array
+      page:
+        description: The 1-based page number in the input document.
+        minimum: 1
+        type: integer
+        x-nullable: false
+      text:
+        description: Text content of the extracted field.
+        type: string
+      type:
+        $ref: "#/definitions/FieldValueType"
+        description: Type of field value.
+      valueArray:
+        description: Array of field values.
+        items:
+          $ref: "#/definitions/FieldValue"
+        type: array
+      valueDate:
+        description: Date value.
+        format: date-time
+        type: string
+        x-nullable: false
+      valueInteger:
+        description: Integer value.
+        type: integer
+        x-nullable: false
+      valueNumber:
+        description: Floating point value.
+        type: number
+        x-nullable: false
+      valueObject:
+        additionalProperties:
+          $ref: "#/definitions/FieldValue"
+        description: Dictionary of named field values.
+        type: object
+      valuePhoneNumber:
+        description: Phone number value.
+        type: string
+      valueString:
+        description: String value.
+        type: string
+      valueTime:
+        description: Time value.
+        format: date-time
+        type: string
+        x-nullable: false
+    required:
+      - type
+    type: object
+  FieldValueType:
+    description: Semantic data type of the field value.
+    enum:
+      - string
+      - date
+      - time
+      - phoneNumber
+      - number
+      - integer
+      - array
+      - object
+    type: string
+    x-ms-enum:
+      modelAsString: false
+      name: FieldValueType
+    x-nullable: false
+  FormFieldsReport:
+    description: Report for a custom model training field.
+    properties:
+      accuracy:
+        description: Estimated extraction accuracy for this field.
+        type: number
+        x-nullable: false
+      fieldName:
+        description: Training field name.
+        type: string
+    required:
+      - fieldName
+      - accuracy
+    type: object
+  KeyValueElement:
+    description: Information about the extracted key or value in a key-value pair.
+    properties:
+      boundingBox:
+        $ref: "#/definitions/BoundingBox"
+        description: Bounding box of the key or value.
+      elements:
+        description: When includeTextDetails is set to true, a list of references to the text elements constituting this key or value.
+        items:
+          $ref: "#/definitions/ElementReference"
+        type: array
+      text:
+        description: The text content of the key or value.
+        type: string
+    required:
+      - text
+    type: object
+  KeyValuePair:
+    description: Information about the extracted key-value pair.
+    properties:
+      confidence:
+        $ref: "#/definitions/Confidence"
+        description: Confidence value.
+      key:
+        $ref: "#/definitions/KeyValueElement"
+        description: Information about the extracted key in a key-value pair.
+      label:
+        description: A user defined label for the key/value pair entry.
+        type: string
+      value:
+        $ref: "#/definitions/KeyValueElement"
+        description: Information about the extracted value in a key-value pair.
+    required:
+      - key
+      - value
+      - confidence
+    type: object
+  KeysResult:
+    description: Keys extracted by the custom model.
+    properties:
+      clusters:
+        additionalProperties:
+          items:
+            type: string
+          type: array
+          uniqueItems: true
+        description: Object mapping clusterIds to a list of keys.
+        type: object
+    required:
+      - clusters
+    type: object
+  Language:
+    description: Language code
+    enum:
+      - en
+      - es
+    type: string
+    x-ms-enum:
+      modelAsString: true
+      name: Language
+    x-nullable: false
+  Model:
+    description: Response to the get custom model operation.
+    properties:
+      keys:
+        $ref: "#/definitions/KeysResult"
+      modelInfo:
+        $ref: "#/definitions/ModelInfo"
+      trainResult:
+        $ref: "#/definitions/TrainResult"
+    required:
+      - modelInfo
+    type: object
+  ModelInfo:
+    description: Basic custom model information.
+    properties:
+      createdDateTime:
+        description: Date and time (UTC) when the model was created.
+        format: date-time
+        type: string
+        x-nullable: false
+      lastUpdatedDateTime:
+        description: Date and time (UTC) when the status was last updated.
+        format: date-time
+        type: string
+        x-nullable: false
+      modelId:
+        description: Model identifier.
+        format: uuid
+        type: string
+        x-nullable: false
+      status:
+        description: Status of the model.
+        enum:
+          - creating
+          - ready
+          - invalid
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: ModelStatus
+        x-nullable: false
+    required:
+      - modelId
+      - status
+      - createdDateTime
+      - lastUpdatedDateTime
+    type: object
+  Models:
+    description: Response to the list custom models operation.
+    properties:
+      modelList:
+        description: Collection of trained custom models.
+        items:
+          $ref: "#/definitions/ModelInfo"
+        type: array
+      nextLink:
+        description: Link to the next page of custom models.
+        type: string
+      summary:
+        description: Summary of all trained custom models.
+        properties:
+          count:
+            description: Current count of trained custom models.
+            type: integer
+            x-nullable: false
+          lastUpdatedDateTime:
+            description: Date and time (UTC) when the summary was last updated.
+            format: date-time
+            type: string
+            x-nullable: false
+          limit:
+            description: Max number of models that can be trained for this subscription.
+            type: integer
+            x-nullable: false
+        required:
+          - count
+          - limit
+          - lastUpdatedDateTime
+        type: object
+    type: object
+  OperationStatus:
+    description: Status of the queued operation.
+    enum:
+      - notStarted
+      - running
+      - succeeded
+      - failed
+    type: string
+    x-ms-enum:
+      modelAsString: false
+      name: OperationStatus
+    x-nullable: false
+  PageResult:
+    description: Extracted information from a single page.
+    properties:
+      clusterId:
+        description: Cluster identifier.
+        format: int32
+        minimum: 0
+        type: integer
+        x-nullable: false
+      keyValuePairs:
+        description: List of key-value pairs extracted from the page.
+        items:
+          $ref: "#/definitions/KeyValuePair"
+        type: array
+      page:
+        description: Page number.
+        format: int32
+        minimum: 1
+        type: integer
+        x-nullable: false
+      tables:
+        description: List of data tables extracted from the page.
+        items:
+          $ref: "#/definitions/DataTable"
+        type: array
+    required:
+      - page
+    type: object
+  ReadResult:
+    description: Text extracted from a page in the input document.
+    properties:
+      angle:
+        description: The general orientation of the text in clockwise direction, measured in degrees between (-180, 180].
+        exclusiveMinimum: true
+        maximum: 180
+        minimum: -180
+        type: number
+        x-nullable: false
+      height:
+        description: The height of the image/PDF in pixels/inches, respectively.
+        minimum: 0
+        type: number
+        x-nullable: false
+      language:
+        $ref: "#/definitions/Language"
+        description: The detected language on the page overall.
+      lines:
+        description: When includeTextDetails is set to true, a list of recognized text lines. The maximum number of lines returned is 300 per page. The lines are sorted top to bottom, left to right, although in certain cases proximity is treated with higher priority. As the sorting order depends on the detected text, it may change across images and OCR version updates. Thus, business logic should be built upon the actual line location instead of order.
+        items:
+          $ref: "#/definitions/TextLine"
+        type: array
+      page:
+        description: The 1-based page number in the input document.
+        minimum: 1
+        type: integer
+        x-nullable: false
+      unit:
+        description: The unit used by the width, height and boundingBox properties. For images, the unit is "pixel". For PDF, the unit is "inch".
+        enum:
+          - pixel
+          - inch
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: LengthUnit
+        x-nullable: false
+      width:
+        description: The width of the image/PDF in pixels/inches, respectively.
+        minimum: 0
+        type: number
+        x-nullable: false
+    required:
+      - page
+      - angle
+      - width
+      - height
+      - unit
+    type: object
+  SourceDataStream:
+    description: A PDF document, image (jpg/png/tiff), or JSON file to analyze.
+    type: object
+  SourcePath:
+    description: Uri or local path to source data.
+    properties:
+      source:
+        description: File source path.
+        maxLength: 2048
+        minLength: 0
+        type: string
+    type: object
+  TextLine:
+    description: An object representing an extracted text line.
+    properties:
+      boundingBox:
+        $ref: "#/definitions/BoundingBox"
+        description: Bounding box of an extracted line.
+      language:
+        $ref: "#/definitions/Language"
+        description: The detected language of this line, if different from the overall page language.
+      text:
+        description: The text content of the line.
+        type: string
+      words:
+        description: List of words in the text line.
+        items:
+          $ref: "#/definitions/TextWord"
+        type: array
+    required:
+      - text
+      - boundingBox
+      - words
+    type: object
+  TextWord:
+    description: An object representing a word.
+    properties:
+      boundingBox:
+        $ref: "#/definitions/BoundingBox"
+        description: Bounding box of an extracted word.
+      confidence:
+        $ref: "#/definitions/Confidence"
+        description: Confidence value.
+      text:
+        description: The text content of the word.
+        type: string
+    required:
+      - boundingBox
+      - text
+    type: object
+  TrainRequest:
+    description: Request parameter to train a new custom model.
+    properties:
+      source:
+        description: Source path containing the training documents.
+        maxLength: 2048
+        minLength: 0
+        type: string
+      sourceFilter:
+        $ref: "#/definitions/TrainSourceFilter"
+        description: Filter to apply to the documents in the source path for training.
+      useLabelFile:
+        default: false
+        description: Use label file for training a model.
+        type: boolean
+    required:
+      - source
+    type: object
+  TrainResult:
+    description: Custom model training result.
+    properties:
+      averageModelAccuracy:
+        description: Average accuracy.
+        type: number
+        x-nullable: false
+      errors:
+        description: Errors returned during the training operation.
+        items:
+          $ref: "#/definitions/ErrorInformation"
+        type: array
+      fields:
+        description: List of fields used to train the model and the train operation error reported by each.
+        items:
+          $ref: "#/definitions/FormFieldsReport"
+        type: array
+      trainingDocuments:
+        description: List of the documents used to train the model and any errors reported in each document.
+        items:
+          $ref: "#/definitions/TrainingDocumentInfo"
+        type: array
+    required:
+      - trainingDocuments
+    type: object
+  TrainSourceFilter:
+    description: Filter to apply to the documents in the source path for training.
+    properties:
+      includeSubFolders:
+        default: false
+        description: A flag to indicate if sub folders within the set of prefix folders will also need to be included when searching for content to be preprocessed.
+        type: boolean
+        x-nullable: false
+      prefix:
+        description: A case-sensitive prefix string to filter documents in the source path for training. For example, when using a Azure storage blob Uri, use the prefix to restrict sub folders for training.
+        maxLength: 1024
+        minLength: 0
+        type: string
+    type: object
+  TrainingDocumentInfo:
+    description: Report for a custom model training document.
+    properties:
+      documentName:
+        description: Training document name.
+        type: string
+      errors:
+        description: List of errors.
+        items:
+          $ref: "#/definitions/ErrorInformation"
+        type: array
+      pages:
+        description: Total number of pages trained.
+        format: int32
+        type: integer
+        x-nullable: false
+      status:
+        description: Status of the training operation.
+        enum:
+          - succeeded
+          - partiallySucceeded
+          - failed
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: TrainStatus
+        x-nullable: false
+    required:
+      - documentName
+      - pages
+      - errors
+      - status
+    type: object
+x-ms-parameterized-host:
+  hostTemplate: "{endpoint}/formrecognizer/v2.0-preview"
+  parameters:
+    - $ref: "#/parameters/Endpoint"
+  useSchemePrefix: false

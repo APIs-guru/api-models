@@ -1,0 +1,431 @@
+openapi: 3.0.0
+servers:
+  - description: VA.gov API sandbox environment
+    url: https://sandbox-api.va.gov/services/va_forms/{version}
+    variables:
+      version:
+        default: v0
+  - description: VA.gov API production environment
+    url: https://api.va.gov/services/va_forms/{version}
+    variables:
+      version:
+        default: v0
+info:
+  contact:
+    name: va.gov
+  description: |
+    Use the VA Forms API to search for VA forms, get the form's PDF link and metadata, and check for new versions.
+
+    Visit our VA Lighthouse [Contact Us page](https://developer.va.gov/support) for further assistance.
+
+    ## Background
+    This API offers an efficient way to stay up-to-date with the latest VA forms and information. The forms information listed on VA.gov matches the information returned by this API.
+    - Search by form number, keyword, or title
+    - Get a link to the form in PDF format
+    - Get detailed form metadata including the number of pages, related forms, benefit categories, language, and more
+    - Retrieve the latest date of PDF changes and the SHA256 checksum
+    - Identify when a form is deleted by the VA
+
+    ## Technical summary
+    The VA Forms API collects form data from the official VA Form Repository on a nightly basis.  The Index endpoint can return all available forms or, if an optional query parameter is passed, will return only forms that may relate to the query value. When a valid form name is passed to the Show endpoint, it will return a single form with additional metadata and full revision history. A JSON response is given with the PDF link (if published) and the corresponding form metadata.
+
+    ### Authentication and authorization
+    The form information shared by this API is publicly available.  API requests are authorized through a symmetric API token, provided in an HTTP header with name apikey. [Get a sandbox API Key](https://developer.va.gov/apply).
+
+    ### Testing in sandbox environment
+    Form data in the sandbox environment is for testing your API only, and is not guaranteed to be up-to-date. This API also has a reduced API rate limit. When you're ready to move to production, be sure to [request a production API key.](https://developer.va.gov/go-live)
+
+    ### SHA256 revision history
+    Each form is checked nightly for recent file changes. A corresponding SHA256 checksum is calculated, which provides a record of when the PDF changed and the SHA256 hash that was calculated. This allows end users to know that they have the most recent version and can verify the integrity of a previously downloaded PDF.
+
+    ### Valid PDF link
+    Additionally, during the nightly refresh process, the link to the form PDF is verified and the `valid_pdf` metadata is updated accordingly. If marked `true`, the link is valid and is a current form. If marked `false`, the link is either broken or the form has been removed.
+
+    ### Deleted forms
+    If the `deleted_at` metadata is set, that means the VA has removed this form from the repository and it is no longer to be used.
+  title: VA Forms
+  version: 0.0.0
+  x-apisguru-categories:
+    - forms
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_prod-va-gov-assets.s3-us-gov-west-1.amazonaws.com_img_design_icons_apple-touch-icon.png
+  x-origin:
+    - format: openapi
+      url: https://api.va.gov/services/va_forms/docs/v0/api
+      version: "3.0"
+  x-providerName: va.gov
+  x-serviceName: forms
+paths:
+  /forms:
+    get:
+      description: Returns an index of all available VA forms. Optionally, pass a query parameter to filter forms by form number or title.
+      operationId: findForms
+      parameters:
+        - description: Returns form data based on entered form name.
+          in: query
+          name: query
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    items:
+                      $ref: "#/components/schemas/FormsIndex"
+                    type: array
+                required:
+                  - data
+                type: object
+          description: VA Forms index response
+        "401":
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    example: Invalid authentication credentials
+                    type: string
+          description: Unauthorized
+        "429":
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    example: API rate limit exceeded
+                    type: string
+          description: Too many requests
+      security:
+        - apikey: []
+      summary: Returns all VA Forms and their last revision date
+      tags:
+        - Forms
+  "/forms/{form_name}":
+    get:
+      description: Returns a single form and the full revision history
+      operationId: findFormByFormName
+      parameters:
+        - description: The VA form_name of the form being requested. The exact form name must be passed, including proper placement of prefixes and/or hyphens.
+          example: 10-10EZ
+          in: path
+          name: form_name
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    $ref: "#/components/schemas/FormShow"
+                required:
+                  - data
+                type: object
+          description: VA Form Show response
+        "401":
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    example: Invalid authentication credentials
+                    type: string
+          description: Unauthorized
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    items:
+                      properties:
+                        message:
+                          example: Form not found
+                          type: string
+                    type: array
+                required:
+                  - errors
+                type: object
+          description: Not Found
+        "429":
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    example: API rate limit exceeded
+                    type: string
+          description: Too many requests
+      security:
+        - apikey: []
+      summary: Find form by form name
+      tags:
+        - Forms
+components:
+  examples: {}
+  links: {}
+  parameters: {}
+  requestBodies: {}
+  responses: {}
+  schemas:
+    FormShow:
+      description: Data for a particular VA form, including form version history.
+      properties:
+        attributes:
+          properties:
+            benefit_categories:
+              description: Listing of benefit categories and match
+              items:
+                properties:
+                  description:
+                    description: Description of the benefit category of the form
+                    example: VA health care
+                    type: string
+                  name:
+                    description: Name of the benefit category of the form
+                    example: Health care
+                    type: string
+              nullable: true
+              type: array
+            created_at:
+              description: Internal field for VA.gov use
+              example: 2021-03-30T16:28:30.338Z
+              format: date-time
+              nullable: true
+              type: string
+            deleted_at:
+              description: The timestamp at which the form was deleted
+              example: null
+              format: date-time
+              nullable: true
+              type: string
+            first_issued_on:
+              description: The date the form first became available
+              example: 2016-07-10
+              format: date
+              nullable: true
+              type: string
+            form_details_url:
+              description: Location on www.va.gov of the info page for this form
+              example: https://www.va.gov/find-forms/about-form-10-10ez
+              nullable: true
+              type: string
+            form_name:
+              description: Name of the VA Form
+              example: 10-10EZ
+              type: string
+            form_tool_intro:
+              description: Introductory text describing the VA online tool for this form
+              example: You can apply online instead of filling out and sending us the paper form.
+              nullable: true
+              type: string
+            form_tool_url:
+              description: Location of the online tool for this form
+              example: https://www.va.gov/health-care/apply/application/introduction
+              nullable: true
+              type: string
+            form_type:
+              description: VA Type of the form
+              example: benefit
+              nullable: true
+              type: string
+            form_usage:
+              description: A description of how the form is to be used
+              example: <p>Use VA Form 10-10EZ if you’re a Veteran and want to apply for VA health care. You must be enrolled in...</p>
+              nullable: true
+              type: string
+            language:
+              description: Language code of the form
+              example: en
+              nullable: true
+              type: string
+            last_revision_on:
+              description: The date the form was last updated
+              example: 2020-01-17
+              format: date
+              nullable: true
+              type: string
+            pages:
+              description: Number of pages contained in the form
+              example: 5
+              type: integer
+            related_forms:
+              description: A listing of other forms that relate to current form
+              items:
+                example: 10-10EZR
+                type: string
+              nullable: true
+              type: array
+            sha256:
+              description: A sha256 hash of the form contents
+              example: 5fe171299ece147e8b456961a38e17f1391026f26e9e170229317bc95d9827b7
+              nullable: true
+              type: string
+            title:
+              description: Title of the form as given by VA
+              example: Instructions and Enrollment Application for Health Benefits
+              type: string
+            url:
+              description: Web location of the form
+              example: https://www.va.gov/vaforms/medical/pdf/10-10EZ-fillable.pdf
+              type: string
+            va_form_administration:
+              description: The VA organization that administers the form
+              example: Veterans Health Administration
+              nullable: true
+              type: string
+            valid_pdf:
+              description: A flag indicating whether the form url was confirmed as a valid download
+              example: "true"
+              type: boolean
+            versions:
+              description: The version history of revisions to the form
+              items:
+                properties:
+                  revision_on:
+                    description: The date the sha256 hash was calculated
+                    example: 2012-01-01
+                    format: date
+                    type: string
+                  sha256:
+                    description: A sha256 hash of the form contents for that version
+                    example: 5fe171299ece147e8b456961a38e17f1391026f26e9e170229317bc95d9827b7
+                    type: string
+              nullable: true
+              type: array
+        id:
+          description: JSON API identifier
+          example: 10-10-EZ
+          type: string
+        type:
+          description: JSON API type specification
+          example: va_form
+          type: string
+    FormsIndex:
+      description: A listing of available VA forms and their location.
+      properties:
+        attributes:
+          properties:
+            benefit_categories:
+              description: Listing of benefit categories and match
+              items:
+                properties:
+                  description:
+                    description: Description of the benefit category of the form
+                    example: VA health care
+                    type: string
+                  name:
+                    description: Name of the benefit category of the form
+                    example: Health care
+                    type: string
+              nullable: true
+              type: array
+            deleted_at:
+              description: The timestamp at which the form was deleted
+              example: "null"
+              format: date-time
+              nullable: true
+              type: string
+            first_issued_on:
+              description: The date the form first became available
+              example: 2016-07-10
+              format: date
+              nullable: true
+              type: string
+            form_details_url:
+              description: Location on www.va.gov of the info page for this form
+              example: https://www.va.gov/find-forms/about-form-10-10ez
+              nullable: true
+              type: string
+            form_name:
+              description: Name of the VA Form
+              example: 10-10EZ
+              type: string
+            form_tool_intro:
+              description: Introductory text describing the VA online tool for this form
+              example: You can apply online instead of filling out and sending us the paper form.
+              nullable: true
+              type: string
+            form_tool_url:
+              description: Location of the online tool for this form
+              example: https://www.va.gov/health-care/apply/application/introduction
+              nullable: true
+              type: string
+            form_type:
+              description: VA Type of the form
+              example: benefit
+              nullable: true
+              type: string
+            form_usage:
+              description: A description of how the form is to be used
+              example: <p>Use VA Form 10-10EZ if you’re a Veteran and want to apply for VA health care. You must be enrolled in...</p>
+              nullable: true
+              type: string
+            language:
+              description: Language code of the form
+              example: en
+              type: string
+            last_revision_on:
+              description: The date the form was last updated
+              example: 2020-01-17
+              format: date
+              nullable: true
+              type: string
+            last_sha256_change:
+              description: The date of the last sha256 hash change
+              example: 2019-05-30
+              format: date
+              nullable: true
+              type: string
+            pages:
+              description: Number of pages contained in the form
+              example: 5
+              type: integer
+            related_forms:
+              description: A listing of other forms that relate to current form
+              items:
+                example: 10-10EZR
+                type: string
+              nullable: true
+              type: array
+            sha256:
+              description: A sha256 hash of the form contents
+              example: 6e6465e2e1c89225871daa9b6d86b92d1c263c7b02f98541212af7b35272372b
+              nullable: true
+              type: string
+            title:
+              description: Title of the form as given by VA
+              example: Instructions and Enrollment Application for Health Benefits
+              type: string
+            url:
+              description: Web location of the form
+              example: https://www.va.gov/vaforms/medical/pdf/10-10EZ-fillable.pdf
+              type: string
+            va_form_administration:
+              description: The VA organization that administers the form
+              example: Veterans Health Administration
+              nullable: true
+              type: string
+            valid_pdf:
+              description: A flag indicating whether the form url was confirmed as a valid download
+              example: "true"
+              type: boolean
+        id:
+          description: JSON API identifier
+          example: 10-10EZ
+          type: string
+        type:
+          description: JSON API type specification
+          example: va_form
+          type: string
+  securitySchemes:
+    apikey:
+      in: header
+      name: apikey
+      type: apiKey

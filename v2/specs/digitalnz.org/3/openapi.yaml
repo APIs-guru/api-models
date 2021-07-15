@@ -1,0 +1,678 @@
+openapi: 3.0.1
+servers:
+  - description: Production API
+    url: https://api.digitalnz.org
+info:
+  contact:
+    email: develop@digitalnz.org
+    name: DigitalNZ
+  description: |
+    OpenAPI specification of DigitalNZ's Record API.  
+    For more information about the API see [digitalnz.org/developers](https://digitalnz.org/developers).  
+    To learn more about the metadata/fields used in the API see the [Metadata Dictionary](https://docs.google.com/document/pub?id=1Z3I_ckQWjnQQ4SzpORbClcIXUheO-Jd4jt-oZFuMcoQ).  
+    To get a sense of what content is available via the API take a look at the search feature on the [DigitalNZ website](https://digitalnz.org/records?text=all%20sorts&tab=Images).  
+    The [terms of use](https://digitalnz.org/about/terms-of-use/developer-api-terms-of-use) specify how developers can use the DigitalNZ API.
+  title: DigitalNZ API
+  version: "3"
+  x-apisguru-categories:
+    - open_data
+  x-origin:
+    - format: openapi
+      url: https://api.swaggerhub.com/apis/DigitalNZ/Records/3
+      version: "3.0"
+  x-providerName: digitalnz.org
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+security:
+  - ApiKeyAuth: []
+tags:
+  - name: API calls
+paths:
+  "/records.{format}":
+    get:
+      description: This is the main search endpoint allowing queries against the records database.
+      parameters:
+        - $ref: "#/components/parameters/format"
+        - $ref: "#/components/parameters/api_key"
+        - description: |
+            This field enables queries based on one or more search terms and provides the functionality of the main search box on [digitalnz.org](https://digitalnz.org). Search terms can be combined with boolean operators (AND, OR).  
+            A minus sign excludes certain terms, eg. "-horse".  
+            An asterisk (\*) acts as a wildcard, eg. "ted*".  
+            Multiple search terms are combined with an AND by default.  
+            Examples: `"moustache"`, `"Wanganui OR Whanganui"`,  `"-paperspast"`, `"ted*"`
+          in: query
+          name: text
+          schema:
+            type: string
+        - description: These are the same categories that are used across the tabs in [digitalnz.org](https://digitalnz.org/records?text=&tab=Videos)
+          explode: true
+          in: query
+          name: and[category][]
+          schema:
+            enum:
+              - Newspapers
+              - Images
+              - Books
+              - Articles
+              - Journals
+              - Archives
+              - Audio
+              - Other
+              - Manuscripts
+              - Reference sources
+              - Research papers
+              - Videos
+              - Music Score
+              - Groups
+              - Data
+              - Websites
+              - Sets
+            type: string
+        - description: |
+            Allows filtering for records from a particular Content Partner.  
+            Examples: `"Ministry for Culture and Heritage"` `"Trove"` `"V.C. Browne & Son"`
+              
+            *Tip* - To see a list of Content Partners available for filtering use the *facets* parameter, eg. *"&facets=content_partner"*.  
+          in: query
+          name: and[content_partner][]
+          schema:
+            type: string
+        - description: |
+            Allows filtering for records from a particular *primary_collection*.  
+            Examples: `"Puke Ariki"` `"NZHistory"` `"TAPUHI"`  
+              
+            *Tip* - To see a list of Primary_Collections available for filtering use the *facets* parameter, eg. *"&facets=primary_collection"*.   
+          in: query
+          name: and[primary_collection][]
+          schema:
+            type: string
+        - description: |
+            Allows filtering for records from a particular Collection. Collections can be thought of as sub-collections or groupings under Primary_Collections.  
+            Examples: `"Music 101"` `"Mollusks"` `"Wairarapa Daily Times"`
+              
+            *Tip* - To see a list of Collections available for filtering use the *facets* parameter, eg. *"&facets=collection"*. 
+          in: query
+          name: and[collection][]
+          schema:
+            type: string
+        - in: query
+          name: and[usage][]
+          schema:
+            enum:
+              - Share
+              - Modify
+              - Use commercially
+              - All rights reserved
+              - Unknown
+            type: string
+        - description: |
+            Examples: `"Cats"` `"Weddings"` `"climb*"`
+          in: query
+          name: and[subject][]
+          schema:
+            type: string
+        - description: |
+            Examples: `"Conference item"` `"Magazines"`
+          in: query
+          name: and[dc_type][]
+          schema:
+            type: string
+        - description: |
+            Examples: `"Photolithographs"` `"Glass*"`
+          in: query
+          name: and[format][]
+          schema:
+            type: string
+        - description: |
+            This field can be used for text-based location search. For a more advanced coordinate-based search, see the "geo_bbox" field below.  
+            Examples: `"Scott Base"` `"Wainuiomata"` `"castle*"`
+          in: query
+          name: and[placename][]
+          schema:
+            type: string
+        - description: |
+            Examples: `"Revelle Jackson"` `"Nicholas Chevalier"` `"Rita Angus"`
+          in: query
+          name: and[creator][]
+          schema:
+            type: string
+        - description: |
+            Examples: `"Pukeko"` `"Club"` `"Break*"`"
+          in: query
+          name: and[title][]
+          schema:
+            type: string
+        - description: |
+            This field can be useful for querying and sorting (see the 'sort' param further down). But it should be noted that, as with some other fields, **not all records have date metadata associated**. There is good coverage of date metadata within certain collections, but there are plenty with no date information at all. So, if you query for records from a specific date you may get some matching results, but might also be missing other potentially relevant records that don't have date metadata available.  
+            Example: `"1970-12-25"`
+
+            *Tip* - There is a related (but not searchable) field that is returned on each record (where available), that often has a more human readable version of the date information, called 'display_date'.
+          in: query
+          name: and[date]
+          schema:
+            type: string
+        - description: |
+            This field allows searching specifically by year. The metadata is derived from the same date information that is searchable and returned in the date field. It is possible to search across a range using syntax the following syntax `[{start year} TO {end year}]`.  
+            Example: `"1893"` `"[1982 TO 1987]"`
+          in: query
+          name: and[year]
+          schema:
+            type: string
+        - description: |
+            This field allows searching specifically by decade. The metadata is derived from the same date information that is searchable and returned in the date field.  
+            Example: `"1850"` `"1990"`
+          in: query
+          name: and[decade]
+          schema:
+            type: string
+        - description: |
+            This field allows searching specifically by century. The metadata is derived from the same date information that is searchable and returned in the date field.  
+            Example: `"1900"` `"2000"`
+          in: query
+          name: and[century]
+          schema:
+            type: string
+        - description: |
+            All of the above `and[___][]` filters in this document are also able to be used with this syntax to exclude specific matches. For example to exclude Papers Past content `&without[primary_collection]=Papers+Past`
+          in: query
+          name: without[{filter_field}]
+          schema:
+            type: string
+        - description: |
+            All of the above `and[___][]` filters in this document are also able to be used with the `and[or][___][]` syntax to allow multi-select *OR* queries within one field.  
+            Basic example: 
+            - To filter your results to only those with a category or Audio or Videos:   
+            `&and[or][category][]=Audio&and[or][category][]=Videos` 
+              
+            In order to combine *OR* filters across multiple fields the syntax needs to be nested as follows  
+            Nested examples: 
+             - To search for *(year is 2014 OR 2015) AND (primary_collection is TAPUHI OR Public Address)*  
+             `&and[or][year][]=2015&and[or][year][]=2014&and[and][or][primary_collection][]=TAPUHI&and[and][or][primary_collection][]=Public+Address`  
+             - To search for *(category is Images OR Video) AND (subject is cat OR cats)*  
+             `&and[or][category][]=Images&and[or][category][]=Videos&and[and][or][subject][]=cat&and[and][or][subject][]=cats`  
+          in: query
+          name: and[or][{filter_field}][]
+          schema:
+            type: string
+        - description: |
+            Some DigitalNZ partners offer their metadata for use in commercial applications. This content can be identified through the *is_commercial_use* flag. Only API results where the *is_commercial_use* field set to True can be used for commercial purposes. Check out the [terms of use](https://digitalnz.org/about/terms-of-use/developer-api-terms-of-use#commercial_use_terms) for more information.
+          in: query
+          name: and[is_commercial_use]
+          schema:
+            type: boolean
+        - description: |
+            Filters results to only those records that have an image available in the *large_thumbnail_url* field.  
+            **Note:** There is an issue with this field where, in order to get results, it needs to be specified with "Y" or not specified at all.
+          in: query
+          name: and[has_large_thumbnail_url]
+          schema:
+            enum:
+              - Y
+            type: string
+        - description: |
+            Filters results to only those records that have latitude and longitude coordinates present in the metadata.
+              
+            *Tip* - To see the location metadata you'll need to specifically request that field using the *fields* parameter - *"&fields=verbose,locations"*  as it is not part of the default, or verbose field sets.
+          in: query
+          name: and[has_lat_lng]
+          schema:
+            enum:
+              - true
+              - false
+            type: boolean
+        - description: |
+            A geographic bounding box scoping a search to a geographic region. Order of latitude-longitude coordinates is north, west, south, east.   For example, filtering the Wellington region would be *"&geo_bbox=-41,174,-42,175"*
+          in: query
+          name: geo_bbox
+          schema:
+            type: string
+        - $ref: "#/components/parameters/fields"
+        - description: |
+            Used to control the order of the results in conjunction with the *direction* field.
+              - *syndication_date* - is the creation date of the record within DigitalNZ, ie. when DigitalNZ first harvested the record.
+              - *date* - is the date metadata (if present) associated with the record.  
+                
+            To sort the search results with newest records at the top use: "&sort=syndication_date&direction=desc"
+          in: query
+          name: sort
+          schema:
+            enum:
+              - syndication_date
+              - date
+            type: string
+        - description: |
+            Used in conjunction with *sort* to order the results
+             - *asc* - Ascending, oldest first.
+             - *desc* - Descending, newest first.
+          in: query
+          name: direction
+          schema:
+            default: asc
+            enum:
+              - asc
+              - desc
+            type: string
+        - description: Specify which page of results to return.
+          in: query
+          name: page
+          schema:
+            default: 1
+            minimum: 1
+            type: integer
+        - description: The number of records to return per page of search results.
+          in: query
+          name: per_page
+          schema:
+            default: 20
+            maximum: 100
+            minimum: 0
+            type: integer
+        - description: |
+            Shows a breakdown of record counts for the specified facets based on the current result set. In the [DigitalNZ search interface](https://digitalnz.org/records) these facets are used to list the values filterable for each field. A comma-separated list will return multiple facets in one call.
+          explode: false
+          in: query
+          name: facets
+          schema:
+            items:
+              enum:
+                - category
+                - content_partner
+                - display_collection
+                - collection
+                - creator
+                - placename
+                - date
+                - year
+                - decade
+                - century
+                - language
+                - rights
+                - usage
+                - copyright
+                - subject
+                - format
+                - dc_type
+              type: string
+            type: array
+          style: form
+        - description: This value specifies which page of facet results to return. Allowing pagination through large lists of facet values.
+          in: query
+          name: facets_page
+          schema:
+            default: null
+            minimum: 1
+            type: integer
+        - description: The number of facets to return per page of facet results.
+          in: query
+          name: facets_per_page
+          schema:
+            default: 10
+            maximum: 350
+            type: integer
+        - description: |
+            This field can be used when filtering into some facets, to maintain the context of the wider facet values. A common use case is to allow the results of a search to be filtered down into a specific category (eg Audio), while still showing the other possible filter options as facet counts (eg. Images, Audio, Video, etc). Setting this to 'true' will not effect the search results returned but will ignore all search filters (eg. "and[category]=Audio") when calculating the facet counts. 
+          in: query
+          name: exclude_filters_from_facets
+          schema:
+            default: false
+            type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  facets:
+                    additionalProperties:
+                      additionalProperties:
+                        type: integer
+                      type: object
+                    description: |
+                      Each field you request from the list of facetable fields will be returned as separate elements. Each of those will contain a sorted list of elements that are made up of a value (eg collection name, subject, date) and the number of results associated with that value.  
+                    example:
+                      display_collection:
+                        Canterbury Museum: 39109
+                        Figure.NZ: 40185
+                        Napier Public Libraries: 39343
+                      year:
+                        "1997": 4
+                        "1998": 10
+                        "1999": 16
+                    type: object
+                  page:
+                    description: Current page.
+                    example: 3
+                    type: integer
+                  per_page:
+                    description: Requested amount of records shown per page of results.
+                    example: 20
+                    type: integer
+                    xml:
+                      name: per-page
+                  records:
+                    items:
+                      $ref: "#/components/schemas/record"
+                    type: array
+                  request_url:
+                    description: The URL of current page of results.
+                    example: https://api.digitalnz.org/v3/records.json?api_key=********&per_page=10&facets_per_page=100&facets=category&text=Wainuiomata
+                    type: string
+                    xml:
+                      name: request-url
+                  result_count:
+                    description: Total number of matching search results.
+                    example: 8190
+                    type: integer
+                    xml:
+                      name: result-count
+                type: object
+          description: search results matching criteria
+        "400":
+          $ref: "#/components/responses/FieldError"
+        "403":
+          $ref: "#/components/responses/KeyError"
+      summary: Run queries against DigitalNZ metadata search service.
+      tags:
+        - API calls
+  "/records/{record_id}.json":
+    get:
+      description: |
+        If you know its `record_id` you can use this endpoint to view all metadata associated with that specific record.
+      parameters:
+        - description: Every record has a unique, persistent *record_id*.
+          example: 189089
+          in: path
+          name: record_id
+          required: true
+          schema:
+            type: integer
+        - description: |
+            Note - There is a small difference with some field names in the response between JSON and XML.  
+            When a field name has more than one word, JSON format will separate the words with an underscore, eg. "content_partner", whereas XML uses a hyphenated naming convention, eg. "content-partner".
+          in: query
+          name: format
+          required: true
+          schema:
+            enum:
+              - json
+              - xml
+            type: string
+        - $ref: "#/components/parameters/api_key"
+        - $ref: "#/components/parameters/fields"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/record"
+          description: ok
+        "403":
+          $ref: "#/components/responses/KeyError"
+        "404":
+          content:
+            application/json:
+              schema:
+                example:
+                  errors: Record with ID *record_id* was not found
+                type: object
+            application/xml:
+              example: <hash><errors>Record with ID *record_id* was not found</errors></hash>
+              schema:
+                type: object
+          description: Resource not found
+      summary: View metadata associated with a single record.
+      tags:
+        - API calls
+components:
+  parameters:
+    api_key:
+      description: To access the API you will need your own DigitalNZ account and [API key](https://digitalnz.org/api_keys/edit).
+      in: query
+      name: api_key
+      required: true
+      schema:
+        type: string
+    fields:
+      description: |
+        Comma-separated whitelist of fields to be returned. The syntax *"&fields=verbose"* can be used to return the bulk of the fields, or you can customise which fields you are interested in, eg. *"&fields=id,title,subject,collection,landing_url,locations"*.
+      explode: false
+      in: query
+      name: fields
+      schema:
+        type: string
+    format:
+      description: |
+        Note - There is a small difference with some field names in the response between JSON and XML.  
+        When a field name has more than one word, JSON format will separate the words with an underscore, eg. "content_partner", whereas XML uses a hyphenated naming convention, eg. "content-partner".
+      in: path
+      name: format
+      required: true
+      schema:
+        enum:
+          - json
+          - xml
+        type: string
+  responses:
+    FieldError:
+      content:
+        application/json:
+          example:
+            errors:
+              - No field configured for Record with name *field_name*
+          schema:
+            type: object
+        application/xml:
+          example: <hash><errors><error>No field configured for Record with name *field_name*</error></errors></hash>
+          schema:
+            type: object
+      description: Incorrect field specified in the request.
+    KeyError:
+      content:
+        application/json:
+          example:
+            errors: Invalid API Key
+          schema:
+            type: object
+        application/xml:
+          example: <hash><errors>Invalid API Key</errors></hash>
+          schema:
+            type: object
+      description: API Key is missing or invalid.
+  schemas:
+    record:
+      description: |
+        *NOTE:* There are a lot of fields that are very rarely used in DigitalNZ. For instance there are custom built fields that are only relevant, and only found on specific collections. The schema below focuses on the most common / well populated fields and does not show every possible field available for a single record. 
+      properties:
+        category:
+          description: There will always be at least 1 human-readable category label in this field.
+          items:
+            enum:
+              - Newspapers
+              - Images
+              - Books
+              - Articles
+              - Journals
+              - Archives
+              - Audio
+              - Other
+              - Manuscripts
+              - Reference sources
+              - Research papers
+              - Videos
+              - Music Score
+              - Groups
+              - Data
+              - Websites
+              - Sets
+            type: string
+          type: array
+        collection:
+          description: |
+            In addition to the top level *"display_collection"* above, this field can also contain sub-collections or groupings within the main collection. 
+          items:
+            type: string
+          type: array
+        collection_title:
+          description: For historic reasons this is a duplicate of the previous field ("collection").
+          items:
+            type: string
+          type: array
+          xml:
+            name: collection-title
+        content_partner:
+          description: Name of the organisation(s), institution(s), or individual(s) making content available through DigitalNZ. This metadata will be present on all records and is usually the name of the organisation that has agreed to the DigitalNZ Metadata Contribution Terms.
+          items:
+            type: string
+          type: array
+          xml:
+            name: content-partner
+        copyright:
+          description: A copyright statement applying to the object referenced by this record. This field may be empty.
+          items:
+            enum:
+              - All rights reserved
+              - Some rights reserved
+              - No known copyright restrictions
+              - Unknown
+            type: string
+          type: array
+        created_at:
+          description: The date the record was initially harvested into DigitalNZ.
+          example: 2012-04-21T05:32:02.000+13:00
+          format: date-time
+          type: string
+          xml:
+            name: created-at
+        creator:
+          description: The name's of the people, organisations, institutions, services etc. who created the content (eg. the photographer, artist, writer or author).
+          items:
+            type: string
+          type: array
+        date:
+          description: Date information associated with this record (e.g. 1996-01-01T00:00:00.000Z). This field may be empty.
+          example: 1996-01-01T00:00:00.000Z
+          items:
+            type: string
+          type: array
+        dc_identifier:
+          description: Identifiers relating to the content from the content partner's system.
+          items:
+            type: string
+          type: array
+          xml:
+            name: dc-identifier
+        description:
+          description: Description of the record. Most records have a description.
+          type: string
+        display_collection:
+          description: The single main collection or website that the item belongs to. This metadata will be present on all records.
+          type: string
+          xml:
+            name: display-collection
+        display_content_partner:
+          description: The main Content Partner, for cases when there are more than one. This metadata will be present on all records.
+          type: string
+          xml:
+            name: dispay-content-partner
+        display_date:
+          description: Where provided, this field contains a human readable version of the date information.
+          example: Circa 1996
+          type: string
+          xml:
+            name: display-date
+        id:
+          description: All records have a unique identifier used within the DigitalNZ system.
+          example: 1788754
+          type: integer
+        landing_url:
+          description: |
+            This field will always contain a URL of the item on the content partner's website.  
+            *Note:* Please use the source_url when providing HTML links.
+          type: string
+        large_thumbnail_url:
+          description: URL for a larger thumbnail image with a width of up to 800px. NOTE - the API Terms do not extend rights to the use of images accessable throught the *large_thumbnail_url* field.
+          type: string
+          xml:
+            name: large-thumbnail-url
+        locations:
+          description: |
+            Geographical location information including latitude and longitude co-ordinates, text based location information, and details about where the location information comes from (eg. "Location provided by Museum of New Zealand Te Papa Tongarewa")
+          items:
+            properties:
+              comment:
+                description: Describes who provided this location metadata.
+                example: Location provided by the Alexander Turnbull Library
+                type: string
+              lat:
+                example: -37.508219086
+                type: number
+              lng:
+                example: 177.1802173
+                type: number
+              placename:
+                example: White Island
+                type: string
+            type: object
+          type: array
+        primary_collection:
+          description: In most cases this is the same as *display_collection*, but will occasionally a second value.
+          items:
+            type: string
+          type: array
+          xml:
+            name: primary-collection
+        rights:
+          description: Rights information. Can be a rights statement explaining the rights of the record or a link to a webpage with more detailed rights information.
+          type: string
+        rights_url:
+          description: An array of HTTP URLs resolving to a rights statement or terms of use information for the resource.
+          items:
+            type: string
+          type: array
+          xml:
+            name: rights-url
+        source_url:
+          description: This URL will always be present and provides a redirect to the landing_url. This link should be used as the main click-through to the content. Passing users through this link allows DNZ to count the number of click-throughs, as well as trigger link-checking activities that help clean up stale links in DigitalNZ.
+          example: https://api.digitalnz.org/records/1788754/source
+          type: string
+          xml:
+            name: source-url
+        subject:
+          description: Keywords about the content.
+          items:
+            type: string
+          type: array
+        thumbnail_url:
+          description: |
+            URL for a thumbnail image of the content. The size varies depending on what is available but we aim for a width of 250px. This field is mostly populated on records with a 'category' of 'Images', but is also sometimes found on others (eg. "Videos").
+          type: string
+          xml:
+            name: thumbnail-url
+        title:
+          description: Title of the record. All records should have a title.
+          example: Election night crowd, Wellington, 1931
+          type: string
+        updated_at:
+          description: The date the record was last updated/re-harvested into DigitalNZ.
+          example: 2020-12-06T01:36:37.359+13:00
+          format: date-time
+          type: string
+          xml:
+            name: updated-at
+        usage:
+          description: This field is always present and contains human-understandable information about how the item may be used based on its copyright/license.
+          items:
+            enum:
+              - All rights reserved
+              - Share
+              - Modify
+              - Use commercially
+              - Unknown
+            type: string
+          type: array
+      type: object
+  securitySchemes:
+    ApiKeyAuth:
+      in: query
+      name: api_key
+      type: apiKey

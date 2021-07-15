@@ -1,0 +1,219 @@
+openapi: 3.0.0
+servers:
+  - url: ""
+info:
+  contact:
+    x-twitter: amentumspace
+  description: |
+    The gravitational field of the earth is non-uniform.  The <a href='https://en.wikipedia.org/wiki/Geoid'>geoid</a> is the shape the
+     ocean surface would take if only gravity and the rotation of the Earth
+      were considered. The geoid is the surface that defines zero elevation.<br><br>
+
+    The geoid height is the difference between an ideal reference ellipsoid  and the geoid.<br><br>
+    The gravity anomaly is the difference between the acceleration due to gravity on the Earth's surface and the value calculated assuming the reference ellipsoid.<br><br>
+    The official Earth Gravitational Model <a href=https://en.wikipedia.org/wiki/Earth_Gravitational_Model#EGM2008/>EGM2008</a> was developed and  released to the public by the National Geospatial-Intelligence Agency (NGA).<br><br>
+    Our EGM2008 API provides on-demand access to the EGM2008 model, as implemented by the open-source GeographicLib  <a href=https://geographiclib.sourceforge.io/html/gravity.html>Gravity</a> library.<br><br>
+    API requests must contain a key "API-Key" in the header (see code samples). Obtain a key from  <a href='https://developer.amentum.io'>here</a>. <br><br> 
+    Amentum Pty Ltd is not responsible nor liable for any loss or damage of any sort incurred as a result of using the API. <br><br>
+    Copyright <a href='https://amentum.space'>Amentum Pty Ltd</a> 2021.
+  title: Gravity API
+  version: 1.1.1
+  x-apisguru-categories:
+    - location
+    - open_data
+  x-logo:
+    altText: Amentum Aerospace
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_amentumspace_profile_image
+  x-origin:
+    - format: openapi
+      url: https://gravity.amentum.space//openapi.json
+      version: "3.0"
+  x-providerName: amentum.space
+  x-serviceName: gravity
+tags:
+  - description: |
+      Calculate geoid height and gravity anomaly values using the EGM2008 model
+    name: egm2008
+    x-displayName: EGM2008 API
+paths:
+  /egm2008/geoid_height:
+    get:
+      description: |
+        for a given latitude / longitude. 
+      operationId: app.api_egm2008.endpoints.EGM2008.calculate_height
+      parameters:
+        - $ref: "#/components/parameters/Latitude"
+        - $ref: "#/components/parameters/Longitude"
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                height:
+                  units: m
+                  value: 45.88107058892659
+              schema:
+                $ref: "#/components/schemas/Height"
+          description: Successful geoid height calculation
+      summary: |
+        Calculate the geoid height
+      tags:
+        - egm2008
+      x-codeSamples:
+        - lang: Shell
+          source: |
+            curl -X GET "https://gravity.amentum.io/egm2008/geoid_height?latitude=-45&longitude=45" -H "API-Key: <your_key>" -H  "accept: application/json"
+        - lang: Python
+          source: |
+            import requests
+
+            headers = {"API-Key" : "<add_your_key>"}
+
+            params = {
+              "latitude" : "-45",
+              "longitude" : "45"
+            }
+
+            # Make the API call
+            try:
+              response = requests.get(
+                "https://gravity.amentum.io/egm2008/geoid_height",
+                params=params, headers=headers)
+              response_json = response.json()
+              response.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+              print(response_json['error'])
+            else:
+              # Extract the height
+              height = response_json['height']['value']
+              h_unit = response_json['height']['units']
+              print("Height: ", height, h_unit)
+  /egm2008/gravity_anomaly:
+    get:
+      description: |
+        for a given latitude / longitude.
+      operationId: app.api_egm2008.endpoints.EGM2008.calculate_anomaly
+      parameters:
+        - $ref: "#/components/parameters/Latitude"
+        - $ref: "#/components/parameters/Longitude"
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                eta:
+                  units: arcsec
+                  value: -0.9413662219916251
+                gravity_anomaly:
+                  units: mGal
+                  value: 27.954737031742376
+                xi:
+                  units: arcsec
+                  value: 1.371151956763653
+              schema:
+                $ref: "#/components/schemas/Anomaly"
+          description: Successful anomaly calculation
+      summary: |
+        Calculate gravity anomaly values
+      tags:
+        - egm2008
+      x-codeSamples:
+        - lang: Shell
+          source: |
+            curl -X GET "https://gravity.amentum.io/egm2008/gravity_anomaly?latitude=-45&longitude=45"  -H "API-Key: <your_key>" -H  "accept: application/json"
+        - lang: Python
+          source: |
+            import requests
+
+            headers = {"API-Key" : "<add_your_key>"}
+
+            params = {
+              "latitude" : "-45",
+              "longitude" : "45"
+            }
+
+            # Make the API call
+            try:
+              response = requests.get(
+                "https://gravity.amentum.io/egm2008/gravity_anomaly",
+                params=params, headers=headers)
+              response_json = response.json()
+              response.raise_for_status()
+            except requests.exceptions.HTTPError as e:
+              print(response_json['error'])
+            else:
+              # Extract eta
+              eta = response_json['eta']['value']
+              e_unit = response_json['eta']['units']
+              print("Eta: ", eta, e_unit)
+
+              # Extract gravity anomaly
+              ga = response_json['gravity_anomaly']['value']
+              ga_unit = response_json['gravity_anomaly']['units']
+              print("Gravity Anomaly: ", ga, ga_unit)
+
+              # Extract xi
+              xi = response_json['xi']['value']
+              xi_unit = response_json['xi']['units']
+              print("Xi: ", xi, xi_unit)
+components:
+  parameters:
+    Latitude:
+      description: Geographic latitude (-90 to 90 deg).
+      in: query
+      name: latitude
+      required: true
+      schema:
+        example: -45
+        type: number
+    Longitude:
+      description: Geographic longitude (-180 to 180 deg).
+      in: query
+      name: longitude
+      required: true
+      schema:
+        example: 45
+        type: number
+  schemas:
+    Anomaly:
+      properties:
+        eta:
+          description: Eta (arcsec) - easterly component of deflection of vertical.
+          properties:
+            units:
+              type: string
+            value:
+              type: number
+          type: object
+        gravity_anomaly:
+          description: |
+            Gravity anomaly (mGal)
+          properties:
+            units:
+              type: string
+            value:
+              type: number
+          type: object
+        xi:
+          description: |
+            Xi (arcsec) - northerly component of deflection of vertical.
+          properties:
+            units:
+              type: string
+            value:
+              type: number
+          type: object
+      type: object
+    Height:
+      properties:
+        height:
+          description: |
+            Geoid height (m)
+          properties:
+            units:
+              type: string
+            value:
+              type: number
+          type: object
+      type: object

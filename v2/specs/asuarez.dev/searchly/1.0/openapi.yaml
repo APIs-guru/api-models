@@ -1,0 +1,452 @@
+openapi: 3.0.1
+servers:
+  - url: https://searchly.asuarez.dev/api/v1
+info:
+  contact:
+    email: hi@asuarez.dev
+  description: |
+    # Introduction
+    The SearchLy API provides similarity searching based on song lyrics.
+
+    # Operations
+    The API allows for the `/similarity/by_song` operation, which allows clients to search the similarity for an existing song in the database. Also, the API has an additional `/similarity/by_content` endpoint which allows clients to search similarity given a free String input through a JSON request body. Additional `/song/search` operation is available for searching songs given a query String.
+
+    # Endpoint
+    The API endpoint for the SearchLy API v1 is as follows:
+    ```
+    https://searchly.asuarez.dev/api/v1
+    ```
+
+    # Motivation
+    This project was built in order to create an API for searching similarities based on song lyrics. There are a lot of songs in the industry and most of them are talking about the same topic. What I wanted to prove with SearchLy was to estimate how similar are two songs between them based on the meaning of their lyrics.
+
+    SearchLy is using a database of 100k songs from AZLyrics, using [this scraper](https://github.com/AlbertSuarez/azlyrics-scraper), which is being updated periodically. Then, using word2vec and NMSLIB, it was possible to create an index where you can search similarities using the k-nearest neighbors (KNN) algorithm.
+
+    > **Note**: I am currently using a micro-instance from DigitalOcean where the API is deployed, so you should expect a bad performance. However, if this API becomes popular I will deploy it in a bigger instance.
+  title: SearchLy API v1
+  version: "1.0"
+  x-apisguru-categories:
+    - media
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/AlbertSuarez/searchly/master/src/searchly/static/openapi/openapi_v1.yaml
+      version: "3.0"
+  x-providerName: asuarez.dev
+  x-serviceName: searchly
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+externalDocs:
+  description: SearchLy demo
+  url: https://searchly.asuarez.dev/
+tags:
+  - name: similarity
+    x-displayName: Similarity search
+  - name: song
+    x-displayName: Song search
+paths:
+  /similarity/by_content:
+    post:
+      description: |
+        Endpoint for an end-user client to search similarity by content.
+
+        If you want to run the /similarity/by_content operation, you can do so via an HTTP POST command to the following URL:
+
+        ```
+        https://searchly.asuarez.dev/api/v1/similarity/by_content
+        ```
+      operationId: src.searchly.api.v1.controllers.similarity.by_content
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                content:
+                  description: Content for searching similarity.
+                  type: string
+              type: object
+        description: Body wrapper for the request.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIResponseSimilarity"
+          description: Standard SearchLy API v1 JSON response. You should check the `error` attribute to determine if there was an error.
+        default:
+          content:
+            application/text:
+              schema:
+                description: Error description.
+                type: string
+          description: Unexpected error.
+      summary: API endpoint to search similarity using content
+      tags:
+        - similarity
+      x-code-samples:
+        - lang: python
+          source: |
+            # Make sure you have installed the required packages:
+            #   pip install requests
+
+            import requests
+
+            url = 'https://searchly.asuarez.dev/api/v1/similarity/by_content'
+            request_body = {"content": "CONTENT"}
+
+            # Make the classify request
+            response = requests.post(url, json=request_body)
+
+            # The response is formatted in JSON
+            json_response = response.json()
+        - lang: Java
+          source: |
+            try {
+              URL myurl = new URL("https://searchly.asuarez.dev/api/v1/similarity/by_content");
+              con = (HttpURLConnection) myurl.openConnection();
+              con.setRequestMethod("POST");
+              StringBuilder content;
+
+              String jsonInputString = "{" +
+                  "\"content\": \"CONTENT\"" +
+                "}";
+              try (OutputStream os = con.getOutputStream()) {
+                byte[] input = jsonInputString.getBytes("utf-8");
+                os.write(input, 0, input.length);
+              }
+
+              try (BufferedReader br = new BufferedReader(
+                      new InputStreamReader(con.getInputStream(), "utf-8"))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine = null;
+                while ((responseLine = br.readLine()) != null) {
+                  response.append(responseLine.trim());
+                }
+                System.out.println(response.toString());
+              }
+
+            } finally {
+              con.disconnect();
+            }
+        - lang: C#
+          source: |
+            var httpWebRequest = (HttpWebRequest)WebRequest.Create("https://searchly.asuarez.dev/api/v1/similarity/by_content");
+            httpWebRequest.ContentType = "application/json";
+            httpWebRequest.Method = "POST";
+
+            using (var streamWriter = new StreamWriter(httpWebRequest.GetRequestStream()))
+            {
+              string json = "{" +
+                  "\"content\": \"CONTENT\"" +
+                "}";
+              streamWriter.Write(json);
+            }
+
+            var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+            using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+            {
+              var result = streamReader.ReadToEnd();
+            }
+        - lang: php
+          source: |
+            <?php
+              // The data to send to the API
+              $postData = array(
+                'content' => 'CONTENT'
+              );
+
+              // Setup cURL
+              $ch = curl_init('https://searchly.asuarez.dev/api/v1/similarity/by_content');
+              curl_setopt_array($ch, array(
+                CURLOPT_POST => TRUE,
+                CURLOPT_RETURNTRANSFER => TRUE,
+                CURLOPT_HTTPHEADER => array(
+                    'Content-Type: application/json'
+                ),
+                CURLOPT_POSTFIELDS => json_encode($postData)
+              ));
+
+              // Send the request
+              $response = curl_exec($ch);
+            ?>
+        - lang: shell
+          source: |
+            curl "https://searchly.asuarez.dev/api/v1/similarity/by_content"\
+            -d content="CONTENT"
+  /similarity/by_song:
+    get:
+      description: |
+        Endpoint for an end-user client to search similarity by song identifier.
+
+        If you want to run the /similarity/by_song operation, you can do so via an HTTP GET command to the following URL:
+
+        ```
+        https://searchly.asuarez.dev/api/v1/similarity/by_song
+        ```
+      operationId: src.searchly.api.v1.controllers.similarity.by_song
+      parameters:
+        - description: Song identifier.
+          example: 234
+          in: query
+          name: song_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIResponseSimilarity"
+          description: Standard SearchLy API v1 JSON response. You should check the `error` attribute to determine if there was an error.
+        default:
+          content:
+            application/text:
+              schema:
+                description: Error description.
+                type: string
+          description: Unexpected error.
+      summary: API endpoint to search similarity using a song identifier
+      tags:
+        - similarity
+      x-code-samples:
+        - lang: python
+          source: |
+            # Make sure you have installed the required packages:
+            #   pip install requests
+
+            import requests
+
+            url = 'https://searchly.asuarez.dev/api/v1/similarity/by_song'
+            payload = {'song_id': SONG_IDENTIFIER}
+
+            # Make the classify request
+            response = requests.get(url, params=payload)
+
+            # The response is formatted in JSON
+            json_response = response.json()
+        - lang: Java
+          source: |
+            try {
+              URL myurl = new URL("https://searchly.asuarez.dev/api/v1/similarity/by_song" +
+                "?song_id=" + "SONG_IDENTIFIER");
+              con = (HttpURLConnection) myurl.openConnection();
+              con.setRequestMethod("GET");
+              StringBuilder content;
+
+              try (BufferedReader br = new BufferedReader(
+                      new InputStreamReader(con.getInputStream(), "utf-8"))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine = null;
+                while ((responseLine = br.readLine()) != null) {
+                  response.append(responseLine.trim());
+                }
+                System.out.println(response.toString());
+              }
+
+            } finally {
+              con.disconnect();
+            }
+        - lang: C#
+          source: |
+            var httpWebRequest = (HttpWebRequest)WebRequest.Create("https://searchly.asuarez.dev/api/v1/similarity/by_song" +
+              "?song_id=" + "SONG_IDENTIFIER");
+            httpWebRequest.Method = "GET";
+
+            var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+            using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+            {
+              var result = streamReader.ReadToEnd();
+            }
+        - lang: php
+          source: |
+            <?php
+              // Setup cURL
+              $ch = curl_init('https://searchly.asuarez.dev/api/v1/similarity/by_song'.'?song_id='.'SONG_IDENTIFIER');
+
+              // Send the request
+              $response = curl_exec($ch);
+            ?>
+        - lang: shell
+          source: |
+            curl "https://searchly.asuarez.dev/api/v1/similarity/by_song?song_id=SONG_IDENTIFIER"
+  /song/search:
+    get:
+      description: |
+        Endpoint for an end-user client to search songs from the database given a String query.
+
+        If you want to run the /song/search operation, you can do so via an HTTP GET command to the following URL:
+
+        ```
+        https://searchly.asuarez.dev/api/v1/song/search
+        ```
+      operationId: src.searchly.api.v1.controllers.song.search
+      parameters:
+        - description: Query.
+          example: Miley Cyrus
+          in: query
+          name: query
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIResponseSong"
+          description: Standard SearchLy API v1 JSON response. You should check the `error` attribute to determine if there was an error.
+        default:
+          content:
+            application/text:
+              schema:
+                description: Error description.
+                type: string
+          description: Unexpected error.
+      summary: API endpoint to search songs from the database given a query
+      tags:
+        - song
+      x-code-samples:
+        - lang: python
+          source: |
+            # Make sure you have installed the required packages:
+            #   pip install requests
+
+            import requests
+
+            url = 'https://searchly.asuarez.dev/api/v1/song/search'
+            payload = {'query': 'QUERY'}
+
+            # Make the classify request
+            response = requests.get(url, params=payload)
+
+            # The response is formatted in JSON
+            json_response = response.json()
+        - lang: Java
+          source: |
+            try {
+              URL myurl = new URL("https://searchly.asuarez.dev/api/v1/song/search" +
+                "?query=" + "QUERY");
+              con = (HttpURLConnection) myurl.openConnection();
+              con.setRequestMethod("GET");
+              StringBuilder content;
+
+              try (BufferedReader br = new BufferedReader(
+                      new InputStreamReader(con.getInputStream(), "utf-8"))) {
+                StringBuilder response = new StringBuilder();
+                String responseLine = null;
+                while ((responseLine = br.readLine()) != null) {
+                  response.append(responseLine.trim());
+                }
+                System.out.println(response.toString());
+              }
+
+            } finally {
+              con.disconnect();
+            }
+        - lang: C#
+          source: |
+            var httpWebRequest = (HttpWebRequest)WebRequest.Create("https://searchly.asuarez.dev/api/v1/song/search" +
+              "?query=" + "QUERY");
+            httpWebRequest.Method = "GET";
+
+            var httpResponse = (HttpWebResponse)httpWebRequest.GetResponse();
+            using (var streamReader = new StreamReader(httpResponse.GetResponseStream()))
+            {
+              var result = streamReader.ReadToEnd();
+            }
+        - lang: php
+          source: |
+            <?php
+              // Setup cURL
+              $ch = curl_init('https://searchly.asuarez.dev/api/v1/song/search'.'?query='.'QUERY');
+
+              // Send the request
+              $response = curl_exec($ch);
+            ?>
+        - lang: shell
+          source: |
+            curl "https://searchly.asuarez.dev/api/v1/song/search?query=QUERY"
+components:
+  schemas:
+    APIResponseSimilarity:
+      properties:
+        error:
+          description: Whether or not the request was successfully processed or not.
+          type: boolean
+        message:
+          description: Error message if the request was unsuccessful.
+          type: string
+        response:
+          description: Contains the response data if the request was successful.
+          properties:
+            similarity_list:
+              description: Contains all the similarity items representing songs.
+              items:
+                description: Song similarity item.
+                properties:
+                  artist_name:
+                    description: Artist's song name.
+                    type: string
+                  artist_url:
+                    description: Artist URL.
+                    type: string
+                  id:
+                    description: Song internal identifier.
+                    type: integer
+                  index_id:
+                    description: Index internal identifier.
+                    type: integer
+                  lyrics:
+                    description: Song lyrics.
+                    type: string
+                  percentage:
+                    description: Similarity percentage.
+                    format: float
+                    type: number
+                  song_name:
+                    description: Song name.
+                    type: string
+                  song_url:
+                    description: Song URL.
+                    type: string
+                type: object
+              type: array
+          type: object
+      type: object
+    APIResponseSong:
+      properties:
+        error:
+          description: Whether or not the request was successfully processed or not.
+          type: boolean
+        message:
+          description: Error message if the request was unsuccessful.
+          type: string
+        response:
+          description: Contains the response data if the request was successful.
+          properties:
+            results:
+              description: Contains all the songs.
+              items:
+                description: Song item.
+                properties:
+                  id:
+                    description: Song internal identifier.
+                    type: integer
+                  name:
+                    description: Song and Artist name.
+                    type: string
+                type: object
+              type: array
+          type: object
+      type: object
+x-logo:
+  altText: SearchLy
+  url: https://searchly.asuarez.dev/static/img/logo.png
+x-tagGroups:
+  - name: Similarity
+    tags:
+      - similarity
+  - name: Song
+    tags:
+      - song

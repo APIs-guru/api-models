@@ -1,0 +1,1824 @@
+swagger: "2.0"
+schemes:
+  - https
+host: azure.local
+basePath: /vision/v1.0
+info:
+  description: The Computer Vision API provides state-of-the-art algorithms to process images and return information. For example, it can be used to determine if an image contains mature content, or it can be used to find all the faces in an image.  It also has other features like estimating dominant and accent colors, categorizing the content of images, and describing an image with complete English sentences.  Additionally, it can also intelligently generate images thumbnails for displaying large images effectively.
+  title: Computer Vision
+  version: "1.0"
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/cognitiveservices/data-plane/ComputerVision/stable/v1.0/ComputerVision.json
+      version: "2.0"
+  x-providerName: azure.com
+  x-serviceName: cognitiveservices-ComputerVision
+  x-tags:
+    - Azure
+    - Microsoft
+securityDefinitions:
+  apim_key:
+    in: header
+    name: Ocp-Apim-Subscription-Key
+    type: apiKey
+security:
+  - apim_key: []
+parameters:
+  DetectOrientation:
+    default: true
+    description: "Whether detect the text orientation in the image. With detectOrientation=true the OCR service tries to detect the image orientation and correct it before further processing (e.g. if it's upside-down). "
+    in: query
+    name: detectOrientation
+    required: true
+    type: boolean
+    x-ms-parameter-location: method
+  HandwritingBoolean:
+    default: false
+    description: If 'true' is specified, handwriting recognition is performed. If this parameter is set to 'false' or is not specified, printed text recognition is performed.
+    in: query
+    name: detectHandwriting
+    required: false
+    type: boolean
+    x-ms-parameter-location: method
+  OcrLanguage:
+    default: unk
+    description: The BCP-47 language code of the text to be detected in the image. The default value is 'unk'
+    enum:
+      - unk
+      - zh-Hans
+      - zh-Hant
+      - cs
+      - da
+      - nl
+      - en
+      - fi
+      - fr
+      - de
+      - el
+      - hu
+      - it
+      - ja
+      - ko
+      - nb
+      - pl
+      - pt
+      - ru
+      - es
+      - sv
+      - tr
+      - ar
+      - ro
+      - sr-Cyrl
+      - sr-Latn
+      - sk
+    in: query
+    name: language
+    required: false
+    type: string
+    x-ms-enum:
+      modelAsString: false
+      name: OcrLanguages
+    x-ms-parameter-location: method
+    x-nullable: false
+  ServiceLanguage:
+    default: en
+    description: The desired language for output generation. If this parameter is not specified, the default value is &quot;en&quot;.Supported languages:en - English, Default. es - Spanish, ja - Japanese, pt - Portuguese, zh - Simplified Chinese.
+    enum:
+      - en
+      - es
+      - ja
+      - pt
+      - zh
+    in: query
+    name: language
+    required: false
+    type: string
+    x-ms-parameter-location: method
+    x-nullable: false
+  VisualFeatures:
+    collectionFormat: csv
+    description: A string indicating what visual feature types to return. Multiple values should be comma-separated. Valid visual feature types include:Categories - categorizes image content according to a taxonomy defined in documentation. Tags - tags the image with a detailed list of words related to the image content. Description - describes the image content with a complete English sentence. Faces - detects if faces are present. If present, generate coordinates, gender and age. ImageType - detects if image is clipart or a line drawing. Color - determines the accent color, dominant color, and whether an image is black&white.Adult - detects if the image is pornographic in nature (depicts nudity or a sex act).  Sexually suggestive content is also detected.
+    in: query
+    items:
+      enum:
+        - ImageType
+        - Faces
+        - Adult
+        - Categories
+        - Color
+        - Tags
+        - Description
+      type: string
+      x-ms-enum:
+        modelAsString: false
+        name: VisualFeatureTypes
+      x-nullable: false
+    name: visualFeatures
+    required: false
+    type: array
+    x-ms-parameter-location: method
+paths:
+  /analyze:
+    post:
+      consumes:
+        - application/json
+      description: This operation extracts a rich set of visual features based on the image content. Two input methods are supported -- (1) Uploading an image or (2) specifying an image URL.  Within your request, there is an optional parameter to allow you to choose which features to return.  By default, image categories are returned in the response.
+      operationId: AnalyzeImage
+      parameters:
+        - $ref: "#/parameters/VisualFeatures"
+        - collectionFormat: csv
+          description: A string indicating which domain-specific details to return. Multiple values should be comma-separated. Valid visual feature types include:Celebrities - identifies celebrities if detected in the image.
+          in: query
+          items:
+            enum:
+              - Celebrities
+              - Landmarks
+            type: string
+            x-ms-enum:
+              modelAsString: false
+              name: Details
+            x-nullable: false
+          name: details
+          required: false
+          type: array
+        - $ref: "#/parameters/ServiceLanguage"
+        - description: A JSON document with a URL pointing to the image that is to be analyzed.
+          in: body
+          name: ImageUrl
+          required: true
+          schema:
+            properties:
+              url:
+                description: Publicly reachable URL of an image
+                type: string
+            required:
+              - url
+            type: object
+          x-ms-client-flatten: true
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: The response include the extracted features in JSON format.Here is the definitions for enumeration typesClipartTypeNon-clipart = 0,  ambiguous = 1, normal-clipart = 2, good-clipart = 3.LineDrawingTypeNon-LineDrawing = 0,LineDrawing = 1.
+          schema:
+            $ref: "#/definitions/ImageAnalysis"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Analyze with Url request:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body:
+              url: "{Image Url here}"
+            details: Celebrities
+            language: en
+            visualFeatures: Categories,Adult,Tags,Description,Faces,Color,ImageType
+          responses:
+            "200":
+              body:
+                adult:
+                  adultScore: 0.0934349000453949
+                  isAdultContent: false
+                  isRacyContent: false
+                  racyScore: 0.06861349195241928
+                categories:
+                  - name: abstract_
+                    score: 0.00390625
+                  - detail:
+                      celebrities:
+                        - confidence: 0.999028444
+                          faceRectangle:
+                            height: 248
+                            left: 597
+                            top: 162
+                            width: 248
+                          name: Satya Nadella
+                      landmarks:
+                        - confidence: 0.9978346
+                          name: Forbidden City
+                    name: people_
+                    score: 0.83984375
+                color:
+                  accentColor: 873B59
+                  dominantColorBackground: Brown
+                  dominantColorForeground: Brown
+                  dominantColors:
+                    - Brown
+                    - Black
+                  isBWImg: false
+                description:
+                  captions:
+                    - confidence: 0.48293603002174407
+                      text: Satya Nadella sitting on a bench
+                  tags:
+                    - person
+                    - man
+                    - outdoor
+                    - window
+                    - glasses
+                faces:
+                  - age: 44
+                    faceRectangle:
+                      height: 250
+                      left: 593
+                      top: 160
+                      width: 250
+                    gender: Male
+                imageType:
+                  clipArtType: 0
+                  lineDrawingType: 0
+                metadata:
+                  format: Jpeg
+                  height: 1000
+                  width: 1500
+                requestId: 0dbec5ad-a3d3-4f7e-96b4-dfd57efe967d
+                tags:
+                  - confidence: 0.9897908568382263
+                    name: person
+                  - confidence: 0.9449388980865479
+                    name: man
+                  - confidence: 0.938492476940155
+                    name: outdoor
+                  - confidence: 0.8951393961906433
+                    name: window
+              headers: {}
+  /describe:
+    post:
+      consumes:
+        - application/json
+      description: This operation generates a description of an image in human readable language with complete sentences.  The description is based on a collection of content tags, which are also returned by the operation. More than one description can be generated for each image.  Descriptions are ordered by their confidence score. All descriptions are in English. Two input methods are supported -- (1) Uploading an image or (2) specifying an image URL.A successful response will be returned in JSON.  If the request failed, the response will contain an error code and a message to help understand what went wrong.
+      operationId: DescribeImage
+      parameters:
+        - default: "1"
+          description: Maximum number of candidate descriptions to be returned.  The default is 1.
+          in: query
+          name: maxCandidates
+          required: false
+          type: string
+        - $ref: "#/parameters/ServiceLanguage"
+        - description: A JSON document with a URL pointing to the image that is to be analyzed.
+          in: body
+          name: ImageUrl
+          required: true
+          schema:
+            properties:
+              url:
+                description: Publicly reachable URL of an image
+                type: string
+            required:
+              - url
+            type: object
+          x-ms-client-flatten: true
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Image description object.
+          schema:
+            $ref: "#/definitions/ImageDescription"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Describe request:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body:
+              url: "{Image Url here}"
+            maxCandidates: "1"
+          responses:
+            "200":
+              body:
+                description:
+                  captions:
+                    - confidence: 0.48293603002174407
+                      text: Satya Nadella sitting on a bench
+                    - confidence: 0.4003700681542283
+                      text: Satya Nadella is sitting on a bench
+                    - confidence: 0.38035155997373377
+                      text: Satya Nadella sitting in front of a building
+                  tags:
+                    - person
+                    - man
+                    - outdoor
+                    - window
+                    - glasses
+                metadata:
+                  format: Jpeg
+                  height: 1000
+                  width: 1500
+                requestId: ed2de1c6-fb55-4686-b0da-4da6e05d283f
+  /generateThumbnail:
+    post:
+      consumes:
+        - application/json
+      description: This operation generates a thumbnail image with the user-specified width and height. By default, the service analyzes the image, identifies the region of interest (ROI), and generates smart cropping coordinates based on the ROI. Smart cropping helps when you specify an aspect ratio that differs from that of the input image. A successful response contains the thumbnail image binary. If the request failed, the response contains an error code and a message to help determine what went wrong.
+      operationId: GenerateThumbnail
+      parameters:
+        - description: Width of the thumbnail. It must be between 1 and 1024. Recommended minimum of 50.
+          in: query
+          maximum: 1023
+          minimum: 1
+          name: width
+          required: true
+          type: integer
+        - description: Height of the thumbnail. It must be between 1 and 1024. Recommended minimum of 50.
+          in: query
+          maximum: 1023
+          minimum: 1
+          name: height
+          required: true
+          type: integer
+        - description: A JSON document with a URL pointing to the image that is to be analyzed.
+          in: body
+          name: ImageUrl
+          required: true
+          schema:
+            properties:
+              url:
+                description: Publicly reachable URL of an image
+                type: string
+            required:
+              - url
+            type: object
+          x-ms-client-flatten: true
+          x-ms-parameter-location: method
+        - default: false
+          description: Boolean flag for enabling smart cropping.
+          in: query
+          name: smartCropping
+          required: false
+          type: boolean
+      produces:
+        - application/octet-stream
+      responses:
+        "200":
+          description: The generated thumbnail in binary format.
+          schema:
+            type: file
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Generate Thumbnail request:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body:
+              url: "{Image Url here}"
+            height: "500"
+            smartCropping: true
+            width: "500"
+          responses:
+            "200":
+              body: "{Binary}"
+              headers: {}
+  /models:
+    get:
+      description: "This operation returns the list of domain-specific models that are supported by the Computer Vision API.  Currently, the API only supports one domain-specific model: a celebrity recognizer. A successful response will be returned in JSON.  If the request failed, the response will contain an error code and a message to help understand what went wrong."
+      operationId: ListModels
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: List of available domain models.
+          schema:
+            $ref: "#/definitions/ListModelsResult"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful List Domains request:
+          parameters:
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: {}
+          responses:
+            "200":
+              body:
+                models:
+                  - categories:
+                      - people_
+                    name: celebrities
+                  - categories:
+                      - building_
+                    name: landmarks
+              headers: {}
+  "/models/{model}/analyze":
+    post:
+      consumes:
+        - application/json
+      description: "This operation recognizes content within an image by applying a domain-specific model.  The list of domain-specific models that are supported by the Computer Vision API can be retrieved using the /models GET request.  Currently, the API only provides a single domain-specific model: celebrities. Two input methods are supported -- (1) Uploading an image or (2) specifying an image URL. A successful response will be returned in JSON.  If the request failed, the response will contain an error code and a message to help understand what went wrong."
+      operationId: AnalyzeImageByDomain
+      parameters:
+        - description: The domain-specific content to recognize.
+          in: path
+          name: model
+          required: true
+          type: string
+        - $ref: "#/parameters/ServiceLanguage"
+        - description: A JSON document with a URL pointing to the image that is to be analyzed.
+          in: body
+          name: ImageUrl
+          required: true
+          schema:
+            properties:
+              url:
+                description: Publicly reachable URL of an image
+                type: string
+            required:
+              - url
+            type: object
+          x-ms-client-flatten: true
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Analysis result based on the domain model
+          schema:
+            $ref: "#/definitions/DomainModelResults"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Domain Model analysis request:
+          parameters:
+            Content-Type: application/json
+            Model: Celebrities
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body:
+              url: "{Image Url here}"
+          responses:
+            "200":
+              body:
+                metadata:
+                  format: Jpeg
+                  height: 1000
+                  width: 1500
+                requestId: f0027b4b-dc0d-4082-9228-1545ed246b03
+                result:
+                  celebrities:
+                    - confidence: 0.999028444
+                      faceRectangle:
+                        height: 248
+                        left: 597
+                        top: 162
+                        width: 248
+                      name: Satya Nadella
+  /ocr:
+    post:
+      consumes:
+        - application/json
+      description: Optical Character Recognition (OCR) detects printed text in an image and extracts the recognized characters into a machine-usable character stream.   Upon success, the OCR results will be returned. Upon failure, the error code together with an error message will be returned. The error code can be one of InvalidImageUrl, InvalidImageFormat, InvalidImageSize, NotSupportedImage,  NotSupportedLanguage, or InternalServerError.
+      operationId: RecognizePrintedText
+      parameters:
+        - $ref: "#/parameters/DetectOrientation"
+        - description: A JSON document with a URL pointing to the image that is to be analyzed.
+          in: body
+          name: ImageUrl
+          required: true
+          schema:
+            properties:
+              url:
+                description: Publicly reachable URL of an image
+                type: string
+            required:
+              - url
+            type: object
+          x-ms-client-flatten: true
+          x-ms-parameter-location: method
+        - $ref: "#/parameters/OcrLanguage"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: The OCR results in the hierarchy of region/line/word. The results include text, bounding box for regions, lines and words.textAngleThe angle, in degrees, of the detected text with respect to the closest horizontal or vertical direction. After rotating the input image clockwise by this angle, the recognized text lines become horizontal or vertical. In combination with the orientation property it can be used to overlay recognition results correctly on the original image, by rotating either the original image or recognition results by a suitable angle around the center of the original image. If the angle cannot be confidently detected, this property is not present. If the image contains text at different angles, only part of the text will be recognized correctly.
+          schema:
+            $ref: "#/definitions/OcrResult"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Ocr request:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body:
+              url: "{Image Url here}"
+            detectOrientation: "true"
+            language: en
+          responses:
+            "200":
+              body:
+                language: en
+                orientation: Up
+                regions:
+                  - boundingBox: 462,379,497,258
+                    lines:
+                      - boundingBox: 462,379,497,74
+                        words:
+                          - boundingBox: 462,379,41,73
+                            text: A
+                          - boundingBox: 523,379,153,73
+                            text: GOAL
+                          - boundingBox: 694,379,265,74
+                            text: WITHOUT
+                      - boundingBox: 565,471,289,74
+                        words:
+                          - boundingBox: 565,471,41,73
+                            text: A
+                          - boundingBox: 626,471,150,73
+                            text: PLAN
+                          - boundingBox: 801,472,53,73
+                            text: IS
+                      - boundingBox: 519,563,375,74
+                        words:
+                          - boundingBox: 519,563,149,74
+                            text: JUST
+                          - boundingBox: 683,564,41,72
+                            text: A
+                          - boundingBox: 741,564,153,73
+                            text: WISH
+                textAngle: -2.0000000000000338
+              headers: {}
+  /recognizeText:
+    post:
+      consumes:
+        - application/json
+      description: Recognize Text operation. When you use the Recognize Text interface, the response contains a field called 'Operation-Location'. The 'Operation-Location' field contains the URL that you must use for your Get Handwritten Text Operation Result operation.
+      operationId: RecognizeText
+      parameters:
+        - description: A JSON document with a URL pointing to the image that is to be analyzed.
+          in: body
+          name: ImageUrl
+          required: true
+          schema:
+            properties:
+              url:
+                description: Publicly reachable URL of an image
+                type: string
+            required:
+              - url
+            type: object
+          x-ms-client-flatten: true
+          x-ms-parameter-location: method
+        - $ref: "#/parameters/HandwritingBoolean"
+      produces:
+        - application/json
+      responses:
+        "202":
+          description: The service has accepted the request and will start processing later. It will return Accepted immediately and include an Operation-Location header. Client side should further query the operation status using the URL specified in this header. The operation ID will expire in 48 hours.
+          headers:
+            Operation-Location:
+              description: "URL to query for status of the operation. The operation ID will expire in 48 hours. "
+              type: string
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Domain Model analysis request:
+          parameters:
+            Content-Type: application/json
+            Handwriting: "true"
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body:
+              url: "{Image Url here}"
+          responses:
+            "202":
+              header:
+                Operation-Location: https://{domain}/vision/v1.0/textOperations/49a36324-fc4b-4387-aa06-090cfbf0064f
+  /tag:
+    post:
+      consumes:
+        - application/json
+      description: This operation generates a list of words, or tags, that are relevant to the content of the supplied image. The Computer Vision API can return tags based on objects, living beings, scenery or actions found in images. Unlike categories, tags are not organized according to a hierarchical classification system, but correspond to image content. Tags may contain hints to avoid ambiguity or provide context, for example the tag 'cello' may be accompanied by the hint 'musical instrument'. All tags are in English.
+      operationId: TagImage
+      parameters:
+        - $ref: "#/parameters/ServiceLanguage"
+        - description: A JSON document with a URL pointing to the image that is to be analyzed.
+          in: body
+          name: ImageUrl
+          required: true
+          schema:
+            properties:
+              url:
+                description: Publicly reachable URL of an image
+                type: string
+            required:
+              - url
+            type: object
+          x-ms-client-flatten: true
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Image tags object.
+          schema:
+            $ref: "#/definitions/TagResult"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Tag request:
+          parameters:
+            Content-Type: application/json
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body:
+              url: "{Image Url here}"
+          responses:
+            "200":
+              body:
+                metadata:
+                  format: Jpeg
+                  height: 400
+                  width: 400
+                requestId: 1ad0e45e-b7b4-4be3-8042-53be96103337
+                tags:
+                  - confidence: 0.9999997615814209
+                    name: grass
+                  - confidence: 0.9999706745147705
+                    name: outdoor
+                  - confidence: 0.9992897510528564
+                    name: sky
+                  - confidence: 0.9964632391929626
+                    name: building
+                  - confidence: 0.9927980303764343
+                    name: house
+                  - confidence: 0.8226802945137024
+                    name: lawn
+                  - confidence: 0.6412225365638733
+                    name: green
+                  - confidence: 0.31403225660324097
+                    name: residential
+  "/textOperations/{operationId}":
+    get:
+      description: This interface is used for getting text operation result. The URL to this interface should be retrieved from 'Operation-Location' field returned from Recognize Text interface.
+      operationId: GetTextOperationResult
+      parameters:
+        - description: Id of the text operation returned in the response of the 'Recognize Handwritten Text'
+          in: path
+          name: operationId
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Returns the operation status.
+          schema:
+            $ref: "#/definitions/TextOperationResult"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Domain Model analysis request:
+          parameters:
+            Ocp-Apim-Subscription-Key: "{API key}"
+            operationId: 49a36324-fc4b-4387-aa06-090cfbf0064f
+          responses:
+            "200":
+              body:
+                recognitionResult:
+                  lines:
+                    - boundingBox:
+                        - 202
+                        - 618
+                        - 2047
+                        - 643
+                        - 2046
+                        - 840
+                        - 200
+                        - 813
+                      text: Our greatest glory is not
+                      words:
+                        - boundingBox:
+                            - 204
+                            - 627
+                            - 481
+                            - 628
+                            - 481
+                            - 830
+                            - 204
+                            - 829
+                          text: Our
+                        - boundingBox:
+                            - 519
+                            - 628
+                            - 1057
+                            - 630
+                            - 1057
+                            - 832
+                            - 518
+                            - 830
+                          text: greatest
+                        - boundingBox:
+                            - 1114
+                            - 630
+                            - 1549
+                            - 631
+                            - 1548
+                            - 833
+                            - 1114
+                            - 832
+                          text: glory
+                        - boundingBox:
+                            - 1586
+                            - 631
+                            - 1785
+                            - 632
+                            - 1784
+                            - 834
+                            - 1586
+                            - 833
+                          text: is
+                        - boundingBox:
+                            - 1822
+                            - 632
+                            - 2115
+                            - 633
+                            - 2115
+                            - 835
+                            - 1822
+                            - 834
+                          text: not
+                    - boundingBox:
+                        - 420
+                        - 1273
+                        - 2954
+                        - 1250
+                        - 2958
+                        - 1488
+                        - 422
+                        - 1511
+                      text: but in rising every time we fall
+                      words:
+                        - boundingBox:
+                            - 423
+                            - 1269
+                            - 634
+                            - 1268
+                            - 635
+                            - 1507
+                            - 424
+                            - 1508
+                          text: but
+                        - boundingBox:
+                            - 667
+                            - 1268
+                            - 808
+                            - 1268
+                            - 809
+                            - 1506
+                            - 668
+                            - 1507
+                          text: in
+                        - boundingBox:
+                            - 874
+                            - 1267
+                            - 1289
+                            - 1265
+                            - 1290
+                            - 1504
+                            - 875
+                            - 1506
+                          text: rising
+                        - boundingBox:
+                            - 1331
+                            - 1265
+                            - 1771
+                            - 1263
+                            - 1772
+                            - 1502
+                            - 1332
+                            - 1504
+                          text: every
+                        - boundingBox:
+                            - 1812
+                            - 1263
+                            - 2178
+                            - 1261
+                            - 2179
+                            - 1500
+                            - 1813
+                            - 1502
+                          text: time
+                        - boundingBox:
+                            - 2219
+                            - 1261
+                            - 2510
+                            - 1260
+                            - 2511
+                            - 1498
+                            - 2220
+                            - 1500
+                          text: we
+                        - boundingBox:
+                            - 2551
+                            - 1260
+                            - 3016
+                            - 1258
+                            - 3017
+                            - 1496
+                            - 2552
+                            - 1498
+                          text: fall
+                    - boundingBox:
+                        - 1612
+                        - 903
+                        - 2744
+                        - 935
+                        - 2738
+                        - 1139
+                        - 1607
+                        - 1107
+                      text: in never failing ,
+                      words:
+                        - boundingBox:
+                            - 1611
+                            - 934
+                            - 1707
+                            - 933
+                            - 1708
+                            - 1147
+                            - 1613
+                            - 1147
+                          text: in
+                        - boundingBox:
+                            - 1753
+                            - 933
+                            - 2132
+                            - 930
+                            - 2133
+                            - 1144
+                            - 1754
+                            - 1146
+                          text: never
+                        - boundingBox:
+                            - 2162
+                            - 930
+                            - 2673
+                            - 927
+                            - 2674
+                            - 1140
+                            - 2164
+                            - 1144
+                          text: failing
+                        - boundingBox:
+                            - 2703
+                            - 926
+                            - 2788
+                            - 926
+                            - 2790
+                            - 1139
+                            - 2705
+                            - 1140
+                          text: ","
+                status: Succeeded
+              header: {}
+definitions:
+  AdultInfo:
+    description: An object describing whether the image contains adult-oriented content and/or is racy.
+    properties:
+      adultScore:
+        description: Score from 0 to 1 that indicates how much of adult content is within the image.
+        format: double
+        type: number
+        x-nullable: false
+      isAdultContent:
+        description: A value indicating if the image contains adult-oriented content.
+        type: boolean
+        x-nullable: false
+      isRacyContent:
+        description: A value indicating if the image is race.
+        type: boolean
+        x-nullable: false
+      racyScore:
+        description: Score from 0 to 1 that indicates how suggestive is the image.
+        format: double
+        type: number
+        x-nullable: false
+    type: object
+  BoundingBox:
+    items:
+      type: integer
+      x-nullable: false
+    type: array
+  Category:
+    description: An object describing identified category.
+    properties:
+      detail:
+        $ref: "#/definitions/CategoryDetail"
+      name:
+        description: Name of the category.
+        type: string
+      score:
+        description: Scoring of the category.
+        format: double
+        type: number
+    type: object
+  CategoryDetail:
+    description: An object describing additional category details.
+    properties:
+      celebrities:
+        description: An array of celebrities if any identified.
+        items:
+          $ref: "#/definitions/CelebritiesModel"
+        type: array
+    type: object
+  CelebritiesModel:
+    description: An object describing possible celebrity identification.
+    properties:
+      confidence:
+        description: Level of confidence ranging from 0 to 1.
+        format: double
+        type: number
+      faceRectangle:
+        $ref: "#/definitions/FaceRectangle"
+      name:
+        description: Name of the celebrity.
+        type: string
+    type: object
+  CelebrityResults:
+    description: List of celebrities recognized in the image.
+    properties:
+      celebrities:
+        items:
+          $ref: "#/definitions/CelebritiesModel"
+        type: array
+      metadata:
+        $ref: "#/definitions/ImageMetadata"
+      requestId:
+        description: Id of the REST API request.
+        type: string
+    type: object
+  ColorInfo:
+    description: An object providing additional metadata describing color attributes.
+    properties:
+      accentColor:
+        description: Possible accent color.
+        type: string
+      dominantColorBackground:
+        description: Possible dominant background color.
+        type: string
+      dominantColorForeground:
+        description: Possible dominant foreground color.
+        type: string
+      dominantColors:
+        description: An array of possible dominant colors.
+        items:
+          type: string
+        type: array
+      isBWImg:
+        description: A value indicating if the image is black and white.
+        type: boolean
+    type: object
+  ComputerVisionError:
+    properties:
+      code:
+        description: The error code.
+        enum:
+          - InvalidImageUrl
+          - InvalidImageFormat
+          - InvalidImageSize
+          - NotSupportedVisualFeature
+          - NotSupportedImage
+          - InvalidDetails
+          - NotSupportedLanguage
+          - BadArgument
+          - FailedToProcess
+          - Timeout
+          - InternalServerError
+          - Unspecified
+          - StorageException
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: ComputerVisionErrorCodes
+      message:
+        description: A message explaining the error reported by the service.
+        type: string
+      requestId:
+        description: A unique request identifier.
+        type: string
+    required:
+      - code
+      - message
+    type: object
+  DomainModelResults:
+    description: Result of image analysis using a specific domain model including additional metadata.
+    properties:
+      metadata:
+        $ref: "#/definitions/ImageMetadata"
+      requestId:
+        description: Id of the REST API request.
+        type: string
+      result:
+        description: Model-specific response
+        type: object
+        x-ms-client-flatten: true
+    type: object
+  FaceDescription:
+    description: An object describing a face identified in the image.
+    properties:
+      age:
+        description: Possible age of the face.
+        type: integer
+      faceRectangle:
+        $ref: "#/definitions/FaceRectangle"
+      gender:
+        description: Possible gender of the face.
+        enum:
+          - Male
+          - Female
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: Gender-
+    type: object
+  FaceRectangle:
+    description: An object describing face rectangle.
+    properties:
+      height:
+        description: Height measured from the top-left point of the face.
+        type: integer
+      left:
+        description: X-coordinate of the top left point of the face.
+        type: integer
+      top:
+        description: Y-coordinate of the top left point of the face.
+        type: integer
+      width:
+        description: Width measured from the top-left point of the face.
+        type: integer
+    type: object
+  ImageAnalysis:
+    description: Result of AnalyzeImage operation.
+    properties:
+      adult:
+        $ref: "#/definitions/AdultInfo"
+      categories:
+        description: An array indicating identified categories.
+        items:
+          $ref: "#/definitions/Category"
+        type: array
+      color:
+        $ref: "#/definitions/ColorInfo"
+      description:
+        $ref: "#/definitions/ImageDescriptionDetails"
+      faces:
+        description: An array of possible faces within the image.
+        items:
+          $ref: "#/definitions/FaceDescription"
+        type: array
+      imageType:
+        $ref: "#/definitions/ImageType"
+      metadata:
+        $ref: "#/definitions/ImageMetadata"
+      requestId:
+        description: Id of the request for tracking purposes.
+        type: string
+      tags:
+        description: A list of tags with confidence level.
+        items:
+          $ref: "#/definitions/ImageTag"
+        type: array
+    type: object
+  ImageCaption:
+    description: An image caption, i.e. a brief description of what the image depicts.
+    properties:
+      confidence:
+        description: The level of confidence the service has in the caption
+        format: double
+        type: number
+      text:
+        description: The text of the caption
+        type: string
+    type: object
+  ImageDescription:
+    description: A collection of content tags, along with a list of captions sorted by confidence level, and image metadata.
+    properties:
+      description:
+        $ref: "#/definitions/ImageDescriptionDetails"
+        x-ms-client-flatten: true
+    type: object
+  ImageDescriptionDetails:
+    description: A collection of content tags, along with a list of captions sorted by confidence level, and image metadata.
+    properties:
+      captions:
+        description: A list of captions, sorted by confidence level.
+        items:
+          $ref: "#/definitions/ImageCaption"
+        type: array
+      metadata:
+        $ref: "#/definitions/ImageMetadata"
+      requestId:
+        description: Id of the REST API request.
+        type: string
+      tags:
+        description: A collection of image tags.
+        items:
+          type: string
+        type: array
+    type: object
+  ImageMetadata:
+    description: Image metadata
+    properties:
+      format:
+        description: Image format
+        type: string
+      height:
+        description: Image height
+        format: int32
+        type: integer
+      width:
+        description: Image width
+        format: int32
+        type: integer
+    type: object
+  ImageTag:
+    description: An image caption, i.e. a brief description of what the image depicts.
+    properties:
+      confidence:
+        description: The level of confidence the service has in the caption
+        format: double
+        type: number
+      name:
+        description: The tag value
+        type: string
+    type: object
+  ImageType:
+    description: An object providing possible image types and matching confidence levels.
+    properties:
+      clipArtType:
+        description: Confidence level that the image is a clip art.
+        type: number
+      lineDrawingType:
+        description: Confidence level that the image is a line drawing.
+        type: number
+    type: object
+  LandmarkResults:
+    description: List of landmarks recognized in the image.
+    properties:
+      landmarks:
+        items:
+          description: A landmark recognized in the image
+          properties:
+            confidence:
+              description: Confidence level for the landmark recognition.
+              format: double
+              type: number
+            name:
+              description: Name of the landmark.
+              type: string
+          type: object
+        type: array
+      metadata:
+        $ref: "#/definitions/ImageMetadata"
+      requestId:
+        description: Id of the REST API request.
+        type: string
+    type: object
+  Line:
+    properties:
+      boundingBox:
+        $ref: "#/definitions/BoundingBox"
+      text:
+        type: string
+      words:
+        items:
+          $ref: "#/definitions/Word"
+        type: array
+    type: object
+  ListModelsResult:
+    description: Result of the List Domain Models operation.
+    properties:
+      models:
+        description: An array of supported models.
+        items:
+          $ref: "#/definitions/ModelDescription"
+        readOnly: true
+        type: array
+    type: object
+  ModelDescription:
+    description: An object describing supported model by name and categories.
+    properties:
+      categories:
+        items:
+          type: string
+        type: array
+      name:
+        type: string
+    type: object
+  OcrLine:
+    description: An object describing a single recognized line of text.
+    properties:
+      boundingBox:
+        description: Bounding box of a recognized line. The four integers represent the x-coordinate of the left edge, the y-coordinate of the top edge, width, and height of the bounding box, in the coordinate system of the input image, after it has been rotated around its center according to the detected text angle (see textAngle property), with the origin at the top-left corner, and the y-axis pointing down.
+        type: string
+      words:
+        description: An array of objects, where each object represents a recognized word.
+        items:
+          $ref: "#/definitions/OcrWord"
+        type: array
+    type: object
+  OcrRegion:
+    description: A region consists of multiple lines (e.g. a column of text in a multi-column document).
+    properties:
+      boundingBox:
+        description: Bounding box of a recognized region. The four integers represent the x-coordinate of the left edge, the y-coordinate of the top edge, width, and height of the bounding box, in the coordinate system of the input image, after it has been rotated around its center according to the detected text angle (see textAngle property), with the origin at the top-left corner, and the y-axis pointing down.
+        type: string
+      lines:
+        items:
+          $ref: "#/definitions/OcrLine"
+        type: array
+    type: object
+  OcrResult:
+    properties:
+      language:
+        description: The BCP-47 language code of the text in the image.
+        type: string
+      orientation:
+        description: Orientation of the text recognized in the image. The value (up,down,left, or right) refers to the direction that the top of the recognized text is facing, after the image has been rotated around its center according to the detected text angle (see textAngle property).
+        type: string
+      regions:
+        description: An array of objects, where each object represents a region of recognized text.
+        items:
+          $ref: "#/definitions/OcrRegion"
+        type: array
+      textAngle:
+        description: The angle, in degrees, of the detected text with respect to the closest horizontal or vertical direction. After rotating the input image clockwise by this angle, the recognized text lines become horizontal or vertical. In combination with the orientation property it can be used to overlay recognition results correctly on the original image, by rotating either the original image or recognition results by a suitable angle around the center of the original image. If the angle cannot be confidently detected, this property is not present. If the image contains text at different angles, only part of the text will be recognized correctly.
+        format: double
+        type: number
+    type: object
+  OcrWord:
+    description: Information on a recognized word.
+    properties:
+      boundingBox:
+        description: Bounding box of a recognized word. The four integers represent the x-coordinate of the left edge, the y-coordinate of the top edge, width, and height of the bounding box, in the coordinate system of the input image, after it has been rotated around its center according to the detected text angle (see textAngle property), with the origin at the top-left corner, and the y-axis pointing down.
+        type: string
+      text:
+        description: String value of a recognized word.
+        type: string
+    type: object
+  RecognitionResult:
+    properties:
+      lines:
+        items:
+          $ref: "#/definitions/Line"
+        type: array
+    type: object
+  ServiceLanguage:
+    type: string
+  TagResult:
+    description: The results of a image tag operation, including any tags and image metadata.
+    properties:
+      metadata:
+        $ref: "#/definitions/ImageMetadata"
+      requestId:
+        description: Id of the REST API request.
+        type: string
+      tags:
+        description: A list of tags with confidence level.
+        items:
+          $ref: "#/definitions/ImageTag"
+        type: array
+    type: object
+  TextOperationResult:
+    properties:
+      recognitionResult:
+        $ref: "#/definitions/RecognitionResult"
+      status:
+        description: Status of the text operation.
+        enum:
+          - Not Started
+          - Running
+          - Failed
+          - Succeeded
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: TextOperationStatusCodes
+        x-nullable: false
+    type: object
+  Word:
+    properties:
+      boundingBox:
+        $ref: "#/definitions/BoundingBox"
+      text:
+        type: string
+    type: object
+x-ms-parameterized-host:
+  hostTemplate: "{AzureRegion}.api.cognitive.microsoft.com"
+  parameters:
+    - description: Supported Azure regions for Cognitive Services endpoints
+      enum:
+        - westus
+        - westeurope
+        - southeastasia
+        - eastus2
+        - westcentralus
+        - westus2
+        - eastus
+        - southcentralus
+        - northeurope
+        - eastasia
+        - australiaeast
+        - brazilsouth
+        - canadacentral
+        - centralindia
+        - uksouth
+        - japaneast
+      in: path
+      name: AzureRegion
+      required: true
+      type: string
+      x-ms-enum:
+        modelAsString: false
+        name: AzureRegions
+      x-ms-parameter-location: client
+      x-ms-skip-url-encoding: true
+x-ms-paths:
+  /analyze?overload=stream:
+    post:
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      description: This operation extracts a rich set of visual features based on the image content.
+      operationId: AnalyzeImageInStream
+      parameters:
+        - $ref: "#/parameters/VisualFeatures"
+        - description: A string indicating which domain-specific details to return. Multiple values should be comma-separated. Valid visual feature types include:Celebrities - identifies celebrities if detected in the image.
+          enum:
+            - Celebrities
+            - Landmarks
+          in: query
+          name: details
+          required: false
+          type: string
+        - $ref: "#/parameters/ServiceLanguage"
+        - description: An image stream.
+          in: body
+          name: Image
+          required: true
+          schema:
+            format: file
+            type: object
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: The response include the extracted features in JSON format. Here is the definitions for enumeration types clipart = 0, ambiguous = 1, normal-clipart = 2, good-clipart = 3. Non-LineDrawing = 0,LineDrawing = 1.
+          schema:
+            $ref: "#/definitions/ImageAnalysis"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Analyze with Url request:
+          parameters:
+            Content-Type: application/octet-stream
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: "{binary}"
+            details: Celebrities
+            language: en
+            visualFeatures: Categories,Adult,Tags,Description,Faces,Color,ImageType
+          responses:
+            "200":
+              body:
+                adult:
+                  adultScore: 0.0934349000453949
+                  isAdultContent: false
+                  isRacyContent: false
+                  racyScore: 0.06861349195241928
+                categories:
+                  - name: abstract_
+                    score: 0.00390625
+                  - detail:
+                      celebrities:
+                        - confidence: 0.999028444
+                          faceRectangle:
+                            height: 248
+                            left: 597
+                            top: 162
+                            width: 248
+                          name: Satya Nadella
+                      landmarks:
+                        - confidence: 0.9978346
+                          name: Forbidden City
+                    name: people_
+                    score: 0.83984375
+                color:
+                  accentColor: 873B59
+                  dominantColorBackground: Brown
+                  dominantColorForeground: Brown
+                  dominantColors:
+                    - Brown
+                    - Black
+                  isBWImg: false
+                description:
+                  captions:
+                    - confidence: 0.48293603002174407
+                      text: Satya Nadella sitting on a bench
+                  tags:
+                    - person
+                    - man
+                    - outdoor
+                    - window
+                    - glasses
+                faces:
+                  - age: 44
+                    faceRectangle:
+                      height: 250
+                      left: 593
+                      top: 160
+                      width: 250
+                    gender: Male
+                imageType:
+                  clipArtType: 0
+                  lineDrawingType: 0
+                metadata:
+                  format: Jpeg
+                  height: 1000
+                  width: 1500
+                requestId: 0dbec5ad-a3d3-4f7e-96b4-dfd57efe967d
+                tags:
+                  - confidence: 0.9897908568382263
+                    name: person
+                  - confidence: 0.9449388980865479
+                    name: man
+                  - confidence: 0.938492476940155
+                    name: outdoor
+                  - confidence: 0.8951393961906433
+                    name: window
+              headers: {}
+  /describe?overload=stream:
+    post:
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      description: This operation generates a description of an image in human readable language with complete sentences.  The description is based on a collection of content tags, which are also returned by the operation. More than one description can be generated for each image.  Descriptions are ordered by their confidence score. All descriptions are in English. Two input methods are supported -- (1) Uploading an image or (2) specifying an image URL.A successful response will be returned in JSON.  If the request failed, the response will contain an error code and a message to help understand what went wrong.
+      operationId: DescribeImageInStream
+      parameters:
+        - default: "1"
+          description: Maximum number of candidate descriptions to be returned.  The default is 1.
+          in: query
+          name: maxCandidates
+          required: false
+          type: string
+        - $ref: "#/parameters/ServiceLanguage"
+        - description: An image stream.
+          in: body
+          name: Image
+          required: true
+          schema:
+            format: file
+            type: object
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Image description object.
+          schema:
+            $ref: "#/definitions/ImageDescription"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Describe request:
+          parameters:
+            Content-Type: application/octet-stream
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: "{binary}"
+            maxCandidates: "1"
+          responses:
+            "200":
+              body:
+                description:
+                  captions:
+                    - confidence: 0.48293603002174407
+                      text: Satya Nadella sitting on a bench
+                    - confidence: 0.4003700681542283
+                      text: Satya Nadella is sitting on a bench
+                    - confidence: 0.38035155997373377
+                      text: Satya Nadella sitting in front of a building
+                  tags:
+                    - person
+                    - man
+                    - outdoor
+                    - window
+                    - glasses
+                metadata:
+                  format: Jpeg
+                  height: 1000
+                  width: 1500
+                requestId: ed2de1c6-fb55-4686-b0da-4da6e05d283f
+  /generateThumbnail?overload=stream:
+    post:
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      description: This operation generates a thumbnail image with the user-specified width and height. By default, the service analyzes the image, identifies the region of interest (ROI), and generates smart cropping coordinates based on the ROI. Smart cropping helps when you specify an aspect ratio that differs from that of the input image. A successful response contains the thumbnail image binary. If the request failed, the response contains an error code and a message to help determine what went wrong.
+      operationId: GenerateThumbnailInStream
+      parameters:
+        - description: Width of the thumbnail. It must be between 1 and 1024. Recommended minimum of 50.
+          in: query
+          maximum: 1023
+          minimum: 1
+          name: width
+          required: true
+          type: integer
+        - description: Height of the thumbnail. It must be between 1 and 1024. Recommended minimum of 50.
+          in: query
+          maximum: 1023
+          minimum: 1
+          name: height
+          required: true
+          type: integer
+        - description: An image stream.
+          in: body
+          name: Image
+          required: true
+          schema:
+            format: file
+            type: object
+          x-ms-parameter-location: method
+        - default: false
+          description: Boolean flag for enabling smart cropping.
+          in: query
+          name: smartCropping
+          required: false
+          type: boolean
+      produces:
+        - application/octet-stream
+      responses:
+        "200":
+          description: The generated thumbnail in binary format.
+          schema:
+            type: file
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Generate Thumbnail request:
+          parameters:
+            Content-Type: application/octet-stream
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: "{binary}"
+            height: "500"
+            smartCropping: true
+            width: "500"
+          responses:
+            "200":
+              body: "{Binary}"
+              headers: {}
+  "/models/{model}/analyze?overload=stream":
+    post:
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      description: "This operation recognizes content within an image by applying a domain-specific model.  The list of domain-specific models that are supported by the Computer Vision API can be retrieved using the /models GET request.  Currently, the API only provides a single domain-specific model: celebrities. Two input methods are supported -- (1) Uploading an image or (2) specifying an image URL. A successful response will be returned in JSON.  If the request failed, the response will contain an error code and a message to help understand what went wrong."
+      operationId: AnalyzeImageByDomainInStream
+      parameters:
+        - description: The domain-specific content to recognize.
+          in: path
+          name: model
+          required: true
+          type: string
+        - $ref: "#/parameters/ServiceLanguage"
+        - description: An image stream.
+          in: body
+          name: Image
+          required: true
+          schema:
+            format: file
+            type: object
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Analysis result based on the domain model
+          schema:
+            $ref: "#/definitions/DomainModelResults"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Domain Model analysis request:
+          parameters:
+            Content-Type: application/octet-stream
+            Model: Celebrities
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: "{binary}"
+          responses:
+            "200":
+              body:
+                metadata:
+                  format: Jpeg
+                  height: 1000
+                  width: 1500
+                requestId: f0027b4b-dc0d-4082-9228-1545ed246b03
+                result:
+                  celebrities:
+                    - confidence: 0.999028444
+                      faceRectangle:
+                        height: 248
+                        left: 597
+                        top: 162
+                        width: 248
+                      name: Satya Nadella
+  /ocr?overload=stream:
+    post:
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      description: Optical Character Recognition (OCR) detects printed text in an image and extracts the recognized characters into a machine-usable character stream.   Upon success, the OCR results will be returned. Upon failure, the error code together with an error message will be returned. The error code can be one of InvalidImageUrl, InvalidImageFormat, InvalidImageSize, NotSupportedImage,  NotSupportedLanguage, or InternalServerError.
+      operationId: RecognizePrintedTextInStream
+      parameters:
+        - $ref: "#/parameters/OcrLanguage"
+        - $ref: "#/parameters/DetectOrientation"
+        - description: An image stream.
+          in: body
+          name: Image
+          required: true
+          schema:
+            format: file
+            type: object
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: The OCR results in the hierarchy of region/line/word. The results include text, bounding box for regions, lines and words. The angle, in degrees, of the detected text with respect to the closest horizontal or vertical direction. After rotating the input image clockwise by this angle, the recognized text lines become horizontal or vertical. In combination with the orientation property it can be used to overlay recognition results correctly on the original image, by rotating either the original image or recognition results by a suitable angle around the center of the original image. If the angle cannot be confidently detected, this property is not present. If the image contains text at different angles, only part of the text will be recognized correctly.
+          schema:
+            $ref: "#/definitions/OcrResult"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Ocr request:
+          parameters:
+            Content-Type: application/octet-stream
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: "{binary}"
+            detectOrientation: "true"
+            language: en
+          responses:
+            "200":
+              body:
+                language: en
+                orientation: Up
+                regions:
+                  - boundingBox: 462,379,497,258
+                    lines:
+                      - boundingBox: 462,379,497,74
+                        words:
+                          - boundingBox: 462,379,41,73
+                            text: A
+                          - boundingBox: 523,379,153,73
+                            text: GOAL
+                          - boundingBox: 694,379,265,74
+                            text: WITHOUT
+                      - boundingBox: 565,471,289,74
+                        words:
+                          - boundingBox: 565,471,41,73
+                            text: A
+                          - boundingBox: 626,471,150,73
+                            text: PLAN
+                          - boundingBox: 801,472,53,73
+                            text: IS
+                      - boundingBox: 519,563,375,74
+                        words:
+                          - boundingBox: 519,563,149,74
+                            text: JUST
+                          - boundingBox: 683,564,41,72
+                            text: A
+                          - boundingBox: 741,564,153,73
+                            text: WISH
+                textAngle: -2.0000000000000338
+              headers: {}
+  /recognizeText?overload=stream:
+    post:
+      consumes:
+        - application/octet-stream
+      description: Recognize Text operation. When you use the Recognize Text interface, the response contains a field called 'Operation-Location'. The 'Operation-Location' field contains the URL that you must use for your Get Handwritten Text Operation Result operation.
+      operationId: RecognizeTextInStream
+      parameters:
+        - $ref: "#/parameters/HandwritingBoolean"
+        - description: An image stream.
+          in: body
+          name: Image
+          required: true
+          schema:
+            format: file
+            type: object
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "202":
+          description: The service has accepted the request and will start processing later.
+          headers:
+            Operation-Location:
+              description: "URL to query for status of the operation. The operation ID will expire in 48 hours. "
+              type: string
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Domain Model analysis request:
+          parameters:
+            Content-Type: application/octet-stream
+            Handwriting: "true"
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: "{binary}"
+          responses:
+            "202":
+              header:
+                Operation-Location: https://{domain}/vision/v1.0/textOperations/49a36324-fc4b-4387-aa06-090cfbf0064f
+  /tag?overload=stream:
+    post:
+      consumes:
+        - application/octet-stream
+        - multipart/form-data
+      description: This operation generates a list of words, or tags, that are relevant to the content of the supplied image. The Computer Vision API can return tags based on objects, living beings, scenery or actions found in images. Unlike categories, tags are not organized according to a hierarchical classification system, but correspond to image content. Tags may contain hints to avoid ambiguity or provide context, for example the tag 'cello' may be accompanied by the hint 'musical instrument'. All tags are in English.
+      operationId: TagImageInStream
+      parameters:
+        - $ref: "#/parameters/ServiceLanguage"
+        - description: An image stream.
+          in: body
+          name: Image
+          required: true
+          schema:
+            format: file
+            type: object
+          x-ms-parameter-location: method
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Image tags object.
+          schema:
+            $ref: "#/definitions/TagResult"
+        default:
+          description: Error response.
+          schema:
+            $ref: "#/definitions/ComputerVisionError"
+      x-ms-examples:
+        Successful Tag request:
+          parameters:
+            Content-Type: application/octet-stream
+            Ocp-Apim-Subscription-Key: "{API key}"
+            body: "{binary}"
+          responses:
+            "200":
+              body:
+                metadata:
+                  format: Jpeg
+                  height: 400
+                  width: 400
+                requestId: 1ad0e45e-b7b4-4be3-8042-53be96103337
+                tags:
+                  - confidence: 0.9999997615814209
+                    name: grass
+                  - confidence: 0.9999706745147705
+                    name: outdoor
+                  - confidence: 0.9992897510528564
+                    name: sky
+                  - confidence: 0.9964632391929626
+                    name: building
+                  - confidence: 0.9927980303764343
+                    name: house
+                  - confidence: 0.8226802945137024
+                    name: lawn
+                  - confidence: 0.6412225365638733
+                    name: green
+                  - confidence: 0.31403225660324097
+                    name: residential

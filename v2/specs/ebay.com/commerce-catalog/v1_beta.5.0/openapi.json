@@ -1,0 +1,715 @@
+{
+  "openapi": "3.0.0",
+  "servers": [
+    {
+      "description": "Production",
+      "url": "https://api.ebay.com{basePath}",
+      "variables": {
+        "basePath": {
+          "default": "/commerce/catalog/v1_beta"
+        }
+      }
+    }
+  ],
+  "info": {
+    "contact": {
+      "name": "eBay Inc,",
+      "x-twitter": "ebay"
+    },
+    "description": "The Catalog API allows users to search for and locate an eBay catalog product that is a direct match for the product that they wish to sell. Listing against an eBay catalog product helps insure that all listings (based off of that catalog product) have complete and accurate information. In addition to helping to create high-quality listings, another benefit to the seller of using catalog information to create listings is that much of the details of the listing will be prefilled, including the listing title, the listing description, the item specifics, and a stock image for the product (if available). Sellers will not have to enter item specifics themselves, and the overall listing process is a lot faster and easier.",
+    "license": {
+      "name": "eBay API License Agreement",
+      "url": "https://go.developer.ebay.com/api-license-agreement"
+    },
+    "title": "Catalog API",
+    "version": "v1_beta.5.0",
+    "x-apisguru-categories": [
+      "ecommerce"
+    ],
+    "x-logo": {
+      "backgroundColor": "#FFFFFF",
+      "url": "https://api.apis.guru/v2/cache/logo/https_twitter.com_ebay_profile_image.jpeg"
+    },
+    "x-origin": [
+      {
+        "format": "openapi",
+        "url": "https://developer.ebay.com/api-docs/master/commerce/catalog/openapi/3/commerce_catalog_v1_beta_oas3.json",
+        "version": "3.0"
+      }
+    ],
+    "x-providerName": "ebay.com",
+    "x-serviceName": "commerce-catalog"
+  },
+  "paths": {
+    "/product/{epid}": {
+      "get": {
+        "description": "This call retrieves details of the catalog product identified by the eBay product identifier (ePID) specified in the request. These details include the product's title and description, aspects and their values, associated images, applicable category IDs, and any recognized identifiers that apply to the product. For a new listing, you can use the search call to identify candidate products on which to base the listing, then use the getProduct call to present the full details of those candidate products to the seller to make a a final selection.",
+        "operationId": "getProduct",
+        "parameters": [
+          {
+            "description": "The ePID of the product being requested. This value can be discovered by issuing the search call and examining the value of the productSummaries.epid field for the desired returned product summary.",
+            "in": "path",
+            "name": "epid",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Product"
+                }
+              }
+            },
+            "description": "OK"
+          },
+          "400": {
+            "description": "Bad Request",
+            "x-response-codes": {
+              "errors": {
+                "75007": {
+                  "category": "REQUEST",
+                  "description": "Currently, the {marketplaceId} marketplace is not supported. The supported Marketplaces are: {allowedMarketplaces}.",
+                  "domain": "API_CATALOG"
+                },
+                "75010": {
+                  "category": "REQUEST",
+                  "description": "The specified EPID value {epid} was not found.",
+                  "domain": "API_CATALOG"
+                },
+                "75011": {
+                  "category": "REQUEST",
+                  "description": "The specified EPID value {epid} no longer exists. Its new value is {newepid}.",
+                  "domain": "API_CATALOG"
+                },
+                "75015": {
+                  "category": "REQUEST",
+                  "description": "Insufficient permissions to fulfill the request.",
+                  "domain": "API_CATALOG"
+                },
+                "75016": {
+                  "category": "REQUEST",
+                  "description": "The specified EPID value {epid} is no longer available.",
+                  "domain": "API_CATALOG"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "404": {
+            "description": "Not Found"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "x-response-codes": {
+              "errors": {
+                "75000": {
+                  "category": "APPLICATION",
+                  "description": "There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.",
+                  "domain": "API_CATALOG"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_auth": [
+              "https://api.ebay.com/oauth/api_scope/sell.inventory",
+              "https://api.ebay.com/oauth/api_scope/commerce.catalog.readonly"
+            ]
+          }
+        ],
+        "tags": [
+          "product"
+        ]
+      }
+    },
+    "/product_summary/search": {
+      "get": {
+        "description": "This call searches for and retrieves summaries of one or more products in the eBay catalog that match the search criteria provided by a seller. The seller can use the summaries to select the product in the eBay catalog that corresponds to the item that the seller wants to offer for sale. When a corresponding product is found and adopted by the seller, eBay will use the product information to populate the item listing. The criteria supported by search include keywords, product categories, and category aspects. To see the full details of a selected product, use the getProduct call. In addition to product summaries, this call can also be used to identify refinements, which help you to better pinpoint the product you're looking for. A refinement consists of one or more aspect values and a count of the number of times that each value has been used in previous eBay listings. An aspect is a property (e.g. color or size) of an eBay category, used by sellers to provide details about the items they're listing. The refinement container is returned when you include the fieldGroups query parameter in the request with a value of ASPECT_REFINEMENTS or FULL. Example A seller wants to find a product that is &quot;gray&quot; in color, but doesn't know what term the manufacturer uses for that color. It might be Silver, Brushed Nickel, Pewter, or even Grey. The returned refinement container identifies all aspects that have been used in past listings for products that match your search criteria, along with all of the values those aspects have taken, and the number of times each value was used. You can use this data to present the seller with a histogram of the values of each aspect. The seller can see which color values have been used in the past, and how frequently they have been used, and selects the most likely value or values for their product. You issue the search call again with those values in the aspect_filter parameter to narrow down the collection of products returned by the call. Although all query parameters are optional, this call must include at least the q parameter, or the category_ids, gtin, or mpn parameter with a valid value. If you provide more than one of these parameters, they will be combined with a logical AND to further refine the returned collection of matching products. Note: This call requires that certain special characters in the query parameters be percent-encoded: &nbsp;&nbsp;&nbsp;&nbsp;(space) = %20 &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;, = %2C &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;: = %3A &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ = %5B &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;] = %5D &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;{ = %7B &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;| = %7C &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;} = %7D This requirement applies to all query parameter values. However, for readability, call examples and samples in this documentation will not use the encoding. This call returns product summaries rather than the full details of the products. To retrieve the full details of a product, use the getProduct call with an ePID.",
+        "operationId": "search",
+        "parameters": [
+          {
+            "description": "An eBay category and one or more aspects of that category, with the values that can be used to narrow down the collection of products returned by this call. Aspects are product attributes that can represent different types of information for different products. Every product has aspects, but different products have different sets of aspects. You can determine appropriate values for the aspects by first submitting this call without this parameter. It will return either the productSummaries.aspects container, the refinement.aspectDistributions container, or both, depending on the value of the fieldgroups parameter in the request. The productSummaries.aspects container provides the category aspects and their values that are associated with each returned product. The refinement.aspectDistributions container provides information about the distribution of values of the set of category aspects associated with the specified categories. In both cases sellers can select from among the returned aspects to use with this parameter. Note: You can also use the Taxonomy API's getItemAspectsForCategory call to retrieve detailed information about aspects and their values that are appropriate for your selected category. The syntax for the aspect_filter parameter is as follows (on several lines for readability; categoryId is required): aspect_filter=categoryId:category_id, aspect1:{valueA|valueB|...}, aspect2:{valueC|valueD|...},... A matching product must be within the specified category, and it must have least one of the values identified for every specified aspect. Note: Aspect names and values are case sensitive. Here is an example of an aspect_filter parameter in which 9355 is the category ID, Color is an aspect of that category, and Black and White are possible values of that aspect (on several lines for readability): GET https://api.ebay.com/commerce/catalog/v1_beta/product_summary/search? aspect_filter=categoryId:9355,Color:{White|Black} Here is the aspect_filter with required URL encoding and a second aspect (on several lines for readability): GET https://api.ebay.com/commerce/catalog/v1_beta/product_summary/search? aspect_filter=categoryId:9355,Color:%7BWhite%7CBlack%7D, Storage%20Capacity:%128GB%7C256GB%7D Note: You cannot use the aspect_filter parameter in the same call with either the gtin parameter or the mpn parameter. For implementation help, refer to eBay API documentation at https://developer.ebay.com/api-docs/commerce/catalog/types/catal:AspectFilter",
+            "in": "query",
+            "name": "aspect_filter",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Important: Currently, only the first category_id value is accepted. One or more comma-separated category identifiers for narrowing down the collection of products returned by this call. Note: This parameter requires a valid category ID value. You can use the Taxonomy API's getCategorySuggestions call to retrieve appropriate category IDs for your product based on keywords. The syntax for this parameter is as follows: category_ids=category_id1,category_id2,... Here is an example of a call with the category_ids parameter: GET https://api.ebay.com/commerce/catalog/v1_beta/product_summary/search? category_ids=178893 Note: Although all query parameters are optional, this call must include at least the q parameter, or the category_ids, gtin, or mpn parameter with a valid value. If you provide only the category_ids parameter, you cannot specify a top-level (L1) category.",
+            "in": "query",
+            "name": "category_ids",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The type of information to return in the response. Important: This parameter may not produce valid results if you also provide more than one value for the category_ids parameter. It is recommended that you avoid using this combination. Valid Values: ASPECT_REFINEMENTS &mdash; This returns the refinement container, which includes the category aspect and aspect value distributions that apply to the returned products. For example, if you searched for Ford Mustang, some of the category aspects might be Model Year, Exterior Color, Vehicle Mileage, and so on. Note: Aspects are category specific. FULL &mdash; This returns all the refinement containers and all the matching products. This value overrides the other values, which will be ignored. MATCHING_PRODUCTS &mdash; This returns summaries for all products that match the values you provide for the q and category_ids parameters. This does not affect your use of the ASPECT_REFINEMENTS value, which you can use in the same call. Code so that your app gracefully handles any future changes to this list. Default: MATCHING_PRODUCTS",
+            "in": "query",
+            "name": "fieldgroups",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "A string consisting of one or more comma-separated Global Trade Item Numbers (GTINs) that identify products to search for. Currently the GTIN values can include EAN, ISBN, and UPC identifier types. Note: Although all query parameters are optional, this call must include at least the q parameter, or the category_ids, gtin, or mpn parameter with a valid value. You cannot use the gtin parameter in the same call with either the q parameter or the aspect_filter parameter.",
+            "in": "query",
+            "name": "gtin",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The number of product summaries to return. This is the result set, a subset of the full collection of products that match the search or filter criteria of this call. Maximum: 200 Default: 50",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "A string consisting of one or more comma-separated Manufacturer Part Numbers (MPNs) that identify products to search for. This call will return all products that have one of the specified MPNs. MPNs are defined by manufacturers for their own products, and are therefore certain to be unique only within a given brand. However, many MPNs do turn out to be globally unique. Note: Although all query parameters are optional, this call must include at least the q parameter, or the category_ids, gtin, or mpn parameter with a valid value. You cannot use the mpn parameter in the same call with either the q parameter or the aspect_filter parameter.",
+            "in": "query",
+            "name": "mpn",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "This parameter is reserved for internal or future use.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "A string consisting of one or more keywords to use to search for products in the eBay catalog. Note: This call searches the following product record fields: title, description, brand, and aspects.localizedName, which do not include product IDs. Wildcard characters (e.g. *) are not allowed. The keywords are handled as follows: If the keywords are separated by a comma (e.g. iPhone,256GB), the query returns products that have iPhone AND 256GB. If the keywords are separated by a space (e.g. &quot;iPhone&nbsp;ipad&quot; or &quot;iPhone,&nbsp;ipad&quot;), the query ignores any commas and returns products that have iPhone OR iPad. Note: Although all query parameters are optional, this call must include at least the q parameter, or the category_ids, gtin, or mpn parameter with a valid value. You cannot use the q parameter in the same call with either the gtin parameter or the mpn parameter.",
+            "in": "query",
+            "name": "q",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ProductSearchResponse"
+                }
+              }
+            },
+            "description": "Success"
+          },
+          "204": {
+            "description": "No Content"
+          },
+          "400": {
+            "description": "Bad Request",
+            "x-response-codes": {
+              "errors": {
+                "75001": {
+                  "category": "REQUEST",
+                  "description": "The call must have a valid 'q', or 'category_ids' or 'gtin' or 'mpn' query parameter.",
+                  "domain": "API_CATALOG"
+                },
+                "75004": {
+                  "category": "REQUEST",
+                  "description": "The 'limit' value should be between 1 and 200 (inclusive).",
+                  "domain": "API_CATALOG"
+                },
+                "75006": {
+                  "category": "REQUEST",
+                  "description": "Top level category browsing is not allowed. Please provide keywords or more filters for the applied top level category.",
+                  "domain": "API_CATALOG"
+                },
+                "75007": {
+                  "category": "REQUEST",
+                  "description": "Currently, the {marketplaceId} marketplace is not supported. The supported Marketplaces are: {allowedMarketplaces} .",
+                  "domain": "API_CATALOG"
+                },
+                "75008": {
+                  "category": "REQUEST",
+                  "description": "The 'fieldgroups' value {fieldgroups} is invalid. The supported fieldgroups are: {supportedFieldgroups}",
+                  "domain": "API_CATALOG"
+                },
+                "75012": {
+                  "category": "REQUEST",
+                  "description": "The aspect_filter format is invalid. For more information, see the API call reference documentation.",
+                  "domain": "API_CATALOG"
+                },
+                "75013": {
+                  "category": "REQUEST",
+                  "description": "The 'aspect_filter' query parameter must include a categoryId. For more information, see the API call reference documentation.",
+                  "domain": "API_CATALOG"
+                },
+                "75014": {
+                  "category": "REQUEST",
+                  "description": "The categoryId in 'aspect_filter' query parameter is invalid. For more information, see the API call reference documentation.",
+                  "domain": "API_CATALOG"
+                },
+                "75015": {
+                  "category": "REQUEST",
+                  "description": "Insufficient permissions to fulfill the request.",
+                  "domain": "API_CATALOG"
+                },
+                "75017": {
+                  "category": "REQUEST",
+                  "description": "The specified GTIN value is invalid.",
+                  "domain": "API_CATALOG"
+                },
+                "75018": {
+                  "category": "REQUEST",
+                  "description": "The call must be made with either 'q' or 'gtin/mpn'.",
+                  "domain": "API_CATALOG"
+                },
+                "75019": {
+                  "category": "REQUEST",
+                  "description": "The call with 'gtin/mpn' cannot be made with aspect_filter.",
+                  "domain": "API_CATALOG"
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden"
+          },
+          "500": {
+            "description": "Internal Server Error",
+            "x-response-codes": {
+              "errors": {
+                "75000": {
+                  "category": "APPLICATION",
+                  "description": "There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.",
+                  "domain": "API_CATALOG"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "api_auth": [
+              "https://api.ebay.com/oauth/api_scope/sell.inventory",
+              "https://api.ebay.com/oauth/api_scope/commerce.catalog.readonly"
+            ]
+          }
+        ],
+        "tags": [
+          "product_summary"
+        ]
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Aspect": {
+        "description": "This type contains the name and values of a category aspect.",
+        "properties": {
+          "localizedName": {
+            "description": "The localized name of this category aspect.",
+            "type": "string"
+          },
+          "localizedValues": {
+            "description": "A list of the localized values of this category aspect.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "AspectDistribution": {
+        "description": "This type contains information about one category aspect that is associated with a specified category.",
+        "properties": {
+          "aspectValueDistributions": {
+            "description": "Contains information about one or more values of the category aspect identified by localizedAspectName.",
+            "items": {
+              "$ref": "#/components/schemas/AspectValueDistribution"
+            },
+            "type": "array"
+          },
+          "localizedAspectName": {
+            "description": "The localized name of an aspect that is associated with the category identified by dominantCategoryId.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "AspectValueDistribution": {
+        "description": "This type contains information about one value of a specified aspect. This value serves as a product refinement.",
+        "properties": {
+          "localizedAspectValue": {
+            "description": "The localized value of the category aspect identified by refinement.aspectDistributions.localizedAspectName.",
+            "type": "string"
+          },
+          "matchCount": {
+            "description": "The number of times the value of localizedAspectValue has been used for eBay product listings. By comparing this quantity to the matchCount for other values of the same aspect, you can present a histogram of the values to sellers, who can use that information to select which aspect value is most appropriate for their product. You can then include the user-selected value in the the search call's aspect_filter parameter to refine your search.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "refinementHref": {
+            "description": "A HATEOAS reference that further refines the search with this particular localizedAspectValue.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Error": {
+        "description": "This type defines the fields that can be returned in an error.",
+        "properties": {
+          "category": {
+            "description": "Identifies the type of erro.",
+            "type": "string"
+          },
+          "domain": {
+            "description": "Name for the primary system where the error occurred. This is relevant for application errors.",
+            "type": "string"
+          },
+          "errorId": {
+            "description": "A unique number to identify the error.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "inputRefIds": {
+            "description": "An array of request elements most closely associated to the error.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "longMessage": {
+            "description": "A more detailed explanation of the error.",
+            "type": "string"
+          },
+          "message": {
+            "description": "Information on how to correct the problem, in the end user's terms and language where applicable.",
+            "type": "string"
+          },
+          "outputRefIds": {
+            "description": "An array of request elements most closely associated to the error.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "parameters": {
+            "description": "An array of name/value pairs that describe details the error condition. These are useful when multiple errors are returned.",
+            "items": {
+              "$ref": "#/components/schemas/ErrorParameter"
+            },
+            "type": "array"
+          },
+          "subdomain": {
+            "description": "Further helps indicate which subsystem the error is coming from. System subcategories include: Initialization, Serialization, Security, Monitoring, Rate Limiting, etc.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ErrorParameter": {
+        "properties": {
+          "name": {
+            "description": "The object of the error.",
+            "type": "string"
+          },
+          "value": {
+            "description": "The value of the object.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Image": {
+        "description": "This type contains information about a product image stored in eBay Picture Services (EPS).",
+        "properties": {
+          "height": {
+            "description": "The height of the image in pixels.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "imageUrl": {
+            "description": "The eBay Picture Services (EPS) URL of the image.",
+            "type": "string"
+          },
+          "width": {
+            "description": "The width of the image in pixels.",
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Product": {
+        "description": "This type contains the full details of a specified product, including information about the product's identifiers, product images, aspects, and categories.",
+        "properties": {
+          "additionalImages": {
+            "description": "Contains information about additional images associated with this product. For the primary image, see the image container.",
+            "items": {
+              "$ref": "#/components/schemas/Image"
+            },
+            "type": "array"
+          },
+          "aspects": {
+            "description": "Contains an array of the category aspects and their values that are associated with this product.",
+            "items": {
+              "$ref": "#/components/schemas/Aspect"
+            },
+            "type": "array"
+          },
+          "brand": {
+            "description": "The manufacturer's brand name for this product.",
+            "type": "string"
+          },
+          "description": {
+            "description": "The rich description of this product, which might contain HTML.",
+            "type": "string"
+          },
+          "ean": {
+            "description": "A list of all European Article Numbers (EANs) that identify this product.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "epid": {
+            "description": "The eBay product ID of this product.",
+            "type": "string"
+          },
+          "gtin": {
+            "description": "A list of all GTINs that identify this product. Currently this can include EAN, ISBN, and UPC identifier types.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "image": {
+            "$ref": "#/components/schemas/Image",
+            "description": "Contains information about the primary image of this product. For more images of this product, see the additionalImages container."
+          },
+          "isbn": {
+            "description": "A list of all International Standard Book Numbers (ISBNs) that identify this product.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "mpn": {
+            "description": "A list of all MPN values that the manufacturer uses to identify this product.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "otherApplicableCategoryIds": {
+            "description": "A list of category IDs (other than the value of primaryCategoryId) for all the leaf categories to which this product might belong.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "primaryCategoryId": {
+            "description": "The identifier of the leaf category that eBay recommends using to list this product, based on previous listings of similar products. Products in the eBay catalog are not automatically associated with any particular category, but using an inappropriate category can make it difficult for prospective buyers to find the product. For other possible categories that might be used, see otherApplicableCategoryIds.",
+            "type": "string"
+          },
+          "productWebUrl": {
+            "description": "The URL for this product's eBay product page.",
+            "type": "string"
+          },
+          "title": {
+            "description": "The title of this product on eBay.",
+            "type": "string"
+          },
+          "upc": {
+            "description": "A list of Universal Product Codes (UPCs) that identify this product.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "version": {
+            "description": "The current version number of this product record in the catalog.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "ProductSearchResponse": {
+        "description": "This type contains the specifications for the collection of products that match the search or filter criteria of a search call. A maximum of 200 product summaries is returned (the result set), fewer if you include the limit query parameter in the request.",
+        "properties": {
+          "href": {
+            "description": "This field is reserved for internal or future use.",
+            "type": "string"
+          },
+          "limit": {
+            "description": "The number of product summaries returned in the response. This is the result set, a subset of the full collection of products that match the search or filter criteria of this call. If the limit query parameter was included in the request, this field will have the same value. Default: 50",
+            "format": "int32",
+            "type": "integer"
+          },
+          "next": {
+            "description": "This field is reserved for internal or future use.",
+            "type": "string"
+          },
+          "offset": {
+            "description": "This field is reserved for internal or future use.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "prev": {
+            "description": "This field is reserved for internal or future use.",
+            "type": "string"
+          },
+          "productSummaries": {
+            "description": "Returned if the fieldGroups query parameter was omitted from the request, or if it was included with a value of MATCHING_PRODUCTS or FULL. This container provides an array of product summaries in the current result set for products that match the combination of the q, category_ids, and aspect_filter parameters that were provided in the request. Each product summary includes information about the product's identifiers, product images, aspects, the product page URL, and the getProduct URL for retrieving the product details.",
+            "items": {
+              "$ref": "#/components/schemas/ProductSummary"
+            },
+            "type": "array"
+          },
+          "refinement": {
+            "$ref": "#/components/schemas/Refinement",
+            "description": "Returned only if the fieldGroups query parameter was included in the request with a value of ASPECT_REFINEMENTS or FULL. An aspect is a property of a category, used by sellers to provide details about the items they're listing. For example, the Cell Phones &amp; Smartphones category (#9355) includes a Storage Capacity aspect. This container provides information about the distribution of values of a set of category aspects. The category aspects are those associated with the category that eBay determines is most likely to cover the products that match the search criteria."
+          },
+          "total": {
+            "description": "This field is reserved for internal or future use.",
+            "format": "int32",
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "ProductSummary": {
+        "description": "This type contains a summary of a specified product. The product summary includes information about the product's identifiers, product images, aspects, and the getProduct URL for retrieving the product details.",
+        "properties": {
+          "additionalImages": {
+            "description": "Contains information about additional images associated with this product. For the primary image, see the image container.",
+            "items": {
+              "$ref": "#/components/schemas/Image"
+            },
+            "type": "array"
+          },
+          "aspects": {
+            "description": "Contains an array of the category aspects and their values that are associated with this product.",
+            "items": {
+              "$ref": "#/components/schemas/Aspect"
+            },
+            "type": "array"
+          },
+          "brand": {
+            "description": "The manufacturer's brand name for this product.",
+            "type": "string"
+          },
+          "ean": {
+            "description": "A list of all European Article Numbers (EANs) that identify this product.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "epid": {
+            "description": "The eBay product ID of this product.",
+            "type": "string"
+          },
+          "gtin": {
+            "description": "A list of all GTINs that identify this product. This includes all of the values returned in the ean, isbn, and upc fields.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "image": {
+            "$ref": "#/components/schemas/Image",
+            "description": "Contains information about the primary image of this product. For more images of this product, see the additionalImages container."
+          },
+          "isbn": {
+            "description": "A list of all International Standard Book Numbers (ISBNs) that identify this product.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "mpn": {
+            "description": "A list of all Manufacturer Product Number (MPN) values that the manufacturer uses to identify this product.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "productHref": {
+            "description": "The URI of the getProduct call request that retrieves this product's details.",
+            "type": "string"
+          },
+          "productWebUrl": {
+            "description": "The URL for this product's eBay product page.",
+            "type": "string"
+          },
+          "title": {
+            "description": "The title of this product on eBay.",
+            "type": "string"
+          },
+          "upc": {
+            "description": "A list of Universal Product Codes (UPCs) that identify this product.",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "Refinement": {
+        "description": "This type identifies a product category and the aspects associated with that category. Each aspect distribution container returns the distribution of values that have been used for the aspect.",
+        "properties": {
+          "aspectDistributions": {
+            "description": "Contains information about one or more aspects that are associated with the category identified by dominantCategoryId.",
+            "items": {
+              "$ref": "#/components/schemas/AspectDistribution"
+            },
+            "type": "array"
+          },
+          "dominantCategoryId": {
+            "description": "The ID of the category that eBay determines is most likely to cover the products matching the search criteria.",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "api_auth": {
+        "description": "The security definitions for this API. Please check individual operations for applicable scopes.",
+        "flows": {
+          "authorizationCode": {
+            "authorizationUrl": "https://auth.ebay.com/oauth2/authorize",
+            "scopes": {
+              "https://api.ebay.com/oauth/api_scope/commerce.catalog.readonly": " This scope would allow signed in user to read catalog data.",
+              "https://api.ebay.com/oauth/api_scope/sell.inventory": "View and manage your inventory and offers"
+            },
+            "tokenUrl": "https://api.ebay.com/identity/v1/oauth2/token"
+          }
+        },
+        "type": "oauth2"
+      }
+    }
+  }
+}

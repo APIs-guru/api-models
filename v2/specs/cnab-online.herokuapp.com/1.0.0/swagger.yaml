@@ -1,0 +1,278 @@
+swagger: "2.0"
+schemes:
+  - https
+host: cnab-online.herokuapp.com
+basePath: /v1
+info:
+  description: Processe arquivos de retorno CNAB
+  title: Cnab Online
+  version: 1.0.0
+  x-apisguru-categories:
+    - financial
+  x-description-language: pt
+  x-logo:
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/http_cnab-online.github.io_img_logo.png
+  x-origin:
+    - format: swagger
+      url: http://cnab-online.github.io/api-reference/api-reference-v1.json
+      version: "2.0"
+  x-providerName: cnab-online.herokuapp.com
+produces:
+  - application/json
+paths:
+  /file:
+    post:
+      consumes:
+        - multipart/form-data
+      description: |
+        Processa um arquivo CNAB para obter informações sobre o mesmo. Retorna um ID temporário para o mesmo.
+      parameters:
+        - description: Arquivo CNAB
+          in: formData
+          name: file
+          required: true
+          type: file
+      responses:
+        "200":
+          description: Informações básicas do arquivo
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/File"
+            type: object
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+      summary: Faz o upload de um arquivo
+      tags:
+        - file
+  "/file/{fileId}":
+    get:
+      parameters:
+        - description: ID Temporário gerado no endpoint file
+          in: path
+          name: fileId
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Informações básicas do arquivo
+          schema:
+            properties:
+              data:
+                $ref: "#/definitions/File"
+            type: object
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+      summary: Retorna as informações básicas de um arquivo previamente processado
+      tags:
+        - file
+  "/file/{fileId}/lines":
+    get:
+      parameters:
+        - description: ID Temporário gerado no endpoint file
+          in: path
+          name: fileId
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Informações básicas do arquivo
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Line"
+                type: array
+            type: object
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+      summary: Retorna todas as linhas e seus respectivos campos (de forma não processada, apenas indicando os campos reconhecidos)
+      tags:
+        - file
+  "/file/{fileId}/occurrences":
+    get:
+      parameters:
+        - description: ID Temporário gerado no endpoint file
+          in: path
+          name: fileId
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Informações básicas do arquivo
+          schema:
+            properties:
+              data:
+                items:
+                  $ref: "#/definitions/Occurrence"
+                type: array
+            type: object
+        default:
+          description: Unexpected error
+          schema:
+            $ref: "#/definitions/Error"
+      summary: Retorna as informações de baixa de boletos e outros tipos de ocorrências
+      tags:
+        - file
+definitions:
+  Error:
+    properties:
+      errors:
+        items:
+          properties:
+            detail:
+              type: string
+            title:
+              type: string
+          type: object
+        type: array
+    type: object
+  File:
+    properties:
+      attributes:
+        properties:
+          account_number:
+            description: Número da conta à qual este arquivo está vinculado
+            type: string
+          bank_code:
+            description: Código do banco
+            type: integer
+          bank_name:
+            description: Nome do banco
+            type: string
+          company_name:
+            description: Nome da empresa a quem pertence este arquivo
+            type: string
+          generation_date:
+            description: Data em que este arquivo foi gerado
+            format: date
+            type: string
+          name:
+            description: Nome do arquivo
+            type: string
+      id:
+        description: Id temporário gerado para o arquivo
+        type: string
+      type:
+        description: Sempre 'files' para seguir a especificação JSON API
+        type: string
+    type: object
+  Line:
+    properties:
+      attributes:
+        properties:
+          identified_fields:
+            items:
+              properties:
+                end:
+                  type: integer
+                name:
+                  type: string
+                start:
+                  type: integer
+                value:
+                  type: string
+            type: array
+          raw_text:
+            description: Linha completa (em texto)
+            type: string
+      id:
+        description: Posição desta linha em relação as outras
+        type: string
+      type:
+        description: Sempre 'lines' para seguir a especificação JSON API
+        type: string
+    type: object
+  Occurrence:
+    properties:
+      attributes:
+        properties:
+          agency:
+            description: Retorna o número da agencia
+            type: string
+          bank_tax:
+            description: Tarifa bancária
+            type: number
+          charged_agency:
+            description: Retorna a agencia cobradora (com o digito)
+            type: string
+          code:
+            description: Código de Ocorrência conforme o padrão CNAB
+            type: string
+          code_name:
+            description: Nome do código
+            type: string
+          credit_date:
+            description: Retorna a data em que o dinheiro caiu na conta
+            type: string
+          discount_value:
+            description: Valor de desconto
+            type: number
+          document_number:
+            description: Retorna o número do documento do boleto
+            type: string
+          due_date:
+            description: Retorna a data de vencimento de boleto
+            type: string
+          iof_tax:
+            description: Retorna o valor do Imposto sobre operações financeiras (IOF)
+            type: number
+          is_dda:
+            description: Retorna de o boleto foi pago através do Débito Direto Autorizado
+            type: string
+          is_payment:
+            description: Retorna se é para dar baixa no boleto
+            type: boolean
+          is_rejected_payment:
+            description: "Retorno se é uma baixa rejeitada (Ex: pedido de baixa foi rejeitado)"
+            type: boolean
+          liquidation_code:
+            description: Retorna o código de liquidação, normalmente usado para saber onde o cliente efetuou o pagamento
+            type: string
+          liquidation_description:
+            description: Retorna a descrição do código de liquidação
+            type: string
+          mulct_value:
+            description: Retorna o valor de juros e mora
+            type: string
+          occurrence_date:
+            description: Retorna a data da ocorrencia, o dia do pagamento
+            type: string
+          others_credits_value:
+            description: Retorna o valor de outros creditos
+            type: number
+          our_number:
+            description: Retorna o nosso número do boleto (sem o digito)
+            type: string
+          payer_allegation:
+            description: Retorna a alegação do pagador (para erros)
+            type: string
+          rebate_value:
+            description: Retornna o valor dos abatimentos concedidos (depois da emissão)
+            type: number
+          received_value:
+            description: Valor recebido
+            type: number
+          sequencial_number:
+            description: Retorna o numero sequencial da ocorrência no arquivo
+            type: number
+          title_value:
+            description: Valor do título (valor do boleto)
+            type: number
+          wallet:
+            description: Retorna o número da carteira do boleto
+            type: string
+      id:
+        description: Posição da ocorrência em relação às outras ocorrências processadas neste mesmo arquivo
+        type: integer
+      type:
+        description: Sempre 'occurrences' para seguir a especificação JSON API
+        type: string
+    type: object

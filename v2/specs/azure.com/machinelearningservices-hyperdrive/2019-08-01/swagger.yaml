@@ -1,0 +1,482 @@
+swagger: "2.0"
+schemes:
+  - https
+host: azure.local
+info:
+  description: HyperDrive REST API
+  title: HyperDrive
+  version: 2019-08-01
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/machinelearningservices/data-plane/Microsoft.MachineLearningServices/preview/2019-08-01/hyperdrive.json
+      version: "2.0"
+  x-preferred: false
+  x-providerName: azure.com
+  x-serviceName: machinelearningservices-hyperdrive
+  x-tags:
+    - Azure
+    - Microsoft
+produces:
+  - application/json
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+security:
+  - azure_auth:
+      - user_impersonation
+parameters:
+  ArmScopeParameter:
+    description: "The ARM scope passed in through URL with format:\r
+
+      \            subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/experiments/{experimentName}.\r\n"
+    in: path
+    name: armScope
+    required: true
+    type: string
+    x-ms-parameter-location: method
+    x-ms-skip-url-encoding: true
+tags: []
+paths:
+  "/hyperdrive/v1.0/{armScope}/runs":
+    post:
+      consumes:
+        - multipart/form-data
+      description: Create a HyperDrive Experiment.
+      operationId: HyperDrive_CreateExperiment
+      parameters:
+        - $ref: "#/parameters/ArmScopeParameter"
+        - description: The configuration file with experiment JSON content. A text file that is a JSON-serialized '#/definitions/HyperDriveCreateExperiment' object.
+          in: formData
+          name: config
+          required: true
+          type: file
+      responses:
+        "201":
+          description: OK
+          schema:
+            $ref: "#/definitions/HyperDriveExperimentResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/HyperDriveErrorResponse"
+      summary: Create an Experiment.
+      tags:
+        - HyperDriveExperiment
+      x-ms-examples:
+        Create a HyperDrive experiment:
+          parameters:
+            armScope: subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/demo_resource_group/providers/Microsoft.MachineLearningServices/workspaces/demo_workspace/experiments/demo_experiment
+            config: multipart-form-data
+            dnsSuffix: api.azureml.ms
+            region: eastus
+          responses:
+            "201":
+              body:
+                code: 201
+                result:
+                  all_jobs_generated: false
+                  cancellation_requested: false
+                  created: 2019-05-23T20:00:00.0Z
+                  created_by_user_id: 0
+                  description: null
+                  experiment_id: demo_experiment_1
+                  experiment_uri: null
+                  generator_config:
+                    name: BAYESIANOPTIMIZATION
+                    parameter_space:
+                      --param1:
+                        - uniform
+                        - - 0
+                          - 1
+                  hyperdrive_run_id: ""
+                  max_concurrent_jobs: 1
+                  max_duration_minutes: 10080
+                  max_total_jobs: 4
+                  modified: 2019-05-23T20:00:00.0Z
+                  name: demo_experiment
+                  platform: AML
+                  platform_config: {}
+                  policy_config:
+                    name: DEFAULT
+                  primary_metric_config:
+                    goal: MAXIMIZE
+                    name: accuracy
+                  status: Running
+                  study_id: 0
+                  study_uri: null
+  "/hyperdrive/v1.0/{armScope}/runs/{runId}/cancel":
+    post:
+      consumes:
+        - application/json
+      description: Cancel a HyperDrive Experiment.
+      operationId: HyperDrive_CancelExperiment
+      parameters:
+        - $ref: "#/parameters/ArmScopeParameter"
+        - description: Hyperdrive run id to cancel.
+          in: path
+          name: runId
+          required: true
+          type: string
+        - description: The host for run location.
+          in: header
+          name: RunHistoryHost
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/HyperDriveCancelExperimentResponse"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/HyperDriveErrorResponse"
+      summary: Cancel an Experiment.
+      tags:
+        - HyperDriveExperiment
+      x-ms-examples:
+        Cancel a HyperDrive experiment:
+          parameters:
+            armScope: subscriptions/00000000-0000-0000-0000-000000000000/resourceGroups/demo_resource_group/providers/Microsoft.MachineLearningServices/workspaces/demo_workspace/experiments/demo_experiment
+            dnsSuffix: api.azureml.ms
+            region: eastus
+            runId: demorun_1558388311
+          responses:
+            "200":
+              body:
+                code: 200
+                result: Cancellation requested for demorun_1558388311
+definitions:
+  HyperDriveBanditPolicy:
+    allOf:
+      - $ref: "#/definitions/HyperDrivePolicyConfigBase"
+      - properties:
+          properties:
+            description: Policy configuration properties.
+            properties:
+              delay_evaluation:
+                description: Value indicating the number of sequences for which the first evaluation is delayed.
+                format: int32
+                type: integer
+              evaluation_interval:
+                description: Evaluation interval of the policy.
+                format: int32
+                type: integer
+              slack_amount:
+                description: Slack amount.
+                format: float
+                type: number
+              slack_factor:
+                description: Slack factor.
+                format: float
+                type: number
+            type: object
+        type: object
+    description: Bandit Policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.banditpolicy?view=azure-ml-py for more information.
+    properties: {}
+    type: object
+    x-ms-discriminator-value: Bandit
+  HyperDriveCancelExperimentResponse:
+    description: Response for HyperDrive_CancelExperiment in case of success.
+    properties:
+      code:
+        description: Response code.
+        format: int32
+        type: integer
+      result:
+        description: Message indicating operation success.
+        type: string
+    required:
+      - code
+      - result
+    type: object
+  HyperDriveCreateExperiment:
+    allOf:
+      - $ref: "#/definitions/HyperDriveExperimentBase"
+      - properties:
+          user:
+            description: User who is creating the Hyperdrive run.
+            maxLength: 255
+            type: string
+        required:
+          - user
+        type: object
+    description: Part of request for HyperDrive_CreateExperiment. Contains configuration details required to create hyperdrive run.
+    properties: {}
+    type: object
+  HyperDriveDefaultPolicy:
+    allOf:
+      - $ref: "#/definitions/HyperDrivePolicyConfigBase"
+    description: No early termination is applied in the case of DefaultPolicy
+    properties: {}
+    type: object
+    x-ms-discriminator-value: Default
+  HyperDriveErrorResponse:
+    description: Response in case of an error.
+    properties:
+      code:
+        description: Error response code.
+        format: int32
+        type: integer
+      message:
+        description: Error message.
+        type: string
+    required:
+      - code
+      - message
+    type: object
+  HyperDriveExperiment:
+    allOf:
+      - $ref: "#/definitions/HyperDriveExperimentBase"
+      - properties:
+          all_jobs_generated:
+            description: Indicates if all runs have been generated.
+            type: boolean
+          cancellation_requested:
+            description: Indicates if cancellation has been requested for this Hyperdrive run.
+            type: boolean
+          created:
+            description: Hyperdrive run creation time.
+            format: date-time
+            type: string
+          created_by_user_id:
+            description: Id of the user who created the Hyperdrive run.
+            format: int32
+            type: integer
+          experiment_id:
+            description: Hyperdrive run id.
+            type: string
+          experiment_uri:
+            description: Hyperdrive run Uri.
+            type: string
+          hyperdrive_run_id:
+            description: Hyperdrive run id.
+            type: string
+          modified:
+            description: Hyperdrive run modification time.
+            format: date-time
+            type: string
+          status:
+            description: Hyperdrive run status.
+            type: string
+          study_uri:
+            description: Study Uri of the Hyperdrive run.
+            type: string
+        required:
+          - all_jobs_generated
+          - cancellation_requested
+          - created
+          - created_by_user_id
+          - experiment_id
+          - modified
+          - status
+          - hyperdrive_run_id
+        type: object
+    description: Part of response for HyperDrive_CreateExperiment in case of success. Contains details about the created hyperdrive run.
+    properties: {}
+    type: object
+  HyperDriveExperimentBase:
+    description: Base object for both request and response of HyperDrive_CreateExperiment api.
+    properties:
+      description:
+        description: The description for Hyperdrive run.
+        maxLength: 511
+        type: string
+        x-nullable: true
+      generator_config:
+        description: Hyperparameter space and the sampling method configuration.
+        properties:
+          name:
+            description: Hyperparameter sampling method.
+            enum:
+              - RANDOM
+              - GRID
+              - BAYESIANOPTIMIZATION
+            type: string
+            x-ms-enum:
+              modelAsString: true
+              name: Name
+          parameter_space:
+            additionalProperties:
+              description: "The first element in the array is a string identifying the parameter expression type like choice, uniform etc. The second element is a parameter expressions corresponding to the type.\r
+
+                \ Please refer to https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.parameter_expressions?view=azure-ml-py for a list of supported types and options for each type.\r
+
+                \ choice parameters are specified as ['choice', [[1, 2, 3, 4]]]. randint is in format ['randint', [1]].\r
+
+                \ uniform, loguniform, normal, lognormal are in format [expression type, [0.01, 0.05]].\r
+
+                \ quniform, qloguniform, qnormal, qlognormal are in format [expression type, [0.01, 0.05, 3]].\r\n"
+              example:
+                - choice
+                - - - 1
+                    - 2
+                    - 3
+                    - 4
+              items: {}
+              maxItems: 2
+              minItems: 2
+              type: array
+            description: Dictionary specifying hyperparameter space.
+            type: object
+        required:
+          - name
+          - parameter_space
+        type: object
+      max_concurrent_jobs:
+        description: Maximum number of runs to run concurrently.
+        format: int32
+        maximum: 100
+        minimum: 1
+        type: integer
+      max_duration_minutes:
+        description: Maximum duration of the Hyperdrive run.
+        format: int32
+        maximum: 43200
+        minimum: 1
+        type: integer
+      max_total_jobs:
+        description: Maximum number of runs.
+        format: int32
+        maximum: 1000
+        minimum: 1
+        type: integer
+      name:
+        description: Name of the Hyperdrive run.
+        maxLength: 255
+        type: string
+      platform:
+        description: Platform of the Hyperdrive run.
+        enum:
+          - AML
+        type: string
+        x-ms-enum:
+          modelAsString: true
+          name: Platform
+      platform_config:
+        description: Platform config object specifying the run definition structure.
+        type: object
+      policy_config:
+        $ref: "#/definitions/HyperDrivePolicyConfigBase"
+        description: Early termination policy configuration.
+      primary_metric_config:
+        description: Name of the primary metric and goal of optimizing.
+        properties:
+          goal:
+            description: Determines if the primary metric has to be minimized/maximized.
+            enum:
+              - MAXIMIZE
+              - MINIMIZE
+            type: string
+            x-ms-enum:
+              modelAsString: true
+              name: Goal
+          name:
+            description: Name of the primary metric reported by runs.
+            type: string
+        required:
+          - goal
+          - name
+        type: object
+      study_id:
+        description: Study Id of the Hyperdrive run.
+        format: int32
+        minimum: 0
+        type: integer
+        x-nullable: true
+    required:
+      - generator_config
+      - name
+      - platform
+      - platform_config
+      - policy_config
+      - primary_metric_config
+    type: object
+  HyperDriveExperimentResponse:
+    description: Response for HyperDrive_CreateExperiment in case of success.
+    properties:
+      code:
+        description: Response code.
+        format: int32
+        type: integer
+      result:
+        $ref: "#/definitions/HyperDriveExperiment"
+        description: Details about created Hyperdrive run.
+    required:
+      - code
+      - result
+    type: object
+  HyperDriveMedianStoppingPolicy:
+    allOf:
+      - $ref: "#/definitions/HyperDrivePolicyConfigBase"
+      - properties:
+          properties:
+            description: Policy configuration properties.
+            properties:
+              delay_evaluation:
+                description: Value indicating the number of sequences for which the first evaluation is delayed.
+                format: int32
+                type: integer
+              evaluation_interval:
+                description: Evaluation interval of the policy.
+                format: int32
+                type: integer
+            type: object
+        type: object
+    description: Median stopping policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.medianstoppingpolicy?view=azure-ml-py for more information.
+    properties: {}
+    type: object
+    x-ms-discriminator-value: MedianStopping
+  HyperDrivePolicyConfigBase:
+    description: Early termination policy configuration.
+    discriminator: name
+    properties:
+      name:
+        description: Type of early termination policy.
+        enum:
+          - Default
+          - Bandit
+          - MedianStopping
+          - TruncationSelection
+        type: string
+        x-ms-enum:
+          modelAsString: true
+          name: Name
+    required:
+      - name
+    type: object
+  HyperDriveTruncationSelectionPolicy:
+    allOf:
+      - $ref: "#/definitions/HyperDrivePolicyConfigBase"
+      - properties:
+          properties:
+            description: Policy configuration properties.
+            properties:
+              delay_evaluation:
+                description: Value indicating the number of sequences for which the first evaluation is delayed.
+                format: int32
+                type: integer
+              evaluation_interval:
+                description: Evaluation interval of the policy.
+                format: int32
+                type: integer
+              exclude_finished_jobs:
+                description: Boolean indicating if metrics from finished jobs should be excluded in the policy decision process.
+                type: boolean
+              truncation_percentage:
+                description: Truncation percentage value.
+                format: int32
+                type: integer
+            type: object
+        type: object
+    description: Truncation selection policy configuration. Please refer https://docs.microsoft.com/en-us/python/api/azureml-train-core/azureml.train.hyperdrive.truncationselectionpolicy?view=azure-ml-py for more information.
+    properties: {}
+    type: object
+    x-ms-discriminator-value: TruncationSelection

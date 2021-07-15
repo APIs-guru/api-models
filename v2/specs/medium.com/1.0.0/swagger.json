@@ -1,0 +1,639 @@
+{
+  "swagger": "2.0",
+  "schemes": [
+    "https"
+  ],
+  "host": "api.medium.com",
+  "basePath": "/v1",
+  "info": {
+    "contact": {
+      "name": "Hossain Khan",
+      "url": "https://github.com/amardeshbd/medium-api-specification"
+    },
+    "description": "Medium’s unofficial API documentation using OpenAPI specification.\n\n# Official API\nOfficial API document can also be viewed for most up to date API spec at [https://github.com/Medium/medium-api-docs](https://github.com/Medium/medium-api-docs).\n\nDeveloper Blog - [Welcome to the Medium API](https://medium.com/blog/welcome-to-the-medium-api-3418f956552)\n",
+    "termsOfService": "https://medium.com/@feerst/2b405a832a2f",
+    "title": "Medium.com - Unofficial API Spec",
+    "version": "1.0.0",
+    "x-apisguru-categories": [
+      "media",
+      "social"
+    ],
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_raw.githubusercontent.com_Medium_medium-logos_master_monogram_Monogram.png"
+    },
+    "x-origin": [
+      {
+        "format": "swagger",
+        "url": "https://raw.githubusercontent.com/amardeshbd/medium-api-specification/master/medium-api-specification.yaml",
+        "version": "2.0"
+      }
+    ],
+    "x-providerName": "medium.com",
+    "x-tags": [
+      "blog",
+      "social journalism",
+      "publishing platform"
+    ],
+    "x-unofficialSpec": true
+  },
+  "externalDocs": {
+    "url": "https://github.com/Medium/medium-api-docs"
+  },
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "BearerToken": {
+      "description": "Self-issued access tokens (described in user-facing copy as integration tokens) are explicitly designed for desktop integrations where implementing browser-based authentication is non-trivial, or software like plugins where it is impossible to secure a client secret. You should not request that a user give you an integration token if you don’t meet these criteria. Users will be cautioned within Medium to treat integration tokens like passwords, and dissuaded from making them generally available.\n\nUsers can generate an access token from the [Settings page](https://medium.com/me/settings) of their Medium account.\n\nYou should instruct your user to visit this URL and generate an integration token from the Integration Tokens section. You should suggest a description for this token - typically the name of your product or feature - and use it consistently for all users.\n\nSelf-issued access tokens currently grant the `basicProfile` and `publishPost` scope. A future iteration of the API will require a user to select the scope they wish to grant access to.\n\nSelf-issued access tokens do not expire, though they may be revoked by the user at any time.\n",
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    },
+    "OauthSecurity": {
+      "authorizationUrl": "https://medium.com/m/oauth/authorize",
+      "description": "First you must register an application on Medium. Then we will supply you a clientId and a clientSecret with which you may access Medium’s API. Each integration should have its own clientId and clientSecret. The clientSecret should be treated like a password and stored securely.",
+      "flow": "accessCode",
+      "scopes": {
+        "basicProfile": "Grants basic access to a user’s profile (not including their email).",
+        "listPublications": "Grants the ability to list publications related to the user.",
+        "publishPost": "Grants the ability to publish a post to the user’s profile.",
+        "uploadImage": "Grants the ability to upload an image for use within a Medium post. \n\nNOTE - This is an **extended permission**.\n\nIntegrations are not permitted to request extended scope from users without explicit prior permission from Medium. Attempting to request these permissions through the standard user authentication flow will result in an error if extended scope has not been authorized for an integration.\n"
+      },
+      "tokenUrl": "https://medium.com/v1/tokens",
+      "type": "oauth2"
+    }
+  },
+  "paths": {
+    "/me": {
+      "get": {
+        "description": "Returns details of the user who has granted permission to the application.",
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/UserResponse"
+            }
+          },
+          "401": {
+            "description": "The `accessToken` is invalid or has been revoked."
+          }
+        },
+        "security": [
+          {
+            "BearerToken": []
+          },
+          {
+            "OauthSecurity": [
+              "basicProfile"
+            ]
+          }
+        ],
+        "summary": "User details",
+        "tags": [
+          "Users"
+        ]
+      }
+    },
+    "/publications/{publicationId}/contributors": {
+      "get": {
+        "description": "This endpoint returns a list of contributors for a given publication. In other words, a list of Medium users who are allowed to publish under a publication, as well as a description of their exact role in the publication (for now, either an editor or a writer).",
+        "parameters": [
+          {
+            "description": "A unique identifier for the publication.",
+            "in": "path",
+            "name": "publicationId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/ContibutorResponse"
+            }
+          },
+          "401": {
+            "description": "The `accessToken` is invalid or has been revoked."
+          }
+        },
+        "security": [
+          {
+            "BearerToken": []
+          },
+          {
+            "OauthSecurity": [
+              "listPublications"
+            ]
+          }
+        ],
+        "summary": "Contributors of Publication",
+        "tags": [
+          "Publications",
+          "Users"
+        ]
+      }
+    },
+    "/publications/{publicationId}/posts": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "creating a post and associating it with a publication on Medium. The request also shows this association, considering posts a collection of resources under a publication\n\nThere are additional rules around publishing that each request to this API must respect:\n  - If the authenticated user is an 'editor' for the publication, they can create posts with any publish status. Posts published as 'public' or 'unlisted' will appear in collection immediately, while posts created as 'draft' will remain in pending state under publication.\n  - If the authenticated user is a 'writer' for the chosen publication, they can only create a post as a 'draft'. That post will remain in pending state under publication until an editor for the publication approves it.\n  - If the authenticated user is neither a 'writer' nor an 'editor', they are not allowed to create any posts in a publication.\n",
+        "parameters": [
+          {
+            "description": "Here publicationId is the id of the publication the post is being created under. The publicationId can be acquired from the API for listing user’s publications.",
+            "in": "path",
+            "name": "publicationId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Creates a post for publication.",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Post"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/PostDetails"
+            }
+          },
+          "400": {
+            "description": "Required fields were invalid, not specified."
+          },
+          "401": {
+            "description": "The `accessToken` is invalid or has been revoked."
+          },
+          "403": {
+            "description": "The `publicationId` in request path doesn’t point to a publication that the user can publish into."
+          }
+        },
+        "security": [
+          {
+            "BearerToken": []
+          },
+          {
+            "OauthSecurity": [
+              "publishPost"
+            ]
+          }
+        ],
+        "summary": "Create Publication Post",
+        "tags": [
+          "Posts",
+          "Publications"
+        ]
+      }
+    },
+    "/users/{authorId}/posts": {
+      "post": {
+        "consumes": [
+          "application/json"
+        ],
+        "description": "Creates a post on the authenticated user’s profile.",
+        "parameters": [
+          {
+            "description": "authorId is the user id of the authenticated user.",
+            "in": "path",
+            "name": "authorId",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Creates a post for user.",
+            "in": "body",
+            "name": "body",
+            "required": true,
+            "schema": {
+              "$ref": "#/definitions/Post"
+            }
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/PostDetails"
+            }
+          },
+          "400": {
+            "description": "Required fields were invalid, not specified."
+          },
+          "401": {
+            "description": "The `accessToken` is invalid or has been revoked."
+          },
+          "403": {
+            "description": "The user does not have permission to publish, or the authorId in the request path points to wrong/non-existent user."
+          }
+        },
+        "security": [
+          {
+            "BearerToken": []
+          },
+          {
+            "OauthSecurity": [
+              "publishPost"
+            ]
+          }
+        ],
+        "summary": "Create User Post",
+        "tags": [
+          "Users",
+          "Posts"
+        ]
+      }
+    },
+    "/users/{userId}/publications": {
+      "get": {
+        "description": "Returns a full list of publications that the user is related to in some way. This includes all publications the user is subscribed to, writes to, or edits.",
+        "parameters": [
+          {
+            "description": "A unique identifier for the user.",
+            "in": "path",
+            "name": "userId",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "OK",
+            "schema": {
+              "$ref": "#/definitions/PublicationResponse"
+            }
+          },
+          "401": {
+            "description": "The `accessToken` is invalid, lacks the `listPublications` scope or has been revoked."
+          },
+          "403": {
+            "description": "The request attempts to list publications for another user."
+          }
+        },
+        "security": [
+          {
+            "BearerToken": []
+          },
+          {
+            "OauthSecurity": [
+              "listPublications"
+            ]
+          }
+        ],
+        "summary": "User's publications",
+        "tags": [
+          "Publications"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "Contibutor": {
+      "description": "Contibutor",
+      "properties": {
+        "publicationId": {
+          "description": "An ID for the publication. This can be lifted from response of publications above",
+          "type": "string"
+        },
+        "role": {
+          "description": "Role of the user identified by userId in the publication identified by `publicationId`. *editor* or *writer*",
+          "type": "string"
+        },
+        "userId": {
+          "description": "A user ID of the contributor.",
+          "type": "string"
+        }
+      },
+      "title": "Contributor",
+      "type": "object"
+    },
+    "ContibutorResponse": {
+      "description": "list of contributors for a given publication",
+      "example": {
+        "data": [
+          {
+            "publicationId": "b45573563f5a",
+            "role": "editor",
+            "userId": "13a06af8f81849c64dafbce822cbafbfab7ed7cecf82135bca946807ea351290d"
+          },
+          {
+            "publicationId": "b45573563f5a",
+            "role": "editor",
+            "userId": "1c9c63b15b874d3e354340b7d7458d55e1dda0f6470074df1cc99608a372866ac"
+          },
+          {
+            "publicationId": "b45573563f5a",
+            "role": "editor",
+            "userId": "1cc07499453463518b77d31650c0b53609dc973ad8ebd33690c7be9236e9384ad"
+          },
+          {
+            "publicationId": "b45573563f5a",
+            "role": "writer",
+            "userId": "196f70942410555f4b3030debc4f199a0d5a0309a7b9df96c57b8ec6e4b5f11d7"
+          },
+          {
+            "publicationId": "b45573563f5a",
+            "role": "writer",
+            "userId": "14d4a581f21ff537d245461b8ff2ae9b271b57d9554e25d863e3df6ef03ddd480"
+          }
+        ]
+      },
+      "properties": {
+        "data": {
+          "items": {
+            "$ref": "#/definitions/Contibutor"
+          },
+          "type": "array"
+        }
+      },
+      "title": "Contributors list for a publication"
+    },
+    "Post": {
+      "example": {
+        "canonicalUrl": "http://jamietalbot.com/posts/liverpool-fc",
+        "content": "<h1>Liverpool FC</h1><p>You’ll never walk alone.</p>",
+        "contentFormat": "html",
+        "publishStatus": "public",
+        "tags": [
+          "football",
+          "sport",
+          "Liverpool"
+        ],
+        "title": "Liverpool FC"
+      },
+      "properties": {
+        "canonicalUrl": {
+          "description": "The original home of this content, if it was originally published elsewhere.",
+          "type": "string"
+        },
+        "content": {
+          "description": "The body of the post, in a valid, semantic, HTML fragment, or Markdown. Further markups may be supported in the future. For a full list of accepted HTML tags, see here. If you want your title to appear on the post page, you must also include it as part of the post content.",
+          "type": "string"
+        },
+        "contentFormat": {
+          "description": "The format of the \"content\" field. There are two valid values, \"html\", and \"markdown\"",
+          "type": "string"
+        },
+        "license": {
+          "default": "all-rights-reserved",
+          "description": "The license of the post. Valid values are `all-rights-reserved`, `cc-40-by`, `cc-40-by-sa`, `cc-40-by-nd`, `cc-40-by-nc`, `cc-40-by-nc-nd`, `cc-40-by-nc-sa`, `cc-40-zero`, `public-domain`. The default is `all-rights-reserved`.",
+          "enum": [
+            "all-rights-reserved",
+            "cc-40-by",
+            "cc-40-by-sa",
+            "cc-40-by-nd",
+            "cc-40-by-nc",
+            "cc-40-by-nc-nd",
+            "cc-40-by-nc-sa",
+            "cc-40-zero",
+            "public-domain"
+          ],
+          "type": "string"
+        },
+        "publishStatus": {
+          "default": "public",
+          "description": "The status of the post. Valid values are `public`, `draft`, or `unlisted`. The default is `public`.",
+          "enum": [
+            "public",
+            "draft",
+            "unlisted"
+          ],
+          "type": "string"
+        },
+        "tags": {
+          "description": "Tags to classify the post. Only the first three will be used. Tags longer than 25 characters will be ignored.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "title": {
+          "description": "The title of the post. Note that this title is used for SEO and when rendering the post as a listing, but will not appear in the actual post—for that, the title must be specified in the content field as well. Titles longer than 100 characters will be ignored. In that case, a title will be synthesized from the first content in the post when it is published.",
+          "type": "string"
+        }
+      },
+      "required": [
+        "title",
+        "contentFormat",
+        "content"
+      ],
+      "title": "Post",
+      "type": "object"
+    },
+    "PostDetails": {
+      "description": "Details of Post",
+      "example": {
+        "data": {
+          "authorId": "5303d74c64f66366f00cb9b2a94f3251bf5",
+          "canonicalUrl": "http://jamietalbot.com/posts/liverpool-fc",
+          "id": "e6f36a",
+          "license": "all-rights-reserved",
+          "licenseUrl": "https://medium.com/policy/9db0094a1e0f",
+          "publishStatus": "public",
+          "publishedAt": 1442286338435,
+          "tags": [
+            "football",
+            "sport",
+            "Liverpool"
+          ],
+          "title": "Liverpool FC",
+          "url": "https://medium.com/@majelbstoat/liverpool-fc-e6f36a"
+        }
+      },
+      "properties": {
+        "authorId": {
+          "description": "The userId of the post’s author",
+          "type": "string"
+        },
+        "canonicalUrl": {
+          "description": "The canonical URL of the post. If canonicalUrl was not specified in the creation of the post, this field will not be present.",
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for the post.",
+          "type": "string"
+        },
+        "license": {
+          "description": "The license of the post.",
+          "enum": [
+            "all-rights-reserved",
+            "cc-40-by",
+            "cc-40-by-sa",
+            "cc-40-by-nd",
+            "cc-40-by-nc",
+            "cc-40-by-nc-nd",
+            "cc-40-by-nc-sa",
+            "cc-40-zero",
+            "public-domain"
+          ],
+          "type": "string"
+        },
+        "licenseUrl": {
+          "description": "The URL to the license of the post.",
+          "type": "string"
+        },
+        "publishStatus": {
+          "description": "The publish status of the post.",
+          "type": "string"
+        },
+        "publishedAt": {
+          "description": "The post’s published date. If created as a draft, this field will not be present.",
+          "format": "date",
+          "type": "string"
+        },
+        "tags": {
+          "description": "The post’s tags",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "title": {
+          "description": "The post’s title",
+          "type": "string"
+        },
+        "url": {
+          "description": "The URL of the post on Medium",
+          "type": "string"
+        }
+      },
+      "title": "Post Details"
+    },
+    "Publication": {
+      "description": "Publications provide a way for authors to work collaboratively within a common narrative framework, brand or point of view.",
+      "example": {
+        "description": "What is this thing and how does it work?",
+        "id": "b969ac62a46b",
+        "imageUrl": "https://cdn-images-1.medium.com/fit/c/200/200/0*ae1jbP_od0W6EulE.jpeg",
+        "name": "About Medium",
+        "url": "https://medium.com/about"
+      },
+      "properties": {
+        "description": {
+          "description": "Short description of the publication",
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for the publication.",
+          "type": "string"
+        },
+        "imageUrl": {
+          "description": "The URL to the publication’s image/logo",
+          "type": "string"
+        },
+        "name": {
+          "description": "The publication’s name on Medium.",
+          "type": "string"
+        },
+        "url": {
+          "description": "The URL to the publication’s homepage",
+          "type": "string"
+        }
+      },
+      "title": "Publication Info",
+      "type": "object"
+    },
+    "PublicationResponse": {
+      "description": "Container object for publication list.",
+      "example": {
+        "data": [
+          {
+            "description": "What is this thing and how does it work?",
+            "id": "b969ac62a46b",
+            "imageUrl": "https://cdn-images-1.medium.com/fit/c/200/200/0*ae1jbP_od0W6EulE.jpeg",
+            "name": "About Medium",
+            "url": "https://medium.com/about"
+          },
+          {
+            "description": "Medium’s Developer resources",
+            "id": "b45573563f5a",
+            "imageUrl": "https://cdn-images-1.medium.com/fit/c/200/200/1*ccokMT4VXmDDO1EoQQHkzg@2x.png",
+            "name": "Developers",
+            "url": "https://medium.com/developers"
+          }
+        ]
+      },
+      "properties": {
+        "data": {
+          "items": {
+            "$ref": "#/definitions/Publication"
+          },
+          "type": "array"
+        }
+      },
+      "title": "Publication List Container"
+    },
+    "User": {
+      "example": {
+        "id": "5303d74c64f66366f00cb9b2a94f3251bf5",
+        "imageUrl": "https://images.medium.com/0*fkfQiTzT7TlUGGyI.png",
+        "name": "Jamie Talbot",
+        "url": "https://medium.com/@majelbstoat",
+        "username": "majelbstoat"
+      },
+      "properties": {
+        "id": {
+          "description": "A unique identifier for the user.",
+          "type": "string"
+        },
+        "imageUrl": {
+          "description": "The URL to the user’s avatar on Medium",
+          "type": "string"
+        },
+        "name": {
+          "description": "The user’s name on Medium.",
+          "type": "string"
+        },
+        "url": {
+          "description": "The URL to the user’s profile on Medium",
+          "type": "string"
+        },
+        "username": {
+          "description": "The user’s username on Medium.",
+          "type": "string"
+        }
+      },
+      "type": "object"
+    },
+    "UserResponse": {
+      "description": "Container object for user info",
+      "example": {
+        "data": {
+          "id": "5303d74c64f66366f00cb9b2a94f3251bf5",
+          "imageUrl": "https://images.medium.com/0*fkfQiTzT7TlUGGyI.png",
+          "name": "Jamie Talbot",
+          "url": "https://medium.com/@majelbstoat",
+          "username": "majelbstoat"
+        }
+      },
+      "properties": {
+        "data": {
+          "$ref": "#/definitions/User"
+        }
+      },
+      "title": "User Container",
+      "type": "object"
+    }
+  }
+}

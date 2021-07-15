@@ -1,0 +1,407 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.globalwinescore.com
+info:
+  contact:
+    x-twitter: GlobalWineScore
+  description: |
+    
+
+    The GlobalWineScore API is designed as a RESTful API, providing several resources and methods depending on your usage plan.
+
+    For further information please refer to <a href="https://www.globalwinescore.com/plans" target="_blank">our plans</a>.
+
+    # Authentication
+    The API uses token-based authentication.
+    In order to authenticate your requests, you need to include a specific header in each of your requests:
+
+    ```
+    Authorization: Token {YOUR-API-TOKEN}
+    ```
+    The word <b>Token</b> must be written. Your requests must also use the <b>HTTPS</b> protocol.
+
+    If you don't have a token yet, you need to apply for one [here](https://www.globalwinescore.com/api/).
+
+    Your personal token can be found under the <a href="https://www.globalwinescore.com/account/api/" target="_blank">My account > API</a> section of the GlobalWineScore website
+
+    # Format
+    The API provides several rendering formats which you can control using the `Accept` header or `format` query parameter.
+
+    - JSON (default): no header or `Accept: application/json`
+    - XML: `Accept: application/xml`
+    # Rate limiting
+    For API requests, the rate limit allows for up to 10 requests per minute.
+
+    # Error handling
+
+    Whether a request succeeded is indicated by the HTTP status code. A 2xx status code indicates success, whereas a 4xx status code indicates failure.
+
+    When a request fails, the response body is still JSON, but always contains a `detail` field with a description of the error, which you can inspect for debugging.
+
+    For example, trying to access the API without proper authentication will return code 403 along with the message:
+
+    `{"detail": "Authentication credentials were not provided."}`
+
+    Found a bug ? send us an email at <a href="mailto:api@globalwinescore.com">api@globalwinescore.com</a>
+
+    # Ordering
+
+    At the moment, GlobalWineScores may be sorted by `date` and `score`. Use "-"
+    to sort in descending order.
+
+    # Continuous synchronization
+
+    If you need to synchronize your database with our API, you can query our API using `?ordering=-date` to get the newest scores first, which means you won't have to crawl the whole catalog every time :-)
+
+    # Quick search interface
+    If you need to search our catalog (e.g. to align it with yours), we're providing you with a handy interface accessible here: <a href="https://api.globalwinescore.com/search/" target="_blank">https://api.globalwinescore.com/search/</a>
+
+    You need to be logged in (email/password) to access this page, but other than that you can share it with anyone in your team and start searching right away !
+
+    # Resources
+
+    The details about available endpoints can be found below.
+    You can click on each endpoint to find information about their parameters.
+  title: GlobalWineScore API Documentation
+  version: 8234aab51481d37a30757d925b7f4221a659427e
+  x-apisguru-categories:
+    - open_data
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_GlobalWineScore_profile_image.jpeg
+  x-origin:
+    - format: openapi
+      url: https://globalwinescore.docs.apiary.io/api-description-document
+      version: "3.0"
+  x-providerName: globalwinescore.com
+security:
+  - TokenAuthentication: []
+paths:
+  /globalwinescores/:
+    description: |
+      https://api.globalwinescore.com/globalwinescores/
+      <br/> <b>Require business plan</b> <br/>
+      GlobalWineScores are re-computed every time a renotation is published, hence resulting in a score evolution over time.
+
+      This API allows you to retrieve the history of all GlobalWineScores.
+    get:
+      description: Returns all available GWS
+      operationId: listHistoricalGWS
+      parameters:
+        - description: ""
+          example: Token <YOUR-API-TOKEN>
+          in: header
+          name: Authorization
+          schema:
+            type: string
+        - description: |
+            The exact `id` of the wine. Can be used multiple times (e.g `?wine_id=114959&wine_id=114952`) <br/> If you need to find the `wine_id` for your wines, use our <a href="https://api.globalwinescore.com/search/" target="_blank">search page</a>
+          example:
+            - 114959
+            - 114952
+          explode: true
+          in: query
+          name: wine_id
+          schema:
+            items:
+              type: integer
+            type: array
+        - description: The vintage you want to search against.
+          example: "2000"
+          in: query
+          name: vintage
+          schema:
+            type: string
+        - description: The lowercase color of the wine.
+          in: query
+          name: color
+          schema:
+            enum:
+              - red
+              - white
+              - pink
+            type: string
+        - description: |
+            Only show the <a href="See https://en.wikipedia.org/wiki/En_primeur">en primeur</a> GlobalWineScores
+          in: query
+          name: is_primeurs
+          schema:
+            default: false
+            type: boolean
+        - description: |
+            L-WIN wine identifier (See definition <a href="https://www.liv-ex.com/lwin/" target="_blank">here</a>)
+          example: "1014033"
+          in: query
+          name: lwin
+          schema:
+            type: string
+        - description: |
+            L-WIN wine/vintage identifier (See definition <a href="https://www.liv-ex.com/lwin/" target="_blank">here</a>)
+          example: "10140332000"
+          in: query
+          name: lwin_11
+          schema:
+            type: string
+        - description: Number of results to return per page.
+          in: query
+          name: limit
+          schema:
+            default: 100
+            minimum: 0
+            type: integer
+        - description: The initial index from which to return the results.
+          example: 100
+          in: query
+          name: offset
+          schema:
+            minimum: 0
+            type: integer
+        - description: Which field to use when ordering the results.
+          in: query
+          name: ordering
+          schema:
+            default: -date
+            enum:
+              - date
+              - -date
+              - score
+              - -score
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value: |
+                    {
+                      "count": 1,
+                      "next": null,
+                      "previous": null,
+                      "results": [
+                        {
+                          "wine": "Petrus, Pomerol",
+                          "wine_id": 114959,
+                          "wine_slug": "petrus-pomerol",
+                          "appellation": "Pomerol",
+                          "appellation_slug": "pomerol",
+                          "color": "Red",
+                          "wine_type": "",
+                          "regions": [
+                            "Bordeaux"
+                          ],
+                          "country": "France",
+                          "classification": null,
+                          "vintage": "2000",
+                          "date": "2016-05-12",
+                          "is_primeurs": false,
+                          "score": 99.02,
+                          "confidence_index": "A+",
+                          "journalist_count": 6,
+                          "lwin": 1014033,
+                          "lwin_11": 10140332000
+                        }
+                      ]
+                    }
+            application/xml:
+              examples:
+                response:
+                  value: |
+                    <root>
+                      <count>1</count>
+                      <next/>
+                      <previous/>
+                      <results>
+                        <list-item>
+                          <wine>Petrus, Pomerol</wine>
+                          <wine_id>114959</wine_id>
+                          <wine_slug>petrus-pomerol</wine_slug>
+                          <appellation>Pomerol</appellation>
+                          <appellation_slug>pomerol</appellation_slug>
+                          <color>Red</color>
+                          <wine_type/>
+                          <regions>
+                            <list-item>Bordeaux</list-item>
+                          </regions>
+                          <country>France</country>
+                          <classification/>
+                          <vintage>2000</vintage>
+                          <date>2016-05-12</date>
+                          <is_primeurs>False</is_primeurs>
+                          <score>99.02</score>
+                          <confidence_index>A+</confidence_index>
+                          <journalist_count>6</journalist_count>
+                          <lwin>1014033</lwin>
+                          <lwin_11>10140332000</lwin_11>
+                        </list-item>
+                      </results>
+                    </root>
+          description: ""
+      summary: List all historical GWS
+      tags:
+        - GlobalWineScore
+    summary: Historical GWS
+  /globalwinescores/latest/:
+    description: https://api.globalwinescore.com/globalwinescores/latest/
+    get:
+      description: Returns the latest GWS available per wine/vintage.
+      parameters:
+        - description: ""
+          example: Token <YOUR-API-TOKEN>
+          in: header
+          name: Authorization
+          schema:
+            type: string
+        - description: |
+            The exact `id` of the wine. Can be used multiple times (e.g `?wine_id=114959&wine_id=114952`) <br/> If you need to find the `wine_id` for your wines, use our <a href="https://api.globalwinescore.com/search/" target="_blank">search page</a>
+          example:
+            - 114959
+            - 114952
+          explode: true
+          in: query
+          name: wine_id
+          schema:
+            items:
+              type: integer
+            type: array
+        - description: The vintage you want to search against.
+          example: "2000"
+          in: query
+          name: vintage
+          schema:
+            type: string
+        - description: The lowercase color of the wine.
+          in: query
+          name: color
+          schema:
+            enum:
+              - red
+              - white
+              - pink
+            type: string
+        - description: |
+            Only show the <a href="See https://en.wikipedia.org/wiki/En_primeur">en primeur</a> GlobalWineScores
+          in: query
+          name: is_primeurs
+          schema:
+            default: false
+            type: boolean
+        - description: |
+            L-WIN wine identifier (See definition <a href="https://www.liv-ex.com/lwin/" target="_blank">here</a>)
+          example: "1014033"
+          in: query
+          name: lwin
+          schema:
+            type: string
+        - description: |
+            L-WIN wine/vintage identifier (See definition <a href="https://www.liv-ex.com/lwin/" target="_blank">here</a>)
+          example: "10140332000"
+          in: query
+          name: lwin_11
+          schema:
+            type: string
+        - description: Number of results to return per page.
+          in: query
+          name: limit
+          schema:
+            default: 100
+            minimum: 0
+            type: integer
+        - description: The initial index from which to return the results.
+          example: 100
+          in: query
+          name: offset
+          schema:
+            minimum: 0
+            type: integer
+        - description: Which field to use when ordering the results.
+          in: query
+          name: ordering
+          schema:
+            default: -date
+            enum:
+              - date
+              - -date
+              - score
+              - -score
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value: |
+                    {
+                      "count": 1,
+                      "next": null,
+                      "previous": null,
+                      "results": [
+                        {
+                          "wine": "Petrus, Pomerol",
+                          "wine_id": 114959,
+                          "wine_slug": "petrus-pomerol",
+                          "appellation": "Pomerol",
+                          "appellation_slug": "pomerol",
+                          "color": "Red",
+                          "wine_type": "",
+                          "regions": [
+                            "Bordeaux"
+                          ],
+                          "country": "France",
+                          "classification": null,
+                          "vintage": "2000",
+                          "date": "2016-05-12",
+                          "is_primeurs": false,
+                          "score": 99.02,
+                          "confidence_index": "A+",
+                          "journalist_count": 6,
+                          "lwin": 1014033,
+                          "lwin_11": 10140332000
+                        }
+                      ]
+                    }
+            application/xml:
+              examples:
+                response:
+                  value: |
+                    <root>
+                      <count>1</count>
+                      <next/>
+                      <previous/>
+                      <results>
+                        <list-item>
+                          <wine>Petrus, Pomerol</wine>
+                          <wine_id>114959</wine_id>
+                          <wine_slug>petrus-pomerol</wine_slug>
+                          <appellation>Pomerol</appellation>
+                          <appellation_slug>pomerol</appellation_slug>
+                          <color>Red</color>
+                          <wine_type/>
+                          <regions>
+                            <list-item>Bordeaux</list-item>
+                          </regions>
+                          <country>France</country>
+                          <classification/>
+                          <vintage>2000</vintage>
+                          <date>2016-05-12</date>
+                          <is_primeurs>False</is_primeurs>
+                          <score>99.02</score>
+                          <confidence_index>A+</confidence_index>
+                          <journalist_count>6</journalist_count>
+                          <lwin>1014033</lwin>
+                          <lwin_11>10140332000</lwin_11>
+                        </list-item>
+                      </results>
+                    </root>
+          description: ""
+      summary: List all latest GWS
+      tags:
+        - GlobalWineScore
+    summary: GWS
+components:
+  securitySchemes:
+    TokenAuthentication:
+      description: See Authentication section above
+      in: header
+      name: Authorization
+      type: apiKey

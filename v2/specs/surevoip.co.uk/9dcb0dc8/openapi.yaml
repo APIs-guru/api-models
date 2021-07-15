@@ -1,0 +1,737 @@
+openapi: 3.0.3
+servers:
+  - description: Production SureVoIP API (live data)
+    url: https://api.surevoip.co.uk
+  - description: Sandbox SureVoIP API (data is 24 hours behind production)
+    url: https://sandbox.surevoip.co.uk
+info:
+  contact:
+    email: support@surevoip.co.uk
+    name: SureVoIP API Support
+    url: https://www.surevoip.co.uk/contact-surevoip
+  description: |
+    # Introduction
+    Welcome to the SureVoIP RESTful hypermedia API (sometimes known as a VoIP REST API, Telecom REST API, SIP API, Hypermedia API or just VoIP API.)
+
+    The SureVoIP API is a way for you to automate your interaction with the SureVoIP platforms. With the API, you can create your own scripts, applications or mashups which can:
+    * List calls
+    * create customers
+    * search numbers
+    * provision numbers
+    * send SMS texts
+    * create outbound calls
+    * schedule announcements
+    * schedule call hangups with an announcement
+    * subscribe to events/alerts
+    * track calls
+    * retrieve invoices
+    * grab your SIP details
+    * check your IP address
+    * be 100% self-sufficient
+    * and much more!
+  license:
+    name: Proprietry
+    url: https://api.surevoip.co.uk
+  termsOfService: https://www.surevoip.co.uk/about/terms-conditions
+  title: The SureVoIP RESTful API
+  version: 9dcb0dc8
+  x-apisguru-categories:
+    - telecom
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_www.surevoip.co.uk_sites_default_files_fbg_logo.png
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/SureVoIP/API-Specification/master/openapi/openapi.yaml
+      version: "3.0"
+  x-providerName: surevoip.co.uk
+externalDocs:
+  description: SureVoIP API Wiki
+  url: https://www.surevoip.co.uk/support/wiki/api_documentation
+security:
+  - BasicAuth: []
+  - OAuth2: []
+tags:
+  - description: Announcements that can be played during or before a call
+    name: announcements
+  - description: Areacodes of numbers that SureVoIP can supply
+    name: areacodes
+  - description: Billing details and invoices
+    name: billing
+  - description: Create phone calls via an API
+    name: calls
+  - description: Create a charge for a customer
+    name: charges
+  - description: Create, List, Updated and Delete Contacts
+    name: contacts
+  - description: Create, List, Updated and Delete Customers
+    name: customers
+  - description: Echo back your payload
+    name: echo
+  - description: Send faxes - Not in service
+    name: faxes
+  - description: Create, List, Updated and Delete Hosted VoIP Customers
+    name: hosted
+  - description: Show the originating IP address of your request
+    name: ip-address
+  - description: Create, List, Updated and Delete SIMs
+    name: mobile
+  - description: Create, List, Updated and Delete Numbers (DDIs)
+    name: numbers
+  - description: Create, List, Updated and Delete Partners and their customers
+    name: partners
+  - description: Create, List, Updated and Delete Number Porting requests
+    name: porting
+  - description: List Services Statuses
+    name: service-status
+  - description: List SIP details
+    name: sip
+  - description: Send SMS (text messages)
+    name: sms
+  - description: List support details
+    name: support
+  - description: Create call credit topups for customers
+    name: topups
+paths:
+  /:
+    get:
+      parameters:
+        - description: Disable Hypermedia
+          in: query
+          name: hypermedia
+          schema:
+            default: yes
+            enum:
+              - yes
+              - no
+            type: string
+        - description: Content Type
+          in: query
+          name: content-type
+          schema:
+            default: application/json
+            enum:
+              - application/json
+              - text/html
+              - text/xml
+              - application/xml
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  status:
+                    enum:
+                      - OK
+                    type: string
+                type: object
+            text/xml:
+              schema:
+                $ref: "#/paths/~1/get/responses/200/content/application~1json/schema"
+          description: Return Status OK and/or resource list
+      summary: List global resources
+      tags:
+        - global
+  /announcements:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1/get/responses/200/content/application~1json/schema"
+            text/xml:
+              schema:
+                $ref: "#/paths/~1/get/responses/200/content/application~1json/schema"
+          description: Return Status OK and/or resource list
+      summary: List global announcements
+      tags:
+        - announcements
+    post:
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              properties:
+                description:
+                  type: string
+                file:
+                  format: audio/x-wav
+                  type: string
+              type: object
+        description: Upload a wav file to be used in other parts of the API - 10Mb limit, ending in .wav
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                properties:
+                  announcement:
+                    properties:
+                      creation_date:
+                        type: string
+                      description:
+                        type: string
+                      file_internal:
+                        type: string
+                      filename:
+                        type: string
+                      id:
+                        type: string
+                      size:
+                        type: integer
+                      src_ip_address:
+                        type: string
+                      url:
+                        properties:
+                          download:
+                            type: string
+                          href:
+                            type: string
+                          title:
+                            type: string
+                        type: object
+                    type: object
+                type: object
+          description: File created on filesystem.
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  errors:
+                    items:
+                      properties:
+                        field:
+                          type: string
+                        message:
+                          items:
+                            type: string
+                          type: array
+                      required:
+                        - message
+                        - field
+                      type: object
+                    type: array
+                required:
+                  - errors
+                type: object
+          description: Bad data
+        "403":
+          content:
+            application/json:
+              schema:
+                properties:
+                  message:
+                    type: string
+                type: object
+          description: Sorry, you have reached your max quota of 10 announcement files. Please delete some.
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1announcements/post/responses/403/content/application~1json/schema"
+          description: Problem saving file
+      summary: Add a new announcement audio file
+      tags:
+        - announcements
+  /areacodes:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List areacodes
+      tags:
+        - areacodes
+  /billing:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List global billing detail
+      tags:
+        - billing
+  /calls:
+    get:
+      parameters:
+        - description: Validate a phone number by calling it for one ring. Note; not 100% proof the number is in service.
+          example: 441224900123
+          in: query
+          name: validate
+          schema:
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1/get/responses/200/content/application~1json/schema"
+          description: OK
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1announcements/post/responses/400/content/application~1json/schema"
+          description: Bad query data
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1announcements/post/responses/403/content/application~1json/schema"
+          description: Only partners or admins can list all live calls.
+      summary: Validate a phone number by calling it once
+      tags:
+        - calls
+    post:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                announcement_at:
+                  description: |
+                    is in seconds. Just take 120 secs away from the hangup_at time for a announcement to be played 2 mins before the end of the call. If provided announcement_id is required
+                  example: 180
+                  type: string
+                announcement_id:
+                  description: |
+                    is the announcement id (from https://api.surevoip.co.uk/customers/{customer}/announcements/{announcement_id}) to play for example “your call is about to end in 2 mins”. We only allow a wav file, but we may allow "words", which will use SureVoIP provided text to speech. If provided announcement_at is required
+                  example: hgCRVfWB4hGRSEAkICyA
+                  type: string
+                caller_id:
+                  description: The caller ID to show the b leg (to).
+                  example: 1224900123
+                  type: string
+                from:
+                  description: The person making the call, i.e the a leg. This person must answer in order for the b leg to be rung
+                  example: 442035159999
+                  type: string
+                hangup_announcement_id:
+                  description: |
+                    the id of a thank you announcement or similar. You can manage these as you would with any RESTful resource at https://api.surevoip.co.uk/announcements and https://api.surevoip.co.uk/customers/{customer}/announcements/{announcement_id}. It will be played at the end of the call at hangup. If provided hangup_at is required.
+                  example: RVfWB4hGRSEAkIXYCyA
+                  type: string
+                hangup_at:
+                  description: |
+                    length in seconds from when the call is *answered* to when the system hangs up. If "hangup_announcement_id" is present, this will be played at hangup
+                  example: 300
+                  type: string
+                options:
+                  properties:
+                    a_leg_caller_id:
+                      description: Change the caller ID shown to the a leg (from)
+                      example: 1224900123
+                      type: string
+                    a_leg_only:
+                      description: Do not ring the "to" number, only the from and show "caller_id"
+                      example: 1
+                      type: integer
+                    cancel_key:
+                      description: The phone keypad number to press to hangup the call and not place the second leg of the call. Default 2
+                      example: 2
+                      type: integer
+                    connect_key:
+                      description: The phone keypad number to press in order to place the call to the b leg, i.e. press to confirm. Default 1
+                      example: 1
+                      type: integer
+                    play_audio:
+                      items:
+                        properties:
+                          announcement_id:
+                            description: |
+                              Id of announcement audio file which will play to the a leg of the call, i.e. the person that must answer the call first. This plays one or more audio files you have uploaded. The use case being you want to play audio to let the a leg of the call know what the call is about. Imagine a call center agent needs to know that they are calling a customer. These audio files may play a customer account number to the agent for example. 
+                              Have lots of audio files in this array to build up a message
+                            example: zgL4QmsB6hGmv5YnsW_4lQ
+                            type: string
+                        type: object
+                      type: array
+                  type: object
+                to:
+                  description: The b leg of the call, i.e. the person you are calling
+                  example: 442035159995
+                  type: string
+              required:
+                - to
+                - from
+                - caller_id
+              type: object
+        description: Create a phone call and play announcement audio to the "from" party (a leg)
+        required: true
+      responses:
+        "202":
+          content:
+            application/json:
+              schema:
+                properties:
+                  Call:
+                    type: string
+                  Location:
+                    type: string
+                type: object
+          description: Call creation request accepted.
+          headers:
+            Location:
+              description: URL of created call to monitor
+              schema:
+                type: string
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1announcements/post/responses/400/content/application~1json/schema"
+          description: Bad data
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1announcements/post/responses/403/content/application~1json/schema"
+          description: Only customer accounts can create calls.
+        "500":
+          description: Issue with API interface to core platform.
+      summary: Create phone calls with or without announcements and scheduled hangups
+      tags:
+        - calls
+  /charges:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List charges
+      tags:
+        - charges
+    post:
+      responses:
+        "201":
+          description: Created,
+      summary: Create charges for invoices
+      tags:
+        - charges
+  /contacts:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List contacts
+      tags:
+        - contacts
+  /customers:
+    get:
+      responses:
+        "302":
+          content:
+            application/json:
+              schema:
+                properties:
+                  location:
+                    type: string
+                type: object
+          description: Found
+          headers:
+            Location:
+              description: URL of customer account
+              schema:
+                type: string
+          links:
+            GetCustomer:
+              description: |
+                The 'location' URL contains the customer account
+              operationId: getCustomer
+              parameters:
+                account: $response.body#/location
+      summary: List all customers or find your own account
+      tags:
+        - customers
+  "/customers/{account}":
+    get:
+      operationId: getCustomer
+      parameters:
+        - description: Account ID of customer
+          in: path
+          name: account
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  address:
+                    type: string
+                  balance:
+                    type: integer
+                  city:
+                    type: string
+                  company_name:
+                    type: string
+                  company_website:
+                    type: string
+                  country:
+                    type: string
+                  creditlimit:
+                    type: string
+                  email:
+                    type: string
+                  fax:
+                    type: string
+                  firstname:
+                    type: string
+                  lastname:
+                    type: string
+                  phone:
+                    type: string
+                  postcode:
+                    type: string
+                  state:
+                    type: string
+                  username:
+                    type: integer
+                type: object
+          description: Found
+      summary: Represents a customer
+      tags:
+        - customers
+  "/customers/{account}/announcements":
+    get:
+      parameters:
+        - description: Account ID of customer
+          in: path
+          name: account
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  list:
+                    items:
+                      $ref: "#/paths/~1announcements/post/responses/201/content/application~1json/schema"
+                    type: array
+                type: object
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1announcements/post/responses/403/content/application~1json/schema"
+          description: Not found
+      summary: List of announcement audio files
+      tags:
+        - announcements
+  "/customers/{account}/announcements/{announcement_id}":
+    delete:
+      parameters:
+        - $ref: "#/paths/~1customers~1%7Baccount%7D~1announcements/get/parameters/0"
+        - $ref: "#/paths/~1customers~1%7Baccount%7D~1announcements~1%7Bannouncement_id%7D/get/parameters/1"
+      responses:
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1announcements/post/responses/403/content/application~1json/schema"
+          description: Not found
+        "410":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1announcements/post/responses/403/content/application~1json/schema"
+          description: Gone
+      summary: Delete an announcement audio file
+      tags:
+        - announcements
+    get:
+      parameters:
+        - $ref: "#/paths/~1customers~1%7Baccount%7D~1announcements/get/parameters/0"
+        - description: Announcement ID of audio file
+          in: path
+          name: announcement_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/paths/~1announcements/post/responses/201/content/application~1json/schema"
+          description: OK
+        "404":
+          content:
+            application/json:
+              schema:
+                properties:
+                  error:
+                    type: string
+                type: object
+          description: Not found
+      summary: Represents an announcement audio file
+      tags:
+        - announcements
+  /faxes:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List global ongoing faxes
+      tags:
+        - faxes
+  /hosted:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List Hosted VoIP domains
+      tags:
+        - hosted
+  /ip-address:
+    get:
+      responses:
+        "200":
+          description: OK
+      security: []
+      summary: Return the IP address from where your API request originated
+      tags:
+        - support
+  /mobile:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List mobile accounts
+      tags:
+        - mobile
+  /numbers:
+    get:
+      responses:
+        "200":
+          description: OK
+      security: []
+      summary: List available SureVoIP Ofcom number allocations for purchase
+      tags:
+        - numbers
+  /numbers/areacodes:
+    get:
+      description: |
+        You can search by area name, area code or filter using both.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  id:
+                    format: int64
+                    type: integer
+                  name:
+                    type: string
+                required:
+                  - id
+                  - name
+                type: object
+          description: OK
+      security: []
+      summary: Search available numbers by areacode
+      tags:
+        - areacodes
+  /partners:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List SureVoIP Partner accounts
+      tags:
+        - partners
+  /porting:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List ported numbers
+      tags:
+        - porting
+  /service-status:
+    get:
+      responses:
+        "200":
+          description: OK
+      security: []
+      summary: List all Service Status messages
+      tags:
+        - support
+  /sip:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List all SIP accounts
+      tags:
+        - sip
+  /sms:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List SMS
+      tags:
+        - sms
+  /support/echo:
+    post:
+      responses:
+        "200":
+          description: OK
+      summary: Return your POSTed data for testing
+      tags:
+        - echo
+  /support/ip-address:
+    $ref: "#/paths/~1ip-address"
+  /support/service-status:
+    $ref: "#/paths/~1service-status"
+  /topups:
+    get:
+      responses:
+        "200":
+          description: OK
+      summary: List all account credit topups
+      tags:
+        - topups
+components:
+  securitySchemes:
+    BasicAuth:
+      description: Basic HTTP Auth
+      scheme: basic
+      type: http
+    OAuth2:
+      description: OpenID Certified OAuth 2.0 Server and OpenID Connect Provider
+      flows:
+        authorizationCode:
+          authorizationUrl: https://authz.surevoip.co.uk/oauth2/auth
+          refreshUrl: https://authz.surevoip.co.uk/oauth2/token
+          scopes:
+            offline: Include this scope if you wish to receive a refresh token
+            offline_access: Include this scope if you wish to receive a refresh token
+            openid: Include this scope if you wish to perform an OpenID Connect request
+          tokenUrl: https://authz.surevoip.co.uk/oauth2/token
+        clientCredentials:
+          scopes:
+            offline: Include this scope if you wish to receive a refresh token
+            offline_access: Include this scope if you wish to receive a refresh token
+            openid: Include this scope if you wish to perform an OpenID Connect request
+          tokenUrl: https://authz.surevoip.co.uk/oauth2/token
+        implicit:
+          authorizationUrl: https://authz.surevoip.co.uk/oauth2/auth
+          refreshUrl: https://authz.surevoip.co.uk/oauth2/token
+          scopes:
+            offline: Include this scope if you wish to receive a refresh token
+            offline_access: Include this scope if you wish to receive a refresh token
+            openid: Include this scope if you wish to perform an OpenID Connect request
+      type: oauth2
+    OpenIDConnect:
+      description: OpenID Certified OAuth 2.0 Server and OpenID Connect Provider
+      openIdConnectUrl: https://authz.surevoip.co.uk/.well-known/openid-configuration
+      type: openIdConnect

@@ -1,0 +1,372 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.languagetoolplus.com
+basePath: /v2
+info:
+  contact:
+    x-twitter: languagetoolorg
+  description: "Check texts for style and grammar issues with LanguageTool. Please consider the following default limitations:<ul><li>your daily request limit depending on <a href='https://languagetool.org/editor/settings/api'>your plan</a> <li>maximum number of requests per minute: 20 (free) / 80 (Premium) <li>maximum number of characters per minute: 75,000 (free) / 300,000 (Premium) <li>maximum number of characters per request: 20,000 (free) / 60,000 (Premium) <li>for the free version, also consider the <a href='https://dev.languagetool.org/public-http-api'>limitations documented here</a> <li><b>Note:</b> any parameters or outputs not part of this documentation are internal and must not be relied on</ul> Need more generous limits? Just <a href='https://languagetool.org/proofreading-api'>contact us</a>."
+  title: LanguageTool API
+  version: 1.1.2
+  x-apisguru-categories:
+    - text
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_languagetoolorg_profile_image.jpeg
+  x-origin:
+    - format: swagger
+      url: https://languagetool.org/http-api/languagetool-swagger.json
+      version: "2.0"
+  x-providerName: languagetool.org
+produces:
+  - application/json
+paths:
+  /check:
+    post:
+      description: The main feature - check a text with LanguageTool for possible style and grammar issues.
+      parameters:
+        - description: The text to be checked. This or 'data' is required.
+          in: formData
+          name: text
+          required: false
+          type: string
+        - description: |-
+            The text to be checked, given as a JSON document that specifies what's text and what's markup. This or 'text' is required. Markup will be ignored when looking for errors. Example text: <pre>A &lt;b>test&lt;/b></pre>JSON for the example text: <pre>{"annotation":[
+             {"text": "A "},
+             {"markup": "&lt;b>"},
+             {"text": "test"},
+             {"markup": "&lt;/b>"}
+            ]}</pre> <p>If you have markup that should be interpreted as whitespace, like <tt>&lt;p&gt;</tt> in HTML, you can have it interpreted like this: <pre>{"markup": "&lt;p&gt;", "interpretAs": "\n\n"}</pre><p>The 'data' feature is not limited to HTML or XML, it can be used for any kind of markup. Entities will need to be expanded in this input.
+          in: formData
+          name: data
+          required: false
+          type: string
+        - description: A language code like `en-US`, `de-DE`, `fr`, or `auto` to guess the language automatically (see `preferredVariants` below). For languages with variants (English, German, Portuguese) spell checking will only be activated when you specify the variant, e.g. `en-GB` instead of just `en`.
+          in: formData
+          name: language
+          required: true
+          type: string
+        - description: "Set to get Premium API access: Your username/email as used to log in at languagetool.org."
+          in: formData
+          name: username
+          type: string
+        - description: "Set to get Premium API access: <a target='_blank' href='https://languagetool.org/editor/settings/api'>your API key</a>"
+          format: password
+          in: formData
+          name: apiKey
+          type: string
+        - description: Comma-separated list of dictionaries to include words from; uses special default dictionary if this is unset
+          in: formData
+          name: dicts
+          type: string
+        - description: A language code of the user's native language, enabling false friends checks for some language pairs.
+          in: formData
+          name: motherTongue
+          type: string
+        - description: Comma-separated list of preferred language variants. The language detector used with `language=auto` can detect e.g. English, but it cannot decide whether British English or American English is used. Thus this parameter can be used to specify the preferred variants like `en-GB` and `de-AT`. Only available with `language=auto`. You should set variants for at least German and English, as otherwise the spell checking will not work for those, as no spelling dictionary can be selected for just `en` or `de`.
+          in: formData
+          name: preferredVariants
+          type: string
+        - description: IDs of rules to be enabled, comma-separated
+          in: formData
+          name: enabledRules
+          type: string
+        - description: IDs of rules to be disabled, comma-separated
+          in: formData
+          name: disabledRules
+          type: string
+        - description: IDs of categories to be enabled, comma-separated
+          in: formData
+          name: enabledCategories
+          type: string
+        - description: IDs of categories to be disabled, comma-separated
+          in: formData
+          name: disabledCategories
+          type: string
+        - default: false
+          description: If true, only the rules and categories whose IDs are specified with `enabledRules` or `enabledCategories` are enabled.
+          in: formData
+          name: enabledOnly
+          type: boolean
+        - description: If set to `picky`, additional rules will be activated, i.e. rules that you might only find useful when checking formal text.
+          enum:
+            - default
+            - picky
+          in: formData
+          name: level
+          type: string
+      responses:
+        "200":
+          description: the result of checking the text
+          schema:
+            properties:
+              language:
+                description: The language used for checking the text.
+                properties:
+                  code:
+                    description: ISO 639-1 code like 'en', 'en-US', or 'ca-ES-valencia'
+                    type: string
+                  detectedLanguage:
+                    description: The automatically detected text language (might be different from the language actually used for checking).
+                    properties:
+                      code:
+                        description: ISO 639-1 code like 'en', 'en-US', or 'ca-ES-valencia'.
+                        type: string
+                      name:
+                        description: Language name like 'French' or 'English (US)'.
+                        type: string
+                    required:
+                      - name
+                      - code
+                    type: object
+                  name:
+                    description: Language name like 'French' or 'English (US)'.
+                    type: string
+                required:
+                  - name
+                  - code
+                  - detectedLanguage
+                type: object
+              matches:
+                items:
+                  properties:
+                    context:
+                      properties:
+                        length:
+                          description: The length of the error in characters in the context.
+                          type: integer
+                        offset:
+                          description: The 0-based character offset of the error in the context text.
+                          type: integer
+                        text:
+                          description: Context of the error, i.e. the error and some text to the left and to the left.
+                          type: string
+                      required:
+                        - text
+                        - offset
+                        - length
+                      type: object
+                    length:
+                      description: The length of the error in characters.
+                      type: integer
+                    message:
+                      description: Message about the error displayed to the user.
+                      type: string
+                    offset:
+                      description: The 0-based character offset of the error in the text.
+                      type: integer
+                    replacements:
+                      description: Replacements that might correct the error. The array can be empty, in this case there is no suggested replacement.
+                      items:
+                        properties:
+                          value:
+                            description: the replacement string
+                            type: string
+                        type: object
+                      type: array
+                    rule:
+                      properties:
+                        category:
+                          properties:
+                            id:
+                              description: A category's identifier that's unique for this language.
+                              type: string
+                            name:
+                              description: A short description of the category.
+                              type: string
+                          type: object
+                        description:
+                          type: string
+                        id:
+                          description: An rule's identifier that's unique for this language.
+                          type: string
+                        issueType:
+                          description: The <a href="http://www.w3.org/International/multilingualweb/lt/drafts/its20/its20.html#lqissue-typevalues">Localization Quality Issue Type</a>. This is not defined for all languages, in which case it will always be 'Uncategorized'.
+                          type: string
+                        subId:
+                          description: An optional sub identifier of the rule, used when several rules are grouped.
+                          type: string
+                        urls:
+                          description: An optional array of URLs with a more detailed description of the error.
+                          items:
+                            properties:
+                              value:
+                                description: the URL
+                                type: string
+                            type: object
+                          type: array
+                      required:
+                        - id
+                        - description
+                        - category
+                      type: object
+                    sentence:
+                      description: The sentence the error occurred in (since LanguageTool 4.0 or later)
+                      type: string
+                    shortMessage:
+                      description: An optional shorter version of 'message'.
+                      type: string
+                  required:
+                    - message
+                    - offset
+                    - length
+                    - replacements
+                    - context
+                    - sentence
+                  type: object
+                type: array
+              software:
+                properties:
+                  apiVersion:
+                    description: Version of this API response. We don't expect to make incompatible changes, so this can also be increased for newly added fields.
+                    type: integer
+                  buildDate:
+                    description: Date when the software was built, e.g. '2016-05-25'.
+                    type: string
+                  name:
+                    description: Usually 'LanguageTool'.
+                    type: string
+                  premium:
+                    description: true if you're using a Premium account with all the premium text checks (since LanguageTool 4.2)
+                    type: boolean
+                  status:
+                    description: An optional warning, e.g. when the API format is not stable.
+                    type: string
+                  version:
+                    description: A version string like '3.3' or '3.4-SNAPSHOT'.
+                    type: string
+                required:
+                  - name
+                  - version
+                  - buildDate
+                  - apiVersion
+                type: object
+      summary: Check a text
+  /languages:
+    get:
+      responses:
+        "200":
+          description: An array of language objects.
+          schema:
+            items:
+              properties:
+                code:
+                  description: a language code like 'en'
+                  type: string
+                longCode:
+                  description: a language code like 'en-US' or 'ca-ES-valencia'
+                  type: string
+                name:
+                  description: a language name like 'French' or 'English (Australia)'
+                  type: string
+              required:
+                - name
+                - code
+                - longCode
+              type: object
+            type: array
+      summary: Get a list of supported languages.
+  /words:
+    get:
+      description: List words in the user's personal dictionaries.
+      parameters:
+        - description: Offset of where to start in the list of words. Defaults to 0.
+          in: query
+          name: offset
+          type: integer
+        - description: Maximum number of words to return. Defaults to 10.
+          in: query
+          name: limit
+          type: integer
+        - description: Your username as used to log in at languagetool.org.
+          in: query
+          name: username
+          required: true
+          type: string
+        - description: Your API key.
+          format: password
+          in: query
+          name: apiKey
+          required: true
+          type: string
+        - description: Comma-separated list of dictionaries to include words from; uses special default dictionary if this is unset
+          in: query
+          name: dicts
+          type: string
+      responses:
+        "200":
+          description: the user's words from the given user dictionaries
+          schema:
+            properties:
+              words:
+                description: array of words
+                items:
+                  type: string
+                type: array
+      summary: List words in dictionaries
+  /words/add:
+    post:
+      description: Add a word to one of the user's personal dictionaries. Please note that this feature is considered to be used for personal dictionaries which typically contain not more than a few hundred items per user. Adding more can have adverse effects on performance for every single text check. If this becomes an issue for you, contact us. Experimental user dictionary caching can be enabled by us on a per-account basis.
+      parameters:
+        - description: The word to be added. Must not be a phrase, i.e. cannot contain white space. The word is added to a global dictionary that applies to all languages.
+          in: formData
+          name: word
+          required: true
+          type: string
+        - description: Your username as used to log in at languagetool.org.
+          in: formData
+          name: username
+          required: true
+          type: string
+        - description: Your API key.
+          format: password
+          in: formData
+          name: apiKey
+          required: true
+          type: string
+        - description: Name of the dictionary to add the word to; non-existent dictionaries are created after calling this; if unset, adds to special default dictionary
+          in: formData
+          name: dict
+          type: string
+      responses:
+        "200":
+          description: the result of adding the word
+          schema:
+            properties:
+              added:
+                description: true if the word has been added. false means the word hasn't been added because it had been added before.
+                type: boolean
+      summary: Add word to a dictionary
+  /words/delete:
+    post:
+      description: Remove a word from one of the user's personal dictionaries.
+      parameters:
+        - description: The word to be removed.
+          in: formData
+          name: word
+          required: true
+          type: string
+        - description: Your username as used to log in at languagetool.org.
+          in: formData
+          name: username
+          required: true
+          type: string
+        - description: Your API key.
+          format: password
+          in: formData
+          name: apiKey
+          required: true
+          type: string
+        - description: Name of the dictionary to remove the word from; if the dictionary is empty upon calling this, it is deleted; if unset, removes from special default dictionary
+          in: formData
+          name: dict
+          type: string
+      responses:
+        "200":
+          description: the result of removing the word
+          schema:
+            properties:
+              deleted:
+                description: true if the word has been removed. false means the word hasn't been removed because it was not in the dictionary.
+                type: boolean
+      summary: Remove word from a dictionary

@@ -1,0 +1,773 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.geneea.com
+basePath: /
+info:
+  description: |
+    <div class="api-description">
+        <h2>Authentication</h2>
+        <p>For all calls, supply your API key. <a href="https://www.geneea.com/pricing">Sign up to <em>obtain the key</em></a>.</p>
+        <p>
+            Our API supports both <em>unencrypted (HTTP)</em> and <em>encrypted (HTTPS)</em> protocols.
+            However, for security reasons, we strongly encourage using only the encrypted version.
+        </p>
+        <p>The API key should be supplied as either a request parameter <code>user_key</code> or in <code>Authorization</code> header.</p>
+        <pre><code>Authorization: user_key &lt;YOUR_API_KEY&gt;</code></pre>
+
+        <h2>API operations</h2>
+        <p>
+            All API operations can perform analysis on supplied raw text or on text extracted from a given URL.
+            Optionally, one can supply additional information which can make the result more precise. An example
+            of such information would be the language of text or a particular text extractor for URL resources.
+        </p>
+        <p>The supported types of analyses are:</p>
+        <ul>
+            <li><strong>lemmatization</strong> &longrightarrow;
+                Finds out lemmata (basic forms) of all the words in the document.
+            </li>
+            <li><strong>correction</strong> &longrightarrow;
+                Performs correction (diacritization) on all the words in the document.
+            </li>
+            <li><strong>topic detection</strong> &longrightarrow;
+                Determines a topic of the document, e.g. finance or sports.
+            </li>
+            <li><strong>sentiment analysis</strong> &longrightarrow;
+                Determines a sentiment of the document, i.e. how positive or negative the document is.
+            </li>
+            <li><strong>named entity recognition</strong> &longrightarrow;
+                Finds named entities (like person, location, date etc.) mentioned the the document.
+            </li>
+        </ul>
+
+        <h2>Encoding</h2>
+        <p>The supplied text is expected to be in UTF-8 encoding, this is especially important for non-english texts.</p>
+
+        <h2>Returned values</h2>
+        <p>The API calls always return objects in serialized JSON format in UTF-8 encoding.</p>
+        <p>
+            If any error occurs, the HTTP response code will be in the range <code>4xx</code> (client-side error) or
+            <code>5xx</code> (server-side error). In this situation, the body of the response will contain information
+            about the error in JSON format, with <code>exception</code> and <code>message</code> values.
+        </p>
+
+        <h2>URL limitations</h2>
+        <p>
+            All the requests are semantically <code>GET</code>. However, for longer texts, you may run into issues
+            with URL length limit. Therefore, it's possible to always issue a <code>POST</code> request with all
+            the parameters encoded as a JSON in the request body.
+        </p>
+        <p>Example:</p>
+        <pre><code>
+            POST /s1/sentiment
+            Content-Type: application/json
+
+            {"text":"There is no harm in being sometimes wrong - especially if one is promptly found out."}
+        </code></pre>
+        <p>This is equivalent to <code>GET /s1/sentiment?text=There%20is%20no%20harm...</code></p>
+
+        <h2>Request limitations</h2>
+        <p>
+            The API has other limitations concerning the size of the HTTP requests. The maximum allowed size of any
+            POST request body is <em>512 KiB</em>. For request with a URL resource, the maximum allowed number of
+            extracted characters from each such resource is <em>100,000</em>.
+        </p>
+
+        <h2>Terms of Service</h2>
+        <p>
+            By using the API, you agree to our
+            <a href="https://www.geneea.com/terms.html" target="_blank">Terms of Service Agreement</a>.
+        </p>
+
+        <h2>More information</h2>
+        <p>
+            <a href="https://help.geneea.com/index.html" target="_blank">
+            The Interpretor Public Documentation
+            </a>
+        </p>
+    </div>
+  title: Geneea Natural Language Processing
+  version: "1.0"
+  x-apisguru-categories:
+    - text
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/http_www.geneea.com_img_geneea-logo.png
+  x-origin:
+    - converter:
+        url: https://github.com/lucybot/api-spec-converter
+        version: 2.7.25
+      format: swagger
+      url: https://api.geneea.com/api-docs?group=s1
+      version: "1.2"
+  x-providerName: geneea.com
+consumes:
+  - application/json
+securityDefinitions:
+  user_key:
+    in: query
+    name: user_key
+    type: apiKey
+security:
+  - user_key: []
+tags:
+  - description: Basic information about the user account.
+    name: account
+  - description: Geneea simple REST API version 1
+    name: geneea-api-s1
+  - description: REST API for status monitoring
+    name: status-api
+paths:
+  /account:
+    get:
+      deprecated: false
+      description: getInfo
+      operationId: getInfo
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Information%20about%20a%20user%20account."
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Information about current user account
+      tags:
+        - account
+  /s1/correction:
+    get:
+      deprecated: false
+      description: <br/><strong>Possible options:</strong><p class="markdown">An optional parameter <code>diacritize</code> with values <code>yes</code>, <code>no</code> or <code>auto</code> indicate whether the text diacritization will be performed. The default value is <code>auto</code>.</p>
+      operationId: correctionGet
+      parameters:
+        - description: document ID
+          in: query
+          name: id
+          required: false
+          type: string
+        - description: raw document text
+          in: query
+          name: text
+          required: false
+          type: string
+        - description: document URL
+          in: query
+          name: url
+          required: false
+          type: string
+        - description: document extractor
+          enum:
+            - default
+            - article
+            - keep-everything
+          in: query
+          name: extractor
+          required: false
+          type: string
+        - description: document language
+          in: query
+          name: language
+          required: false
+          type: string
+        - in: query
+          name: returnTextInfo
+          required: false
+          type: boolean
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Response%20for%20the%20text%20correction"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs text correction (diacritization) on the given document
+      tags:
+        - geneea-api-s1
+    post:
+      deprecated: false
+      description: '<strong>Notes:</strong><br/>Valid JSON cannot contain newline characters. These have to be escaped. (See also <a href="https://geneea.atlassian.net/wiki/display/IPD/The+Interpretor+API+Public+Documentation#TheInterpretorAPIPublicDocumentation-Interactiveonlinedocumentation" target="_blank">Interpretor documentation</a>)<br/>Fields <code>text</code> and <code>url</code> are mutually exclusive.<br/><strong>Examples:</strong><pre><code>{"text": "Hello world!"}</code></pre><pre><code>{"url": "https://en.wikipedia.org/wiki/Pyrrhuloxia"}</code></pre><br/><strong>Possible options:</strong><p class="markdown">An optional parameter <code>diacritize</code> with values <code>yes</code>, <code>no</code> or <code>auto</code> indicate whether the text diacritization will be performed. The default value is <code>auto</code>.</p>'
+      operationId: correctionPost
+      parameters:
+        - description: request
+          in: body
+          name: body
+          required: false
+          schema:
+            $ref: "#/definitions/Request"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Description was not specified
+          schema:
+            $ref: "#/definitions/Response%20for%20the%20text%20correction"
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs text correction (diacritization) on the given document
+      tags:
+        - geneea-api-s1
+  /s1/entities:
+    get:
+      deprecated: false
+      description: entitiesGet
+      operationId: entitiesGet
+      parameters:
+        - description: document ID
+          in: query
+          name: id
+          required: false
+          type: string
+        - description: raw document text
+          in: query
+          name: text
+          required: false
+          type: string
+        - description: document URL
+          in: query
+          name: url
+          required: false
+          type: string
+        - description: document extractor
+          enum:
+            - default
+            - article
+            - keep-everything
+          in: query
+          name: extractor
+          required: false
+          type: string
+        - description: document language
+          in: query
+          name: language
+          required: false
+          type: string
+        - in: query
+          name: returnTextInfo
+          required: false
+          type: boolean
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/EntitiesResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs named-entity recognition on the given document
+      tags:
+        - geneea-api-s1
+    post:
+      deprecated: false
+      description: '<strong>Notes:</strong><br/>Valid JSON cannot contain newline characters. These have to be escaped. (See also <a href="https://geneea.atlassian.net/wiki/display/IPD/The+Interpretor+API+Public+Documentation#TheInterpretorAPIPublicDocumentation-Interactiveonlinedocumentation" target="_blank">Interpretor documentation</a>)<br/>Fields <code>text</code> and <code>url</code> are mutually exclusive.<br/><strong>Examples:</strong><pre><code>{"text": "Hello world!"}</code></pre><pre><code>{"url": "https://en.wikipedia.org/wiki/Pyrrhuloxia"}</code></pre>'
+      operationId: entitiesPost
+      parameters:
+        - description: request
+          in: body
+          name: body
+          required: false
+          schema:
+            $ref: "#/definitions/Request"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Description was not specified
+          schema:
+            $ref: "#/definitions/EntitiesResponse"
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs named-entity recognition on the given document
+      tags:
+        - geneea-api-s1
+  /s1/lemmatize:
+    get:
+      deprecated: false
+      description: lemmatizeGet
+      operationId: lemmatizeGet
+      parameters:
+        - description: document ID
+          in: query
+          name: id
+          required: false
+          type: string
+        - description: raw document text
+          in: query
+          name: text
+          required: false
+          type: string
+        - description: document URL
+          in: query
+          name: url
+          required: false
+          type: string
+        - description: document extractor
+          enum:
+            - default
+            - article
+            - keep-everything
+          in: query
+          name: extractor
+          required: false
+          type: string
+        - description: document language
+          in: query
+          name: language
+          required: false
+          type: string
+        - in: query
+          name: returnTextInfo
+          required: false
+          type: boolean
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/LemmatizeResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs lemmatization on the given document
+      tags:
+        - geneea-api-s1
+    post:
+      deprecated: false
+      description: '<strong>Notes:</strong><br/>Valid JSON cannot contain newline characters. These have to be escaped. (See also <a href="https://geneea.atlassian.net/wiki/display/IPD/The+Interpretor+API+Public+Documentation#TheInterpretorAPIPublicDocumentation-Interactiveonlinedocumentation" target="_blank">Interpretor documentation</a>)<br/>Fields <code>text</code> and <code>url</code> are mutually exclusive.<br/><strong>Examples:</strong><pre><code>{"text": "Hello world!"}</code></pre><pre><code>{"url": "https://en.wikipedia.org/wiki/Pyrrhuloxia"}</code></pre>'
+      operationId: lemmatizePost
+      parameters:
+        - description: request
+          in: body
+          name: body
+          required: false
+          schema:
+            $ref: "#/definitions/Request"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Description was not specified
+          schema:
+            $ref: "#/definitions/LemmatizeResponse"
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs lemmatization on the given document
+      tags:
+        - geneea-api-s1
+  /s1/sentiment:
+    get:
+      deprecated: false
+      description: sentimentGet
+      operationId: sentimentGet
+      parameters:
+        - description: document ID
+          in: query
+          name: id
+          required: false
+          type: string
+        - description: raw document text
+          in: query
+          name: text
+          required: false
+          type: string
+        - description: document URL
+          in: query
+          name: url
+          required: false
+          type: string
+        - description: document extractor
+          enum:
+            - default
+            - article
+            - keep-everything
+          in: query
+          name: extractor
+          required: false
+          type: string
+        - description: document language
+          in: query
+          name: language
+          required: false
+          type: string
+        - in: query
+          name: returnTextInfo
+          required: false
+          type: boolean
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/SentimentResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs sentiment analysis on the given document
+      tags:
+        - geneea-api-s1
+    post:
+      deprecated: false
+      description: '<strong>Notes:</strong><br/>Valid JSON cannot contain newline characters. These have to be escaped. (See also <a href="https://geneea.atlassian.net/wiki/display/IPD/The+Interpretor+API+Public+Documentation#TheInterpretorAPIPublicDocumentation-Interactiveonlinedocumentation" target="_blank">Interpretor documentation</a>)<br/>Fields <code>text</code> and <code>url</code> are mutually exclusive.<br/><strong>Examples:</strong><pre><code>{"text": "Hello world!"}</code></pre><pre><code>{"url": "https://en.wikipedia.org/wiki/Pyrrhuloxia"}</code></pre>'
+      operationId: sentimentPost
+      parameters:
+        - description: request
+          in: body
+          name: body
+          required: false
+          schema:
+            $ref: "#/definitions/Request"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Description was not specified
+          schema:
+            $ref: "#/definitions/SentimentResponse"
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs sentiment analysis on the given document
+      tags:
+        - geneea-api-s1
+  /s1/topic:
+    get:
+      deprecated: false
+      description: topicGet
+      operationId: topicGet
+      parameters:
+        - description: document ID
+          in: query
+          name: id
+          required: false
+          type: string
+        - description: raw document text
+          in: query
+          name: text
+          required: false
+          type: string
+        - description: document URL
+          in: query
+          name: url
+          required: false
+          type: string
+        - description: document extractor
+          enum:
+            - default
+            - article
+            - keep-everything
+          in: query
+          name: extractor
+          required: false
+          type: string
+        - description: document language
+          in: query
+          name: language
+          required: false
+          type: string
+        - in: query
+          name: returnTextInfo
+          required: false
+          type: boolean
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/TopicResponse"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs topic detection on the given document
+      tags:
+        - geneea-api-s1
+    post:
+      deprecated: false
+      description: '<strong>Notes:</strong><br/>Valid JSON cannot contain newline characters. These have to be escaped. (See also <a href="https://geneea.atlassian.net/wiki/display/IPD/The+Interpretor+API+Public+Documentation#TheInterpretorAPIPublicDocumentation-Interactiveonlinedocumentation" target="_blank">Interpretor documentation</a>)<br/>Fields <code>text</code> and <code>url</code> are mutually exclusive.<br/><strong>Examples:</strong><pre><code>{"text": "Hello world!"}</code></pre><pre><code>{"url": "https://en.wikipedia.org/wiki/Pyrrhuloxia"}</code></pre>'
+      operationId: topicPost
+      parameters:
+        - description: request
+          in: body
+          name: body
+          required: false
+          schema:
+            $ref: "#/definitions/Request"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Description was not specified
+          schema:
+            $ref: "#/definitions/TopicResponse"
+        "201":
+          description: Created
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Performs topic detection on the given document
+      tags:
+        - geneea-api-s1
+  /status:
+    get:
+      deprecated: false
+      description: status
+      operationId: status
+      produces:
+        - text/plain
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Gets status of the Interpretor service
+      tags:
+        - status-api
+definitions:
+  EntitiesResponse:
+    description: Response for the named-entity recognition
+    properties:
+      entities:
+        description: Found named entities in the document
+        items:
+          $ref: "#/definitions/Entity"
+        type: array
+      id:
+        description: Unique identifier of the document
+        type: string
+      language:
+        description: The used language of the document
+        type: string
+      text:
+        description: The raw text of the document which has been analysed
+        type: string
+    required:
+      - entities
+      - language
+  Entity:
+    description: The named entity
+    properties:
+      entity:
+        description: Disambiguated and standardized form of the entity
+        type: string
+      links:
+        description: Disambiguation links for the entity, e.g. its DBpedia page
+        type: object
+      sentiment:
+        description: Detected sentiment of the entity (value from -1.0 to 1.0)
+        format: double
+        type: number
+      textOffset:
+        description: Character offset in the text (starting from 0)
+        format: int32
+        type: integer
+      type:
+        description: Detected type of the entity
+        type: string
+    required:
+      - entity
+      - links
+      - textOffset
+      - type
+  "Entry«string,long»":
+    properties:
+      key:
+        format: int64
+        type: integer
+  Information about a user account.: {}
+  Information_about_a_user_account.:
+    properties:
+      remainingQuotas:
+        description: Remaining quotas for the user account.
+        items:
+          $ref: "#/definitions/Entry«string,long»"
+        type: array
+      type:
+        description: Type (plan) of the user account.
+        type: string
+  Label:
+    description: The topic label
+    properties:
+      confidence:
+        description: Confidence (probability) of this label
+        format: double
+        type: number
+      label:
+        description: The value of this label
+        type: string
+    required:
+      - confidence
+      - label
+  LemmatizeResponse:
+    description: Response for the lemmatization
+    properties:
+      id:
+        description: Unique identifier of the document
+        type: string
+      language:
+        description: The used language of the document
+        type: string
+      lemmatizedText:
+        description: Lemmatized text of the document, individual tokens are separated by a space and sentences are separated by a new-line character
+        type: string
+      text:
+        description: The raw text of the document which has been analysed
+        type: string
+    required:
+      - language
+      - lemmatizedText
+  Request:
+    description: Request encapsulation for simple API version 1
+    properties:
+      extractor:
+        description: "[optional] Text extractor to be used when analyzing HTML document"
+        enum:
+          - default
+          - article
+          - keep-everything
+        type: string
+      id:
+        description: Unique identifier of the document, it's optional
+        type: string
+      language:
+        description: "[optional] The language of the document, auto-detection will be used if omitted"
+        type: string
+      options:
+        description: "[optional] Additional options for the internal modules (key-value pairs)"
+        type: object
+      returnTextInfo:
+        description: "[optional] Indicates whether to return the source text within the response object"
+        type: boolean
+      text:
+        description: The raw text to be analyzed, mutually exclusive with the 'url' parameter
+        type: string
+      url:
+        description: URL of a document to be analysed, mutually exclusive with the 'text' parameter
+        type: string
+  Response for the text correction: {}
+  Response_for_the_text_correction:
+    properties:
+      corrected:
+        type: boolean
+      correctedText:
+        description: Corrected text of the document
+        type: string
+      diacritized:
+        type: boolean
+      id:
+        description: Unique identifier of the document
+        type: string
+      language:
+        description: The used language of the document
+        type: string
+      text:
+        description: The raw text of the document which has been analysed
+        type: string
+    required:
+      - correctedText
+      - language
+  SentimentResponse:
+    description: Response for the sentiment analysis
+    properties:
+      id:
+        description: Unique identifier of the document
+        type: string
+      language:
+        description: The used language of the document
+        type: string
+      sentiment:
+        description: Detected sentiment of the document (value from -1.0 to 1.0)
+        format: double
+        type: number
+      text:
+        description: The raw text of the document which has been analysed
+        type: string
+    required:
+      - language
+      - sentiment
+  TopicResponse:
+    description: Response for the topic detection
+    properties:
+      confidence:
+        description: Confidence for the detected topic
+        format: double
+        type: number
+      id:
+        description: Unique identifier of the document
+        type: string
+      labels:
+        description: Probabilistic distribution over possible topic labels
+        items:
+          $ref: "#/definitions/Label"
+        type: array
+      language:
+        description: The used language of the document
+        type: string
+      text:
+        description: The raw text of the document which has been analysed
+        type: string
+      topic:
+        description: Detected topic of the document
+        type: string
+    required:
+      - confidence
+      - labels
+      - language
+      - topic

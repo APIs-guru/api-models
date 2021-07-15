@@ -1,0 +1,156 @@
+swagger: "2.0"
+schemes:
+  - https
+host: azure.local
+info:
+  description: Azure EventGrid Client
+  title: EventGridClient
+  version: 2018-01-01
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/eventgrid/data-plane/Microsoft.EventGrid/stable/2018-01-01/EventGrid.json
+      version: "2.0"
+  x-preferred: false
+  x-providerName: azure.com
+  x-serviceName: eventgrid-EventGrid
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+parameters:
+  ApiVersionParameter:
+    description: Version of the API to be used with the client request.
+    in: query
+    name: api-version
+    required: true
+    type: string
+paths:
+  /api/events:
+    post:
+      description: Publishes a batch of events to an Azure Event Grid topic.
+      operationId: PublishEvents
+      parameters:
+        - description: An array of events to be published to Event Grid.
+          in: body
+          name: events
+          required: true
+          schema:
+            items:
+              $ref: "#/definitions/EventGridEvent"
+            type: array
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: OK
+        default:
+          description: |-
+            *** Error Responses: ***
+
+             * 400 Bad Request.
+
+             * 500 Internal Server Error.
+
+             * 429 Too Many Events
+
+             * 404 Not Found.
+      tags:
+        - Events
+      x-ms-examples:
+        PublishEventsToEventGridTopic:
+          parameters:
+            api-version: 2018-01-01
+            events:
+              - data:
+                  Property1: Value1
+                  Property2: Value2
+                dataVersion: "1.0"
+                eventTime: 2017-12-04T22:06:09.147165Z
+                eventType: Microsoft.Contoso.TestEvent
+                id: b3ccc7e3-c1cb-49bf-b7c8-0d4e60980616
+                subject: TestSubject
+            topicHostname: mytopic.westcentralus-1.eventgrid.azure.net
+          responses:
+            "200": {}
+definitions:
+  EventGridEvent:
+    description: Properties of an event published to an Event Grid topic.
+    properties:
+      data:
+        description: Event data specific to the event type.
+        type: object
+      dataVersion:
+        description: The schema version of the data object.
+        type: string
+      eventTime:
+        description: The time (in UTC) the event was generated.
+        format: date-time
+        type: string
+      eventType:
+        description: The type of the event that occurred.
+        type: string
+      id:
+        description: An unique identifier for the event.
+        type: string
+      metadataVersion:
+        description: The schema version of the event metadata.
+        readOnly: true
+        type: string
+      subject:
+        description: A resource path relative to the topic path.
+        type: string
+      topic:
+        description: The resource path of the event source.
+        type: string
+    required:
+      - id
+      - subject
+      - data
+      - eventType
+      - eventTime
+      - dataVersion
+    type: object
+  SubscriptionDeletedEventData:
+    description: Schema of the Data property of an EventGridEvent for a Microsoft.EventGrid.SubscriptionDeletedEvent.
+    properties:
+      eventSubscriptionId:
+        description: The Azure resource ID of the deleted event subscription.
+        readOnly: true
+        type: string
+    type: object
+  SubscriptionValidationEventData:
+    description: Schema of the Data property of an EventGridEvent for a Microsoft.EventGrid.SubscriptionValidationEvent.
+    properties:
+      validationCode:
+        description: The validation code sent by Azure Event Grid to validate an event subscription. To complete the validation handshake, the subscriber must either respond with this validation code as part of the validation response, or perform a GET request on the validationUrl (available starting version 2018-05-01-preview).
+        readOnly: true
+        type: string
+      validationUrl:
+        description: The validation URL sent by Azure Event Grid (available starting version 2018-05-01-preview). To complete the validation handshake, the subscriber must either respond with the validationCode as part of the validation response, or perform a GET request on the validationUrl (available starting version 2018-05-01-preview).
+        readOnly: true
+        type: string
+    type: object
+  SubscriptionValidationResponse:
+    description: To complete an event subscription validation handshake, a subscriber can use either the validationCode or the validationUrl received in a SubscriptionValidationEvent. When the validationCode is used, the SubscriptionValidationResponse can be used to build the response.
+    properties:
+      validationResponse:
+        description: The validation response sent by the subscriber to Azure Event Grid to complete the validation of an event subscription.
+        type: string
+    type: object
+x-ms-parameterized-host:
+  hostTemplate: "{topicHostname}"
+  parameters:
+    - description: The host name of the topic, e.g. topic1.westus2-1.eventgrid.azure.net
+      in: path
+      name: topicHostname
+      required: true
+      type: string
+      x-ms-skip-url-encoding: true
+  positionInOperation: first
+  useSchemePrefix: true

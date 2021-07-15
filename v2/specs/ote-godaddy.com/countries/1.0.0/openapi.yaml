@@ -1,0 +1,281 @@
+openapi: 3.0.0
+servers:
+  - url: //api.ote-godaddy.com
+info:
+  title: ""
+  version: 1.0.0
+  x-apisguru-categories:
+    - hosting
+  x-origin:
+    - format: swagger
+      url: https://developer.godaddy.com/swagger/swagger_countries.json
+      version: "2.0"
+  x-providerName: ote-godaddy.com
+  x-serviceName: countries
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+tags:
+  - description: ""
+    name: v1
+paths:
+  /v1/countries:
+    get:
+      description: Authorization is not required
+      operationId: getCountries
+      parameters:
+        - description: MarketId in which the request is being made, and for which responses should be localized
+          in: query
+          name: marketId
+          required: true
+          schema:
+            format: bcp-47
+            type: string
+        - description: Restrict countries to this region type; required if regionName is supplied
+          in: query
+          name: regionTypeId
+          required: false
+          schema:
+            type: integer
+        - description: Restrict countries to this region name; required if regionTypeId is supplied
+          in: query
+          name: regionName
+          required: false
+          schema:
+            type: string
+        - description: The term to sort the result countries by.
+          in: query
+          name: sort
+          required: false
+          schema:
+            default: key
+            enum:
+              - key
+              - label
+            type: string
+        - description: The direction to sort the result countries by.
+          in: query
+          name: order
+          required: false
+          schema:
+            default: ascending
+            enum:
+              - ascending
+              - descending
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArrayOfCountrySummary"
+          description: Request was successful
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: marketId is required<br>regionTypeId is not a valid integer<br>regionName is required when regionTypeId is provided<br>regionTypeId is required when regionName is provided
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorLimit"
+          description: Too many requests received within interval
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Internal server error
+      summary: Retrieves summary country information for the provided marketId and filters
+      tags:
+        - v1
+  "/v1/countries/{countryKey}":
+    get:
+      description: Authorization is not required
+      operationId: getCountry
+      parameters:
+        - description: The country key
+          in: path
+          name: countryKey
+          required: true
+          schema:
+            format: iso-country-code
+            type: string
+        - description: MarketId in which the request is being made, and for which responses should be localized
+          in: query
+          name: marketId
+          required: true
+          schema:
+            format: bcp-47
+            type: string
+        - description: The term to sort the result country states by.
+          in: query
+          name: sort
+          required: false
+          schema:
+            default: key
+            enum:
+              - key
+              - label
+            type: string
+        - description: The direction to sort the result country states by.
+          in: query
+          name: order
+          required: false
+          schema:
+            default: ascending
+            enum:
+              - ascending
+              - descending
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ArrayOfCountry"
+          description: Request was successful
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Country not found
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: marketId is required
+        "429":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ErrorLimit"
+          description: Too many requests received within interval
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Internal server error
+      summary: Retrieves country and summary state information for provided countryKey
+      tags:
+        - v1
+components:
+  schemas:
+    ArrayOfCountry:
+      items:
+        $ref: "#/components/schemas/Country"
+      type: array
+    ArrayOfCountrySummary:
+      items:
+        $ref: "#/components/schemas/CountrySummary"
+      type: array
+    Country:
+      properties:
+        callingCode:
+          description: The calling code prefix used for phone numbers in this country
+          type: string
+        countryKey:
+          description: The ISO country-code
+          format: iso-country-code
+          type: string
+        label:
+          description: The localized name of the country
+          type: string
+        states:
+          description: List of states/provinces in this country
+          items:
+            $ref: "#/components/schemas/State"
+          type: array
+    CountrySummary:
+      properties:
+        callingCode:
+          description: The calling code prefix used for phone numbers in this country
+          type: string
+        countryKey:
+          description: The ISO country-code
+          format: iso-country-code
+          type: string
+        label:
+          description: The localized name of the country
+          type: string
+    Error:
+      properties:
+        code:
+          description: Short identifier for the error, suitable for indicating the specific error within client code
+          format: constant
+          type: string
+        fields:
+          description: List of the specific fields, and the errors found with their contents
+          items:
+            $ref: "#/components/schemas/ErrorField"
+          type: array
+        message:
+          description: Human-readable, English description of the error
+          type: string
+        stack:
+          description: |-
+            Stack trace indicating where the error occurred.<br/>
+            NOTE: This attribute <strong>MAY</strong> be included for Development and Test environments.
+            However, it <strong>MUST NOT</strong> be exposed from OTE nor Production systems
+          items:
+            type: string
+          type: array
+      required:
+        - code
+    ErrorField:
+      properties:
+        code:
+          description: Short identifier for the error, suitable for indicating the specific error within client code
+          format: constant
+          type: string
+        message:
+          description: Human-readable, English description of the problem with the contents of the field
+          type: string
+        path:
+          description: JSONPath referring to the field within the submitted data containing an error
+          format: json-path
+          type: string
+      required:
+        - path
+        - code
+    ErrorLimit:
+      properties:
+        code:
+          description: Short identifier for the error, suitable for indicating the specific error within client code
+          format: constant
+          type: string
+        fields:
+          description: List of the specific fields, and the errors found with their contents
+          items:
+            $ref: "#/components/schemas/ErrorField"
+          type: array
+        message:
+          description: Human-readable, English description of the error
+          type: string
+        retryAfterSec:
+          description: Number of seconds to wait before attempting a similar request
+          format: integer-positive
+          type: integer
+        stack:
+          description: |-
+            Stack trace indicating where the error occurred.<br/>
+            NOTE: This attribute <strong>MAY</strong> be included for Development and Test environments.
+            However, it <strong>MUST NOT</strong> be exposed from OTE nor Production systems
+          items:
+            type: string
+          type: array
+      required:
+        - retryAfterSec
+        - code
+    State:
+      properties:
+        label:
+          description: The localized name of the state, province, or territory
+          type: string
+        stateKey:
+          description: The state code
+          type: string

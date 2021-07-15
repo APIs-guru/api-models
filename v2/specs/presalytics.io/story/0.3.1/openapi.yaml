@@ -1,0 +1,1586 @@
+openapi: 3.0.0
+servers:
+  - url: /story
+info:
+  description: This API is the main entry point for creating, editing and publishing analytics throught the Presalytics API
+  title: Story
+  version: 0.3.1
+  x-apisguru-categories:
+    - analytics
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_presalytics.io_static_img_Logo_Logos_Orange-White_navbar.png
+  x-origin:
+    - format: openapi
+      url: https://api.presalytics.io/story/openapi.json
+      version: "3.0"
+  x-providerName: presalytics.io
+  x-serviceName: story
+tags:
+  - description: Story
+    name: Story
+  - description: Story Collaborators
+    name: Story Collaborators
+  - description: Permissions and Authorization
+    name: Permissions
+paths:
+  /:
+    get:
+      description: Returns a list of stories for this user identifie via the access token presentated to the api
+      operationId: story_get
+      parameters:
+        - $ref: "#/components/parameters/include_relationships"
+        - $ref: "#/components/parameters/include_outline"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/story"
+                type: array
+          description: List of stories for this user
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: Get List of User Stories"
+      tags:
+        - Story
+      x-operationName: list
+    post:
+      description: Upload new story to presalytics api
+      operationId: story_post
+      parameters:
+        - $ref: "#/components/parameters/include_outline"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/outline"
+        description: A story outline json object
+        required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/story"
+        "415":
+          $ref: "#/components/responses/unsupported_media_type"
+        "422":
+          $ref: "#/components/responses/unprocessable_entity"
+      summary: "Story: Upload"
+      tags:
+        - Story
+  /cache:
+    post:
+      description: An endpoint for Presalytics Renderers to cache html subdocuments for subsequent retrieval by the browser.  Documents Are retrieved via token expire after 1 minute.
+      operationId: cache_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/cache_post_request"
+        description: parameters to identify an update a collaborator across multiple stories
+        required: true
+      responses:
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Cache: Store Subdocument"
+      tags:
+        - Cache
+  "/cache/{nonce}":
+    get:
+      description: An endpoint for broswer retreive html documents that were cached durin the rendering process via a nonce (token)
+      operationId: cache_nonce_get
+      parameters:
+        - $ref: "#/components/parameters/nonce"
+      responses:
+        "200":
+          content:
+            text/html:
+              schema:
+                description: html document with a link to the login page
+                title: Login Button
+                type: string
+          description: A cached html subdocument (typically loaded via iframe)
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Cache: Get Subdocument"
+      tags:
+        - Cache
+  /collaborators:
+    post:
+      description: Allows for bulk updates on collaborator metadata.  Restricted to internal admins
+      operationId: collaborators_post
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/collaborator_bulk_update_request"
+        description: parameters to identify an update a collaborator across multiple stories
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/permission_type"
+                title: List of Permission Types
+                type: array
+          description: Array of all possible permission types
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Collborators: Bulk Update (Admin Only)"
+      tags:
+        - Restricted
+  /environment/:
+    get:
+      description: pass rendering metadata to the client-side scripts
+      operationId: get_environment
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+          description: Success
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+      summary: "Environment: Get"
+  /file:
+    post:
+      description: Upload new story to presalytics api via an Open Office Xml file
+      operationId: story_post_file
+      parameters:
+        - $ref: "#/components/parameters/include_outline"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              description: A pptx or xlsx object from which to start creation of a story
+              properties:
+                file:
+                  items:
+                    format: binary
+                    type: string
+                  type: array
+              title: Open Office Xml document (e.g., xlsx, pptx file)
+        description: A pptx or xlsx file upload or story outline json object
+        required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/story"
+        "415":
+          $ref: "#/components/responses/unsupported_media_type"
+        "422":
+          $ref: "#/components/responses/unprocessable_entity"
+      summary: "Story: Upload a File"
+      tags:
+        - Story
+      x-operationName: upload-file
+  /file/json:
+    post:
+      description: Upload new story to presalytics api via an Open Office Xml file
+      operationId: story_post_file_json
+      parameters:
+        - $ref: "#/components/parameters/include_outline"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/file_upload"
+        description: A json-formatted object that includes a base64 encoded file (file encoded utf-8)
+      responses:
+        "200":
+          $ref: "#/components/responses/story"
+        "415":
+          $ref: "#/components/responses/unsupported_media_type"
+        "422":
+          $ref: "#/components/responses/unprocessable_entity"
+      summary: "Story: Upload a File (base64)"
+      tags:
+        - Story
+      x-operationName: upload-file-json
+  /no_tags_spec:
+    get:
+      description: json-formatted version of this spec with the tags removed to help with codegen processes
+      operationId: spec_no_tags
+      responses:
+        "200":
+          description: Success
+        "400":
+          $ref: "#/components/responses/badrequest"
+      summary: "Specification: No tags"
+  "/outline-schema/{schema_version}/story-outline.json":
+    get:
+      description: Json Schema for validating Story Outline objects
+      operationId: story_outline_schema
+      parameters:
+        - $ref: "#/components/parameters/schema_version"
+      responses:
+        "200":
+          description: Success
+        "400":
+          $ref: "#/components/responses/badrequest"
+      summary: Story Outline Schema
+      tags:
+        - Schemas
+  /permission_types:
+    get:
+      description: Returns a list of possible user permission types
+      operationId: story_permission_types_get
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/permission_type"
+                title: List of Permission Types
+                type: array
+          description: Array of all possible permission types
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Permissions: List Permission Types"
+      tags:
+        - Permissions
+      x-operationName: list
+  "/sessions/{session_id}":
+    delete:
+      description: Remove a session and dependant data.
+      operationId: session_id_delete
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      responses:
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Sessions: Delete by Id"
+      tags:
+        - Sessions
+    get:
+      description: Get session metadata
+      operationId: session_id_get
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+        - $ref: "#/components/parameters/include_relationships"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/session"
+          description: A session object
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Sessions: Get"
+      tags:
+        - Sessions
+      x-operationName: get-session-id
+  "/sessions/{session_id}/views":
+    get:
+      description: Get data for all views in a session
+      operationId: sessions_id_views_get
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/view"
+                type: array
+          description: A List of session views
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Views: List Session Views"
+      tags:
+        - Views
+      x-operationName: get-views
+    post:
+      description: Create a page view object for a viewing session
+      operationId: sessions_id_views_post
+      parameters:
+        - $ref: "#/components/parameters/session_id"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              description: A page view required a page number from the story outline to be created
+              properties:
+                activeMSecs:
+                  type: integer
+                additional:
+                  type: string
+                endTime:
+                  format: date-time
+                  type: string
+                pageNumber:
+                  type: integer
+                startTime:
+                  format: date-time
+                  type: string
+              required:
+                - pageNumber
+                - startTime
+                - endTime
+              title: Required parameters to create a view
+              type: object
+        description: Collaborator user id and permission type
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/view"
+          description: A new view object
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Views: Create A Session View"
+      tags:
+        - Views
+      x-operationName: create-view
+  "/views/{view_id}":
+    delete:
+      description: Remove a view and dependant data.
+      operationId: views_id_delete
+      parameters:
+        - $ref: "#/components/parameters/view_id"
+      responses:
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Views: Delete by Id"
+      tags:
+        - Views
+    get:
+      description: Get view meta data
+      operationId: views_id_get
+      parameters:
+        - $ref: "#/components/parameters/view_id"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/view"
+          description: A List of session views
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Views: Get View"
+      tags:
+        - Views
+      x-operationName: get-view-id
+  "/{id}":
+    delete:
+      description: Remove a story and dependant data.
+      operationId: story_id_delete
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: Delete by Id"
+      tags:
+        - Story
+    get:
+      description: Returns story metadata, inlcuding json object with story outline
+      operationId: story_id_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/include_relationships"
+        - $ref: "#/components/parameters/include_outline"
+        - $ref: "#/components/parameters/full"
+        - $ref: "#/components/parameters/refresh_cache"
+      responses:
+        "200":
+          $ref: "#/components/responses/story"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: Get by Id"
+      tags:
+        - Story
+    put:
+      description: Update story metadata, including story outline
+      operationId: story_id_put
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/include_outline"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/story"
+        description: The updated story object
+        required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/story"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: Modify"
+      tags:
+        - Story
+  "/{id}/analytics":
+    get:
+      description: returns an html document containing session and event metrics for the story
+      operationId: story_id_analytics
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                description: html document with reveal.js presenation of story
+                title: reveal.js presenation with analytics data
+                type: string
+          description: An html document containing session analytics for the story
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          content:
+            text/html:
+              schema:
+                description: html document with a link to the login page
+                title: Login Button
+                type: string
+          description: An html document containing a login button
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: View Analytics"
+      tags:
+        - Story
+      x-operationName: getAnalytics
+  "/{id}/collaborators":
+    get:
+      description: Gets a list users that can read or edit this story
+      operationId: story_id_collaborators_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/story_collaborator"
+                type: array
+          description: List of collaborators on the story
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story Collaborators: List"
+      tags:
+        - Story Collaborators
+      x-operationName: list
+    post:
+      description: Add a colloborator to this story
+      operationId: story_id_collaborators_post
+      parameters:
+        - $ref: "#/components/parameters/id"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/add_new_collaborator_request"
+        description: Collaborator user id and permission type
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/story_collaborator"
+          description: Collaborator data
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story Collaborators: Add New User"
+      tags:
+        - Story Collaborators
+  "/{id}/collaborators/authorize/{story_collaborator_userid}/{permissiontype}":
+    get:
+      description: Check whether user have certain types of permissions.  Use http status codes to understand if permission is granted - 204 = Granted, 403 = Forbidden
+      operationId: story_id_collaborators_userid_permissiontype_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/story_collaborator_userid"
+        - description: the type of permission requested.  can be a permission_type object name (e.g., owner, editor, create, viewer, admin) or a permission type field (e.g., can_edit, can_view, can_add_collaborators, can_delete)
+          in: path
+          name: permissiontype
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Permissions: Story Authorization for a User"
+      tags:
+        - Permissions
+      x-operationName: check-auth
+  "/{id}/collaborators/inactive":
+    post:
+      description: Edit story permissions for inactive users.  Requires admin rights.
+      operationId: story_id_collaborators_inactive_post
+      parameters:
+        - $ref: "#/components/parameters/id"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/modify_inactive_collaborator"
+        description: Collaborator user id and permission type
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/story_collaborator"
+          description: Collaborator data
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story Collaborators: Edit Inactive User Permission"
+      tags:
+        - Story Collaborators
+  "/{id}/collaborators/{story_collaborator_userid}":
+    delete:
+      description: Remove a collaborator from this story
+      operationId: story_id_collaborators_userid_delete
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/story_collaborator_userid"
+      responses:
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story Collaborators: Remove User"
+      tags:
+        - Story Collaborators
+    get:
+      description: Data to help you understand the access rights of a particular collaborator on this story
+      operationId: story_id_collaborators_userid_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/story_collaborator_userid"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/story_collaborator"
+          description: Collaborator data
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story Collaborators: Access Permissions"
+      tags:
+        - Story Collaborators
+    put:
+      description: Modify a user's access right to this story (e.g., grant edit permissions)
+      operationId: story_id_collaborators_userid_put
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/story_collaborator_userid"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/story_collaborator"
+        description: Collaborator user id (presalytics userid) and permission type
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/story_collaborator"
+          description: Collaborator data
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story Collaborators: Edit Access Rights"
+      tags:
+        - Story Collaborators
+  "/{id}/events":
+    get:
+      description: Get a list of Events available to users of this story
+      operationId: story_id_events_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/event"
+                type: array
+          description: An Array of events
+        "401":
+          $ref: "#/components/responses/unauthorized"
+      summary: "Events: List Events"
+      tags:
+        - Events
+      x-operationName: get-events
+    post:
+      description: Add a message to the Story's conversation
+      operationId: story_id_events_post
+      parameters:
+        - $ref: "#/components/parameters/id"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/manage_event"
+        description: Collaborator user id and permission type
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: object
+          description: A repsonse to the requested action
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Events: Manage Events"
+      tags:
+        - Events
+      x-operationName: post-events
+  "/{id}/file":
+    post:
+      description: Upload a file to an existing story
+      operationId: story_id_file_post
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/replace_existing"
+        - $ref: "#/components/parameters/obsolete_id"
+        - $ref: "#/components/parameters/include_outline"
+      requestBody:
+        content:
+          multipart/form-data:
+            schema:
+              description: A pptx or xlsx object from which to start creation of a story
+              properties:
+                file:
+                  items:
+                    format: binary
+                    type: string
+                  type: array
+              title: Open Office Xml document (e.g., xlsx, pptx file)
+        description: A pptx or xlsx file upload or story outline json object
+        required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/story"
+        "415":
+          $ref: "#/components/responses/unsupported_media_type"
+        "422":
+          $ref: "#/components/responses/unprocessable_entity"
+      summary: "Story: Upload a File To Existing Story"
+      tags:
+        - Story
+      x-operationName: update
+  "/{id}/file/{ooxml_automation_id}":
+    delete:
+      description: Deletes a subdcoument of this story (e.g., .pptx, .docx, .xlsx)
+      operationId: story_id_file_ooxmlautomationid_delete
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/ooxml_automation_id"
+      responses:
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: Delete Subdocument"
+      tags:
+        - Story
+      x-operationName: download
+    get:
+      description: Redtreives updated story as open office xml file (e.g., .pptx, .docx, .xlsx)
+      operationId: story_id_file_ooxmlautomationid_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/ooxml_automation_id"
+      responses:
+        "200":
+          content:
+            application/vnd.openxmlformats-officedocument.presentationml.presentation:
+              schema:
+                format: binary
+                title: Powerpoint presentation
+                type: string
+            application/vnd.openxmlformats-officedocument.spreadsheetml.sheet:
+              schema:
+                format: binary
+                title: Word document
+                type: string
+            application/vnd.openxmlformats-officedocument.wordprocessingml.document:
+              schema:
+                format: binary
+                title: Excel spreadsheet
+                type: string
+          description: The latest versiono of the story, in its orginal file format
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: Download Updated File"
+      tags:
+        - Story
+      x-operationName: download
+  "/{id}/messages":
+    get:
+      description: Get a list of messages that have been send in this story
+      operationId: story_id_messages_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/message"
+                type: array
+          description: An Array of conversation messages
+        "401":
+          $ref: "#/components/responses/unauthorized"
+      summary: "Conversation: List Conversation Messages"
+      tags:
+        - Conversation
+      x-operationName: get-messages
+    post:
+      description: Add a message to the Story's conversation
+      operationId: story_id_messages_post
+      parameters:
+        - $ref: "#/components/parameters/id"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: The message text
+        required: true
+      responses:
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Conversation: Send a Message"
+      tags:
+        - Conversation
+      x-operationName: post-messages
+  "/{id}/outline":
+    get:
+      description: Returns Story's outline
+      operationId: story_id_outline_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                type: string
+          description: Stringified Story outline
+        "202":
+          $ref: "#/components/responses/accepted"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+        "410":
+          $ref: "#/components/responses/gone"
+      summary: "Story: Get Story Outline"
+      tags:
+        - Story
+      x-operationName: getOutline
+    post:
+      description: Update a story outline.
+      operationId: story_id_outline_post
+      parameters:
+        - $ref: "#/components/parameters/id"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: string
+        description: A story outline object
+        required: true
+      responses:
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: Post Story Outline"
+      tags:
+        - Story
+      x-operationName: postOutline
+  "/{id}/public/":
+    get:
+      description: returns an html document containing a reveal.js epresentation of the story, if the story if set to is_public = True
+      operationId: story_id_public
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                description: html document with reveal.js presenation of story
+                title: reveal.js presenation
+                type: string
+          description: An html document containing a reveal.js represenation of the story
+        "302":
+          description: Not Found redirect
+        "400":
+          $ref: "#/components/responses/badrequest"
+      summary: "Story: Public Link to Story Reveal.js Document"
+      tags:
+        - Story
+      x-operationName: getPublic
+  "/{id}/reveal":
+    get:
+      description: returns an html document containing a reveal.js epresentation of the story
+      operationId: story_id_reveal
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                description: html document with reveal.js presenation of story
+                title: reveal.js presenation
+                type: string
+          description: An html document containing a reveal.js represenation of the story
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          content:
+            text/html:
+              schema:
+                description: html document with a link to the login page
+                title: Login Button
+                type: string
+          description: An html document containing a login button
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: Get Story at Reveal.js Document"
+      tags:
+        - Story
+      x-operationName: getHtml
+  "/{id}/sessions":
+    get:
+      description: Get a list of sessions asscoaited with this story
+      operationId: story_id_sessions_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+        - $ref: "#/components/parameters/include_relationships"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/session"
+                type: array
+          description: An array of session objects
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Sessions: List Story Sessions"
+      tags:
+        - Sessions
+      x-operationName: get-sessions
+    post:
+      description: Create a new session
+      operationId: story_id_session_post
+      parameters:
+        - $ref: "#/components/parameters/id"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/create_session_request"
+        description: Collaborator user id and permission type
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/session"
+          description: A new session object
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "403":
+          $ref: "#/components/responses/forbidden"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Sessions: Create a Session"
+      tags:
+        - Sessions
+      x-operationName: create-session
+  "/{id}/status":
+    get:
+      description: Returns code indicating whether story has active running background and is healthy (e.g., the latest outline is valid)
+      operationId: story_id_status_get
+      parameters:
+        - $ref: "#/components/parameters/id"
+      responses:
+        "200":
+          $ref: "#/components/responses/accepted"
+        "204":
+          $ref: "#/components/responses/success_response_no_content"
+        "400":
+          $ref: "#/components/responses/badrequest"
+        "401":
+          $ref: "#/components/responses/unauthorized"
+        "404":
+          $ref: "#/components/responses/notfound"
+      summary: "Story: Get Story Status"
+      tags:
+        - Story
+      x-operationName: getStatus
+components:
+  parameters:
+    d3_id:
+      description: A d3 figure id from a D3Widget instance in the Presaltyics Python Library
+      in: path
+      name: d3_id
+      required: true
+      schema:
+        type: string
+    figure_id:
+      description: A matplotlib figure id from a MatplotlibResponsiveFigure instance in the Presaltyics Python Library
+      in: path
+      name: figure_id
+      required: true
+      schema:
+        type: string
+    full:
+      description: Pull a story object with associated collaborator user, permission, and session data(faster if cached from prior api call)
+      in: query
+      name: full
+      required: false
+      schema:
+        type: boolean
+    id:
+      description: the id from the story object
+      in: path
+      name: id
+      required: true
+      schema:
+        format: uuid
+        type: string
+    include_outline:
+      description: Determines whether a repsonse including story objects should include the story outline.  Defaults to true. Useful for speeding up processing times.
+      in: query
+      name: include_outline
+      required: false
+      schema:
+        type: boolean
+    include_relationships:
+      description: Indicate whether the returned object should include child relationships
+      in: query
+      name: include_relationships
+      required: false
+      schema:
+        type: boolean
+    nonce:
+      description: A one-time use token for retieving items in the users cache
+      in: path
+      name: nonce
+      required: true
+      schema:
+        format: uuid
+        type: string
+    obsolete_id:
+      description: A primary key pointing to an obsolete item in the story. Item type is context-dependent
+      in: query
+      name: obsolete_id
+      required: false
+      schema:
+        format: uuid
+        type: string
+    ooxml_automation_id:
+      description: the id of the ooxml_automation object
+      in: path
+      name: ooxml_automation_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+    permissiontype:
+      description: The type of access required.  Must match - admin, owner, editor, viewer
+      in: path
+      name: permissiontype
+      required: true
+      schema:
+        type: string
+    refresh_cache:
+      description: Force the api reload the `Story full` object
+      in: query
+      name: refresh_cache
+      required: false
+      schema:
+        type: boolean
+    replace_existing:
+      description: Indicates whether a put or post method would replace the existing contents
+      in: query
+      name: replace_existing
+      required: false
+      schema:
+        type: boolean
+    schema_version:
+      description: The semanitic version of a schema (e.g. '0.3.1')
+      in: path
+      name: schema_version
+      required: true
+      schema:
+        type: string
+    session_id:
+      description: The primary key for a view session
+      in: path
+      name: session_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+    story_collaborator_userid:
+      description: The presalytics userid (NOT the Id of the story_collaborator object)
+      in: path
+      name: story_collaborator_userid
+      required: true
+      schema:
+        format: uuid
+        type: string
+    view_id:
+      description: The primary key for a page view within a session
+      in: path
+      name: view_id
+      required: true
+      schema:
+        format: uuid
+        type: string
+  responses:
+    accepted:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/status"
+      description: Accepted
+    badrequest:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/problem_detail"
+      description: Bad Request
+    forbidden:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/problem_detail"
+      description: Forbidden
+    gone:
+      description: Gone
+    notfound:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/problem_detail"
+      description: Not found
+    outline:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/outline"
+      description: Success responses with story object
+    story:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/story"
+      description: Success responses with story object
+    success_response_no_content:
+      description: Success
+    unauthorized:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/problem_detail"
+      description: Unauthorized
+    unprocessable_entity:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/problem_detail"
+      description: Unprocessable Entity
+    unsupported_media_type:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/problem_detail"
+      description: Unsupported Media Type
+  schemas:
+    add_new_collaborator_request:
+      description: required subset of collaborator data to get a permission
+      properties:
+        collaborator_type:
+          type: string
+        user_email:
+          type: string
+        user_id:
+          format: uuid
+          type: string
+      title: Collaborator permission data
+    base_model:
+      description: Base model for all types
+      properties:
+        created_at:
+          format: date-time
+          type: string
+          x-nullable: true
+        created_by:
+          format: uuid
+          type: string
+          x-nullable: true
+        id:
+          format: uuid
+          type: string
+        updated_at:
+          format: date-time
+          type: string
+          x-nullable: true
+        updated_by:
+          format: uuid
+          type: string
+          x-nullable: true
+      title: BaseModel
+    cache_post_request:
+      properties:
+        current_user_id:
+          format: uuid
+          type: string
+        nonce:
+          format: uuid
+          type: string
+        subdocument:
+          type: string
+      title: Cache Post Request body
+      type: object
+    collaborator_bulk_update_request:
+      description: allows for bulk updating of user_ids and active status based on a lead id or user_id
+      properties:
+        active:
+          type: boolean
+        lead_id:
+          format: int32
+          type: integer
+        user_id:
+          format: uuid
+          type: string
+      title: Collaborator data to change
+    create_session_request:
+      description: Request body for creating a session
+      properties:
+        collaboratorUserId:
+          format: uuid
+          type: string
+        host:
+          type: string
+      title: session-create
+    event:
+      allOf:
+        - $ref: "#/components/schemas/base_model"
+        - properties:
+            attributes:
+              type: string
+            chat_prompt:
+              type: string
+            conversation_id:
+              type: string
+            dom_selectors:
+              type: string
+            is_chat_hidden:
+              type: boolean
+            is_notify_enabled:
+              type: boolean
+            name:
+              type: string
+          type: object
+      description: An Story Event object
+      title: Event
+    file_upload:
+      description: A Base64 encoded file object
+      properties:
+        content_length:
+          type: integer
+        file:
+          type: string
+        file_name:
+          type: string
+        mimetype:
+          type: string
+      title: File Upload
+    manage_event:
+      properties:
+        action:
+          enum:
+            - create
+            - fire
+            - change
+            - delete
+          type: string
+        action_params:
+          additionalProperties: true
+          type: object
+        name:
+          nullable: true
+          type: string
+          x-nullable: true
+      title: Event Actions
+      type: object
+    message:
+      description: A conversation message
+      properties:
+        body:
+          type: string
+        id:
+          type: string
+        remote:
+          type: boolean
+        timestamp:
+          format: date-time
+          type: string
+        userId:
+          format: uuid
+          type: string
+        userName:
+          type: string
+      title: Message
+    modify_inactive_collaborator:
+      description: Action can be either "delete" or "activate".  Either lead_id or user_id is required.  user_id takes precedence.
+      properties:
+        action:
+          type: string
+        lead_id:
+          format: int32
+          type: integer
+        user_id:
+          format: uuid
+          type: string
+      title: Collaborator permission data
+    ooxml_document:
+      allOf:
+        - $ref: "#/components/schemas/base_model"
+        - properties:
+            delete_target_on_story_delete:
+              type: boolean
+            ooxml_automation_id:
+              format: uuid
+              type: string
+            story_id:
+              format: uuid
+              type: string
+          type: object
+      description: A reference to an Ooxml Automation Document from the Presalytics Ooxml Automation API
+      title: Ooxml Document
+    outline:
+      description: story_outline (json object)
+      properties:
+        outline:
+          type: string
+      title: Story Outline
+    permission_type:
+      allOf:
+        - $ref: "#/components/schemas/base_model"
+        - properties:
+            can_add_collaborators:
+              type: boolean
+            can_delete:
+              type: boolean
+            can_edit:
+              type: boolean
+            can_view:
+              type: boolean
+            name:
+              type: string
+          type: object
+      description: A permission type that can be applied to story collaborator
+      title: Permission Type
+    problem_detail:
+      description: Error reponse model
+      properties:
+        detail:
+          type: string
+        status:
+          format: int32
+          type: integer
+        title:
+          type: string
+        type:
+          type: string
+      title: Problem Detail
+    session:
+      allOf:
+        - $ref: "#/components/schemas/base_model"
+        - properties:
+            collaborator:
+              $ref: "#/components/schemas/story_collaborator"
+            collaborator_id:
+              format: uuid
+              type: string
+            host:
+              type: string
+            outline_revision:
+              type: integer
+            views:
+              items:
+                $ref: "#/components/schemas/view"
+              type: array
+          type: object
+      description: A user session with an open story
+      title: Session
+    status:
+      description: Status response when returning 202s
+      properties:
+        status:
+          type: string
+      title: Status
+    story:
+      allOf:
+        - $ref: "#/components/schemas/base_model"
+        - properties:
+            collaborators:
+              items:
+                $ref: "#/components/schemas/story_collaborator"
+              type: array
+              x-nullable: true
+            is_public:
+              type: boolean
+              x-nullable: true
+            ooxml_documents:
+              items:
+                $ref: "#/components/schemas/ooxml_document"
+              type: array
+              x-nullable: true
+            outline:
+              nullable: true
+              type: string
+              x-nullable: true
+            outline_history:
+              items:
+                $ref: "#/components/schemas/story_outline_history"
+              type: array
+              x-nullable: true
+            revision:
+              format: Int32
+              type: integer
+              x-nullable: true
+            title:
+              type: string
+              x-nullable: true
+          type: object
+      description: Model for story objects
+      title: Story
+    story_collaborator:
+      allOf:
+        - $ref: "#/components/schemas/base_model"
+        - properties:
+            active:
+              nullable: true
+              type: boolean
+              x-nullable: true
+            email:
+              type: string
+            lead_id:
+              format: int32
+              nullable: true
+              type: integer
+              x-nullable: true
+            name:
+              type: string
+            permission_type:
+              $ref: "#/components/schemas/permission_type"
+              nullable: true
+              x-nullable: true
+            permission_type_id:
+              format: uuid
+              type: string
+            story_id:
+              format: uuid
+              type: string
+            user_id:
+              format: uuid
+              type: string
+          type: object
+      description: Description of a user that can collaborate on a story
+      title: Story Collaborator
+    story_outline_history:
+      allOf:
+        - $ref: "#/components/schemas/base_model"
+        - properties:
+            collaborator_user_id:
+              format: uuid
+              type: string
+            outline:
+              type: string
+            revision_number:
+              format: Int32
+              type: integer
+            story_id:
+              format: uuid
+              type: string
+          type: object
+      description: A revision repository for story outlines
+      title: Story Outline History
+    view:
+      allOf:
+        - $ref: "#/components/schemas/base_model"
+        - properties:
+            active_msecs:
+              type: integer
+            additional:
+              type: string
+            end_time:
+              format: date-time
+              type: string
+            page_number:
+              type: integer
+            session_id:
+              format: uuid
+              type: string
+            start_time:
+              format: date-time
+              type: string
+            total_msecs:
+              type: integer
+          type: object
+      description: A Page view within a session-create
+      title: View
+  securitySchemes:
+    jwt:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

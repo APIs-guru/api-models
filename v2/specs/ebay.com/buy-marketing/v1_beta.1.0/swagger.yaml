@@ -1,0 +1,425 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.ebay.com
+basePath: /buy/marketing/v1_beta
+info:
+  contact:
+    name: eBay Inc,
+    x-twitter: ebay
+  description: The Marketing API retrieves eBay products based on a metric, such as Best Selling, as well as products that were also bought and also viewed.
+  license:
+    name: eBay API License Agreement
+    url: https://go.developer.ebay.com/api-license-agreement
+  title: Buy Marketing API
+  version: v1_beta.1.0
+  x-apisguru-categories:
+    - ecommerce
+  x-logo:
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_ebay_profile_image.jpeg
+  x-origin:
+    - format: swagger
+      url: https://developer.ebay.com/api-docs/master/buy/marketing/openapi/2/buy_marketing_v1_beta_oas2.json
+      version: "2.0"
+  x-providerName: ebay.com
+  x-serviceName: buy-marketing
+securityDefinitions:
+  Client Credentials:
+    description: The security definitions for this API. Please check individual operations for applicable scopes.
+    flow: application
+    scopes:
+      https://api.ebay.com/oauth/api_scope/buy.marketing: Retrieve eBay product and listing data for use in marketing merchandise to buyers
+    tokenUrl: https://api.ebay.com/identity/v1/oauth2/token
+    type: oauth2
+paths:
+  /merchandised_product:
+    get:
+      description: This method returns an array of products based on the category and metric specified. This includes details of the product, such as the eBay product ID (EPID), title, and user reviews and ratings for the product. You can use the epid returned by this method in the Browse API search method to retrieve items for this product. Restrictions To test getMerchandisedProducts in Sandbox, you must use category ID 9355 and the response will be mock data. For a list of supported sites and other restrictions, see API Restrictions.
+      operationId: getMerchandisedProducts
+      parameters:
+        - description: "The aspect name/value pairs used to further refine product results. For example: &nbsp;&nbsp;&nbsp;/buy/marketing/v1_beta/merchandised_product?category_id=31388&amp;metric_name=BEST_SELLING&amp;aspect_filter=Brand:Canon You can use the Browse API search method with the fieldgroups=ASPECT_REFINEMENTS field to return the aspects of a product. For implementation help, refer to eBay API documentation at https://developer.ebay.com/api-docs/buy/marketing/types/gct:MarketingAspectFilter"
+          in: query
+          name: aspect_filter
+          required: false
+          type: string
+        - description: "This query parameter limits the products returned to a specific eBay category. The list of eBay category IDs is not published and category IDs are not all the same across all the eBay maketplace. You can use the following techniques to find a category by site: Use the Category Changes page. Use the Taxonomy API. For details see Get Categories for Buy APIs. Use the Browse API and submit the following method to get the dominantCategoryId for an item. /buy/browse/v1/item_summary/search?q=keyword&amp;fieldgroups=ASPECT_REFINEMENTS Maximum: 1 Required: 1"
+          in: query
+          name: category_id
+          required: true
+          type: string
+        - description: "This value specifies the maximum number of products to return in a result set. Note: Maximum value means the method will return up to that many products per set, but it can be less than this value. If the number of products found is less than this value, the method will return all of the products matching the criteria. Default: 8 Maximum: 100"
+          in: query
+          name: limit
+          required: false
+          type: string
+        - description: "This value filters the result set by the specified metric. Only products in this metric are returned. Currently, the only metric supported is BEST_SELLING. Default: BEST_SELLING Maximum: 1 Required: 1"
+          in: query
+          name: metric_name
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/BestSellingProductResponse"
+        "400":
+          description: Bad Request
+          x-response-codes:
+            errors:
+              "70001":
+                category: REQUEST
+                description: A metric_name is required to make the API call.
+                domain: API_MARKETING
+              "70002":
+                category: REQUEST
+                description: The metric_name {metric_name} is invalid.
+                domain: API_MARKETING
+              "70003":
+                category: REQUEST
+                description: A categoryId is required to make the API call.
+                domain: API_MARKETING
+              "70004":
+                category: REQUEST
+                description: The category id {categoryId} is invalid
+                domain: API_MARKETING
+              "70005":
+                category: REQUEST
+                description: The 'limit' value should be between 1 and 100 (inclusive).
+                domain: API_MARKETING
+              "70006":
+                category: REQUEST
+                description: The 'limit' value must be an integer value.
+                domain: API_MARKETING
+        "409":
+          description: Conflict
+          x-response-codes:
+            errors:
+              "70007":
+                category: BUSINESS
+                description: "The marketplace value {marketplace} is not supported. The supported values are: {marketplaces}."
+                domain: API_MARKETING
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "70000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_MARKETING
+      security:
+        - Client Credentials:
+            - https://api.ebay.com/oauth/api_scope/buy.marketing
+      tags:
+        - merchandised_product
+  /merchandised_product/get_also_bought_products:
+    get:
+      description: "This method returns products that were also bought when shoppers bought the product specified in the request. Showing 'also bought' products inspires up-selling and cross-selling. You specify the product by one of the following: epid - eBay Product ID gtin - Global Trade Item Number (UPC, ISBN, EAN) brand - (brand name, such as Nike) plus mpn (Manufacturer's Part Number) Restrictions For a list of supported sites and other restrictions, see API Restrictions. Note: A maximum of 12 products are returned. The method will return up to 12 products, but it can be less than 12. If the number of products found is less than 12, the method will return all of the products matching the criteria."
+      operationId: getAlsoBoughtByProduct
+      parameters:
+        - description: "The brand of the product. Restriction: This must be used along with mpn. Required: You must specify one epid, or one gtin, or one brand plus mpn pair."
+          in: query
+          name: brand
+          required: false
+          type: string
+        - description: "The eBay product identifier of a product. Required: You must specify one epid, or one gtin, or one brand plus mpn pair."
+          in: query
+          name: epid
+          required: false
+          type: string
+        - description: "The unique Global Trade Item Number of the item as defined by https://www.gtin.info. This can be a UPC (Universal Product Code), EAN (European Article Number), or an ISBN (International Standard Book Number value. Required: You must specify one epid, or one gtin, or one brand plus mpn pair."
+          in: query
+          name: gtin
+          required: false
+          type: string
+        - description: "The manufacturer part number of the product. Restriction: This must be used along with brand. Required: You must specify one epid, or one gtin, or one brand plus mpn pair."
+          in: query
+          name: mpn
+          required: false
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/BestSellingProductResponse"
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          x-response-codes:
+            errors:
+              "70100":
+                category: REQUEST
+                description: The request must have only one valid 'epid',  or one  'gtin', or one 'brand' PLUS 'mpn' pair.
+                domain: API_MARKETING
+              "70101":
+                category: REQUEST
+                description: The EPID value {epid} does not exist in the eBay  product catalog.
+                domain: API_MARKETING
+              "70102":
+                category: REQUEST
+                description: The GTIN value {gtin} does not exist in the eBay product catalog.
+                domain: API_MARKETING
+              "70103":
+                category: REQUEST
+                description: The combination of MPN {mpn} and brand {brand} does not exist in the eBay product catalog.
+                domain: API_MARKETING
+        "409":
+          description: Conflict
+          x-response-codes:
+            errors:
+              "70007":
+                category: BUSINESS
+                description: "The marketplace value {marketplace} is not supported. The supported values are: {marketplaces}."
+                domain: API_MARKETING
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "70000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_MARKETING
+      security:
+        - Client Credentials:
+            - https://api.ebay.com/oauth/api_scope/buy.marketing
+      tags:
+        - merchandised_product
+  /merchandised_product/get_also_viewed_products:
+    get:
+      description: "This method returns products that were also viewed when shoppers viewed the product specified in the request. Showing 'also viewed' products encourages up-selling and cross-selling. You specify the product by one of the following: epid - eBay Product ID gtin - Global Trade Item Number (UPC, ISBN, EAN) brand (brand name, such as Nike) plus mpn (Manufacturer's Part Number) Restrictions For a list of supported sites and other restrictions, see API Restrictions. Note: A maximum of 12 products are returned. The method will return up to 12 products, but it can be less than 12. If the number of products found is less than 12, the method will return all of the products matching the criteria."
+      operationId: getAlsoViewedByProduct
+      parameters:
+        - description: "The brand of the product. Restriction: This must be used along with mpn. Required: You must specify one epid, or one gtin, or one brand plus mpn pair."
+          in: query
+          name: brand
+          required: false
+          type: string
+        - description: "The eBay product identifier of a product. Required: You must specify one epid, or one gtin, or one brand plus mpn pair."
+          in: query
+          name: epid
+          required: false
+          type: string
+        - description: "The unique Global Trade Item Number of the item as defined by https://www.gtin.info. This can be a UPC (Universal Product Code), EAN (European Article Number), or an ISBN (International Standard Book Number value. Required: You must specify one epid, or one gtin, or one brand plus mpn pair."
+          in: query
+          name: gtin
+          required: false
+          type: string
+        - description: "The manufacturer part number of the product. Restriction: This must be used along with brand."
+          in: query
+          name: mpn
+          required: false
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/BestSellingProductResponse"
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          x-response-codes:
+            errors:
+              "70100":
+                category: REQUEST
+                description: The request must have only one valid 'epid',  or one  'gtin', or one 'brand' PLUS 'mpn' pair.
+                domain: API_MARKETING
+              "70101":
+                category: REQUEST
+                description: The EPID value {epid} does not exist in the eBay  product catalog.
+                domain: API_MARKETING
+              "70102":
+                category: REQUEST
+                description: The GTIN value {gtin} does not exist in the eBay product catalog.
+                domain: API_MARKETING
+              "70103":
+                category: REQUEST
+                description: The combination of MPN {mpn} and brand {brand} does not exist in the eBay product catalog.
+                domain: API_MARKETING
+        "409":
+          description: Conflict
+          x-response-codes:
+            errors:
+              "70007":
+                category: BUSINESS
+                description: "The marketplace value {marketplace} is not supported. The supported values are: {marketplaces}."
+                domain: API_MARKETING
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "70000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_MARKETING
+      security:
+        - Client Credentials:
+            - https://api.ebay.com/oauth/api_scope/buy.marketing
+      tags:
+        - merchandised_product
+definitions:
+  Amount:
+    description: This type defines the monetary value of an amount and the currency used.
+    properties:
+      currency:
+        description: The three-letter ISO 4217 code representing the currency of the amount in the value field. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/buy/marketing/types/bas:CurrencyCodeEnum'>eBay API documentation</a>
+        type: string
+      value:
+        description: The monetary amount, in the currency specified by the currency field.
+        type: string
+    type: object
+  BestSellingProductResponse:
+    description: The type that defines the fields for the best selling product information.
+    properties:
+      merchandisedProducts:
+        description: An array of containers for the products.
+        items:
+          $ref: "#/definitions/MerchandisedProduct"
+        type: array
+      warnings:
+        description: The container with all the warnings for the input request.
+        items:
+          $ref: "#/definitions/Error"
+        type: array
+    type: object
+  Error:
+    description: The type that defines the fields that can be returned in an error.
+    properties:
+      category:
+        description: "This string value indicates the error category. There are three categories of errors: request errors, application errors, and system errors."
+        type: string
+      domain:
+        description: The name of the primary system where the error occurred. This is relevant for application errors.
+        type: string
+      errorId:
+        description: A unique code that identifies the particular error or warning that occurred. Your application can use error codes as identifiers in your customized error-handling algorithms.
+        type: integer
+      inputRefIds:
+        description: An array of reference IDs that identify the specific request elements most closely associated to the error or warning, if any.
+        items:
+          type: string
+        type: array
+      longMessage:
+        description: A detailed description of the condition that caused the error or warning, and information on what to do to correct the problem.
+        type: string
+      message:
+        description: A description of the condition that caused the error or warning.
+        type: string
+      outputRefIds:
+        description: An array of reference IDs that identify the specific response elements most closely associated to the error or warning, if any.
+        items:
+          type: string
+        type: array
+      parameters:
+        description: An array of warning and error messages that return one or more variables contextual information about the error or warning. This is often the field or value that triggered the error or warning.
+        items:
+          $ref: "#/definitions/ErrorParameter"
+        type: array
+      subdomain:
+        description: The name of the subdomain in which the error or warning occurred.
+        type: string
+    type: object
+  ErrorParameter:
+    description: An array of name/value pairs that provide details regarding the error.
+    properties:
+      name:
+        description: This is the name of input field that caused an issue with the call request.
+        type: string
+      value:
+        description: This is the actual value that was passed in for the element specified in the name field.
+        type: string
+    type: object
+  Image:
+    description: Type the defines the details of an image, such as size and URL. Currently only <b> imageUrl</b> is getting populated. The <b> height</b> and <b> width</b> were added for future use.
+    properties:
+      height:
+        description: Reserved for future use.
+        type: integer
+      imageUrl:
+        description: The URL of the image.
+        type: string
+      width:
+        description: Reserved for future use.
+        type: integer
+    type: object
+  MarketPriceDetail:
+    description: The type that defines the fields for details about the product, such as condition and estimated start price.
+    properties:
+      conditionGroup:
+        description: "The name for the condition of the product. For example: NEW Note: In all eBay marketplaces, Condition ID 2000 now maps to an item condition of 'Certified Refurbished', and not 'Manufacturer Refurbished'. To list an item as 'Certified Refurbished', a seller must be pre-qualified by eBay for this feature."
+        type: string
+      conditionIds:
+        description: "An array of condition identifiers for the product. Note: In all eBay marketplaces, Condition ID 2000 now maps to an item condition of 'Certified Refurbished', and not 'Manufacturer Refurbished'. To list an item as 'Certified Refurbished', a seller must be pre-qualified by eBay for this feature."
+        items:
+          type: string
+        type: array
+      estimatedStartPrice:
+        $ref: "#/definitions/Amount"
+    type: object
+  MerchandisedProduct:
+    description: The type that defines the fields for product information, including price, condition, ratings, etc.
+    properties:
+      averageRating:
+        description: The average rating for the product based on eBay user ratings.
+        type: string
+      epid:
+        description: The eBay product identifier of a product from the eBay product catalog. You can use this value in the Browse API search method to retrieve items for this product.
+        type: string
+      image:
+        $ref: "#/definitions/Image"
+      marketPriceDetails:
+        description: An array of containers for the product market price details, such as condition and market price.
+        items:
+          $ref: "#/definitions/MarketPriceDetail"
+        type: array
+      ratingAspects:
+        description: An array of containers for ratings of the product aspects, such as &quot;Is it a good value&quot;.
+        items:
+          $ref: "#/definitions/RatingAspect"
+        type: array
+      ratingCount:
+        description: The total number of eBay users that rated the product.
+        type: integer
+      reviewCount:
+        description: The total number of eBay users that wrote a review for the product.
+        type: integer
+      title:
+        description: The title of the product.
+        type: string
+    type: object
+  RatingAspect:
+    description: The type that defines the fields for the product aspect ratings.
+    properties:
+      count:
+        description: The number of eBay users that rated the product on this aspect.
+        type: integer
+      description:
+        description: "The name of the rating aspect. Camping tent examples: Is it lightweight? or Is it easy to set up?"
+        type: string
+      name:
+        description: "The answer or value of the rating aspect. Camping tent examples: Lightweight or Easy to set up"
+        type: string
+      ratingAspectDistributions:
+        description: The container for the details of the aspect rating. The details show the aspect rating value, usually TRUE or FALSE and the user count and percentage.
+        items:
+          $ref: "#/definitions/RatingAspectDistribution"
+        type: array
+    type: object
+  RatingAspectDistribution:
+    description: The type that defines the field for the aspect rating details, such as the aspect rating value, usually TRUE or FALSE and the user count and percentage.
+    properties:
+      count:
+        description: The number of eBay users that choose this rating aspect value.
+        type: integer
+      percentage:
+        description: The percentage of the aspect rating value. ratingAspectDistributions.percentage = ratingAspectDistributions.count / ratingAspects.count
+        type: string
+      value:
+        description: "The rating aspect. For example: TRUE or FALSE"
+        type: string
+    type: object

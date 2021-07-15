@@ -1,0 +1,408 @@
+swagger: "2.0"
+schemes:
+  - https
+host: management.azure.com
+info:
+  description: The Azure management API provides a RESTful set of web services that interact with Azure Key Vault.
+  title: KeyVaultManagementClient
+  version: 2015-06-01
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/keyvault/resource-manager/Microsoft.KeyVault/stable/2015-06-01/keyvault.json
+      version: "2.0"
+  x-preferred: false
+  x-providerName: azure.com
+  x-serviceName: keyvault
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+parameters:
+  ApiVersionParameter:
+    description: Client Api Version.
+    in: query
+    name: api-version
+    required: true
+    type: string
+  SubscriptionIdParameter:
+    description: Gets subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call.
+    in: path
+    name: subscriptionId
+    required: true
+    type: string
+paths:
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults":
+    get:
+      description: The List operation gets information about the vaults associated with the subscription and within the specified resource group.
+      operationId: Vaults_ListByResourceGroup
+      parameters:
+        - description: The name of the Resource Group to which the vault belongs.
+          in: path
+          name: resourceGroupName
+          required: true
+          type: string
+        - description: Maximum number of results to return.
+          format: int32
+          in: query
+          name: $top
+          type: integer
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: Get information about all key vaults in the specified resource group.
+          schema:
+            $ref: "#/definitions/VaultListResult"
+      tags:
+        - Vaults
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.KeyVault/vaults/{vaultName}":
+    delete:
+      description: Deletes the specified Azure key vault.
+      operationId: Vaults_Delete
+      parameters:
+        - description: The name of the Resource Group to which the vault belongs.
+          in: path
+          name: resourceGroupName
+          required: true
+          type: string
+        - description: The name of the vault to delete
+          in: path
+          name: vaultName
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: OK Response.
+        "204":
+          description: No Content.
+      tags:
+        - Vaults
+    get:
+      description: Gets the specified Azure key vault.
+      operationId: Vaults_Get
+      parameters:
+        - description: The name of the Resource Group to which the vault belongs.
+          in: path
+          name: resourceGroupName
+          required: true
+          type: string
+        - description: The name of the vault.
+          in: path
+          name: vaultName
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: Retrieved vault
+          schema:
+            $ref: "#/definitions/Vault"
+      tags:
+        - Vaults
+    put:
+      description: Create or update a key vault in the specified subscription.
+      operationId: Vaults_CreateOrUpdate
+      parameters:
+        - description: The name of the Resource Group to which the server belongs.
+          in: path
+          name: resourceGroupName
+          required: true
+          type: string
+        - description: Name of the vault
+          in: path
+          name: vaultName
+          pattern: ^[a-zA-Z0-9-]{3,24}$
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - description: Parameters to create or update the vault
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/VaultCreateOrUpdateParameters"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: Created or updated vault
+          schema:
+            $ref: "#/definitions/Vault"
+        "201":
+          description: Created or updated vault
+          schema:
+            $ref: "#/definitions/Vault"
+      tags:
+        - Vaults
+  "/subscriptions/{subscriptionId}/resources":
+    get:
+      description: The List operation gets information about the vaults associated with the subscription.
+      operationId: Vaults_List
+      parameters:
+        - description: The filter to apply on the operation.
+          enum:
+            - resourceType eq 'Microsoft.KeyVault/vaults'
+          in: query
+          name: $filter
+          required: true
+          type: string
+        - description: Maximum number of results to return.
+          format: int32
+          in: query
+          name: $top
+          type: integer
+        - description: Azure Resource Manager Api Version.
+          enum:
+            - 2015-11-01
+          in: query
+          name: api-version
+          required: true
+          type: string
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: Get information about all key vaults in the subscription.
+          schema:
+            $ref: "#/definitions/ResourceListResult"
+      tags:
+        - Vaults
+      x-ms-pageable:
+        nextLinkName: nextLink
+definitions:
+  AccessPolicyEntry:
+    description: An identity that have access to the key vault. All identities in the array must use the same tenant ID as the key vault's tenant ID.
+    properties:
+      applicationId:
+        description: " Application ID of the client making request on behalf of a principal"
+        format: uuid
+        type: string
+      objectId:
+        description: The object ID of a user, service principal or security group in the Azure Active Directory tenant for the vault. The object ID must be unique for the list of access policies.
+        type: string
+      permissions:
+        $ref: "#/definitions/Permissions"
+        description: Permissions the identity has for keys, secrets and certificates.
+      tenantId:
+        description: The Azure Active Directory tenant ID that should be used for authenticating requests to the key vault.
+        format: uuid
+        type: string
+    required:
+      - tenantId
+      - objectId
+      - permissions
+  Permissions:
+    description: Permissions the identity has for keys, secrets and certificates.
+    properties:
+      certificates:
+        description: Permissions to certificates
+        items:
+          enum:
+            - all
+            - get
+            - list
+            - delete
+            - create
+            - import
+            - update
+            - managecontacts
+            - getissuers
+            - listissuers
+            - setissuers
+            - deleteissuers
+            - manageissuers
+            - recover
+            - purge
+          type: string
+          x-ms-enum:
+            modelAsString: true
+            name: CertificatePermissions
+        type: array
+      keys:
+        description: Permissions to keys
+        items:
+          enum:
+            - all
+            - encrypt
+            - decrypt
+            - wrapKey
+            - unwrapKey
+            - sign
+            - verify
+            - get
+            - list
+            - create
+            - update
+            - import
+            - delete
+            - backup
+            - restore
+            - recover
+            - purge
+          type: string
+          x-ms-enum:
+            modelAsString: true
+            name: KeyPermissions
+        type: array
+      secrets:
+        description: Permissions to secrets
+        items:
+          enum:
+            - all
+            - get
+            - list
+            - set
+            - delete
+            - backup
+            - restore
+            - recover
+            - purge
+          type: string
+          x-ms-enum:
+            modelAsString: true
+            name: SecretPermissions
+        type: array
+  Resource:
+    description: Key Vault resource
+    properties:
+      id:
+        description: The Azure Resource Manager resource ID for the key vault.
+        readOnly: true
+        type: string
+      location:
+        description: The supported Azure location where the key vault should be created.
+        type: string
+      name:
+        description: The name of the key vault.
+        type: string
+      tags:
+        additionalProperties:
+          type: string
+        description: "The tags that will be assigned to the key vault. "
+        type: object
+      type:
+        description: The resource type of the key vault.
+        readOnly: true
+        type: string
+    required:
+      - location
+      - name
+    x-ms-azure-resource: true
+  ResourceListResult:
+    description: List of vault resources.
+    properties:
+      nextLink:
+        description: Gets the URL to get the next set of vault resources.
+        type: string
+      value:
+        description: Gets the list of vault resources.
+        items:
+          $ref: "#/definitions/Resource"
+        type: array
+  Sku:
+    description: SKU details
+    properties:
+      family:
+        description: SKU family name
+        enum:
+          - A
+        type: string
+        x-ms-enum:
+          modelAsString: true
+          name: SkuFamily
+      name:
+        description: SKU name to specify whether the key vault is a standard vault or a premium vault.
+        enum:
+          - standard
+          - premium
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: SkuName
+    required:
+      - name
+      - family
+  Vault:
+    allOf:
+      - $ref: "#/definitions/Resource"
+    description: Resource information with extended details.
+    properties:
+      properties:
+        $ref: "#/definitions/VaultProperties"
+        description: Properties of the vault
+    required:
+      - properties
+  VaultCreateOrUpdateParameters:
+    description: Parameters for creating or updating a vault
+    properties:
+      location:
+        description: The supported Azure location where the key vault should be created.
+        type: string
+      properties:
+        $ref: "#/definitions/VaultProperties"
+        description: Properties of the vault
+      tags:
+        additionalProperties:
+          type: string
+        description: "The tags that will be assigned to the key vault. "
+        type: object
+    required:
+      - location
+      - properties
+    x-ms-azure-resource: true
+  VaultListResult:
+    description: List of vaults
+    properties:
+      nextLink:
+        description: Gets or sets the URL to get the next set of vaults.
+        type: string
+      value:
+        description: Gets or sets the list of vaults.
+        items:
+          $ref: "#/definitions/Vault"
+        type: array
+  VaultProperties:
+    description: Properties of the vault
+    properties:
+      accessPolicies:
+        description: An array of 0 to 16 identities that have access to the key vault. All identities in the array must use the same tenant ID as the key vault's tenant ID.
+        items:
+          $ref: "#/definitions/AccessPolicyEntry"
+        maxItems: 16
+        type: array
+      enableSoftDelete:
+        description: Property to specify whether the 'soft delete' functionality is enabled for this key vault.
+        type: boolean
+      enabledForDeployment:
+        description: Property to specify whether Azure Virtual Machines are permitted to retrieve certificates stored as secrets from the key vault.
+        type: boolean
+      enabledForDiskEncryption:
+        description: Property to specify whether Azure Disk Encryption is permitted to retrieve secrets from the vault and unwrap keys.
+        type: boolean
+      enabledForTemplateDeployment:
+        description: Property to specify whether Azure Resource Manager is permitted to retrieve secrets from the key vault.
+        type: boolean
+      sku:
+        $ref: "#/definitions/Sku"
+        description: SKU details
+      tenantId:
+        description: The Azure Active Directory tenant ID that should be used for authenticating requests to the key vault.
+        format: uuid
+        type: string
+      vaultUri:
+        description: The URI of the vault for performing operations on keys and secrets.
+        type: string
+    required:
+      - tenantId
+      - sku
+      - accessPolicies

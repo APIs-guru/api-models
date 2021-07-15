@@ -1,0 +1,440 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.stoplight.io/v1
+info:
+  contact:
+    x-twitter: stoplightio
+  description: ""
+  title: Stoplight
+  version: api-v1
+  x-apisguru-categories:
+    - developer_tools
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_stoplightio_profile_image.png
+  x-origin:
+    - format: openapi
+      url: https://api.stoplight.io/v1/versions/wDcMCTKXwn8X4ynL9/export/oas.json
+      version: "3.0"
+  x-providerName: stoplight.io
+paths:
+  /versions/publish/anon:
+    post:
+      description: |-
+        Anonymously publish to API Docs.
+
+        This endpoint will take a JSON spec or a URL to a swagger or raml spec.
+
+        ```
+        {
+          "specData": {...}
+        }
+        ```
+
+        or
+
+        ```
+        {
+          "url": "http://petstore.swagger.io/v2/swagger.json"
+        }
+        ```
+
+        The spec will be published to api-docs.io anonymously, which means you will not be able to update or remove this documentation.
+
+        The response will contain a url to the published documentation.
+
+        ```
+        {
+          "url": "https://swagger-petstore.api-docs.io/v1.0.0"
+        }
+        ```
+
+
+        The limitations of anonymous publishing
+        * Cannot update/remove the documentation
+        * Cannot choose the subdomain
+        * Cannot choose the version
+        * Cannot add theming
+      operationId: POST_versions-publish-anon
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                specData:
+                  oneOf:
+                    - type: object
+                    - type: string
+                url:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    url: https://stoplight.api-docs.io/api-v1
+              schema:
+                properties:
+                  url:
+                    type: string
+                required:
+                  - url
+                type: object
+          description: ""
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/standarderror"
+          description: ""
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/standarderror"
+          description: ""
+        "404":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/standarderror"
+          description: ""
+        "500":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/standarderror"
+          description: ""
+      summary: Publish Anonymous
+  "/versions/{versionId}/export/{format}":
+    get:
+      description: |-
+        Export a version to your choice of API specification.
+
+        ### Allowed Formats:
+
+        - oas.json
+        - oas.yaml
+        - raml08.yaml
+        - raml10.yaml
+        - stoplight.json
+        - stoplight.yaml
+
+        The stoplight format actually returns OAS (Swagger 2) with x-stoplight annotations. If you are exporting with the intent on importing back into Stoplight, this export format preserves the most information.
+
+        ### Example URL:
+
+        `https://api.stoplight.io/v1/versions/123/export/oas.json`
+      operationId: GET_versions-versionId-export-format
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    info:
+                      title: Test API
+                      version: "1.0"
+                    paths: {}
+                    swagger: "2.0"
+            text/yaml:
+              schema:
+                description: The specification. Returned as a string when YAML, object when JSON.
+                oneOf:
+                  - type: object
+                  - type: string
+          description: ""
+        "401":
+          $ref: "#/components/responses/trait_standardErrors_401"
+        "404":
+          $ref: "#/components/responses/trait_standardErrors_404"
+      summary: Export
+      tags:
+        - Versions
+    parameters:
+      - description: This is the unique identifier for the version.
+        in: path
+        name: versionId
+        required: true
+        schema:
+          default: ""
+          type: string
+      - description: The specification / format that you want to export.
+        in: path
+        name: format
+        required: true
+        schema:
+          default: oas.json
+          enum:
+            - oas.json
+            - oas.yaml
+            - raml08.yaml
+            - raml10.yaml
+            - stoplight.json
+            - stoplight.yaml
+          type: string
+  "/versions/{versionId}/import":
+    parameters:
+      - description: This is the unique identifier for the version.
+        in: path
+        name: versionId
+        required: true
+        schema:
+          type: string
+    put:
+      description: |-
+        Import the given specification into an existing version. 
+
+        **Warning, this is a destructive action! Any resources present in both the existing version, and the specification being imported, will be overwritten.**
+
+        This endpoint is particularly useful when you manage a specification file (Swagger or RAML) outside of Stoplight, and want to keep your Stoplight API version up to date as that specification changes.
+
+        By default, a "merge" is performed when importing. If a resource exists in the specification that you are importing, and in the Stoplight API, the resource will be overwritten. If a resource exists in the Stoplight API, but not in the spefication that you are importing, the resource will be left alone (and not deleted).
+
+        You can include an optional `options` property in the request body, to indicate if you would like to perform more of a replacement (instead of a merge). The options are documented in full in the response definition below these notes.
+
+        Take this request + request body for example:
+
+        `PUT https://api.stoplight.io/v1/versions/123/import`
+        ```json
+        {
+          "url": "http://petstore.swagger.io/v2/swagger.json",
+          "options": {
+            "removeExtraEndpoints": true,
+            "removeExtraSchemas": true
+          }
+        }
+        ```
+
+        This request will grab the swagger specification described at `http://petstore.swagger.io/v2/swagger.json`, and import it into the Stoplight API version with id `123`. Additionally, it will delete any existing endpoints or models that are not described in the petstore swagger being imported.
+
+        Instead of a URL, you can provide the actual specification to be imported, either as a string (in the case of YAML) or an object (in the case of JSON). That request would look something like this:
+
+        `PUT https://api.stoplight.io/v1/versions/123/import`
+        ```json
+        {
+          "specData": {
+            "swagger": "2.0",
+            "info": {}
+            ... rest of spec
+          }
+        }
+        ```
+      operationId: PUT_versions-versionId-import
+      requestBody:
+        content:
+          application/json:
+            schema:
+              example:
+                options:
+                  removeExtraEndpoints: true
+                  removeExtraModels: true
+                url: http://petstore.swagger.io/v2/swagger.json
+              properties:
+                options:
+                  properties:
+                    removeExtraEndpoints:
+                      default: ""
+                      description: "Default: false."
+                      type: boolean
+                    removeExtraSchemas:
+                      default: ""
+                      description: "Default: false."
+                      type: boolean
+                    removeExtraTextSections:
+                      default: ""
+                      description: "Default: false."
+                      type: boolean
+                    removeExtraTraits:
+                      default: ""
+                      description: "Default: false."
+                      type: boolean
+                  type: object
+                specData:
+                  oneOf:
+                    - type: object
+                    - type: string
+                url:
+                  type: string
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  data:
+                    properties:
+                      endpointCount:
+                        type: number
+                      format:
+                        enum:
+                          - RAML08
+                          - RAML10
+                          - SWAGGER
+                          - STOPLIGHTX
+                        type: string
+                      projectId:
+                        type: string
+                      schemaCount:
+                        type: number
+                      testCount:
+                        type: number
+                      textSectionCount:
+                        type: number
+                      traitCount:
+                        type: number
+                      versionId:
+                        type: string
+                      workspaceId:
+                        type: string
+                    required:
+                      - workspaceId
+                      - projectId
+                      - versionId
+                      - schemaCount
+                      - textSectionCount
+                      - traitCount
+                      - endpointCount
+                      - testCount
+                      - format
+                    type: object
+                required:
+                  - data
+                type: object
+          description: ""
+        "401":
+          $ref: "#/components/responses/trait_standardErrors_401"
+        "404":
+          $ref: "#/components/responses/trait_standardErrors_404"
+      security:
+        - Authorization: []
+      summary: Import
+      tags:
+        - Versions
+  "/versions/{versionId}/publish":
+    parameters:
+      - description: This is the unique identifier for the version.
+        in: path
+        name: versionId
+        required: true
+        schema:
+          type: string
+    post:
+      description: |-
+        Re-publish an API version in Stoplight. This will re-publish the given API version, with whatever publish settings have already been setup in the app.
+
+        This will only work with APIs that have previously been published at least once.
+
+        This works well with the #endpoint:957qEfc97BB5XGAeZ endpoint to augment your continuous integration processes, and automatically re-publish your documentation when certain events happen. Once such scenario is:
+
+        1. Swagger is generated from your codebase, and pushed up to Github.
+        2. A simple script that you write sends a request to the Stoplight API to import the new specification, passing in the URL to the swagger file on Github.
+        3. After the import succeeds, and your API in Stoplight is up to date, the script sends a request to the Stoplight API (this endpoint) to re-publish your documentation.
+      operationId: POST_versions-versionId-publish
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    customDomain: https://help.stoplight.io/api-v1
+                    url: https://stoplight.api-docs.io/api-v1
+              schema:
+                properties:
+                  customDomain:
+                    type: string
+                  url:
+                    type: string
+                required:
+                  - url
+                type: object
+          description: ""
+        "401":
+          $ref: "#/components/responses/trait_standardErrors_401"
+        "404":
+          $ref: "#/components/responses/trait_standardErrors_404"
+      security:
+        - Authorization: []
+      summary: Publish
+      tags:
+        - Versions
+  "/versions/{versionId}/unpublish":
+    parameters:
+      - description: This is the unique identifier for the version.
+        in: path
+        name: versionId
+        required: true
+        schema:
+          type: string
+    put:
+      description: Unpublish the documentation associated with the given API version.
+      operationId: PUT_versions-versionId-unpublish
+      responses:
+        "200":
+          content:
+            application/json:
+              examples:
+                response:
+                  value:
+                    data: {}
+              schema:
+                properties:
+                  data:
+                    type: object
+                type: object
+          description: ""
+        "401":
+          $ref: "#/components/responses/trait_standardErrors_401"
+        "404":
+          $ref: "#/components/responses/trait_standardErrors_404"
+      security:
+        - Authorization: []
+      summary: Unpublish
+      tags:
+        - Versions
+components:
+  responses:
+    trait_standardErrors_400:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/standarderror"
+      description: ""
+    trait_standardErrors_401:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/standarderror"
+      description: ""
+    trait_standardErrors_404:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/standarderror"
+      description: ""
+    trait_standardErrors_500:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/standarderror"
+      description: ""
+  schemas:
+    shared-user:
+      properties:
+        "":
+          type: string
+        username:
+          type: string
+      title: Shared User
+      type: object
+    standarderror: {}
+  securitySchemes:
+    Authorization:
+      in: header
+      name: Authorization
+      type: apiKey

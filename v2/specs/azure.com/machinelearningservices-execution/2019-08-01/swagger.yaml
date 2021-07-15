@@ -1,0 +1,728 @@
+swagger: "2.0"
+schemes:
+  - https
+host: azure.local
+info:
+  title: Execution Service
+  version: 2019-08-01
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/machinelearningservices/data-plane/Microsoft.MachineLearningServices/preview/2019-08-01/execution.json
+      version: "2.0"
+  x-preferred: false
+  x-providerName: azure.com
+  x-serviceName: machinelearningservices-execution
+  x-tags:
+    - Azure
+    - Microsoft
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+security:
+  - azure_auth:
+      - user_impersonation
+parameters:
+  resourceGroupNameParameter:
+    description: The Name of the resource group in which the workspace is located.
+    in: path
+    name: resourceGroupName
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  subscriptionIdParameter:
+    description: The Azure Subscription ID.
+    format: uuid
+    in: path
+    name: subscriptionId
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  workspaceNameParameter:
+    description: The name of the workspace.
+    in: path
+    name: workspaceName
+    required: true
+    type: string
+    x-ms-parameter-location: method
+tags: []
+paths:
+  "/execution/v1.0/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/experiments/{experimentName}/runId/{runId}/cancel":
+    post:
+      consumes: []
+      description: Cancels a run within an experiment.
+      operationId: Execution_CancelRunWithUri
+      parameters:
+        - $ref: "#/parameters/subscriptionIdParameter"
+        - $ref: "#/parameters/resourceGroupNameParameter"
+        - $ref: "#/parameters/workspaceNameParameter"
+        - description: The experiment name.
+          in: path
+          name: experimentName
+          required: true
+          type: string
+        - description: The id of the run to cancel.
+          in: path
+          name: runId
+          pattern: ^[a-zA-Z0-9][\w-]{0,255}$
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: The run was successfully cancelled.
+          schema:
+            $ref: "#/definitions/StartRunResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Cancel a run.
+      tags:
+        - Execution
+      x-ms-examples:
+        Cancel a run with URI:
+          parameters:
+            dnsSuffix: api.azureml.ms
+            experimentName: demo_experiment
+            region: eastus
+            resourceGroupName: demo_resource_group
+            runId: demorun_15501234342_0
+            subscriptionId: 00000000-0000-0000-0000-000000000000
+            workspaceName: demo_workspace
+          responses:
+            "200":
+              body:
+                runId: demorun_15501234342_0
+  "/execution/v1.0/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/experiments/{experimentName}/snapshotrun":
+    post:
+      consumes:
+        - application/json
+      description: "Starts an experiment run on the remote compute target using the provided definition.json file to define the run.\r
+
+        \            The code for the run is retrieved using the snapshotId in definition.json."
+      operationId: Execution_StartSnapshotRun
+      parameters:
+        - $ref: "#/parameters/subscriptionIdParameter"
+        - $ref: "#/parameters/resourceGroupNameParameter"
+        - $ref: "#/parameters/workspaceNameParameter"
+        - description: The experiment name.
+          in: path
+          name: experimentName
+          required: true
+          type: string
+        - description: A JSON run definition structure.
+          in: body
+          name: definition
+          required: true
+          schema:
+            $ref: "#/definitions/RunDefinition"
+        - description: A run id. If not supplied a run id will be created automatically.
+          in: query
+          name: runId
+          pattern: ^[a-zA-Z0-9][\w-]{0,255}$
+          required: false
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: A snapshot run was successfully started.
+          schema:
+            $ref: "#/definitions/StartRunResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Start a run from a snapshot on a remote compute target.
+      tags:
+        - Execution
+      x-ms-examples:
+        Start a snapshot run:
+          parameters:
+            definition:
+              configuration:
+                arguments:
+                  - "234"
+                communicator: None
+                environment:
+                  docker:
+                    baseImage: mcr.microsoft.com/azureml/base:0.2.2
+                  python:
+                    condaDependencies:
+                      dependencies:
+                        - python=3.6.2
+                        - pip:
+                            - azureml-defaults
+                      name: project_environment
+                    interpreterPath: python
+                    userManagedDependencies: false
+                framework: Python
+                history: {}
+                maxRunDurationSeconds: 1200
+                nodeCount: 1
+                script: findsquare.py
+                target: batchai
+              snapshotId: 00000000-0000-0000-0000-000000000000
+            dnsSuffix: api.azureml.ms
+            experimentName: demo_experiment
+            region: eastus
+            resourceGroupName: demo_resource_group
+            subscriptionId: 00000000-0000-0000-0000-000000000000
+            workspaceName: demo_workspace
+          responses:
+            "200":
+              body:
+                runId: demorun_15501234342_0
+  "/execution/v1.0/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/experiments/{experimentName}/startlocalrun":
+    post:
+      consumes:
+        - application/json
+      description: "Starts an experiment run using the provided definition.json file to define the run.\r
+
+        \            The source code and configuration is defined in a zip archive in project.zip."
+      operationId: Execution_StartLocalRun
+      parameters:
+        - $ref: "#/parameters/subscriptionIdParameter"
+        - $ref: "#/parameters/resourceGroupNameParameter"
+        - $ref: "#/parameters/workspaceNameParameter"
+        - description: The experiment name.
+          in: path
+          name: experimentName
+          required: true
+          type: string
+        - description: A JSON run definition structure.
+          in: body
+          name: definition
+          required: true
+          schema:
+            $ref: "#/definitions/RunDefinition"
+        - description: A run id. If not supplied a run id will be created automatically.
+          in: query
+          name: runId
+          pattern: ^[a-zA-Z0-9][\w-]{0,255}$
+          required: false
+          type: string
+      produces:
+        - application/json
+        - application/octet-stream
+      responses:
+        "200":
+          description: File Response
+          schema:
+            format: byte
+            type: file
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Start a run on a local machine.
+      tags:
+        - Execution
+      x-ms-examples:
+        Start a local run:
+          parameters:
+            definition:
+              configuration:
+                arguments:
+                  - "234"
+                communicator: None
+                environment:
+                  docker:
+                    baseImage: mcr.microsoft.com/azureml/base:0.2.2
+                  python:
+                    condaDependencies:
+                      dependencies:
+                        - python=3.6.2
+                        - pip:
+                            - azureml-defaults
+                      name: project_environment
+                    interpreterPath: python
+                    userManagedDependencies: false
+                framework: Python
+                history: {}
+                maxRunDurationSeconds: 1200
+                nodeCount: 1
+                script: findsquare.py
+                target: batchai
+              snapshotId: 00000000-0000-0000-0000-000000000000
+            dnsSuffix: api.azureml.ms
+            experimentName: demo_experiment
+            region: eastus
+            resourceGroupName: demo_resource_group
+            subscriptionId: 00000000-0000-0000-0000-000000000000
+            workspaceName: demo_workspace
+          responses:
+            "200":
+              schema:
+                format: byte
+                type: file
+  "/execution/v1.0/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.MachineLearningServices/workspaces/{workspaceName}/experiments/{experimentName}/startrun":
+    post:
+      consumes:
+        - multipart/form-data
+      description: "Starts an experiment run using the provided definition.json file to define the run.\r
+
+        \            The source code and configuration is defined in a zip archive in project.zip."
+      operationId: Execution_StartRun
+      parameters:
+        - $ref: "#/parameters/subscriptionIdParameter"
+        - $ref: "#/parameters/resourceGroupNameParameter"
+        - $ref: "#/parameters/workspaceNameParameter"
+        - description: The experiment name.
+          in: path
+          name: experimentName
+          required: true
+          type: string
+        - description: The JSON file containing the RunDefinition
+          in: formData
+          name: runDefinitionFile
+          required: true
+          type: file
+        - description: The zip archive of the project folder containing the source code to use for the run.
+          in: formData
+          name: projectZipFile
+          required: true
+          type: file
+        - description: A run id. If not supplied a run id will be created automatically.
+          in: query
+          name: runId
+          pattern: ^[a-zA-Z0-9][\w-]{0,255}$
+          required: false
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: A run was successfully started.
+          schema:
+            $ref: "#/definitions/StartRunResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      summary: Start a run on a remote compute target.
+      tags:
+        - Execution
+      x-ms-examples:
+        Start a run:
+          parameters:
+            dnsSuffix: api.azureml.ms
+            experimentName: demo_experiment
+            projectZipFile: multipart-form-data
+            region: eastus
+            resourceGroupName: demo_resource_group
+            runDefinitionFile: multipart-form-data
+            subscriptionId: 00000000-0000-0000-0000-000000000000
+            workspaceName: demo_workspace
+          responses:
+            "200":
+              body:
+                runId: demorun_15501234342_0
+definitions:
+  ContainerRegistry:
+    properties:
+      address:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    type: object
+  DataReferenceConfiguration:
+    description: A class for managing DataReferenceConfiguration.
+    properties:
+      dataStoreName:
+        description: The name of the data store.
+        example: myblobstore
+        type: string
+      mode:
+        description: Operation on the datastore, mount, download, upload.
+        enum:
+          - Mount
+          - Download
+          - Upload
+        example: Mount
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: DataStoreMode
+      overwrite:
+        description: Whether to overwrite the data if existing.
+        type: boolean
+      pathOnCompute:
+        description: The path on the compute target.
+        type: string
+      pathOnDataStore:
+        description: Relative path on the datastore.
+        example: /images/validation
+        type: string
+    type: object
+  DockerSection:
+    properties:
+      arguments:
+        description: Extra arguments to the Docker run command.
+        items:
+          type: string
+        type: array
+        uniqueItems: false
+      baseDockerfile:
+        description: Base Dockerfile used for Docker-based runs. Mutually exclusive with BaseImage.
+        example: "FROM ubuntu:latest\r
+
+          RUN echo \"Hello world!\""
+        type: string
+      baseImage:
+        description: Base image used for Docker-based runs. Mutually exclusive with BaseDockerfile.
+        example: ubuntu:latest
+        type: string
+      baseImageRegistry:
+        $ref: "#/definitions/ContainerRegistry"
+        description: Image registry that contains the base image.
+      enabled:
+        description: Set true to perform this run inside a Docker container.
+        type: boolean
+      sharedVolumes:
+        description: Set false to disable AzureML's usage of the Docker shared volumes feature to work around bugs in certain versions of Docker for Windows.
+        type: boolean
+    type: object
+  EnvironmentDefinition:
+    properties:
+      docker:
+        $ref: "#/definitions/DockerSection"
+        description: The definition of a Docker container.
+      environmentVariables:
+        additionalProperties:
+          type: string
+        description: Definition of environment variables to be defined in the environment.
+        type: object
+      inferencingStackVersion:
+        description: 'The inferencing stack version added to the image. To avoid adding an inferencing stack, do not set this value. Valid values: "latest".'
+        example: latest
+        type: string
+      name:
+        description: The name of the environment.
+        example: mydevenvironment
+        type: string
+      python:
+        $ref: "#/definitions/PythonSection"
+        description: Settings for a Python environment.
+      spark:
+        $ref: "#/definitions/SparkSection"
+        description: The configuration for a Spark environment.
+      version:
+        description: The environment version.
+        example: "1"
+        type: string
+    type: object
+  ErrorDetails:
+    description: The error details.
+    properties:
+      code:
+        description: The error code.
+        type: string
+      message:
+        description: The error message.
+        type: string
+      target:
+        description: The target of the error (e.g., the name of the property in error).
+        type: string
+    type: object
+  ErrorResponse:
+    description: The error response.
+    properties:
+      correlation:
+        additionalProperties:
+          type: string
+        description: Dictionary containing correlation details for the error.
+        type: object
+      environment:
+        description: The hosting environment.
+        type: string
+      error:
+        $ref: "#/definitions/RootError"
+        description: The top level error that occurred.
+      location:
+        description: The Azure region.
+        type: string
+      time:
+        description: The time in UTC.
+        format: date-time
+        type: string
+    type: object
+  HdiConfiguration:
+    properties:
+      yarnDeployMode:
+        enum:
+          - None
+          - Client
+          - Cluster
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: YarnDeployMode
+    type: object
+  HistoryConfiguration:
+    properties:
+      directoriesToWatch:
+        description: The list of directories to monitor and upload files from.
+        example: '["logs", "outputs"]'
+        items:
+          type: string
+        type: array
+        uniqueItems: false
+      outputCollection:
+        description: Set to true to collect outputs and store in run history.
+        type: boolean
+    type: object
+  InnerErrorResponse:
+    description: A nested structure of errors.
+    properties:
+      code:
+        description: The error code.
+        type: string
+      innerError:
+        $ref: "#/definitions/InnerErrorResponse"
+        description: A nested list of inner errors. When evaluating errors, clients MUST traverse through all of the nested “innerErrors” and choose the deepest one that they understand.
+    type: object
+  MpiConfiguration:
+    properties:
+      processCountPerNode:
+        description: Number of processes per node.
+        example: "2"
+        format: int32
+        type: integer
+    type: object
+  PythonSection:
+    properties:
+      baseCondaEnvironment:
+        type: string
+      condaDependencies:
+        type: object
+      interpreterPath:
+        description: The python interpreter path. This is only used when user_managed_dependencies=True.
+        type: string
+      userManagedDependencies:
+        description: True means that AzureML reuses an existing python environment; False means that AzureML will create a python environment based on the Conda dependencies specification.
+        type: boolean
+    type: object
+  RootError:
+    description: The root error.
+    properties:
+      code:
+        description: "The service-defined error code. Supported error codes: ServiceError, UserError, ValidationError, AzureStorageError, TransientError, RequestThrottled."
+        type: string
+      details:
+        description: The related errors that occurred during the request.
+        items:
+          $ref: "#/definitions/ErrorDetails"
+        type: array
+        uniqueItems: false
+      innerError:
+        $ref: "#/definitions/InnerErrorResponse"
+        description: A nested list of inner errors. When evaluating errors, clients MUST traverse through all of the nested “innerErrors” and choose the deepest one that they understand.
+      message:
+        description: A human-readable representation of the error.
+        type: string
+      target:
+        description: The target of the error (e.g., the name of the property in error).
+        type: string
+    type: object
+  RunConfiguration:
+    properties:
+      arguments:
+        description: Command line arguments for the python script file.
+        example: '["234"]'
+        items:
+          type: string
+        type: array
+        uniqueItems: false
+      communicator:
+        description: "The supported communicators are None, ParameterServer, OpenMpi, and IntelMpi Keep in mind that OpenMpi requires a custom image with OpenMpi installed.\r
+
+          Use ParameterServer or OpenMpi for AmlCompute clusters. Use IntelMpi for distributed training jobs."
+        enum:
+          - None
+          - ParameterServer
+          - Gloo
+          - Mpi
+          - Nccl
+        example: None
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: Communicator
+      dataReferences:
+        additionalProperties:
+          $ref: "#/definitions/DataReferenceConfiguration"
+        description: All the data sources are made available to the run during execution based on each configuration.
+        type: object
+      environment:
+        $ref: "#/definitions/EnvironmentDefinition"
+        description: "The environment definition, This field configures the python environment.\r
+
+          It can be configured to use an existing Python environment or configured to setup a temp environment for the experiment.\r
+
+          The definition is also responsible for setting the required application dependencies."
+      framework:
+        description: The supported frameworks are Python, PySpark, CNTK, TensorFlow, and PyTorch. Use Tensorflow for AmlCompute clusters, and Python for distributed training jobs.
+        enum:
+          - Python
+          - PySpark
+          - Cntk
+          - TensorFlow
+          - PyTorch
+        example: Python
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: Framework
+      hdi:
+        $ref: "#/definitions/HdiConfiguration"
+        description: "This attribute takes effect only when the target is set to an Azure HDI compute.\r
+
+          The HDI Configuration is used to set the YARN deployment mode. It is defaulted to cluster mode."
+      history:
+        $ref: "#/definitions/HistoryConfiguration"
+        description: This section is used to disable and enable experiment history logging features.
+      jobName:
+        description: "This is primarily intended for notebooks to override the default job name.\r
+
+          Defaults to ArgumentVector[0] if not specified."
+        example: FindSquaresJob
+        type: string
+      maxRunDurationSeconds:
+        description: "Maximum allowed time for the run. The system will attempt to automatically cancel the run if it took longer than this value.\r
+
+          MaxRunDurationSeconds=null means infinite duration."
+        example: "84000"
+        format: int64
+        type: integer
+      mpi:
+        $ref: "#/definitions/MpiConfiguration"
+        description: "The attribute is used to configure the distributed MPI job parameters.\r
+
+          This attribute takes effect only when the framework is set to Python, and the communicator to OpenMpi or IntelMpi.\r
+
+          AmlCompute is the only supported compute type for this configuration."
+      nodeCount:
+        description: Number of compute nodes to run the job on. Only applies to AMLCompute.
+        example: "1"
+        format: int32
+        type: integer
+      script:
+        description: The relative path to the python script file. The file path is relative to the source_directory passed to submit run.
+        example: findsquare.py
+        type: string
+      spark:
+        $ref: "#/definitions/SparkConfiguration"
+        description: When the platform is set to Pyspark, The spark configuration is used to set the default sparkconf for the submitted job.
+      target:
+        description: Target refers to compute where the job is scheduled for execution. The default target is "local" referring to the local machine.
+        example: amlcompute
+        type: string
+      tensorflow:
+        $ref: "#/definitions/TensorflowConfiguration"
+        description: "The attribute is used to configure the distributed tensorflow parameters.\r
+
+          This attribute takes effect only when the framework is set to TensorFlow, and the communicator to ParameterServer.\r
+
+          AmlCompute is the only supported compute for this configuration."
+    type: object
+  RunDefinition:
+    properties:
+      configuration:
+        $ref: "#/definitions/RunConfiguration"
+        description: "Fully specified configuration information for the run. Even when that information\r
+
+          is contained in configuration files within the project folder, the client collapses\r
+
+          it all and inlines it into the run definition when submitting a run."
+      parentRunId:
+        description: "Specifies that the run history entry for this execution should be scoped within\r
+
+          an existing run as a child. Defaults to null, meaning the run has no parent.\r
+
+          This is intended for first-party service integration, not third-party API users."
+        example: myexperiment_155000000001_0
+        type: string
+      runType:
+        description: Specifies the runsource property for this run. The default value is "experiment" if not specified.
+        example: experiment
+        type: string
+      snapshotId:
+        description: "Snapshots are user project folders that have been uploaded to the cloud for subsequent\r
+
+          execution. This field is required when executing against cloud-based compute targets\r
+
+          unless the run submission was against the API endpoint that takes a zipped project folder\r
+
+          inline with the request."
+        format: uuid
+        type: string
+    type: object
+  SparkConfiguration:
+    properties:
+      configuration:
+        additionalProperties:
+          type: string
+        type: object
+    type: object
+  SparkMavenPackage:
+    properties:
+      artifact:
+        type: string
+      group:
+        type: string
+      version:
+        type: string
+    type: object
+  SparkSection:
+    properties:
+      packages:
+        description: The Spark packages to use.
+        items:
+          $ref: "#/definitions/SparkMavenPackage"
+        type: array
+        uniqueItems: false
+      precachePackages:
+        description: Whether to precache the packages.
+        type: boolean
+      repositories:
+        description: The list of spark repositories.
+        items:
+          type: string
+        type: array
+        uniqueItems: false
+    type: object
+  StartRunResult:
+    description: Contains the details of a run.
+    properties:
+      runId:
+        description: The identifier for a run.
+        example: myexperiment_155000000001_0
+        type: string
+    required:
+      - runId
+    type: object
+  TensorflowConfiguration:
+    properties:
+      parameterServerCount:
+        description: Number of parameter servers.
+        example: "1"
+        format: int32
+        type: integer
+      workerCount:
+        description: The number of workers.
+        example: "2"
+        format: int32
+        type: integer
+    type: object

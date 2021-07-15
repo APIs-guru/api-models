@@ -1,0 +1,177 @@
+swagger: "2.0"
+schemes:
+  - https
+host: management.azure.com
+info:
+  description: Provides create, read, update and delete functionality for Azure SQL Database resources including servers, databases, elastic pools, recommendations, and operations.
+  title: Azure SQL Database
+  version: 2014-04-01
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/sql/resource-manager/Microsoft.Sql/stable/2014-04-01/checkNameAvailability.json
+      version: "2.0"
+  x-providerName: azure.com
+  x-serviceName: sql-checkNameAvailability
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    description: Azure Active Directory OAuth2 Flow
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+parameters:
+  DatabaseExpandParameter:
+    description: "A comma separated list of child objects to expand in the response. Possible properties: serviceTierAdvisors, transparentDataEncryption."
+    in: query
+    name: $expand
+    required: false
+    type: string
+    x-ms-parameter-location: method
+  ServerNameParameter:
+    description: The name of the server.
+    in: path
+    name: serverName
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  TransparentDataEncryptionNameParameter:
+    description: The name of the transparent data encryption configuration.
+    enum:
+      - current
+    in: path
+    name: transparentDataEncryptionName
+    required: true
+    type: string
+    x-ms-enum:
+      modelAsString: true
+      name: TransparentDataEncryptionName
+    x-ms-parameter-location: method
+paths:
+  "/subscriptions/{subscriptionId}/providers/Microsoft.Sql/checkNameAvailability":
+    post:
+      description: Determines whether a resource can be created with the specified name.
+      operationId: Servers_CheckNameAvailability
+      parameters:
+        - description: The API version to use for the request.
+          in: query
+          name: api-version
+          required: true
+          type: string
+          x-ms-parameter-location: client
+        - description: The subscription ID that identifies an Azure subscription.
+          in: path
+          name: subscriptionId
+          required: true
+          type: string
+          x-ms-parameter-location: client
+        - description: The parameters to request for name availability.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/CheckNameAvailabilityRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/CheckNameAvailabilityResponse"
+      tags:
+        - Servers
+      x-ms-examples:
+        Check for a server name that already exists:
+          parameters:
+            api-version: 2014-04-01
+            parameters:
+              name: server1
+              type: Microsoft.Sql/servers
+            subscriptionId: 00000000-1111-2222-3333-444444444444
+          responses:
+            "200":
+              body:
+                available: false
+                message: Specified server name is already used
+                name: server1
+                reason: AlreadyExists
+        Check for a server name that is available:
+          parameters:
+            api-version: 2014-04-01
+            parameters:
+              name: server1
+              type: Microsoft.Sql/servers
+            subscriptionId: 00000000-1111-2222-3333-444444444444
+          responses:
+            "200":
+              body:
+                available: true
+                message: null
+                name: server1
+                reason: null
+        Check for a server name that is invalid:
+          parameters:
+            api-version: 2014-04-01
+            parameters:
+              name: SERVER1
+              type: Microsoft.Sql/servers
+            subscriptionId: 00000000-1111-2222-3333-444444444444
+          responses:
+            "200":
+              body:
+                available: false
+                message: Specified server name contains unsupported characters or is too long. Server name must be no longer than 63 characters long, contain only lower-case characters or digits, cannot contain '.' or '_' characters and can't start or end with '-' character.
+                name: SERVER1
+                reason: Invalid
+definitions:
+  CheckNameAvailabilityRequest:
+    description: A request to check whether the specified name for a resource is available.
+    properties:
+      name:
+        description: The name whose availability is to be checked.
+        type: string
+      type:
+        description: The type of resource that is used as the scope of the availability check.
+        enum:
+          - Microsoft.Sql/servers
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: CheckNameAvailabilityResourceType
+    required:
+      - name
+      - type
+  CheckNameAvailabilityResponse:
+    description: A response indicating whether the specified name for a resource is available.
+    properties:
+      available:
+        description: True if the name is available, otherwise false.
+        readOnly: true
+        type: boolean
+      message:
+        description: A message explaining why the name is unavailable. Will be null if the name is available.
+        readOnly: true
+        type: string
+      name:
+        description: The name whose availability was checked.
+        readOnly: true
+        type: string
+      reason:
+        description: The reason code explaining why the name is unavailable. Will be null if the name is available.
+        enum:
+          - Invalid
+          - AlreadyExists
+        readOnly: true
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: CheckNameAvailabilityReason

@@ -1,0 +1,1559 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.simplyrets.com
+basePath: /
+info:
+  description: |
+    The SimplyRETS API is an exciting step towards making it easier for
+    developers and real estate agents to build something awesome with
+    real estate data!
+
+    The documentation below makes live requests to our API using the
+    trial data. To get set up with the API using live MLS data, you
+    must have RETS credentials from your MLS, which you can then use to
+    create an app with SimplyRETS. For more information on that
+    process, please see our [FAQ](https://simplyrets.com/faq), [Getting
+    Started](https://simplyrets.com/blog/getting-set-up.html) page, or
+    [contact us](https://simplyrets.com/\#home-contact).
+
+    Below you'll find the API endpoints, query parameters, response bodies,
+    and other information about using the SimplyRETS API. You can run
+    queries by clicking the 'Try it Out' button at the bottom of each
+    section.
+
+    ### Authentication
+    The SimplyRETS API uses Basic Authentication. When you create an
+    app, you'll get a set of API credentials to access your
+    listings. If you're trying out the test data, you can use
+    `simplyrets:simplyrets` for connecting to the API.
+
+    ### Media Types
+    The SimplyRETS API uses the `Accept` header to allow clients to
+    control media types (content versions). We maintain backwards
+    compatibility with API clients by allowing them to specify a
+    content version. We highly recommend setting and explicity media
+    type when your application reaches production. Both the structure
+    and content of our API response bodies is subject to change so we
+    can add new features while respecting the stability of applications
+    which have already been developed.
+
+    To always use the latest SimplyRETS content version, simply use
+    `application/json` in your application `Accept` header.
+
+    If you want to pin your clients media type to a specific version,
+    you can use the vendor-specific SimplyRETS media type, e.g.
+    `application/vnd.simplyrets-v0.1+json"`
+
+    To view all valid content-types for making an `OPTIONS`, make a
+    request to the SimplyRETS api root
+
+    `curl -XOPTIONS -u simplyrets:simplyrets https://api.simplyrets.com/`
+
+    The default media types used in our API responses may change in the
+    future. If you're building an application and care about the
+    stability of the API, be sure to request a specific media type in the
+    Accept header as shown in the examples below.
+
+    The wordpress plugin automatically sets the `Accept` header for the
+    compatible SimplyRETS media types.
+
+    ### Pagination
+
+    To paginate through listings, start your query with these
+    parameters: 'limit=500&lastId=0'. The 'lastId' is the important
+    part, you can use any limit up to 500. When you receive the
+    response from the API with the results, check the 'Link' header for
+    the 'next' link. That link is pre-built to access the next 'page'
+    of listings. Alternatively, you can use the last listing's 'mlsId'
+    from the previous request and use that in the next query. For
+    example:
+
+    First query:
+
+    curl -u username:password 'https://api.simplyrets.com/properties?limit=500&lastId=0'
+
+    If the 'mlsId' in the last listing of the results is '1234567', then the next query will be:
+
+    curl -u username:password 'https://api.simplyrets.com/properties?limit=500&lastId=1234567'
+
+    ...and so one until you have reached the final page of listings.
+
+    There a few pieces of useful information about each request stored
+    in the HTTP Headers:
+
+    - `X-Total-Count` shows you the total amount of listings that match
+      your current query.
+    - `Link` contains pre-built pagination links for accessing the next
+    'page' of listings that match your query.
+
+    ### RETS Vendor Compliance
+
+    Many RETS vendors have strict requirements for showing disclaimers
+    with specific information embedded. For example, in many areas it's
+    required to show the timestamp of the time the listings were
+    refreshed inside a disclaimer or on a listing page.
+
+    The timestamp of the last listing refresh timestamp can be found in
+    one of two spots:
+
+    - The `X-SimplyRETS-LastUpdate` header from `GET /properties` or `GET /properties/{mlsId}`
+
+    - Calling the API root `/` or properties api endpoint `/properties`
+      with an OPTIONS request
+
+      - `OPTIONS /`
+
+        This request will show the last update timestamp for all RETS
+        vendors associated with your application. Look for the
+        `updates` list in the JSON response.
+
+      - `OPTIONS /properties`
+
+        Using this request, look for the `lastUpdate` field in the JSON
+        response.
+  title: SimplyRETS
+  version: 1.0.0
+  x-origin:
+    - format: swagger
+      url: https://docs.simplyrets.com/api/assets/resources.json
+      version: "2.0"
+  x-providerName: simplyrets.com
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+consumes:
+  - application/json
+produces:
+  - application/json
+  - application/vnd.simplyrets-v0.1+json
+securityDefinitions:
+  basicAuth:
+    description: HTTP Basic Authentication. Works over `HTTPS` only
+    type: basic
+paths:
+  /openhouses:
+    get:
+      description: |
+        This is the main endpoint for accessing openhouses.
+      parameters:
+        - collectionFormat: multi
+          description: |
+            Request listings by a specific property type. This
+            defaults to Residential, and you can only specify one type
+            in a single query.
+          enum:
+            - residential
+            - rental
+            - multifamily
+            - condominium
+            - commercial
+            - land
+            - farm
+          in: query
+          name: type
+          required: false
+          type: string
+        - description: |
+            Request openhouses for a specific `listingId`.
+          in: query
+          name: listingId
+          required: false
+          type: string
+        - collectionFormat: multi
+          description: |
+            Filter the openhouses returned by a list of valid cities.
+
+            The `cities` query parameter is case-insensitive.
+
+            The list of `cities` provided by your RETS vendor can be
+            seen by sending an `OPTIONS` request to the `/properties`
+            endpoint:
+
+            `curl -XOPTIONS -u simplyrets:simplyrets https://api.simplyrets.com/openhouses`
+          in: query
+          items:
+            type: string
+          name: cities
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: |
+            Filter the listings returned by brokerage with a Broker ID.
+            You can specific multiple broker parameters. Note, the Broker
+            ID is provided by your MLS.
+          in: query
+          items:
+            type: string
+          name: brokers
+          required: false
+          type: array
+        - description: |
+            Filter the listings returned by an agent ID.  Note, the
+            Agent ID is provided by your MLS.
+          in: query
+          name: agent
+          required: false
+          type: string
+        - description: |
+            Filter listings by a minimum price.
+          in: query
+          name: minprice
+          required: false
+          type: integer
+        - description: Scheduled date and time of the open house showing
+          format: date-time
+          in: query
+          name: startdate
+          type: string
+        - description: |
+            Increase the offset parameter by the limit to go to the
+            next "page" of listings. Also take a look at the Link HTTP
+            Header for pre-built pagination.
+
+            *NOTE:* Use the `lastId` parameter for pagination.
+          in: query
+          name: offset
+          required: false
+          type: integer
+        - description: |
+            Used as a cursor for pagination.
+          in: query
+          name: lastId
+          required: false
+          type: integer
+        - description: |
+            Set the number of listings to return in the response.
+            This defaults to 20 listings, and can be a maximum of 500.
+            To paginate through to the next page of listings, take a
+            look at the `offset` parameter, or the Link in the HTTP
+            Header.
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - description: |
+            Sort the response by a specific field. Values starting
+            with a minus (-) denote descending order, while the others
+            are ascending.
+          enum:
+            - listprice
+            - -listprice
+            - listdate
+            - -listdate
+            - beds
+            - -beds
+            - baths
+            - -baths
+          in: query
+          name: sort
+          required: false
+          type: string
+        - collectionFormat: multi
+          description: |
+            Include a extra fields which are not in the default
+            response body
+            - 'association' includes additional HOA data
+            - 'agreement' information on the listing agreement
+            - 'garageSpaces' additional garage data
+            - 'maintenanceExpense' data on maintenance expenses
+            - 'parking' additional parking data
+            - 'pool' includes an additional pool description
+            - 'taxAnnualAmount' include the annual tax amount
+            - 'taxYear' include the tax year data
+            - 'rooms' include parameter will include
+               any additional rooms as a list.
+
+            Note that your MLS must provide these fields in their RETS
+            data for them to be available in the API response.
+
+            In the future, fields which require an 'include' may become available
+            by default.
+          in: query
+          items:
+            type: string
+          name: include
+          required: false
+          type: array
+      responses:
+        "200":
+          description: |
+            Will send `Authenticated` if authentication is succesful,
+            otherwise it will send `Unauthorized`.
+          schema:
+            items:
+              $ref: "#/definitions/OpenHouse"
+            type: array
+        "400":
+          description: Will send `Bad Request`.
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Will send `Authentication Required`.
+          schema:
+            $ref: "#/definitions/Error"
+        "403":
+          description: Will send `Authorization Required`.
+          schema:
+            $ref: "#/definitions/Error"
+        "429":
+          description: |
+            Will send `Too Many Requests`. Please see our Service
+            Level Agreement for more information on Request Rates and
+            Acceptable Use.
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Will send `Internal Server Error`.
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+        - basicAuth: []
+      summary: The SimplyRETS OpenHouses API
+  "/openhouses/{openHouseKey}":
+    get:
+      description: |
+        Use this endpoint for accessing a single OpenHouse.
+      parameters:
+        - default: 189018
+          description: A unique OpenHouse identification key
+          format: int64
+          in: path
+          name: openHouseKey
+          required: true
+          type: integer
+        - collectionFormat: multi
+          description: |
+            Include a extra fields which are not in the default
+            response body
+            - 'association' includes additional HOA data
+            - 'agreement' information on the listing agreement
+            - 'garageSpaces' additional garage data
+            - 'maintenanceExpense' data on maintenance expenses
+            - 'parking' additional parking data
+            - 'pool' includes an additional pool description
+            - 'taxAnnualAmount' include the annual tax amount
+            - 'taxYear' include the tax year data
+            - 'rooms' include parameter will include
+               any additional rooms as a list.
+
+            Note that your MLS must provide these fields in their RETS
+            data for them to be available in the API response.
+
+            In the future, fields which require an 'include' may
+            become available by default.
+          in: query
+          items:
+            type: string
+          name: include
+          required: false
+          type: array
+      responses:
+        "200":
+          description: |
+            Will send `Authenticated` if authentication is succesful,
+            otherwise it will send `Unauthorized`
+          schema:
+            $ref: "#/definitions/OpenHouse"
+        "400":
+          description: Will send `Bad Request`.
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Will send `Authentication Required`.
+          schema:
+            $ref: "#/definitions/Error"
+        "403":
+          description: Will send `Authorization Required`.
+          schema:
+            $ref: "#/definitions/Error"
+        "429":
+          description: |
+            Will send `Too Many Requests`. Please see our Service
+            Level Agreement for more information on Request Rates and
+            Acceptable Use.
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Will send `Internal Server Error`.
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+        - basicAuth: []
+      summary: Single OpenHouse Endpoint
+  /properties:
+    get:
+      description: |
+        This is the main endpoint for accessing your properties. View
+        all of the available query parameters and make requests below!
+        The API uses Basic Authentication, which most HTTP libraries
+        will handle for you. To use the test data (which is what this
+        pages uses), you can use the api key `simplyrets` and secret
+        `simplyrets`. Note that these test listings are not live MLS
+        listings but the data, query parameters, and response bodies
+        will all work the same.
+      parameters:
+        - description: |
+            A textual keyword search. This parameter will search  the following
+            fields, when available:
+              - listingId (This does _not_ search the `mlsId` field in the SimplyRETS response body)
+              - street number
+              - street name
+              - mls area (major)
+              - city
+              - subdivision name
+              - postal code
+          in: query
+          name: q
+          required: false
+          type: string
+        - collectionFormat: multi
+          description: |
+            Request listings by a specific status. This parameter
+            defaults to active and you can specify multiple statuses
+            in a single query.
+
+            Listing statuses depend on your MLS's availability. Below is
+            a brief description of each status with possible synonyms which
+            may map to your MLS-specific statuses
+            - *Active*: Active Listing which is still on the market
+            - *ActiveUnderContract*: An offer has been accepted but the listing is still on market. Synonyms: Accepting Backup Offers, Backup Offer, Active With Accepted. Synonyms: Offer, Backup, Contingent
+            - *Pending*: An offer has been accepted and the listing is no longer on market. Synonyms: Offer Accepted, Under Contract
+            - *Hold*: The listing has been withdrawn from the market, but a contract
+              still exists between the seller and the listing member. Synonyms: Hold, Hold Do Not Show, Temp Off Market
+            - *Withdrawn*: The listing has been withdrawn from the market, but a contract
+              still exists between the seller and the listing member. Synonyms: Hold, Hold Do Not Show, Temp Off Market
+            - *Closed*: The purchase agreement has been fulfilled or the lease
+              agreement has been executed. Synonyms: Sold, Leased, Rented, Closed Sale
+            - *Expired*: The listing contract has expired
+            - *Delete*: The listing contract was never valid or other reason for the contract to be nullified. Synonyms: Kill, Zap
+            - *Incomplete*: The listing has not yet be completely entered and is not yet
+              published in the MLS. Synonyms: Draft, Partially Complted
+            - *ComingSoon*
+          enum:
+            - Active
+            - Pending
+            - Closed
+            - ActiveUnderContract
+            - Hold
+            - Withdrawn
+            - Expired
+            - Delete
+            - Incomplete
+            - ComingSoon
+          in: query
+          items:
+            type: string
+          name: status
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: |
+            Request listings by a specific property type. This
+            defaults to Residential and Rental. You can specify
+            multiple property types in a single query.
+          enum:
+            - residential
+            - rental
+            - multifamily
+            - condominium
+            - commercial
+            - land
+            - farm
+          in: query
+          items:
+            type: string
+          name: type
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: |
+            Request listings by a specific property sub type.
+
+            *NOTE* not all sub type filters are available for all vendors.
+          enum:
+            - apartment
+            - boatslip
+            - singlefamilyresidence
+            - deededparking
+            - cabin
+            - condominium
+            - duplex
+            - manufacturedhome
+            - ownyourown
+            - quadruplex
+            - stockcooperative
+            - townhouse
+            - timeshare
+            - triplex
+            - manufacturedonland
+          in: query
+          items:
+            type: string
+          name: subtype
+          required: false
+          type: array
+        - description: |
+            Filter the listings returned by an agent ID.  Note, the
+            Agent ID is provided by your MLS.
+
+            The co-listing agent is not included in this query parameter.
+          in: query
+          name: agent
+          required: false
+          type: string
+        - collectionFormat: multi
+          description: |
+            Filter the listings returned by brokerage with a Broker
+            ID. For some MLS areas, this is the ListOfficeId (Listing
+            Office ID).  You can specific multiple broker
+            parameters. Note, this query parameter is only available
+            if a Broker ID is provided by your MLS.
+          in: query
+          items:
+            type: string
+          name: brokers
+          required: false
+          type: array
+        - description: |
+            Filter listings by a minimum price.
+          in: query
+          name: minprice
+          required: false
+          type: integer
+        - description: |
+            Filter listings by a maximum price
+          in: query
+          name: maxprice
+          required: false
+          type: integer
+        - description: |
+            Filter listings by a minimum area size in Sq Ft.
+          in: query
+          name: minarea
+          required: false
+          type: integer
+        - description: |
+            Filter listings by a maximum area size in Sq Ft.
+          in: query
+          name: maxarea
+          required: false
+          type: integer
+        - description: |
+            Filter listings by a minimum number of bathrooms.
+          in: query
+          name: minbaths
+          required: false
+          type: integer
+        - description: |
+            Filter listings by a maximum number of bathrooms.
+          in: query
+          name: maxbaths
+          required: false
+          type: integer
+        - description: |
+            Filter listings by a minimum number of bedrooms.
+          in: query
+          name: minbeds
+          required: false
+          type: integer
+        - description: |
+            Filter listings by a maximum number of bedrooms.
+          in: query
+          name: maxbeds
+          required: false
+          type: integer
+        - description: |
+            Filter listings by a maximum number of days on market.
+            _Note that your MLS must provide Days on Market data._
+          in: query
+          name: maxdom
+          required: false
+          type: integer
+        - description: |
+            Filter listings by a setting a minimum year built.
+          in: query
+          name: minyear
+          required: false
+          type: integer
+        - description: |
+            Set the number of listings to return in the response.
+            This defaults to 20 listings, and can be a maximum of 500.
+            To paginate through to the next page of listings, take a
+            look at the `offset` parameter, or the Link in the HTTP
+            Header.
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - description: |
+            Increase the offset parameter by the limit to go to the
+            next "page" of listings. Also take a look at the Link HTTP
+            Header for pre-built pagination.
+
+            *NOTE:* Use the `lastId` field to paginate response
+
+            *NOTE:* If you're offset is too high, you will receive an
+            `HTTP 400 offset too high` error message.
+          in: query
+          name: offset
+          required: false
+          type: integer
+        - description: |
+            Used as a cursor for pagination. When using `lastId`, the `sort` parameter
+            will not work.
+          in: query
+          name: lastId
+          required: false
+          type: integer
+        - description: |
+            Used to specify the vendor (MLS) to search from. This
+            parameter is required on multi-MLS apps, and you can only
+            query one vendor at a time. To get your vendor id's make
+            an OPTIONS request to https://api.simplyrets.com.
+
+            `curl -XOPTIONS https://api.simplyrets.com/properties`
+          in: query
+          name: vendor
+          required: false
+          type: string
+        - collectionFormat: multi
+          description: |
+            Filter the listings returned by postal codes / zip
+            code. You can specify multiple.
+          in: query
+          items:
+            type: string
+          name: postalCodes
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: |
+            Filter the listings by specific interior features.  You
+            can filter by multiple. For example, to filter trial listings
+            by multiple features you can use,
+            Return listings that are within a set of latitude
+            longitude coordinates. For example,
+
+            ```
+            Wet Bar
+            High Ceiling
+            ```
+
+            e.g. `https://simplyrets.com/services?features=Wet%20Bar&features=High%20Ceiling`
+
+            The list of `features` provided by your RETS vendor can be
+            seen by sending an `OPTIONS` request to the `/properties`
+            endpoint:
+
+            `curl -XOPTIONS -u simplyrets:simplyrets https://api.simplyrets.com/properties`
+          in: query
+          items:
+            type: string
+          name: features
+          required: false
+          type: array
+        - description: |
+            Query water/waterfront listings only. Specify `true` to
+            filter waterfront listings.
+
+            If you specify `water=true`, all listings with any `waterfront` value
+            will be queried.
+
+            If you specify `water=false`, listings which are **NOT** waterfront
+            listings will be queried.
+
+            If you specify `water=LAKE+NAME` or another valid value contained in
+            your feed, that value will be searched
+          in: query
+          name: water
+          required: false
+          type: string
+        - collectionFormat: multi
+          description: |
+            Filter the listings returned by specific neighborhoods and
+            subdivisions. You can specify multiple `neighborhoods` by
+            using the query parameter multiple times.
+
+            The `neighborhoods` query parameter is case-insensitive.
+
+            The list of `neighborhoods` provided by your RETS vendor can be
+            seen by sending an `OPTIONS` request to the `/properties`
+            endpoint:
+
+            `curl -XOPTIONS -u simplyrets:simplyrets https://api.simplyrets.com/properties`
+          in: query
+          items:
+            type: string
+          name: neighborhoods
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: |
+            Filter the listings returned by specific cities. You can
+            specify multiple `cities` query parameters.
+
+            The `cities` query parameter is case-insensitive.
+
+            The list of `cities` provided by your RETS vendor can be
+            seen by sending an `OPTIONS` request to the `/properties`
+            endpoint:
+
+            `curl -XOPTIONS -u simplyrets:simplyrets https://api.simplyrets.com/openhouses`
+          in: query
+          items:
+            type: string
+          name: cities
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: |
+            Filter the listings returned by specific counties. You can
+            specify multiple `counties` parameters.
+
+            The `counties` query parameter is case-insensitive.
+
+            The list of `counties` provided by your RETS vendor can be
+            seen by sending an `OPTIONS` request to the `/properties`
+            endpoint:
+
+            `curl -XOPTIONS -u simplyrets:simplyrets https://api.simplyrets.com/openhouses`
+          in: query
+          items:
+            type: string
+          name: counties
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: |
+            Return listings that are within a set of latitude
+            longitude coordinates. For example;
+            ```
+            29.723837,-95.69778
+            29.938275,-95.69778
+            29.938275,-95.32974
+            29.723837,-95.32974
+            ```
+            Note that some MLS's do not provide latitude and longitude
+            for their listings, which is required for this parameter
+            to work. In these cases, SimplyRETS offers a [Geocoding
+            Addon](https://simplyrets.com/services#geocoding).
+
+            Check out our
+            [blog post](https://simplyrets.com/blog/interactive-map-search.html)
+            on using the `points` parameter to build a map-based app
+            in javascript.
+          in: query
+          items:
+            type: string
+          name: points
+          required: false
+          type: array
+        - collectionFormat: multi
+          description: |
+            Include a extra fields which are not in the default
+            response body
+            - 'association' includes additional HOA data
+            - 'agreement' information on the listing agreement
+            - 'garageSpaces' additional garage data
+            - 'maintenanceExpense' data on maintenance expenses
+            - 'parking' additional parking data
+            - 'pool' includes an additional pool description
+            - 'taxAnnualAmount' include the annual tax amount
+            - 'taxYear' include the tax year data
+            - 'rooms' include parameter will include
+               any additional rooms as a list.
+
+            Note that your MLS must provide these fields in their RETS
+            data for them to be available in the API response.
+
+            In the future, fields which require an 'include' may become available
+            by default.
+          enum:
+            - association
+            - agreement
+            - garageSpaces
+            - maintenanceExpense
+            - parking
+            - pool
+            - rooms
+            - taxYear
+            - taxAnnualAmount
+          in: query
+          items:
+            type: string
+          name: include
+          required: false
+          type: array
+        - description: |
+            Sort the response by a specific field. Values starting
+            with a minus (-) denote descending order, while the others
+            are ascending.
+          enum:
+            - listprice
+            - -listprice
+            - listdate
+            - -listdate
+            - beds
+            - -beds
+            - baths
+            - -baths
+          in: query
+          name: sort
+          required: false
+          type: string
+        - description: |
+            When set to `false`, The `X-Total-Count` header will not
+            be returned
+
+            Counting the listings can contribute to slower API calls
+            due to the extra queries that need to be run to get an
+            exact count.
+
+            Disabling count can increase query speeds.
+          in: query
+          name: count
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: |
+            Will send `Authenticated` if authentication is succesful,
+            otherwise it will send `Unauthorized`.
+          schema:
+            items:
+              $ref: "#/definitions/Listing"
+            type: array
+        "400":
+          description: Will send `Bad Request`.
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Will send `Authentication Required`.
+          schema:
+            $ref: "#/definitions/Error"
+        "403":
+          description: Will send `Authorization Required`.
+          schema:
+            $ref: "#/definitions/Error"
+        "429":
+          description: |
+            Will send `Too Many Requests`. Please see our Service
+            Level Agreement for more information on Request Rates and
+            Acceptable Use.
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Will send `Internal Server Error`.
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+        - basicAuth: []
+      summary: The SimplyRETS Listings API
+  "/properties/{mlsId}":
+    get:
+      description: |
+        Use this endpoint for accessing a single listing. When you
+        make a search to the `/properties` endpoint, each listing in
+        the response will contain a unique `mlsId` field which should
+        be used to request that listing on this route.
+
+        The `mlsId` field is a unique identifier for a listing which
+        is specific to the SimplyRETS API only.  It is different from
+        the `listingId` field is the public number given to a listing
+        by the MLS and is not used here.
+      parameters:
+        - default: 1005252
+          description: |
+            The `mlsId` field is a unique identifier which is specific
+            to the SimplyRETS API only.  This field is different from
+            the `listingId` field (which is the public number given to
+            a listing by the MLS and is not used here).
+          format: int64
+          in: path
+          name: mlsId
+          required: true
+          type: integer
+        - collectionFormat: multi
+          description: |
+            Include a extra fields which are not in the default
+            response body
+            - 'association' includes additional HOA data
+            - 'agreement' information on the listing agreement
+            - 'garageSpaces' additional garage data
+            - 'maintenanceExpense' data on maintenance expenses
+            - 'parking' additional parking data
+            - 'pool' includes an additional pool description
+            - 'rooms' include parameter will include
+               any additional rooms as a list.
+
+            Note that your MLS must provide these fields in their RETS
+            data for them to be available with valid data in the API
+            response. If your MLS does not offer these fields, they will
+            contain 'null'.
+
+            In the future, fields which require an 'include' may become available
+            by default.
+          enum:
+            - association
+            - agreement
+            - garageSpaces
+            - maintenanceExpense
+            - parking
+            - pool
+            - rooms
+          in: query
+          items:
+            type: string
+          name: include
+          required: false
+          type: array
+      responses:
+        "200":
+          description: |
+            Will send `Authenticated` if authentication is succesful,
+            otherwise it will send `Unauthorized`
+          schema:
+            $ref: "#/definitions/Listing"
+        "400":
+          description: Will send `Bad Request`.
+          schema:
+            $ref: "#/definitions/Error"
+        "401":
+          description: Will send `Authentication Required`.
+          schema:
+            $ref: "#/definitions/Error"
+        "403":
+          description: Will send `Authorization Required`.
+          schema:
+            $ref: "#/definitions/Error"
+        "429":
+          description: |
+            Will send `Too Many Requests`. Please see our Service
+            Level Agreement for more information on Request Rates and
+            Acceptable Use.
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Will send `Internal Server Error`.
+          schema:
+            $ref: "#/definitions/Error"
+      security:
+        - basicAuth: []
+      summary: Single Listing Endpoint
+definitions:
+  Agent:
+    description: SimplyRETS Agent Api
+    properties:
+      contact:
+        $ref: "#/definitions/ContactInformation"
+        description: |
+          Agent contact info. This information is only present when
+          your RETS feed specifies the agent wishes to show their
+          contact information publicly.
+
+          *Contact information is not available for all RETS Vendors.*
+      firstName:
+        description: Agent first name
+        type: string
+      id:
+        description: Well known Agent MLS number or id.
+        type: string
+      lastName:
+        description: Agent last name
+        type: string
+    type: object
+  Association:
+    description: Home Owners Association
+    properties:
+      amenities:
+        description: Any extra amenities granted by the HOA
+        type: string
+      fee:
+        description: Association fee
+        type: integer
+      name:
+        description: Name of the association
+        type: string
+    type: object
+  Broker:
+    description: SimplyRETS Broker Api
+    properties:
+      startdate:
+        description: Start Date
+        format: date-time
+        type: string
+    type: object
+  ContactInformation:
+    description: RETS MLS Contact Information
+    properties:
+      cell:
+        description: |
+          Contact Information Cell Phone
+
+          **Not available for all RETS vendors**
+        type: string
+      email:
+        description: |
+          The email address of the `ContactInformation`
+
+          **Not available for all RETS vendors**
+        type: string
+      office:
+        description: |
+          Contact Information Office Phone Number
+
+          **Not available for all RETS vendors**
+        type: string
+    type: object
+  Error:
+    description: Error information
+    properties:
+      error:
+        description: |
+          Error code. In general, we try to adhere to HTTP status code
+          and use these error statuses for detailed reporting.
+        format: int32
+        type: integer
+      message:
+        description: Status message with an explanation of the error
+        type: string
+    type: object
+  GeographicData:
+    description: RETS MLS Geographic Data
+    properties:
+      county:
+        description: Listing county
+        type: string
+      directions:
+        description: Directions to the property
+        type: string
+      lat:
+        description: Listing latitude (if available)
+        format: double
+        type: number
+      lng:
+        description: Listing longitude (if available)
+        format: double
+        type: number
+      marketArea:
+        description: Listing GeoMarket area. May be the same as mlsArea
+        type: string
+    type: object
+  Listing:
+    description: RETS MLS Listing Property
+    properties:
+      address:
+        $ref: "#/definitions/StreetAddress"
+        description: Comprehensive property address information
+      agent:
+        $ref: "#/definitions/Agent"
+        description: Comprehensive listing agent information
+      association:
+        $ref: "#/definitions/Association"
+      coAgent:
+        $ref: "#/definitions/Agent"
+        description: |
+          co-listing agent information.
+
+          *NOTE*: If your RETS feed stores co-list information outside
+          of the `Property` resource, co-list agent information will not
+          be available.
+      disclaimer:
+        description: |
+          Data accuracy disclaimer. The value in the disclaimer may
+          change depending on your MLS vendors rules.
+        type: string
+      geo:
+        $ref: "#/definitions/GeographicData"
+        description: Geographic data for the listing
+      leaseTerm:
+        description: Represents the length of the lease.
+        type: string
+      leaseType:
+        description: Information about the status of the existing lease on the property.
+        type: string
+      listDate:
+        description: Date and time the listing became Active
+        format: date-time
+        type: string
+      listPrice:
+        description: Price of the listing
+        format: double
+        type: number
+      listingId:
+        description: |
+          Data Dictionary v1.3 ListingId. The well known identifier
+          for the listing. The value is the id or number by the MLS as
+          a public identifier for the listing.
+
+          This identifier should not be confused with the `mlsId`, which is
+          specific to the SimplyRETS API.
+        type: string
+      mls:
+        $ref: "#/definitions/MlsInformation"
+        description: MLS vendor information and data
+      mlsId:
+        description: |
+          A unique identifier for this listing specific to the
+          SimplyRETS API. Thie identifier is specific to the
+          SimplyRETS api and has no correlation with the MLS
+          number. Use this id when making requests to the single
+          listing endpoint (eg, `/properties/{mlsId}`).
+
+          Applications should not rely on specific `mlsId`s being
+          present. Instead, apps should dynamically use the `mlsId`
+          after using other more general query parameters. Many mls
+          vendors require listings which are expired, terminated or
+          sold to be purged, which will render calls to specific
+          `mlsId`s to return nothing (or possibly a 404).
+        format: int64
+        type: integer
+      modified:
+        description: Date and time of the last modification
+        format: date-time
+        type: string
+      office:
+        $ref: "#/definitions/Office"
+        description: Listing office or brokerage.
+      photos:
+        description: |
+          Photos of the property. Images are served over https and are
+          suitable for production use on secure websites
+        items:
+          type: string
+        type: array
+      privateRemarks:
+        description: Agent only remarks
+        type: string
+      property:
+        $ref: "#/definitions/Property"
+        description: Specific property data associated with listing.
+      remarks:
+        description: Description or remarks
+        type: string
+      sales:
+        $ref: "#/definitions/Sales"
+        description: Sales data
+      school:
+        $ref: "#/definitions/School"
+        description: Comprehensive school zone data
+      showingInstructions:
+        description: Public instructions for showing the property.
+        type: string
+      tax:
+        $ref: "#/definitions/Tax"
+        description: Associate tax data
+      virtualTourUrl:
+        description: |
+          The URL for an unbranded virtual tour of the property.
+
+          **Added on 2016/05/04 - Not available for all RETS vendors**
+        type: string
+    type: object
+  MlsInformation:
+    description: RETS MLS Vendor Data
+    properties:
+      area:
+        description: MLS Area major. The major marketing area name, as defined by the MLS or other non-governmental organization.
+        type: string
+      areaMinor:
+        description: MLS Area minor. The minor/sub marketing area name, as defined by the MLS or other non-governmental organization.
+        type: string
+      daysOnMarket:
+        description: Amount of days the property has been Active
+        format: int64
+        type: integer
+      originatingSystemName:
+        description: |
+          Alias for the listing office or brokerage
+
+          This field corresponds to the data-dictionary `OriginatingSystemName` field
+
+          The name of the originating record provider.  Most commonly
+          the name of the MLS. The place where the listing is
+          originally input by the member.  The legal name of the
+          company.  To be used for display.
+
+          If you're RETS provider aggregates feeds from multiple
+          MLS's, this will be the name of the corresponding MLS.
+        type: string
+      status:
+        description: |
+          Normalized MLS Status Code. Compliant with data dictionary
+          v1.3 ListingStatus Listing statuses depend on your MLS's
+          availability. Below is a brief description of each status
+          with possible synonyms which may map to your MLS-specific
+          statuses
+
+          - Active: Active Listing which is still on the market
+          - ActiveUnderContract: An offer has been accepted but the listing is still on market. Synonyms: Accepting Backup Offers, Backup Offer, Active With Accepted. Synonyms: Offer, Backup, Contingent
+          - Pending: An offer has been accepted and the listing is no longer on market. Synonyms: Offer Accepted, Under Contract
+          - Hold: The listing has been withdrawn from the market, but a contract
+            still exists between the seller and the listing member. Synonyms: Hold, Hold Do Not Show, Temp Off Market
+          - Withdrawn: The listing has been withdrawn from the market, but a contract
+            still exists between the seller and the listing member. Synonyms: Hold, Hold Do Not Show, Temp Off Market
+          - Closed: The purchase agreement has been fulfilled or the lease
+            agreement has been executed. Synonyms: Sold, Leased, Rented, Closed Sale
+          - Expired: The listing contract has expired
+          - Delete: The listing contract was never valid or other reason for the contract to be nullified. Synonyms: Kill, Zap
+          - Incomplete: The listing has not yet be completely entered and is not yet
+            published in the MLS. Synonyms: Draft, Partially Complted
+          - ComingSoon
+        enum:
+          - Active
+          - ActiveUnderContract (Backup-Offer)
+          - Pending
+          - Hold
+          - Withdrawn
+          - Closed
+          - Expired
+          - Delete
+          - Incomplete
+          - ComingSoon
+        type: string
+      statusText:
+        description: |
+          Raw MLS status text. This `field` comes directly from your RETS data
+          field and is not normalized.
+        type: string
+    type: object
+  Office:
+    description: RETS MLS Office
+    properties:
+      brokerid:
+        description: |
+          Office or brokerage MLS identifier
+
+          **Not available for all RETS vendors**
+        type: string
+      contact:
+        $ref: "#/definitions/ContactInformation"
+        description: |
+          Associated contact details for the office. The availability of this
+          information depends on your MLS rules and regulations
+
+          *Contact information is not available for all RETS Vendors.*
+      name:
+        description: Pimary office name
+        type: string
+      servingName:
+        description: Primary office or brokerage name
+        type: string
+    type: object
+  OpenHouse:
+    description: SimplyRETS Open House object
+    properties:
+      description:
+        description: The remarks and/or description details for the open house
+        type: string
+      endTime:
+        description: The ending date time for the open house
+        format: date-time
+        type: string
+      inputId:
+        description: |
+          The MLS number for the showing agent or agent which created the OpenHouse
+          in the MLS database.
+      listing:
+        $ref: "#/definitions/Listing"
+        description: The full listing associated with the OpenHouse
+      openHouseId:
+        description: |
+          The MLS number or id provided by the MLS
+        type: string
+      openHouseKey:
+        description: |
+          A unique identifier for the open house which is specific to the
+          SimplyRETS API
+        type: string
+      refreshments:
+        description: Provided
+        type: string
+      startTime:
+        description: Start Date for the open house
+        format: date-time
+        type: string
+      type:
+        description: The open house type. For example, Public or Private
+        type: string
+    type: object
+  Parking:
+    description: RETS MLS School Data
+    properties:
+      description:
+        description: Parking features description
+        type: string
+      leased:
+        type: string
+      spaces:
+        description: Number of parking spaces
+        type: integer
+    type: object
+  Property:
+    description: Rets MLS Listing Property
+    properties:
+      accessibility:
+        type: string
+      additionalRooms:
+        description: |
+          Additional room information. This is a textual description
+          of additional rooms for the listing.
+        type: string
+      area:
+        description: Square footage of the building associated with a listing
+        format: int64
+        type: integer
+      areaSource:
+        type: string
+      bathsFull:
+        description: Number of full bathrooms
+        format: int64
+        type: integer
+      bathsHalf:
+        description: Number of half bathrooms
+        format: int64
+        type: integer
+      bathsThreeQuarter:
+        description: Number of 3/4 bathrooms
+        format: int64
+        type: integer
+      bedrooms:
+        description: Number of bedrooms
+        format: int64
+        type: integer
+      construction:
+        description: The materials that were used in the construction of the property.
+        type: string
+      cooling:
+        description: A description of the cooling or air conditioning features of the property.
+        type: string
+      exteriorFeatures:
+        description: |
+          Exterior Features for the listing
+        type: string
+      fireplaces:
+        description: Number of fireplaces
+        format: int64
+        type: integer
+      flooring:
+        description: The type(s) of flooring found within the property.
+        type: string
+      foundation:
+        type: string
+      garageSpaces:
+        description: Number of garage spaces
+        format: float
+        type: number
+      heating:
+        description: Heating description or short string
+        type: string
+      interiorFeatures:
+        description: The properties interior features
+        type: string
+      laundryFeatures:
+        type: string
+      lotDescription:
+        type: string
+      lotSize:
+        description: |
+          Lot size dimensions or square footage as a text. This
+          field is generally used to show the pretty formatted
+          lot size.
+        type: string
+      lotSizeAcres:
+        description: |
+          Lot size in acres
+
+          **Added on 2016/05/04 - Not available for all RETS vendors**
+        format: float
+        type: number
+      lotSizeArea:
+        description: |
+          The total area of the lot.  See `lotSizeUnits` for the units
+          of measurement (Square Feet, Square Meters, Acres, etc.).
+
+          **Added on 2016/05/04 - Not available for all RETS vendors**
+        format: double
+        type: number
+      lotSizeAreaUnits:
+        description: |
+          Unit of measurement for the lotSizeArea field.  e.g. Square
+          Feet, Square Meters, Acres, etc.
+
+          If this field is `null` the units is the default unit
+          of measure specified by your RETS provider.
+
+          **Added on 2016/05/04 - Not available for all RETS vendors**
+        type: string
+      maintenanceExpense:
+        description: Yearly maintenance expense
+        format: float
+        type: number
+      occupantName:
+        type: string
+      occupantType:
+        type: string
+      ownerName:
+        type: string
+      parking:
+        $ref: "#/definitions/Parking"
+      poolFeatures:
+        type: string
+      roof:
+        description: Property roof description
+        type: string
+      stories:
+        description: |
+          Number of stories or levels. Represented as a `double' to
+          account for half stories.
+        format: float
+        type: number
+      style:
+        description: Property style description or short string
+        type: string
+      subType:
+        description: |
+          A normalized representation of the listings sub-type.
+        enum:
+          - Apartment
+          - BoatSlip
+          - SingleFamilyResidence
+          - DeededParking
+          - Cabin
+          - Condominium
+          - Duplex
+          - ManufacturedHome
+          - Quadruplex
+          - StockCooperative
+          - Townhouse
+          - Timeshare
+          - Triplex
+          - ManufacturedOnLand
+        type: string
+      subTypeRaw:
+        description: |
+          The raw text representation of the property sub type.
+        type: string
+      subdivision:
+        description: The subdivision or community name
+        type: string
+      type:
+        description: |
+          Abbreviated property type. RES is Residential, CND is CondoOrTownhome,
+          RNT is Rental, MLF is Multi-Family, CRE is Commercial, LND is Land,
+          FRM is Farm. See the `propertySubType` field for more information.
+        enum:
+          - RES
+          - CND
+          - RNT
+          - MLF
+          - CRE
+          - LND
+          - FRM
+        type: string
+      view:
+        description: View details and description
+        type: string
+      water:
+        description: |
+          The name, if known, of the body of water on which the
+          property is located. (E.g., lake name, river name, ocean
+          name, sea name, canal name). Otherwise, this field will
+          contain features of the waterfront on which the property is
+          located.
+        type: string
+      yearBuilt:
+        description: Year the property was built
+        format: int64
+        type: integer
+    type: object
+  Sales:
+    description: Sales Data
+    properties:
+      agent:
+        description: RETS Sales data agent id
+        type: string
+      closeDate:
+        description: RETS Sales data close date
+        format: date-time
+        type: string
+      closePrice:
+        description: RETS Sales data sold price
+        format: int64
+        type: integer
+      contractDate:
+        description: RETS Sales data contract date
+        format: date-time
+        type: string
+      office:
+        description: RETS Sales data selling office/brokerage id
+        type: string
+    type: object
+  School:
+    description: RETS MLS School Data
+    properties:
+      district:
+        description: School district name.
+        type: string
+      elementarySchool:
+        description: Elementary school name.
+        type: string
+      highSchool:
+        description: High school name
+        type: string
+      middleSchool:
+        description: Middle or junior school name
+        type: string
+    type: object
+  StreetAddress:
+    description: RETS MLS Street Address
+    properties:
+      city:
+        description: City name
+        type: string
+      country:
+        description: Street address country (United States or Canada)
+        type: string
+      crossStreet:
+        description: Known cross street
+        type: string
+      full:
+        description: Full pretty-printed address with suffix (if available)
+        type: string
+      postalCode:
+        description: Street Address postal code
+        type: string
+      state:
+        description: State or province. Maps to the data dictionary field `StateOrProvince`.
+        type: string
+      streetName:
+        description: Name of the street
+        type: string
+      streetNumber:
+        description: Street number
+        format: int64
+        type: integer
+      streetNumberText:
+        description: |
+          Textual representation of the street number. This field
+          is usually redundant with what's in `streetNumber` but is
+          occassionally usefuly for street number which are actually
+          alpha-numerical. For example, "N63453" or "34556B".
+
+          **Added on 2016/05/02**
+        type: string
+    type: object
+  Tax:
+    description: RETS MLS Tax Data
+    properties:
+      id:
+        description: Tax Parcel ID for the listing
+        type: string
+      taxAnnualAmount:
+        description: Annual tax amount in USD
+        type: string
+      taxYear:
+        description: Tax Year
+        format: int64
+        type: integer
+    type: object

@@ -1,0 +1,1297 @@
+swagger: "2.0"
+schemes:
+  - https
+host: management.azure.com
+info:
+  title: BatchManagement
+  version: 2017-05-01
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-ms-code-generation-settings:
+    name: BatchManagementClient
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/batch/resource-manager/Microsoft.Batch/stable/2017-05-01/BatchManagement.json
+      version: "2.0"
+  x-preferred: false
+  x-providerName: azure.com
+  x-serviceName: batch-BatchManagement
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    description: Azure Active Directory OAuth2 Flow
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+security:
+  - azure_auth:
+      - user_impersonation
+parameters:
+  AccountNameParameter:
+    description: The name of the Batch account.
+    in: path
+    maxLength: 24
+    minLength: 3
+    name: accountName
+    pattern: ^[-\w\._]+$
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  ApiVersionParameter:
+    description: The API version to be used with the HTTP request.
+    in: query
+    name: api-version
+    required: true
+    type: string
+  ResourceGroupNameParameter:
+    description: The name of the resource group that contains the Batch account.
+    in: path
+    name: resourceGroupName
+    pattern: ^[-\w\._]+$
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  SubscriptionIdParameter:
+    description: The Azure subscription ID. This is a GUID-formatted string (e.g. 00000000-0000-0000-0000-000000000000)
+    in: path
+    name: subscriptionId
+    required: true
+    type: string
+paths:
+  /providers/Microsoft.Batch/operations:
+    get:
+      description: Lists available operations for the Microsoft.Batch provider
+      operationId: Operations_List
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains the list of available operations.
+          schema:
+            $ref: "#/definitions/OperationListResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - Operations
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/providers/Microsoft.Batch/batchAccounts":
+    get:
+      description: Gets information about the Batch accounts associated with the subscription.
+      operationId: BatchAccount_List
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains a list of Batch account entities associated with the subscription.
+          schema:
+            $ref: "#/definitions/BatchAccountListResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - BatchAccount
+      x-ms-examples:
+        BatchAccountList:
+          parameters:
+            api-version: 2017-05-01
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                value:
+                  - id: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Batch/batchAccounts/sampleacct
+                    location: japaneast
+                    name: sampleacct
+                    properties:
+                      accountEndpoint: sampleacct.japaneast.batch.azure.com
+                      activeJobAndJobScheduleQuota: 20
+                      autoStorage:
+                        lastKeySync: 2016-03-10T23:48:38.9878479Z
+                        storageAccountId: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Storage/storageAccounts/samplestorage
+                      dedicatedCoreQuota: 20
+                      lowPriorityCoreQuota: 20
+                      poolAllocationMode: BatchService
+                      poolQuota: 20
+                      provisioningState: Succeeded
+                    type: Microsoft.Batch/batchAccounts
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/providers/Microsoft.Batch/locations/{locationName}/checkNameAvailability":
+    post:
+      description: Checks whether the Batch account name is available in the specified region.
+      operationId: Location_CheckNameAvailability
+      parameters:
+        - description: The desired region for the name check.
+          in: path
+          name: locationName
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+        - description: Properties needed to check the availability of a name.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/CheckNameAvailabilityParameters"
+      responses:
+        "200":
+          description: Success. Returns details about whether a Batch account name is available.
+          schema:
+            $ref: "#/definitions/CheckNameAvailabilityResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      x-ms-examples:
+        LocationCheckNameAvailability_AlreadyExists:
+          parameters:
+            api-version: 2017-05-01
+            locationName: japaneast
+            parameters:
+              name: existingaccountname
+              type: Microsoft.Batch/batchAccounts
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                message: An account named 'existingaccountname' is already in use.
+                nameAvailable: false
+                reason: AlreadyExists
+        LocationCheckNameAvailability_Available:
+          parameters:
+            api-version: 2017-05-01
+            locationName: japaneast
+            parameters:
+              name: newaccountname
+              type: Microsoft.Batch/batchAccounts
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                nameAvailable: true
+  "/subscriptions/{subscriptionId}/providers/Microsoft.Batch/locations/{locationName}/quotas":
+    get:
+      description: Gets the Batch service quotas for the specified subscription at the given location.
+      operationId: Location_GetQuotas
+      parameters:
+        - description: The region for which to retrieve Batch service quotas.
+          in: path
+          name: locationName
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains the Batch service quotas for the subscription in the specified location.
+          schema:
+            $ref: "#/definitions/BatchLocationQuota"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - Location
+      x-ms-examples:
+        LocationGetQuotas:
+          parameters:
+            api-version: 2017-05-01
+            locationName: japaneast
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                accountQuota: 1
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts":
+    get:
+      description: Gets information about the Batch accounts associated with the specified resource group.
+      operationId: BatchAccount_ListByResourceGroup
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains a list of Batch account entities associated with the resource group.
+          schema:
+            $ref: "#/definitions/BatchAccountListResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - BatchAccount
+      x-ms-examples:
+        BatchAccountListByResourceGroup:
+          parameters:
+            api-version: 2017-05-01
+            resourceGroupName: default-azurebatch-japaneast
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                value:
+                  - id: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Batch/batchAccounts/sampleacct
+                    location: japaneast
+                    name: sampleacct
+                    properties:
+                      accountEndpoint: sampleacct.japaneast.batch.azure.com
+                      activeJobAndJobScheduleQuota: 20
+                      autoStorage:
+                        lastKeySync: 2016-03-10T23:48:38.9878479Z
+                        storageAccountId: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Storage/storageAccounts/samplestorage
+                      dedicatedCoreQuota: 20
+                      lowPriorityCoreQuota: 20
+                      poolAllocationMode: BatchService
+                      poolQuota: 20
+                      provisioningState: Succeeded
+                    type: Microsoft.Batch/batchAccounts
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts/{accountName}":
+    delete:
+      description: Deletes the specified Batch account.
+      operationId: BatchAccount_Delete
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful.
+        "202":
+          description: The operation will be completed asynchronously.
+          headers:
+            Location:
+              description: The URL of the resource used to check the status of the asynchronous operation.
+              type: string
+            Retry-After:
+              description: Suggested delay to check the status of the asynchronous operation. The value is an integer that specifies the delay in seconds.
+              format: int32
+              type: integer
+        "204":
+          description: NoContent -- account does not exist in the subscription.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - BatchAccount
+      x-ms-examples:
+        BatchAccountDelete:
+          parameters:
+            accountName: sampleacct
+            api-version: 2017-05-01
+            resourceGroupName: default-azurebatch-japaneast
+            subscriptionId: subid
+          responses:
+            "200": {}
+            "202": {}
+            "204": {}
+      x-ms-long-running-operation: true
+    get:
+      description: Gets information about the specified Batch account.
+      operationId: BatchAccount_Get
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains the Batch account entity.
+          schema:
+            $ref: "#/definitions/BatchAccount"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - BatchAccount
+      x-ms-examples:
+        BatchAccountGet:
+          parameters:
+            accountName: sampleacct
+            api-version: 2017-05-01
+            resourceGroupName: default-azurebatch-japaneast
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                id: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Batch/batchAccounts/sampleacct
+                location: japaneast
+                name: sampleacct
+                properties:
+                  accountEndpoint: sampleacct.japaneast.batch.azure.com
+                  activeJobAndJobScheduleQuota: 20
+                  autoStorage:
+                    lastKeySync: 2016-03-10T23:48:38.9878479Z
+                    storageAccountId: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Storage/storageAccounts/samplestorage
+                  dedicatedCoreQuota: 20
+                  lowPriorityCoreQuota: 20
+                  poolAllocationMode: BatchService
+                  poolQuota: 20
+                  provisioningState: Succeeded
+                type: Microsoft.Batch/batchAccounts
+    patch:
+      description: Updates the properties of an existing Batch account.
+      operationId: BatchAccount_Update
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: Additional parameters for account update.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/BatchAccountUpdateParameters"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains the Batch account entity.
+          schema:
+            $ref: "#/definitions/BatchAccount"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - BatchAccount
+      x-ms-examples:
+        BatchAccountUpdate:
+          parameters:
+            accountName: sampleacct
+            api-version: 2017-05-01
+            parameters:
+              properties:
+                autoStorage:
+                  storageAccountId: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Storage/storageAccounts/samplestorage
+            resourceGroupName: default-azurebatch-japaneast
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                id: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Batch/batchAccounts/sampleacct
+                location: japaneast
+                name: sampleacct
+                properties:
+                  accountEndpoint: sampleacct.japaneast.batch.azure.com
+                  activeJobAndJobScheduleQuota: 20
+                  autoStorage:
+                    lastKeySync: 2016-03-10T23:48:38.9878479Z
+                    storageAccountId: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Storage/storageAccounts/samplestorage
+                  dedicatedCoreQuota: 20
+                  lowPriorityCoreQuota: 20
+                  poolAllocationMode: BatchService
+                  poolQuota: 20
+                  provisioningState: Succeeded
+                type: Microsoft.Batch/batchAccounts
+    put:
+      description: Creates a new Batch account with the specified parameters. Existing accounts cannot be updated with this API and should instead be updated with the Update Batch Account API.
+      operationId: BatchAccount_Create
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - description: "A name for the Batch account which must be unique within the region. Batch account names must be between 3 and 24 characters in length and must use only numbers and lowercase letters. This name is used as part of the DNS name that is used to access the Batch service in the region in which the account is created. For example: http://accountname.region.batch.azure.com/."
+          in: path
+          maxLength: 24
+          minLength: 3
+          name: accountName
+          pattern: ^[-\w\._]+$
+          required: true
+          type: string
+        - description: Additional parameters for account creation.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/BatchAccountCreateParameters"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains the Batch account entity.
+          schema:
+            $ref: "#/definitions/BatchAccount"
+        "202":
+          description: The operation will be completed asynchronously.
+          headers:
+            Location:
+              description: The URL of the resource used to check the status of the asynchronous operation.
+              type: string
+            Retry-After:
+              description: Suggested delay to check the status of the asynchronous operation. The value is an integer that specifies the delay in seconds.
+              format: int32
+              type: integer
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - BatchAccount
+      x-ms-examples:
+        BatchAccountCreate_BYOS:
+          parameters:
+            accountName: sampleacct
+            api-version: 2017-05-01
+            parameters:
+              location: japaneast
+              properties:
+                autoStorage:
+                  storageAccountId: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Storage/storageAccounts/samplestorage
+                keyVaultReference:
+                  id: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.KeyVault/vaults/sample
+                  url: http://sample.vault.azure.net/
+                poolAllocationMode: UserSubscription
+            resourceGroupName: default-azurebatch-japaneast
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                id: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Batch/batchAccounts/sampleacct
+                location: japaneast
+                name: sampleacct
+                properties:
+                  accountEndpoint: sampleacct.japaneast.batch.azure.com
+                  activeJobAndJobScheduleQuota: 20
+                  autoStorage:
+                    lastKeySync: 2016-03-10T23:48:38.9878479Z
+                    storageAccountId: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Storage/storageAccounts/samplestorage
+                  dedicatedCoreQuota: 20
+                  keyVaultReference:
+                    id: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.KeyVault/vaults/sample
+                    url: http://sample.vault.azure.net/
+                  lowPriorityCoreQuota: 20
+                  poolAllocationMode: UserSubscription
+                  poolQuota: 20
+                  provisioningState: Succeeded
+                type: Microsoft.Batch/batchAccounts
+            "202": {}
+        BatchAccountCreate_Default:
+          parameters:
+            accountName: sampleacct
+            api-version: 2017-05-01
+            parameters:
+              location: japaneast
+              properties:
+                autoStorage:
+                  storageAccountId: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Storage/storageAccounts/samplestorage
+            resourceGroupName: default-azurebatch-japaneast
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                id: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Batch/batchAccounts/sampleacct
+                location: japaneast
+                name: sampleacct
+                properties:
+                  accountEndpoint: sampleacct.japaneast.batch.azure.com
+                  activeJobAndJobScheduleQuota: 20
+                  autoStorage:
+                    lastKeySync: 2016-03-10T23:48:38.9878479Z
+                    storageAccountId: /subscriptions/subid/resourceGroups/default-azurebatch-japaneast/providers/Microsoft.Storage/storageAccounts/samplestorage
+                  dedicatedCoreQuota: 20
+                  lowPriorityCoreQuota: 20
+                  poolAllocationMode: BatchService
+                  poolQuota: 20
+                  provisioningState: Succeeded
+                type: Microsoft.Batch/batchAccounts
+            "202": {}
+      x-ms-long-running-operation: true
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts/{accountName}/applications":
+    get:
+      description: Lists all of the applications in the specified account.
+      operationId: Application_List
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The maximum number of items to return in the response.
+          format: int32
+          in: query
+          name: maxresults
+          required: false
+          type: integer
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains a list of the application entities associated with the specified account.
+          schema:
+            $ref: "#/definitions/ListApplicationsResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - Application
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts/{accountName}/applications/{applicationId}":
+    delete:
+      description: Deletes an application.
+      operationId: Application_Delete
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The ID of the application.
+          in: path
+          name: applicationId
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "204":
+          description: The operation was successful.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - Application
+    get:
+      description: Gets information about the specified application.
+      operationId: Application_Get
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The ID of the application.
+          in: path
+          name: applicationId
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains the application entity.
+          schema:
+            $ref: "#/definitions/Application"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - Application
+    patch:
+      description: Updates settings for the specified application.
+      operationId: Application_Update
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The ID of the application.
+          in: path
+          name: applicationId
+          required: true
+          type: string
+        - description: The parameters for the request.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/ApplicationUpdateParameters"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "204":
+          description: The operation was successful.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - Application
+    put:
+      description: Adds an application to the specified Batch account.
+      operationId: Application_Create
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The ID of the application.
+          in: path
+          name: applicationId
+          required: true
+          type: string
+        - description: The parameters for the request.
+          in: body
+          name: parameters
+          required: false
+          schema:
+            $ref: "#/definitions/ApplicationCreateParameters"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "201":
+          description: The operation was successful. The response contains the application entity.
+          schema:
+            $ref: "#/definitions/Application"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - Application
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts/{accountName}/applications/{applicationId}/versions/{version}":
+    delete:
+      description: Deletes an application package record and its associated binary file.
+      operationId: ApplicationPackage_Delete
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The ID of the application.
+          in: path
+          name: applicationId
+          required: true
+          type: string
+        - description: The version of the application to delete.
+          in: path
+          name: version
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "204":
+          description: The operation was successful.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - ApplicationPackage
+    get:
+      description: Gets information about the specified application package.
+      operationId: ApplicationPackage_Get
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The ID of the application.
+          in: path
+          name: applicationId
+          required: true
+          type: string
+        - description: The version of the application.
+          in: path
+          name: version
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains the application package entity.
+          schema:
+            $ref: "#/definitions/ApplicationPackage"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - ApplicationPackage
+    put:
+      description: Creates an application package record.
+      operationId: ApplicationPackage_Create
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The ID of the application.
+          in: path
+          name: applicationId
+          required: true
+          type: string
+        - description: The version of the application.
+          in: path
+          name: version
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "201":
+          description: The operation was successful. The response contains the application package entity.
+          schema:
+            $ref: "#/definitions/ApplicationPackage"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - ApplicationPackage
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts/{accountName}/applications/{applicationId}/versions/{version}/activate":
+    post:
+      description: Activates the specified application package.
+      operationId: ApplicationPackage_Activate
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The ID of the application.
+          in: path
+          name: applicationId
+          required: true
+          type: string
+        - description: The version of the application to activate.
+          in: path
+          name: version
+          required: true
+          type: string
+        - description: The parameters for the request.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/ActivateApplicationPackageParameters"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "204":
+          description: The operation was successful.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - ApplicationPackage
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts/{accountName}/listKeys":
+    post:
+      description: This operation applies only to Batch accounts created with a poolAllocationMode of 'BatchService'. If the Batch account was created with a poolAllocationMode of 'UserSubscription', clients cannot use access to keys to authenticate, and must use Azure Active Directory instead. In this case, getting the keys will fail.
+      operationId: BatchAccount_GetKeys
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains the keys of the Batch account.
+          schema:
+            $ref: "#/definitions/BatchAccountKeys"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      summary: Gets the account keys for the specified Batch account.
+      tags:
+        - BatchAccount
+      x-ms-examples:
+        BatchAccountGetKeys:
+          parameters:
+            accountName: sampleacct
+            api-version: 2017-05-01
+            resourceGroupName: default-azurebatch-japaneast
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                accountName: sampleacct
+                primary: AAAA==
+                secondary: BBBB==
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts/{accountName}/regenerateKeys":
+    post:
+      description: Regenerates the specified account key for the Batch account.
+      operationId: BatchAccount_RegenerateKey
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - description: The type of key to regenerate.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            $ref: "#/definitions/BatchAccountRegenerateKeyParameters"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "200":
+          description: The operation was successful. The response contains the Batch account keys.
+          schema:
+            $ref: "#/definitions/BatchAccountKeys"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - BatchAccount
+      x-ms-examples:
+        BatchAccountRegenerateKey:
+          parameters:
+            accountName: sampleacct
+            api-version: 2017-05-01
+            parameters:
+              keyName: Primary
+            resourceGroupName: default-azurebatch-japaneast
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                accountName: sampleacct
+                primary: AAAA==
+                secondary: BBBB==
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.Batch/batchAccounts/{accountName}/syncAutoStorageKeys":
+    post:
+      description: Synchronizes access keys for the auto-storage account configured for the specified Batch account.
+      operationId: BatchAccount_SynchronizeAutoStorageKeys
+      parameters:
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/AccountNameParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/SubscriptionIdParameter"
+      responses:
+        "204":
+          description: The operation was successful.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/CloudError"
+      tags:
+        - BatchAccount
+definitions:
+  ActivateApplicationPackageParameters:
+    description: Parameters for an activating an application package.
+    properties:
+      format:
+        description: The format of the application package binary file.
+        type: string
+    required:
+      - format
+  Application:
+    description: Contains information about an application in a Batch account.
+    properties:
+      allowUpdates:
+        description: A value indicating whether packages within the application may be overwritten using the same version string.
+        type: boolean
+      defaultVersion:
+        description: The package to use if a client requests the application but does not specify a version.
+        type: string
+      displayName:
+        description: The display name for the application.
+        type: string
+      id:
+        description: A string that uniquely identifies the application within the account.
+        type: string
+      packages:
+        description: The list of packages under this application.
+        items:
+          $ref: "#/definitions/ApplicationPackage"
+        type: array
+  ApplicationCreateParameters:
+    description: Parameters for adding an Application.
+    properties:
+      allowUpdates:
+        description: A value indicating whether packages within the application may be overwritten using the same version string.
+        type: boolean
+      displayName:
+        description: The display name for the application.
+        type: string
+  ApplicationPackage:
+    description: An application package which represents a particular version of an application.
+    properties:
+      format:
+        description: The format of the application package, if the package is active.
+        readOnly: true
+        type: string
+      id:
+        description: The ID of the application.
+        readOnly: true
+        type: string
+      lastActivationTime:
+        description: The time at which the package was last activated, if the package is active.
+        format: date-time
+        readOnly: true
+        type: string
+      state:
+        description: The current state of the application package.
+        enum:
+          - pending
+          - active
+          - unmapped
+        readOnly: true
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: PackageState
+      storageUrl:
+        description: The URL for the application package in Azure Storage.
+        readOnly: true
+        type: string
+      storageUrlExpiry:
+        description: The UTC time at which the Azure Storage URL will expire.
+        format: date-time
+        readOnly: true
+        type: string
+      version:
+        description: "The version of the application package. "
+        readOnly: true
+        type: string
+  ApplicationUpdateParameters:
+    description: Parameters for an update application request.
+    properties:
+      allowUpdates:
+        description: A value indicating whether packages within the application may be overwritten using the same version string.
+        type: boolean
+      defaultVersion:
+        description: The package to use if a client requests the application but does not specify a version.
+        type: string
+      displayName:
+        description: The display name for the application.
+        type: string
+  AutoStorageBaseProperties:
+    description: The properties related to the auto-storage account.
+    properties:
+      storageAccountId:
+        description: The resource ID of the storage account to be used for auto-storage account.
+        type: string
+    required:
+      - storageAccountId
+  AutoStorageProperties:
+    allOf:
+      - $ref: "#/definitions/AutoStorageBaseProperties"
+    description: Contains information about the auto-storage account associated with a Batch account.
+    properties:
+      lastKeySync:
+        description: The UTC time at which storage keys were last synchronized with the Batch account.
+        format: date-time
+        type: string
+    required:
+      - lastKeySync
+  BatchAccount:
+    allOf:
+      - $ref: "#/definitions/Resource"
+    description: Contains information about an Azure Batch account.
+    properties:
+      properties:
+        $ref: "#/definitions/BatchAccountProperties"
+        description: The properties associated with the account.
+        x-ms-client-flatten: true
+  BatchAccountCreateParameters:
+    description: Parameters supplied to the Create operation.
+    properties:
+      location:
+        description: The region in which to create the account.
+        type: string
+      properties:
+        $ref: "#/definitions/BatchAccountCreateProperties"
+        description: The properties of the Batch account.
+        x-ms-client-flatten: true
+      tags:
+        additionalProperties:
+          type: string
+        description: The user-specified tags associated with the account.
+        type: object
+    required:
+      - location
+  BatchAccountCreateProperties:
+    description: The properties of a Batch account.
+    properties:
+      autoStorage:
+        $ref: "#/definitions/AutoStorageBaseProperties"
+        description: The properties related to the auto-storage account.
+      keyVaultReference:
+        $ref: "#/definitions/KeyVaultReference"
+        description: A reference to the Azure key vault associated with the Batch account.
+      poolAllocationMode:
+        $ref: "#/definitions/PoolAllocationMode"
+        description: The pool allocation mode also affects how clients may authenticate to the Batch Service API. If the mode is BatchService, clients may authenticate using access keys or Azure Active Directory. If the mode is UserSubscription, clients must use Azure Active Directory. The default is BatchService.
+        title: The allocation mode to use for creating pools in the Batch account.
+  BatchAccountKeys:
+    description: A set of Azure Batch account keys.
+    properties:
+      accountName:
+        description: The Batch account name.
+        readOnly: true
+        type: string
+      primary:
+        description: The primary key associated with the account.
+        readOnly: true
+        type: string
+      secondary:
+        description: The secondary key associated with the account.
+        readOnly: true
+        type: string
+  BatchAccountListResult:
+    description: Values returned by the List operation.
+    properties:
+      nextLink:
+        description: The continuation token.
+        type: string
+      value:
+        description: The collection of Batch accounts returned by the listing operation.
+        items:
+          $ref: "#/definitions/BatchAccount"
+        type: array
+  BatchAccountProperties:
+    description: Account specific properties.
+    properties:
+      accountEndpoint:
+        description: The account endpoint used to interact with the Batch service.
+        readOnly: true
+        type: string
+      activeJobAndJobScheduleQuota:
+        format: int32
+        readOnly: true
+        title: The active job and job schedule quota for this Batch account.
+        type: integer
+        x-nullable: false
+      autoStorage:
+        $ref: "#/definitions/AutoStorageProperties"
+        readOnly: true
+        title: The properties and status of any auto-storage account associated with the Batch account.
+      dedicatedCoreQuota:
+        format: int32
+        readOnly: true
+        title: The dedicated core quota for this Batch account.
+        type: integer
+        x-nullable: false
+      keyVaultReference:
+        $ref: "#/definitions/KeyVaultReference"
+        readOnly: true
+        title: A reference to the Azure key vault associated with the Batch account.
+      lowPriorityCoreQuota:
+        format: int32
+        readOnly: true
+        title: The low-priority core quota for this Batch account.
+        type: integer
+        x-nullable: false
+      poolAllocationMode:
+        $ref: "#/definitions/PoolAllocationMode"
+        readOnly: true
+        title: The allocation mode to use for creating pools in the Batch account.
+        x-nullable: false
+      poolQuota:
+        format: int32
+        readOnly: true
+        title: The pool quota for this Batch account.
+        type: integer
+        x-nullable: false
+      provisioningState:
+        description: The provisioned state of the resource
+        enum:
+          - Invalid
+          - Creating
+          - Deleting
+          - Succeeded
+          - Failed
+          - Cancelled
+        readOnly: true
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: ProvisioningState
+        x-nullable: false
+  BatchAccountRegenerateKeyParameters:
+    description: Parameters supplied to the RegenerateKey operation.
+    properties:
+      keyName:
+        description: The type of account key to regenerate.
+        enum:
+          - Primary
+          - Secondary
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: AccountKeyType
+    required:
+      - keyName
+  BatchAccountUpdateParameters:
+    description: Parameters for updating an Azure Batch account.
+    properties:
+      properties:
+        $ref: "#/definitions/BatchAccountUpdateProperties"
+        description: The properties of the account.
+        x-ms-client-flatten: true
+      tags:
+        additionalProperties:
+          type: string
+        description: The user-specified tags associated with the account.
+        type: object
+  BatchAccountUpdateProperties:
+    description: The properties of a Batch account.
+    properties:
+      autoStorage:
+        $ref: "#/definitions/AutoStorageBaseProperties"
+        description: The properties related to the auto-storage account.
+  BatchLocationQuota:
+    description: Quotas associated with a Batch region for a particular subscription.
+    properties:
+      accountQuota:
+        description: The number of Batch accounts that may be created under the subscription in the specified region.
+        format: int32
+        readOnly: true
+        type: integer
+  CheckNameAvailabilityParameters:
+    description: Parameters for a check name availability request.
+    properties:
+      name:
+        description: The name to check for availability
+        type: string
+      type:
+        description: The resource type. Must be set to Microsoft.Batch/batchAccounts
+        enum:
+          - Microsoft.Batch/batchAccounts
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: Type
+    required:
+      - name
+      - type
+  CheckNameAvailabilityResult:
+    description: The CheckNameAvailability operation response.
+    properties:
+      message:
+        description: Gets an error message explaining the Reason value in more detail.
+        readOnly: true
+        type: string
+      nameAvailable:
+        description: Gets a boolean value that indicates whether the name is available for you to use. If true, the name is available. If false, the name has already been taken or invalid and cannot be used.
+        readOnly: true
+        type: boolean
+      reason:
+        description: Gets the reason that a Batch account name could not be used. The Reason element is only returned if NameAvailable is false.
+        enum:
+          - Invalid
+          - AlreadyExists
+        readOnly: true
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: NameAvailabilityReason
+  CloudError:
+    description: An error response from the Batch service.
+    properties:
+      error:
+        $ref: "#/definitions/CloudErrorBody"
+    x-ms-external: true
+  CloudErrorBody:
+    description: An error response from the Batch service.
+    properties:
+      code:
+        description: An identifier for the error. Codes are invariant and are intended to be consumed programmatically.
+        type: string
+      details:
+        description: A list of additional details about the error.
+        items:
+          $ref: "#/definitions/CloudErrorBody"
+        type: array
+      message:
+        description: A message describing the error, intended to be suitable for display in a user interface.
+        type: string
+      target:
+        description: The target of the particular error. For example, the name of the property in error.
+        type: string
+    x-ms-external: true
+  KeyVaultReference:
+    description: Identifies the Azure key vault associated with a Batch account.
+    properties:
+      id:
+        description: The resource ID of the Azure key vault associated with the Batch account.
+        type: string
+      url:
+        description: The URL of the Azure key vault associated with the Batch account.
+        type: string
+    required:
+      - id
+      - url
+  ListApplicationsResult:
+    description: The result of performing list applications.
+    properties:
+      nextLink:
+        description: The URL to get the next set of results.
+        type: string
+      value:
+        description: The list of applications.
+        items:
+          $ref: "#/definitions/Application"
+        type: array
+  Operation:
+    properties:
+      display:
+        properties:
+          description:
+            title: The friendly name of the operation
+            type: string
+          operation:
+            description: "For example: read, write, delete, or listKeys/action"
+            title: The operation type.
+            type: string
+          provider:
+            title: Friendly name of the resource provider.
+            type: string
+          resource:
+            title: The resource type on which the operation is performed.
+            type: string
+        title: The object that describes the operation.
+      name:
+        description: This is of the format {provider}/{resource}/{operation}
+        title: The operation name.
+        type: string
+      origin:
+        title: The intended executor of the operation.
+        type: string
+      properties:
+        title: Properties of the operation.
+        type: object
+    title: A REST API operation
+    type: object
+  OperationListResult:
+    properties:
+      nextLink:
+        title: The URL to get the next set of operation list results if there are any.
+        type: string
+      value:
+        items:
+          $ref: "#/definitions/Operation"
+        title: The list of operations supported by the resource provider.
+        type: array
+    title: Result of the request to list REST API operations. It contains a list of operations and a URL nextLink to get the next set of results.
+  PoolAllocationMode:
+    description: The allocation mode for creating pools in the Batch account.
+    enum:
+      - BatchService
+      - UserSubscription
+    type: string
+    x-ms-enum:
+      modelAsString: false
+      name: PoolAllocationMode
+  Resource:
+    description: A definition of an Azure resource.
+    properties:
+      id:
+        description: The ID of the resource.
+        readOnly: true
+        type: string
+      location:
+        description: The location of the resource.
+        readOnly: true
+        type: string
+      name:
+        description: The name of the resource.
+        readOnly: true
+        type: string
+      tags:
+        additionalProperties:
+          type: string
+        description: The tags of the resource.
+        readOnly: true
+        type: object
+      type:
+        description: The type of the resource.
+        readOnly: true
+        type: string
+    x-ms-azure-resource: true

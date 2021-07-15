@@ -1,0 +1,755 @@
+swagger: "2.0"
+schemes:
+  - https
+host: management.azure.com
+info:
+  description: The HDInsight Management Client.
+  title: HDInsightManagementClient
+  version: 2015-03-01-preview
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/hdinsight/resource-manager/Microsoft.HDInsight/preview/2015-03-01-preview/scriptActions.json
+      version: "2.0"
+  x-preferred: false
+  x-providerName: azure.com
+  x-serviceName: hdinsight-scriptActions
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    description: Azure Active Directory OAuth2 Flow
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+security:
+  - azure_auth:
+      - user_impersonation
+parameters:
+  ApiVersionParameter:
+    description: The HDInsight client API Version.
+    in: query
+    name: api-version
+    required: true
+    type: string
+  ClusterNameParameter:
+    description: The name of the cluster.
+    in: path
+    name: clusterName
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  ResourceGroupNameParameter:
+    description: The name of the resource group.
+    in: path
+    name: resourceGroupName
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  ScriptExecutionIdParameter:
+    description: The script execution Id
+    in: path
+    name: scriptExecutionId
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  ScriptNameParameter:
+    description: The name of the script.
+    in: path
+    name: scriptName
+    required: true
+    type: string
+    x-ms-parameter-location: method
+  SubscriptionIdParameter:
+    description: The subscription credentials which uniquely identify Microsoft Azure subscription. The subscription ID forms part of the URI for every service call.
+    in: path
+    name: subscriptionId
+    required: true
+    type: string
+paths:
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.HDInsight/clusters/{clusterName}/executeScriptActions":
+    post:
+      description: Executes script actions on the specified HDInsight cluster.
+      operationId: Clusters_ExecuteScriptActions
+      parameters:
+        - $ref: "#/parameters/SubscriptionIdParameter"
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/ClusterNameParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - description: The parameters for executing script actions.
+          in: body
+          name: parameters
+          required: true
+          schema:
+            description: The parameters for the script actions to execute on a running cluster.
+            properties:
+              persistOnSuccess:
+                description: Gets or sets if the scripts needs to be persisted.
+                type: boolean
+              scriptActions:
+                description: The list of run time script actions.
+                items:
+                  description: Describes a script action on a running cluster.
+                  properties:
+                    applicationName:
+                      description: The application name of the script action, if any.
+                      readOnly: true
+                      type: string
+                    name:
+                      description: The name of the script action.
+                      type: string
+                    parameters:
+                      description: The parameters for the script
+                      type: string
+                    roles:
+                      description: The list of roles where script will be executed.
+                      items:
+                        type: string
+                      type: array
+                    uri:
+                      description: The URI to the script.
+                      type: string
+                  required:
+                    - name
+                    - uri
+                    - roles
+                type: array
+            required:
+              - persistOnSuccess
+      responses:
+        "200":
+          description: Accepted response definition.
+        "202":
+          description: OK response definition.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            description: Describes the format of Error response.
+            properties:
+              code:
+                description: Error code
+                type: string
+              message:
+                description: Error message indicating why the operation failed.
+                type: string
+            type: object
+      tags:
+        - Clusters
+      x-ms-examples:
+        Execute script action on HDInsight cluster:
+          parameters:
+            api-version: 2015-03-01-preview
+            clusterName: cluster1
+            parameters:
+              persistOnSuccess: false
+              scriptActions:
+                - name: Test
+                  parameters: ""
+                  roles:
+                    - headnode
+                    - workernode
+                  uri: http://testurl.com/install.ssh
+            resourceGroupName: rg1
+            subscriptionId: subid
+          responses:
+            "200": {}
+            "202":
+              headers:
+                location: https://management.azure.com/subscriptions/subid/providers/Microsoft.HDInsight/pathToOperationResult
+      x-ms-long-running-operation: true
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.HDInsight/clusters/{clusterName}/scriptActions":
+    get:
+      description: Lists all the persisted script actions for the specified cluster.
+      operationId: ScriptActions_ListPersistedScripts
+      parameters:
+        - $ref: "#/parameters/SubscriptionIdParameter"
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/ClusterNameParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: OK response definition.
+          schema:
+            $ref: "#/definitions/ScriptActionsList"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            description: Describes the format of Error response.
+            properties:
+              code:
+                description: Error code
+                type: string
+              message:
+                description: Error message indicating why the operation failed.
+                type: string
+            type: object
+      tags:
+        - ScriptActions
+      x-ms-examples:
+        List all persisted script actions for the given cluster:
+          parameters:
+            api-version: 2015-03-01-preview
+            clusterName: cluster1
+            resourceGroupName: rg1
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                value:
+                  - applicationName: app
+                    name: app-Install
+                    parameters: ""
+                    roles:
+                      - edgenode
+                    uri: https://app.com/azure/app_install.sh
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.HDInsight/clusters/{clusterName}/scriptActions/{scriptName}":
+    delete:
+      description: Deletes a specified persisted script action of the cluster.
+      operationId: ScriptActions_Delete
+      parameters:
+        - $ref: "#/parameters/SubscriptionIdParameter"
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/ClusterNameParameter"
+        - $ref: "#/parameters/ScriptNameParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: OK response definition.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            description: Describes the format of Error response.
+            properties:
+              code:
+                description: Error code
+                type: string
+              message:
+                description: Error message indicating why the operation failed.
+                type: string
+            type: object
+      tags:
+        - ScriptActions
+      x-ms-examples:
+        Delete a script action on HDInsight cluster:
+          parameters:
+            api-version: 2015-03-01-preview
+            clusterName: cluster1
+            resourceGroupName: rg1
+            scriptName: scriptName
+            subscriptionId: subid
+          responses:
+            "200": {}
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.HDInsight/clusters/{clusterName}/scriptExecutionHistory":
+    get:
+      description: Lists all scripts' execution history for the specified cluster.
+      operationId: ScriptExecutionHistory_List
+      parameters:
+        - $ref: "#/parameters/SubscriptionIdParameter"
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/ClusterNameParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: OK response definition.
+          schema:
+            $ref: "#/definitions/ScriptActionExecutionHistoryList"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            description: Describes the format of Error response.
+            properties:
+              code:
+                description: Error code
+                type: string
+              message:
+                description: Error message indicating why the operation failed.
+                type: string
+            type: object
+      tags:
+        - ScriptExecutionHistory
+      x-ms-examples:
+        Get Script Execution History List:
+          parameters:
+            api-version: 2015-03-01-preview
+            clusterName: cluster1
+            resourceGroupName: rg1
+            scriptExecutionId: "391145124054712"
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                value:
+                  - applicationName: app1
+                    endTime: 2017-03-22T21:34:39.293
+                    executionSummary: []
+                    name: Test
+                    operation: PostClusterCreateScriptActionRequest
+                    parameters: ""
+                    roles:
+                      - headnode
+                      - workernode
+                    scriptExecutionId: 391145124054712
+                    startTime: 2017-03-22T21:34:39.293
+                    status: ValidationFailed
+                    uri: http://testurl.com/install.ssh
+                  - applicationName: app2
+                    endTime: 2017-03-22T21:34:39.293
+                    executionSummary: []
+                    name: Test
+                    operation: PostClusterCreateScriptActionRequest
+                    parameters: ""
+                    roles:
+                      - headnode
+                      - workernode
+                    scriptExecutionId: 391144597342127
+                    startTime: 2017-03-22T21:34:39.293
+                    status: ValidationFailed
+                    uri: http://testurl.com/install-script.ssh
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.HDInsight/clusters/{clusterName}/scriptExecutionHistory/{scriptExecutionId}":
+    get:
+      description: Gets the script execution detail for the given script execution ID.
+      operationId: ScriptActions_GetExecutionDetail
+      parameters:
+        - $ref: "#/parameters/SubscriptionIdParameter"
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/ClusterNameParameter"
+        - $ref: "#/parameters/ScriptExecutionIdParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: OK response definition.
+          schema:
+            allOf:
+              - description: Describes a script action on a running cluster.
+                properties:
+                  applicationName:
+                    description: The application name of the script action, if any.
+                    readOnly: true
+                    type: string
+                  name:
+                    description: The name of the script action.
+                    type: string
+                  parameters:
+                    description: The parameters for the script
+                    type: string
+                  roles:
+                    description: The list of roles where script will be executed.
+                    items:
+                      type: string
+                    type: array
+                  uri:
+                    description: The URI to the script.
+                    type: string
+                required:
+                  - name
+                  - uri
+                  - roles
+              - properties:
+                  debugInformation:
+                    description: The script action execution debug information.
+                    readOnly: true
+                    type: string
+                  endTime:
+                    description: The end time of script action execution.
+                    readOnly: true
+                    type: string
+                  executionSummary:
+                    description: The summary of script action execution result.
+                    items:
+                      description: The execution summary of a script action.
+                      properties:
+                        instanceCount:
+                          description: The instance count for a given script action execution status.
+                          format: int32
+                          readOnly: true
+                          type: integer
+                        status:
+                          description: The status of script action execution.
+                          readOnly: true
+                          type: string
+                    readOnly: true
+                    type: array
+                  operation:
+                    description: The reason why the script action was executed.
+                    readOnly: true
+                    type: string
+                  scriptExecutionId:
+                    description: The execution id of the script action.
+                    format: int64
+                    readOnly: true
+                    type: integer
+                  startTime:
+                    description: The start time of script action execution.
+                    readOnly: true
+                    type: string
+                  status:
+                    description: The current execution status of the script action.
+                    readOnly: true
+                    type: string
+            description: The execution details of a script action.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            description: Describes the format of Error response.
+            properties:
+              code:
+                description: Error code
+                type: string
+              message:
+                description: Error message indicating why the operation failed.
+                type: string
+            type: object
+      tags:
+        - ScriptExecutionHistory
+      x-ms-examples:
+        Get script execution history by script id:
+          parameters:
+            api-version: 2015-03-01-preview
+            clusterName: cluster1
+            resourceGroupName: rg1
+            scriptExecutionId: "391145124054712"
+            subscriptionId: subid
+          responses:
+            "200":
+              body:
+                applicationName: app1
+                debugInformation: ""
+                endTime: 2017-03-22T21:34:39.293
+                executionSummary: []
+                name: Test
+                operation: PostClusterCreateScriptActionRequest
+                parameters: ""
+                roles:
+                  - headnode
+                  - workernode
+                scriptExecutionId: 391145124054712
+                startTime: 2017-03-22T21:34:39.293
+                status: ValidationFailed
+                uri: http://testurl.com/install.ssh
+  "/subscriptions/{subscriptionId}/resourceGroups/{resourceGroupName}/providers/Microsoft.HDInsight/clusters/{clusterName}/scriptExecutionHistory/{scriptExecutionId}/promote":
+    post:
+      description: Promotes the specified ad-hoc script execution to a persisted script.
+      operationId: ScriptExecutionHistory_Promote
+      parameters:
+        - $ref: "#/parameters/SubscriptionIdParameter"
+        - $ref: "#/parameters/ResourceGroupNameParameter"
+        - $ref: "#/parameters/ClusterNameParameter"
+        - $ref: "#/parameters/ScriptExecutionIdParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: OK response definition.
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            description: Describes the format of Error response.
+            properties:
+              code:
+                description: Error code
+                type: string
+              message:
+                description: Error message indicating why the operation failed.
+                type: string
+            type: object
+      tags:
+        - Promote
+      x-ms-examples:
+        Promote a script action on HDInsight cluster:
+          parameters:
+            api-version: 2015-03-01-preview
+            clusterName: cluster1
+            resourceGroupName: rg1
+            scriptExecutionId: "391145124054712"
+            subscriptionId: subid
+          responses:
+            "200": {}
+definitions:
+  ClusterListRuntimeScriptActionDetailResult:
+    description: The list runtime script action detail response.
+    properties:
+      nextLink:
+        description: The link (url) to the next page of results.
+        readOnly: true
+        type: string
+      value:
+        description: The list of persisted script action details for the cluster.
+        items:
+          allOf:
+            - description: Describes a script action on a running cluster.
+              properties:
+                applicationName:
+                  description: The application name of the script action, if any.
+                  readOnly: true
+                  type: string
+                name:
+                  description: The name of the script action.
+                  type: string
+                parameters:
+                  description: The parameters for the script
+                  type: string
+                roles:
+                  description: The list of roles where script will be executed.
+                  items:
+                    type: string
+                  type: array
+                uri:
+                  description: The URI to the script.
+                  type: string
+              required:
+                - name
+                - uri
+                - roles
+            - properties:
+                debugInformation:
+                  description: The script action execution debug information.
+                  readOnly: true
+                  type: string
+                endTime:
+                  description: The end time of script action execution.
+                  readOnly: true
+                  type: string
+                executionSummary:
+                  description: The summary of script action execution result.
+                  items:
+                    description: The execution summary of a script action.
+                    properties:
+                      instanceCount:
+                        description: The instance count for a given script action execution status.
+                        format: int32
+                        readOnly: true
+                        type: integer
+                      status:
+                        description: The status of script action execution.
+                        readOnly: true
+                        type: string
+                  readOnly: true
+                  type: array
+                operation:
+                  description: The reason why the script action was executed.
+                  readOnly: true
+                  type: string
+                scriptExecutionId:
+                  description: The execution id of the script action.
+                  format: int64
+                  readOnly: true
+                  type: integer
+                startTime:
+                  description: The start time of script action execution.
+                  readOnly: true
+                  type: string
+                status:
+                  description: The current execution status of the script action.
+                  readOnly: true
+                  type: string
+          description: The execution details of a script action.
+        readOnly: true
+        type: array
+  ScriptAction:
+    description: Describes a script action on role on the cluster.
+    properties:
+      name:
+        description: The name of the script action.
+        type: string
+      parameters:
+        description: The parameters for the script provided.
+        type: string
+      uri:
+        description: The URI to the script.
+        type: string
+    required:
+      - name
+      - uri
+      - parameters
+  ScriptActionExecutionHistoryList:
+    description: The list script execution history response.
+    properties:
+      nextLink:
+        description: The link (url) to the next page of results.
+        readOnly: true
+        type: string
+      value:
+        description: The list of persisted script action details for the cluster.
+        items:
+          allOf:
+            - description: Describes a script action on a running cluster.
+              properties:
+                applicationName:
+                  description: The application name of the script action, if any.
+                  readOnly: true
+                  type: string
+                name:
+                  description: The name of the script action.
+                  type: string
+                parameters:
+                  description: The parameters for the script
+                  type: string
+                roles:
+                  description: The list of roles where script will be executed.
+                  items:
+                    type: string
+                  type: array
+                uri:
+                  description: The URI to the script.
+                  type: string
+              required:
+                - name
+                - uri
+                - roles
+            - properties:
+                debugInformation:
+                  description: The script action execution debug information.
+                  readOnly: true
+                  type: string
+                endTime:
+                  description: The end time of script action execution.
+                  readOnly: true
+                  type: string
+                executionSummary:
+                  description: The summary of script action execution result.
+                  items:
+                    description: The execution summary of a script action.
+                    properties:
+                      instanceCount:
+                        description: The instance count for a given script action execution status.
+                        format: int32
+                        readOnly: true
+                        type: integer
+                      status:
+                        description: The status of script action execution.
+                        readOnly: true
+                        type: string
+                  readOnly: true
+                  type: array
+                operation:
+                  description: The reason why the script action was executed.
+                  readOnly: true
+                  type: string
+                scriptExecutionId:
+                  description: The execution id of the script action.
+                  format: int64
+                  readOnly: true
+                  type: integer
+                startTime:
+                  description: The start time of script action execution.
+                  readOnly: true
+                  type: string
+                status:
+                  description: The current execution status of the script action.
+                  readOnly: true
+                  type: string
+          description: The execution details of a script action.
+        readOnly: true
+        type: array
+  ScriptActionPersistedGetResponseSpec:
+    description: The persisted script action for cluster.
+    properties:
+      applicationName:
+        description: The application name for the script action.
+        type: string
+      name:
+        description: The name of script action.
+        type: string
+      parameters:
+        description: The parameters for the script provided.
+        type: string
+      roles:
+        description: The list of roles where script will be executed.
+        items:
+          type: string
+        type: array
+      uri:
+        description: The URI to the script.
+        type: string
+  ScriptActionsList:
+    description: The persisted script action for the cluster.
+    properties:
+      nextLink:
+        description: The link (url) to the next page of results.
+        readOnly: true
+        type: string
+      value:
+        description: The list of persisted script action details for the cluster.
+        items:
+          allOf:
+            - description: Describes a script action on a running cluster.
+              properties:
+                applicationName:
+                  description: The application name of the script action, if any.
+                  readOnly: true
+                  type: string
+                name:
+                  description: The name of the script action.
+                  type: string
+                parameters:
+                  description: The parameters for the script
+                  type: string
+                roles:
+                  description: The list of roles where script will be executed.
+                  items:
+                    type: string
+                  type: array
+                uri:
+                  description: The URI to the script.
+                  type: string
+              required:
+                - name
+                - uri
+                - roles
+            - properties:
+                debugInformation:
+                  description: The script action execution debug information.
+                  readOnly: true
+                  type: string
+                endTime:
+                  description: The end time of script action execution.
+                  readOnly: true
+                  type: string
+                executionSummary:
+                  description: The summary of script action execution result.
+                  items:
+                    description: The execution summary of a script action.
+                    properties:
+                      instanceCount:
+                        description: The instance count for a given script action execution status.
+                        format: int32
+                        readOnly: true
+                        type: integer
+                      status:
+                        description: The status of script action execution.
+                        readOnly: true
+                        type: string
+                  readOnly: true
+                  type: array
+                operation:
+                  description: The reason why the script action was executed.
+                  readOnly: true
+                  type: string
+                scriptExecutionId:
+                  description: The execution id of the script action.
+                  format: int64
+                  readOnly: true
+                  type: integer
+                startTime:
+                  description: The start time of script action execution.
+                  readOnly: true
+                  type: string
+                status:
+                  description: The current execution status of the script action.
+                  readOnly: true
+                  type: string
+          description: The execution details of a script action.
+        type: array

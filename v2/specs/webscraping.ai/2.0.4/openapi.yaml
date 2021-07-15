@@ -1,0 +1,366 @@
+openapi: 3.0.2
+servers:
+  - url: https://api.webscraping.ai
+info:
+  contact:
+    email: support@webscraping.ai
+    name: WebScraping.AI Support
+    url: https://webscraping.ai
+  description: A client for https://webscraping.ai API. It provides a web scaping automation API with Chrome JS rendering, rotating proxies and builtin HTML parsing.
+  title: WebScraping.AI
+  version: 2.0.4
+  x-apisguru-categories:
+    - developer_tools
+  x-origin:
+    - format: openapi
+      url: https://webscraping.ai/openapi.yml
+      version: "3.0"
+  x-providerName: webscraping.ai
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+security:
+  - api_key: []
+tags:
+  - description: Get full HTML content of pages with proxies and Chrome JS rendering
+    name: HTML
+  - description: Get HTML content of selected page areas (like price, search results, page title, etc.)
+    name: Selected HTML
+  - description: Information about your account calls quota
+    name: Account
+paths:
+  /account:
+    get:
+      description: Always returns JSON
+      operationId: account
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                remaining_api_calls: 200000
+                remaining_concurrency: 100
+                resets_at: 1617073667
+              schema:
+                $ref: "#/components/schemas/Account"
+          description: Success
+        "403":
+          $ref: "#/components/responses/403"
+      summary: Information about your account calls quota
+      tags:
+        - Account
+  /html:
+    get:
+      description: Returns just HTML on success, JSON on error
+      operationId: getHTML
+      parameters:
+        - $ref: "#/components/parameters/url"
+        - $ref: "#/components/parameters/headers"
+        - $ref: "#/components/parameters/timeout"
+        - $ref: "#/components/parameters/js"
+        - $ref: "#/components/parameters/proxy"
+      responses:
+        "200":
+          content:
+            text/html:
+              example: |-
+                <html><head>
+                    <title>Example Domain</title>
+                </head>
+
+                <body>
+                <div>
+                    <h1>Example Domain</h1>
+                </body></html>
+              schema:
+                type: string
+          description: Success
+        "400":
+          $ref: "#/components/responses/400"
+        "402":
+          $ref: "#/components/responses/402"
+        "403":
+          $ref: "#/components/responses/403"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "502":
+          $ref: "#/components/responses/502"
+        "504":
+          $ref: "#/components/responses/504"
+      summary: Page HTML by URL
+      tags:
+        - HTML
+  /selected:
+    get:
+      description: Returns just HTML on success, JSON on error
+      operationId: getSelected
+      parameters:
+        - description: CSS selector (null by default, returns whole page HTML)
+          example: h1
+          in: query
+          name: selector
+          schema:
+            type: string
+        - $ref: "#/components/parameters/url"
+        - $ref: "#/components/parameters/headers"
+        - $ref: "#/components/parameters/timeout"
+        - $ref: "#/components/parameters/js"
+        - $ref: "#/components/parameters/proxy"
+      responses:
+        "200":
+          content:
+            text/html:
+              example: <a href="https://www.iana.org/domains/example">More information...</a>
+              schema:
+                type: string
+          description: Success
+        "400":
+          $ref: "#/components/responses/400"
+        "402":
+          $ref: "#/components/responses/402"
+        "403":
+          $ref: "#/components/responses/403"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "502":
+          $ref: "#/components/responses/502"
+        "504":
+          $ref: "#/components/responses/504"
+      summary: HTML of a selected page area by URL and CSS selector
+      tags:
+        - Selected HTML
+  /selected-multiple:
+    get:
+      description: Always returns JSON
+      operationId: getSelectedMultiple
+      parameters:
+        - description: Multiple CSS selectors (null by default, returns whole page HTML)
+          example:
+            - h1
+          in: query
+          name: selectors
+          schema:
+            items:
+              type: string
+            type: array
+        - $ref: "#/components/parameters/url"
+        - $ref: "#/components/parameters/headers"
+        - $ref: "#/components/parameters/timeout"
+        - $ref: "#/components/parameters/js"
+        - $ref: "#/components/parameters/proxy"
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                - <a href='/test'>some link</a>
+                - Hello
+              schema:
+                $ref: "#/components/schemas/SelectedAreas"
+          description: Success
+        "400":
+          $ref: "#/components/responses/400"
+        "402":
+          $ref: "#/components/responses/402"
+        "403":
+          $ref: "#/components/responses/403"
+        "429":
+          $ref: "#/components/responses/429"
+        "500":
+          $ref: "#/components/responses/500"
+        "502":
+          $ref: "#/components/responses/502"
+        "504":
+          $ref: "#/components/responses/504"
+      summary: HTML of multiple page areas by URL and CSS selectors
+      tags:
+        - Selected HTML
+components:
+  parameters:
+    headers:
+      description: 'HTTP headers to pass to the target page. Can be specified either via a nested query parameter (...&headers[One]=value1&headers=[Another]=value2) or as a JSON encoded object (...&headers={"One": "value1", "Another": "value2"})'
+      example:
+        Cookie: session=some_id
+      in: query
+      name: headers
+      schema:
+        additionalProperties:
+          type: string
+        type: object
+    js:
+      description: Execute on-page JavaScript using a headless browser (true by default)
+      example: true
+      in: query
+      name: js
+      schema:
+        default: true
+        type: boolean
+    js_timeout:
+      description: Maximum JavaScript rendering time in ms. Increase it in case if you see a loading indicator instead of data on the target page.
+      example: 5000
+      in: query
+      name: timeout
+      schema:
+        default: 2000
+        maximum: 20000
+        minimum: 1
+        type: integer
+    postUrl:
+      description: URL of the target page
+      example: https://httpbin.org/post
+      in: query
+      name: url
+      required: true
+      schema:
+        type: string
+    proxy:
+      description: Type of proxy, use residential proxies if your site restricts traffic from datacenters (datacenter by default). Note that residential proxy requests are more expensive than datacenter, see the pricing page for details.
+      example: datacenter
+      in: query
+      name: proxy
+      schema:
+        default: datacenter
+        enum:
+          - datacenter
+          - residential
+        type: string
+    timeout:
+      description: Maximum processing time in ms. Increase it in case of timeout errors (5000 by default, maximum is 30000)
+      example: 5000
+      in: query
+      name: timeout
+      schema:
+        default: 5000
+        maximum: 30000
+        minimum: 1
+        type: integer
+    url:
+      description: URL of the target page
+      example: https://example.com
+      in: query
+      name: url
+      required: true
+      schema:
+        type: string
+  requestBodies:
+    Body:
+      content:
+        application/json:
+          schema:
+            additionalProperties: true
+            type: object
+        application/x-www-form-urlencoded:
+          schema:
+            additionalProperties: true
+            type: object
+        application/xml:
+          schema:
+            additionalProperties: true
+            type: object
+        text/plain:
+          schema:
+            type: string
+      description: Request body to pass to the target page
+  responses:
+    "400":
+      content:
+        application/json:
+          example:
+            message: Invalid CSS selector
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Parameters validation error
+    "402":
+      content:
+        application/json:
+          example:
+            message: Some error
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Billing issue, probably you've ran out of credits
+    "403":
+      content:
+        application/json:
+          example:
+            message: Some error
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Wrong API key
+    "429":
+      content:
+        application/json:
+          example:
+            message: Some error
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Too many concurrent requests
+    "500":
+      content:
+        application/json:
+          example:
+            message: Some error
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Unexpected error, try again or contact support@webscraping.ai
+    "502":
+      content:
+        application/json:
+          example:
+            status_code: 500
+            status_message: Some website error
+          schema:
+            $ref: "#/components/schemas/PageError"
+      description: Non-2xx and non-404 HTTP status code on the target page
+    "504":
+      content:
+        application/json:
+          example:
+            message: Some error
+          schema:
+            $ref: "#/components/schemas/Error"
+      description: Timeout error, try increasing timeout parameter value
+  schemas:
+    Account:
+      properties:
+        remaining_api_calls:
+          description: Remaining API calls quota
+          type: integer
+        remaining_concurrency:
+          description: Remaining concurrent requests
+          type: integer
+        resets_at:
+          description: Next billing cycle start time (UNIX timestamp)
+          type: integer
+      title: Account limits info
+      type: object
+    Error:
+      properties:
+        message:
+          description: Error description
+          type: string
+      title: Generic error
+      type: object
+    PageError:
+      properties:
+        status_code:
+          description: Response HTTP status code (403, 500, etc)
+          type: integer
+        status_message:
+          description: Response HTTP status message
+          type: string
+      title: Non-2xx and non-404 HTTP status code on the target page
+      type: object
+    SelectedAreas:
+      description: Array of elements matched by selectors
+      items:
+        type: string
+      title: HTML for selected page areas
+      type: array
+  securitySchemes:
+    api_key:
+      in: query
+      name: api_key
+      type: apiKey

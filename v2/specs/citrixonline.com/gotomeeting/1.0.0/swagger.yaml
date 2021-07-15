@@ -1,0 +1,1905 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.citrixonline.com
+basePath: /G2M/rest
+info:
+  contact:
+    email: developer-support@citrixonline.com
+    name: Developer Support
+    url: https://developer.citrixonline.com
+  description: <br>The GoToMeeting API provides seamless integration of GoToMeeting provisioning and meeting management into your existing infrastructure or third party applications.<br><br>For customers, the ability to add, suspend or delete an organizer in your GoToMeeting Corporate account from within your primary management systems simplifies and streamlines the entire process of account management. The ability to monitor meeting schedules, history and active meeting status allows managers to leverage GoToMeeting activities through your primary applications.<br><br>For third parties, the ability to create, update or delete a meeting from within your application makes real-time collaboration possible for your customers. The ability to update meeting schedules, view history and scheduled meetings, and view attendees from past meetings allows you to enhance your users' experience and the value of your applications.
+  termsOfService: https://developer.citrixonline.com/terms-use
+  title: GoToMeeting
+  version: 1.0.0
+  x-apisguru-categories:
+    - collaboration
+  x-logo:
+    backgroundColor: "#5F6166"
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_citrix_profile_image.jpeg
+  x-origin:
+    - format: swagger
+      url: https://developer.citrixonline.com/sites/default/files/citrix/citrix-apis/gotomeeting.json
+      version: "2.0"
+  x-providerName: citrixonline.com
+  x-serviceName: gotomeeting
+externalDocs:
+  url: https://developer.citrixonline.com/
+consumes:
+  - application/json
+produces:
+  - application/json
+parameters:
+  Authorization:
+    description: Access token
+    in: header
+    name: Authorization
+    required: true
+    type: string
+  groupKey:
+    description: The key of the group
+    format: int64
+    in: path
+    name: groupKey
+    required: true
+    type: integer
+  meetingId:
+    description: The meeting ID
+    format: int64
+    in: path
+    name: meetingId
+    required: true
+    type: integer
+  organizerKey:
+    description: The key of the organizer
+    format: int64
+    in: path
+    name: organizerKey
+    required: true
+    type: integer
+tags:
+  - description: Operations on organizers. Only available to users with the admin role.
+    name: Organizers
+  - description: Operations on meetings.
+    name: Meetings
+  - description: Operations on groups. Only available to users with the admin role.
+    name: Groups
+paths:
+  /groups:
+    get:
+      description: List all groups for an account. This API call is only available to users with the admin role.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Group"
+            type: array
+        "403":
+          description: Forbidden
+      summary: Get groups
+      tags:
+        - Groups
+  "/groups/{groupKey}/attendees":
+    get:
+      description: Returns all attendees for all meetings within specified date range held by organizers within the specified group. This API call is only available to users with the admin role. This API call can be used only for groups with maximum 50 organizers.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/groupKey"
+        - description: Start of date range, in ISO8601 UTC format, e.g. 2015-07-01T22:00:00Z
+          format: date-time
+          in: query
+          name: startDate
+          type: string
+        - description: End of date range, in ISO8601 UTC format, e.g. 2015-07-01T23:00:00Z
+          format: date-time
+          in: query
+          name: endDate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/AttendeeByGroup"
+            type: array
+        "400":
+          description: Bad Request
+      summary: Get attendees by group
+      tags:
+        - Groups
+  "/groups/{groupKey}/historicalMeetings":
+    get:
+      description: "Get historical meetings for the specified group that started within the specified date/time range. This API call is only available to users with the admin role. This API call is restricted to groups with a maximum of 50 organizers. Remark: Meetings which are still ongoing at the time of the request are NOT contained in the result array."
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/groupKey"
+        - description: Required start of date range, in ISO8601 UTC format, e.g. 2015-07-01T22:00:00Z
+          format: date-time
+          in: query
+          name: startDate
+          required: true
+          type: string
+        - description: Required end of date range, in ISO8601 UTC format, e.g. 2015-07-01T23:00:00Z
+          format: date-time
+          in: query
+          name: endDate
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/HistoricalMeetingByGroup"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      summary: Get historical meetings by group
+      tags:
+        - Groups
+  "/groups/{groupKey}/meetings":
+    get:
+      deprecated: true
+      description: "DEPRECATED: Please use the new API calls 'Get historical meetings by group' and 'Get upcoming meetings by group'. Get meetings for a specified group. Additional filters can be used to view only meetings within a specified date range. This API call is only available to users with the admin role."
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/groupKey"
+        - description: When 'true', returns all past meetings within date range
+          in: query
+          name: history
+          required: true
+          type: boolean
+        - description: If history=true, required start of date range, in ISO8601 UTC format, e.g. 2015-07-01T22:00:00Z
+          format: date-time
+          in: query
+          name: startDate
+          required: true
+          type: string
+        - description: If history=true, required end of date range, in ISO8601 UTC format, e.g. 2015-07-01T23:00:00Z
+          format: date-time
+          in: query
+          name: endDate
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/HistoryMeetingByGroup"
+            type: array
+        "400":
+          description: Bad Request
+      summary: "DEPRECATED: Get historical meetings by group"
+      tags:
+        - Groups
+  "/groups/{groupKey}/organizers":
+    get:
+      description: Returns all the organizers within a specific group. This API call is only available to users with the admin role.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/groupKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/OrganizerByGroup"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+      summary: Get organizers by group
+      tags:
+        - Groups
+    post:
+      description: Creates a new organizer and sends an email to the email address defined in request. This API call is only available to users with the admin role. You may also pass 'G2W' or 'G2T' or 'OPENVOICE' as productType variables, creating organizers for those products. A G2W or G2T organizer will also have access to G2M.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/groupKey"
+        - description: The details of the organizer to be created
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/OrganizerReq"
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: "#/definitions/OrganizerShort"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Server Error
+        "409":
+          description: Conflict
+      summary: Create organizer in group
+      tags:
+        - Groups
+  "/groups/{groupKey}/upcomingMeetings":
+    get:
+      description: Get upcoming meetings for a specified group. This API call is only available to users with the admin role. This API call can be used only for groups with maximum 50 organizers.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/groupKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/UpcomingMeetingByGroup"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "500":
+          description: Internal Server Error
+      summary: Get upcoming meetings by group
+      tags:
+        - Groups
+  /historicalMeetings:
+    get:
+      description: "Get historical meetings for the currently authenticated organizer that started within the specified date/time range. Remark: Meetings which are still ongoing at the time of the request are NOT contained in the result array."
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - description: Required start of date range, in ISO8601 UTC format, e.g. 2015-07-01T22:00:00Z
+          format: date-time
+          in: query
+          name: startDate
+          required: true
+          type: string
+        - description: Required end of date range, in ISO8601 UTC format, e.g. 2015-07-01T23:00:00Z
+          format: date-time
+          in: query
+          name: endDate
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/HistoricalMeeting"
+            type: array
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+      summary: Get historical meetings
+      tags:
+        - Meetings
+  /meetings:
+    get:
+      deprecated: true
+      description: "DEPRECATED: Please use the new API calls 'Get historical meetings' and 'Get upcoming meetings'.  Gets historical meetings for the current authenticated organizer. Requires date range for filtering results to only meetings within specified dates. History searches will contain the parameter 'meetingInstanceKey' which is used in conjunction with the call 'Get Attendees by Meeting' to get attendee information for a past meeting."
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - description: When 'true', returns all past meetings within date range
+          enum:
+            - true
+          in: query
+          name: history
+          type: boolean
+        - description: If history=true, required start of date range, in ISO8601 UTC format, e.g. 2015-07-01T22:00:00Z
+          format: date-time
+          in: query
+          name: startDate
+          type: string
+        - description: If history=true, required end of date range, in ISO8601 UTC format, e.g. 2015-07-01T23:00:00Z
+          format: date-time
+          in: query
+          name: endDate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/MeetingHistory"
+            type: array
+      summary: "DEPRECATED: Get historical meetings"
+      tags:
+        - Meetings
+    post:
+      description: Create a new meeting based on the parameters specified.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - description: The meeting details
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/MeetingReqCreate"
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: "#/definitions/MeetingCreated"
+            type: array
+        "400":
+          description: Bad Request
+      summary: Create meeting
+      tags:
+        - Meetings
+  "/meetings/{meetingId}":
+    delete:
+      description: Deletes the meeting identified by the meetingId.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/meetingId"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "404":
+          description: Not found
+      summary: Delete meeting
+      tags:
+        - Meetings
+    get:
+      description: Returns the meeting details for the specified meeting.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/meetingId"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/MeetingById"
+            type: array
+        "404":
+          description: Not found
+      summary: Get meeting
+      tags:
+        - Meetings
+    put:
+      description: Updates an existing meeting specified by meetingId.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/meetingId"
+        - description: The meeting details
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/MeetingReqUpdate"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "404":
+          description: Not found
+      summary: Update meeting
+      tags:
+        - Meetings
+  "/meetings/{meetingId}/attendees":
+    get:
+      description: List all attendees for specified meetingId of historical meeting. The historical meetings can be fetched using 'Get historical meetings', 'Get historical meetings by organizer', and 'Get historical meetings by group'. For users with the admin role this call returns attendees for any meeting. For any other user the call will return attendees for meetings on which the user is a valid organizer.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - description: The meeting ID
+          format: int64
+          in: path
+          name: meetingId
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/AttendeeByMeeting"
+            type: array
+        "404":
+          description: Not found
+      summary: Get attendees by meeting
+      tags:
+        - Meetings
+  "/meetings/{meetingId}/start":
+    get:
+      description: Returns a host URL that can be used to start a meeting. When this URL is opened in a web browser, the GoToMeeting client will be downloaded and launched and the meeting will start. The end user is not required to login to a client.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/meetingId"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/StartUrl"
+      summary: Start meeting
+      tags:
+        - Meetings
+  /organizers:
+    delete:
+      description: Deletes the individual organizer specified by the email address. This API call is only available to users with the admin role.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - description: The email address of the organizer
+          in: query
+          name: email
+          required: true
+          type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+      summary: Delete organizer by email
+      tags:
+        - Organizers
+    get:
+      description: Gets the individual organizer specified by the organizer's email address. If an email address is not specified, all organizers are returned. This API call is only available to users with the admin role.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - description: The email address of the organizer
+          in: query
+          name: email
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Organizer"
+            type: array
+        "404":
+          description: Not found
+      summary: Get organizer by email / Get all organizers
+      tags:
+        - Organizers
+    post:
+      description: Creates a new organizer and sends an email to the email address defined in the request. This API call is only available to users with the admin role. You may also pass 'G2W' or 'G2T' or 'OPENVOICE' as productType variables, creating organizers for those products. A G2W or G2T organizer will also have access to G2M.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - description: The details of the organizer to be created
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/OrganizerReq"
+      responses:
+        "201":
+          description: Created
+          schema:
+            items:
+              $ref: "#/definitions/OrganizerShort"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Server Error
+        "409":
+          description: Conflict
+      summary: Create organizer
+      tags:
+        - Organizers
+  "/organizers/{organizerKey}":
+    delete:
+      description: Deletes the individual organizer specified by the organizer key. This API call is only available to users with the admin role.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+      responses:
+        "204":
+          description: No Content
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+      summary: Delete organizer
+      tags:
+        - Organizers
+    get:
+      description: Returns the individual organizer specified by the key. This API call is only available to users with the admin role. Non-admin users can only make this call for their own organizerKey.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Organizer"
+            type: array
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+      summary: Get organizer
+      tags:
+        - Organizers
+    put:
+      description: Updates the products of the specified organizer. To add a product (G2M, G2W, G2T, OPENVOICE) for the organizer, the call must be sent once for each product you want to add. To remove all products for the organizer, set status to 'suspended'. The call is limited to users with the admin role.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - description: The organizer's status
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/OrganizerStatus"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+      summary: Update organizer
+      tags:
+        - Organizers
+  "/organizers/{organizerKey}/attendees":
+    get:
+      description: Lists all attendees for all meetings within a specified date range for a specified organizer. This API call is only available to users with the admin role.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - description: A required start of date range in ISO8601 UTC format, e.g. 2015-07-01T22:00:00Z
+          format: date-time
+          in: query
+          name: startDate
+          required: true
+          type: string
+        - description: A required end of date range in ISO8601 UTC format, e.g. 2015-07-01T23:00:00Z
+          format: date-time
+          in: query
+          name: endDate
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/AttendeeByOrganizer"
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not found
+      summary: Get attendees by organizer
+      tags:
+        - Organizers
+  "/organizers/{organizerKey}/historicalMeetings":
+    get:
+      description: "Get historical meetings for the specified organizer that started within the specified date/time range. Remark: Meetings which are still ongoing at the time of the request are NOT contained in the result array."
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - description: Required start of date range, in ISO8601 UTC format, e.g. 2015-07-01T22:00:00Z
+          format: date-time
+          in: query
+          name: startDate
+          required: true
+          type: string
+        - description: Required end of date range, in ISO8601 UTC format, e.g. 2015-07-01T23:00:00Z
+          format: date-time
+          in: query
+          name: endDate
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/HistoricalMeeting"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+      summary: Get historical meetings by organizer
+      tags:
+        - Organizers
+  "/organizers/{organizerKey}/meetings":
+    get:
+      deprecated: true
+      description: "DEPRECATED: Please use the new API calls 'Get historical meetings by organizer' and 'Get upcoming meetings by organizer'. Gets future (scheduled) or past (history) meetings for a specified organizer. Include 'history=true' and the past start and end dates in the URL to retrieve past meetings. Enter 'scheduled=true' (without dates) to get scheduled meetings."
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - description: When 'true', returns all future meetings. Date range not supported.
+          in: query
+          name: scheduled
+          type: boolean
+        - description: When 'true', returns all past meetings within date range
+          in: query
+          name: history
+          type: boolean
+        - description: If history is 'true', required start of date range, in ISO8601 UTC format, e.g. 2015-07-01T22:00:00Z
+          format: date-time
+          in: query
+          name: startDate
+          type: string
+        - description: If history is 'true', required end of date range, in ISO8601 UTC format, e.g. 2015-07-01T23:00:00Z
+          format: date-time
+          in: query
+          name: endDate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/MeetingByOrganizer"
+            type: array
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+      summary: "DEPRECATED: Get meetings by organizer"
+      tags:
+        - Organizers
+  "/organizers/{organizerKey}/upcomingMeetings":
+    get:
+      description: Get upcoming meetings for a specified organizer. This API call is only available to users with the admin role.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/UpcomingMeeting"
+            type: array
+        "403":
+          description: Forbidden
+        "404":
+          description: Not found
+      summary: Get upcoming meetings by organizer
+      tags:
+        - Organizers
+  /upcomingMeetings:
+    get:
+      description: Gets upcoming meetings for the current authenticated organizer.
+      parameters:
+        - $ref: "#/parameters/Authorization"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/UpcomingMeeting"
+            type: array
+        "403":
+          description: Forbidden
+      summary: Get upcoming meetings
+      tags:
+        - Meetings
+definitions:
+  AttendeeByGroup:
+    description: Describes an attendee of a meeting instance held by an organizer within a specified group.
+    properties:
+      attendeeEmail:
+        description: The attendee's email address
+        type: string
+      attendeeName:
+        description: The full name of the attendee
+        type: string
+      conferenceCallInfo:
+        description: Audio options for the attended meeting
+        type: string
+      duration:
+        description: The duration of attendance in minutes
+        format: int32
+        type: integer
+      email:
+        description: The email address of the meeting organizer
+        type: string
+      endTime:
+        description: The time the meeting instance ended
+        format: date-time
+        type: string
+      firstName:
+        description: The first name of the organizer of the attended meeting
+        type: string
+      groupName:
+        description: The name of the group
+        type: string
+      joinTime:
+        description: The time the attendee joined the meeting instance
+        format: date-time
+        type: string
+      lastName:
+        description: The surname of the meeting organizer
+        type: string
+      leaveTime:
+        description: The time the attendee left the meeting instance
+        format: date-time
+        type: string
+      meetingId:
+        description: The meeting ID
+        type: string
+      meetingInstanceKey:
+        description: The key of the attended meeting instance
+        format: int64
+        type: integer
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      numAttendees:
+        description: The number of attendees at the attended meeting instance
+        format: int32
+        type: integer
+      organizerKey:
+        description: The key of the meeting organizer
+        type: string
+      organizerkey:
+        description: The key of the meeting organizer. Field retained for backwards compatibility reasons
+        format: int64
+        type: integer
+      startTime:
+        description: The time the meeting instance started
+        format: date-time
+        type: string
+      subject:
+        description: The subject of the attended meeting
+        type: string
+    required:
+      - lastName
+      - groupName
+      - numAttendees
+      - attendeeName
+      - subject
+      - endTime
+      - conferenceCallInfo
+      - organizerkey
+      - startTime
+      - meetingInstanceKey
+      - duration
+      - joinTime
+      - email
+      - leaveTime
+      - attendeeEmail
+      - organizerKey
+      - meetingId
+      - meetingType
+      - firstName
+  AttendeeByMeeting:
+    description: Describes an attendee of a specified meeting instance.
+    properties:
+      attendeeEmail:
+        description: The attendee's email address
+        type: string
+      attendeeName:
+        description: The attendee's full name
+        type: string
+      conferenceCallInfo:
+        description: Audio options for the meeting
+        type: string
+      duration:
+        description: The meeting duration in minutes
+        format: int32
+        type: integer
+      email:
+        description: The email address of the meeting organizer
+        type: string
+      endTime:
+        description: The ending time of the meeting instance
+        format: date-time
+        type: string
+      firstName:
+        description: The first name of the meeting organizer
+        type: string
+      groupName:
+        description: DEPRECATED. Returns 'NA'
+        type: string
+      joinTime:
+        description: The time the attendee joined the meeting instance
+        format: date-time
+        type: string
+      lastName:
+        description: The surname of the meeting organizer
+        type: string
+      leaveTime:
+        description: The time the attendee left the meeting instance
+        format: date-time
+        type: string
+      meetingId:
+        description: The meeting ID
+        format: int64
+        type: integer
+      meetingInstanceKey:
+        description: The key of the unique meeting instance
+        format: int64
+        type: integer
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      name:
+        description: The attendee's full name
+        type: string
+      numAttendees:
+        description: The number of attendees at the meeting instance
+        format: int32
+        type: integer
+      organizerkey:
+        description: The key of the meeting organizer
+        format: int64
+        type: integer
+      startTime:
+        description: The starting time of the meeting instance
+        format: date-time
+        type: string
+      subject:
+        description: The subject of the meeting
+        type: string
+    required:
+      - lastName
+      - groupName
+      - numAttendees
+      - attendeeName
+      - subject
+      - endTime
+      - conferenceCallInfo
+      - organizerkey
+      - startTime
+      - meetingInstanceKey
+      - duration
+      - email
+      - joinTime
+      - name
+      - leaveTime
+      - attendeeEmail
+      - meetingId
+      - meetingType
+      - firstName
+  AttendeeByOrganizer:
+    description: Describes an attendee of a meeting instance held by a specified organizer.
+    properties:
+      attendeeEmail:
+        description: The attendee's email address
+        type: string
+      attendeeName:
+        description: The full name of the attendee
+        type: string
+      conferenceCallInfo:
+        description: Audio options for the attended meeting
+        type: string
+      duration:
+        description: The duration of attendance in minutes
+        format: int32
+        type: integer
+      email:
+        description: The email address of the meeting organizer
+        type: string
+      endTime:
+        description: The time the meeting instance ended
+        format: date-time
+        type: string
+      firstName:
+        description: The first name of the meeting organizer
+        type: string
+      groupName:
+        description: The name of the group the organizer is assigned to
+        type: string
+      joinTime:
+        description: The time the attendee joined the meeting instance
+        format: date-time
+        type: string
+      lastName:
+        description: The surname of the meeting organizer
+        type: string
+      leaveTime:
+        description: The time the attendee left the meeting instance
+        format: date-time
+        type: string
+      meetingId:
+        description: The meeting ID
+        format: int64
+        type: integer
+      meetingInstanceKey:
+        description: The key of the attended meeting instance
+        format: int64
+        type: integer
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      name:
+        description: The full name of the meeting organizer
+        type: string
+      newMeetingId:
+        description: The formatted meeting ID
+        type: string
+      numAttendees:
+        description: The number of attendees at the attended meeting instance
+        format: int32
+        type: integer
+      organizerkey:
+        description: The key of the meeting organizer. Field retained for backwards compatibility reasons
+        format: int64
+        type: integer
+      startTime:
+        description: The time the meeting instance started
+        format: date-time
+        type: string
+      subject:
+        description: The subject of the attended meeting
+        type: string
+    required:
+      - lastName
+      - groupName
+      - numAttendees
+      - attendeeName
+      - subject
+      - endTime
+      - conferenceCallInfo
+      - organizerkey
+      - startTime
+      - meetingInstanceKey
+      - duration
+      - newMeetingId
+      - email
+      - joinTime
+      - name
+      - leaveTime
+      - attendeeEmail
+      - meetingId
+      - meetingType
+      - firstName
+  Group:
+    description: Describes a collection of organizers categorized by department or job function, for example. Can be a subgroup of a larger group.
+    properties:
+      groupName:
+        description: The name of this group
+        type: string
+      groupkey:
+        description: The key of this group
+        format: int64
+        type: integer
+      numOrganizers:
+        description: The number of organizers assigned to this group
+        format: int32
+        type: integer
+      parentKey:
+        description: The key of the parent group this group belongs to. Identical with the groupkey if this group is not a subgroup
+        format: int64
+        type: integer
+      status:
+        $ref: "#/definitions/Status"
+        description: The status of this group, i.e. whether the organizers assigned to it are able to host meetings
+    required:
+      - groupkey
+      - groupName
+      - parentKey
+      - status
+      - numOrganizers
+  HistoricalMeeting:
+    description: Describes a historical meeting within specified dates.
+    properties:
+      accountKey:
+        description: The key of the company account
+        type: string
+      conferenceCallInfo:
+        description: Audio options for the meeting
+        type: string
+      duration:
+        description: The duration of the meeting session in minutes
+        type: string
+      email:
+        description: The meeting organizer's email address
+        type: string
+      endTime:
+        description: The time the meeting instance ended
+        format: date-time
+        type: string
+      firstName:
+        description: The meeting organizer's first name
+        type: string
+      lastName:
+        description: The surname of the meeting organizer
+        type: string
+      locale:
+        description: The current language setting of the organizer in the web portal
+        type: string
+      meetingId:
+        description: The meeting ID
+        type: string
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      numAttendees:
+        description: The number of attendees at the meeting instance
+        type: string
+      organizerKey:
+        description: The key of the meeting organizer
+        type: string
+      sessionId:
+        description: The ID of the meeting session
+        type: string
+      startTime:
+        description: The time the meeting instance started
+        format: date-time
+        type: string
+      subject:
+        description: The subject of the meeting
+        type: string
+    required:
+      - startTime
+      - lastName
+      - duration
+      - numAttendees
+      - accountKey
+      - email
+      - sessionId
+      - subject
+      - locale
+      - organizerKey
+      - meetingId
+      - meetingType
+      - firstName
+      - endTime
+      - conferenceCallInfo
+  HistoricalMeetingByGroup:
+    description: Describes a historical meeting within specified dates for a specified group.
+    properties:
+      accountKey:
+        description: The key of the company account
+        type: string
+      duration:
+        description: The duration of the meeting session in minutes
+        type: string
+      email:
+        description: The meeting organizer's email address
+        type: string
+      endTime:
+        description: The time the meeting instance ended
+        format: date-time
+        type: string
+      firstName:
+        description: The meeting organizer's first name
+        type: string
+      groupName:
+        description: The name of the group
+        type: string
+      lastName:
+        description: The surname of the meeting organizer
+        type: string
+      locale:
+        description: The current language setting of the organizer in the web portal
+        type: string
+      meetingId:
+        description: The meeting ID
+        type: string
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      numAttendees:
+        description: The number of attendees at the meeting instance
+        type: string
+      organizerKey:
+        description: The key of the meeting organizer
+        type: string
+      startTime:
+        description: The time the meeting instance started
+        format: date-time
+        type: string
+      subject:
+        description: The subject of the meeting
+        type: string
+    required:
+      - startTime
+      - lastName
+      - duration
+      - numAttendees
+      - accountKey
+      - email
+      - subject
+      - locale
+      - organizerKey
+      - meetingId
+      - meetingType
+      - firstName
+      - endTime
+      - groupName
+  HistoryMeetingByGroup:
+    description: Describes past meeting instance(s) held by an organizer within a specified group.
+    properties:
+      conferenceCallInfo:
+        description: Audio options for the meeting
+        type: string
+      duration:
+        description: The duration of this meeting instance in minutes
+        type: string
+      email:
+        description: The email address of the meeting organizer
+        type: string
+      endTime:
+        description: The time this meeting instance ended
+        format: date-time
+        type: string
+      firstName:
+        description: The first name of the meeting organizer
+        type: string
+      groupName:
+        description: The name of the group
+        type: string
+      lastName:
+        description: The surname of the meeting organizer
+        type: string
+      meetingId:
+        description: The meeting ID
+        type: string
+      meetingInstanceKey:
+        description: The key of this meeting instance
+        format: int64
+        type: integer
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      numAttendees:
+        description: The number of attendees at this meeting instance
+        format: int32
+        type: integer
+      organizerKey:
+        description: The key of the meeting organizer
+        type: string
+      organizerkey:
+        description: The key of the meeting organizer. Field retained for backwards compatibility reasons
+        format: int64
+        type: integer
+      startTime:
+        description: The time this meeting instance started
+        format: date-time
+        type: string
+      subject:
+        description: The subject of the meeting
+        type: string
+    required:
+      - lastName
+      - groupName
+      - numAttendees
+      - subject
+      - endTime
+      - conferenceCallInfo
+      - organizerkey
+      - startTime
+      - meetingInstanceKey
+      - duration
+      - email
+      - organizerKey
+      - meetingId
+      - meetingType
+      - firstName
+  MeetingById:
+    description: Describes a given meeting.
+    properties:
+      conferenceCallInfo:
+        description: Audio options of the meeting
+        type: string
+      createTime:
+        description: DEPRECATED. Returns an empty string ''
+        format: date-time
+        type: string
+      duration:
+        description: The duration of the meeting in minutes
+        format: int32
+        type: integer
+      endTime:
+        description: The ending time of the meeting
+        format: date-time
+        type: string
+      maxParticipants:
+        description: The maximum number of participants allowed at the meeting
+        format: int32
+        type: integer
+      meetingId:
+        description: The meeting ID
+        format: int64
+        type: integer
+      meetingKey:
+        description: The meeting ID. Field retained for backwards compatibility reasons
+        format: int64
+        type: integer
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      passwordRequired:
+        description: Indicates whether a password is required to join the meeting
+        type: boolean
+      startTime:
+        description: The meeting starting time
+        format: date-time
+        type: string
+      status:
+        $ref: "#/definitions/MeetingStatus"
+        description: The meeting status, i.e whether the meeting is running or not
+      subject:
+        description: The subject of the meeting
+        type: string
+      uniqueMeetingId:
+        description: The meeting ID. Field retained for backwards compatibility reasons
+        format: int64
+        type: integer
+    required:
+      - createTime
+      - passwordRequired
+      - status
+      - subject
+      - endTime
+      - conferenceCallInfo
+      - startTime
+      - duration
+      - maxParticipants
+      - meetingId
+      - meetingKey
+      - meetingType
+      - uniqueMeetingId
+  MeetingByOrganizer:
+    description: Describes a meeting scheduled by a specified organizer
+    properties:
+      conferenceCallInfo:
+        description: Audio options for the meeting
+        type: string
+      createTime:
+        description: DEPRECATED. Returns an empty string ''
+        format: date-time
+        type: string
+      endTime:
+        description: The ending time of the meeting
+        format: date-time
+        type: string
+      maxParticipants:
+        description: The maximum number of participants allowed at the meeting
+        format: int32
+        type: integer
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      meetingid:
+        description: The meeting ID
+        format: int64
+        type: integer
+      passwordRequired:
+        description: Indicates whether a password is required to join the meeting
+        type: boolean
+      startTime:
+        description: The starting time of the meeting
+        format: date-time
+        type: string
+      status:
+        $ref: "#/definitions/MeetingStatus"
+        description: The meeting status, i.e whether the meeting is running or not
+      subject:
+        description: The subject of the meeting
+        type: string
+      uniqueMeetingId:
+        description: A unique ID for the meeting
+        format: int64
+        type: integer
+    required:
+      - startTime
+      - createTime
+      - meetingid
+      - maxParticipants
+      - passwordRequired
+      - status
+      - subject
+      - meetingType
+      - endTime
+      - uniqueMeetingId
+      - conferenceCallInfo
+  MeetingCreated:
+    description: Describes a newly created meeting.
+    properties:
+      conferenceCallInfo:
+        description: Audio options for the meeting
+        type: string
+      joinURL:
+        description: The URL the meeting participants will use to join the meeting
+        type: string
+      maxParticipants:
+        description: The maximum number of participants allowed in the meeting
+        format: int32
+        type: integer
+      meetingid:
+        description: The meeting ID
+        format: int64
+        type: integer
+      uniqueMeetingId:
+        description: The meeting ID. Field retained for backwards compatibility reasons
+        format: int64
+        type: integer
+    required:
+      - joinURL
+      - meetingid
+      - maxParticipants
+      - uniqueMeetingId
+      - conferenceCallInfo
+  MeetingHistory:
+    description: Describes a unique past meeting instance.
+    properties:
+      conferenceCallInfo:
+        description: Audio options for the meeting
+        type: string
+      date:
+        description: The time the meeting instance started. Field retained for backwards compatibility reasons
+        format: date-time
+        type: string
+      duration:
+        description: The duration of the meeting session in minutes
+        format: int32
+        type: integer
+      email:
+        description: The meeting organizer's email address
+        type: string
+      endTime:
+        description: The time the meeting instance ended
+        format: date-time
+        type: string
+      firstName:
+        description: The meeting organizer's first name
+        type: string
+      groupName:
+        description: DEPRECATED. An empty string '' is returned
+        type: string
+      lastName:
+        description: The surname of the meeting organizer
+        type: string
+      meetingId:
+        description: The meeting ID
+        format: int64
+        type: integer
+      meetingInstanceKey:
+        description: The key of the unique meeting instance
+        format: int64
+        type: integer
+      meetingKey:
+        description: The meeting ID. Field retained for backwards compatibility reasons
+        format: int64
+        type: integer
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      newMeetingId:
+        description: Formatted meeting ID
+        type: string
+      newOrganizerKey:
+        description: The key of the meeting organizer. Field introduced for compatibility reasons
+        type: string
+      numAttendees:
+        description: The number of attendees at the meeting instance
+        format: int32
+        type: integer
+      organizerKey:
+        description: The key of the meeting organizer
+        type: string
+      organizerkey:
+        description: The key of the meeting organizer. Field retained for backwards compatibility reasons
+        type: string
+      passwordRequired:
+        description: DEPRECATED. An empty string '' is returned
+        type: boolean
+      sessionId:
+        description: The ID of the meeting session
+        format: int64
+        type: integer
+      startTime:
+        description: The time the meeting instance started
+        format: date-time
+        type: string
+      status:
+        description: DEPRECATED. An empty string '' is returned
+        type: string
+      subject:
+        description: The subject of the meeting
+        type: string
+      uniqueMeetingId:
+        description: The meeting ID. Field retained for backwards compatibility reasons
+        format: int64
+        type: integer
+    required:
+      - lastName
+      - groupName
+      - numAttendees
+      - passwordRequired
+      - status
+      - subject
+      - endTime
+      - date
+      - conferenceCallInfo
+      - startTime
+      - organizerkey
+      - meetingInstanceKey
+      - newOrganizerKey
+      - duration
+      - newMeetingId
+      - sessionId
+      - email
+      - meetingId
+      - organizerKey
+      - meetingKey
+      - meetingType
+      - firstName
+      - uniqueMeetingId
+  MeetingReqCreate:
+    description: Describes the information required to create a meeting.
+    properties:
+      conferencecallinfo:
+        description: "A required string. Can be one of the following options: <br>PSTN (PSTN only), <br>Free (PSTN and VoIP), <br>Hybrid, (PSTN and VoIP), <br>Private (you provide numbers and access code), or <br>VoIP (VoIP only). <br>You may also enter plain text for numbers and access codes with a limit of 255 characters"
+        type: string
+      endtime:
+        description: The ending time of the meeting. Required ISO8601 UTC string, e.g. 2015-07-01T23:00:00Z
+        format: date-time
+        type: string
+      meetingtype:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      passwordrequired:
+        description: Indicates whether a password is required to join the meeting. Required parameter
+        type: boolean
+      starttime:
+        description: The starting time of the meeting. Required ISO8601 UTC string, e.g. 2015-07-01T22:00:00Z
+        format: date-time
+        type: string
+      subject:
+        description: The subject of the meeting. 100 characters maximum. The characters '&gt;' and '&lt;' have to be replaced with the corresponding html character code (&amp;gt; for &#39;&gt;&#39; and &amp;lt; for &#39;&lt;&#39;)
+        type: string
+      timezonekey:
+        description: DEPRECATED. Must be provided and set to empty string ''
+        type: string
+    required:
+      - subject
+      - starttime
+      - endtime
+      - passwordrequired
+      - conferencecallinfo
+      - timezonekey
+      - meetingtype
+  MeetingReqUpdate:
+    description: Describes the information required to update a meeting.
+    properties:
+      conferencecallinfo:
+        description: "A required string. Can be one of the following options: <br>PSTN (PSTN only), <br>Free (PSTN and VoIP), <br>Hybrid, (PSTN and VoIP), <br>Private (you provide numbers and access code), or <br>VoIP (VoIP only). <br>You may also enter plain text for numbers and access codes with a limit of 255 characters"
+        type: string
+      endtime:
+        description: The ending time of the meeting. A required ISO8601 UTC string, e.g. 2015-07-01T22:00:00Z
+        format: date-time
+        type: string
+      meetingtype:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      passwordrequired:
+        description: Indicates whether a password is required to join the meeting. Required parameter
+        type: boolean
+      starttime:
+        description: The starting time of the meeting. A required ISO8601 UTC string, e.g. 2015-07-01T22:00:00Z
+        format: date-time
+        type: string
+      subject:
+        description: A description of the meeting. 100 characters maximum. The characters '&gt;' and '&lt;' have to be replaced with the corresponding html character code (&amp;gt; for &#39;&gt;&#39; and &amp;lt; for &#39;&lt;&#39;)
+        type: string
+      timezonekey:
+        description: DEPRECATED. Must be provided and set to empty string ''
+        type: string
+    required:
+      - subject
+      - starttime
+      - endtime
+      - passwordrequired
+      - conferencecallinfo
+      - timezonekey
+      - meetingtype
+  MeetingScheduled:
+    description: Describes a scheduled meeting.
+    properties:
+      conferenceCallInfo:
+        description: Audio options for the meeting.
+        type: string
+      createTime:
+        description: The time the meeting was created.
+        format: date-time
+        type: string
+      endTime:
+        description: The ending time of the meeting.
+        format: date-time
+        type: string
+      maxParticipants:
+        description: The maximum number of participants allowed at the meeting.
+        format: int32
+        type: integer
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      meetingid:
+        description: The meeting ID.
+        format: int64
+        type: integer
+      passwordRequired:
+        description: Indicates whether a password is required to join the meeting.
+        type: boolean
+      startTime:
+        description: The starting time of the meeting.
+        format: date-time
+        type: string
+      status:
+        $ref: "#/definitions/MeetingStatus"
+        description: The meeting status, i.e whether the meeting is running or not
+      subject:
+        description: The subject of the meeting.
+        type: string
+      uniqueMeetingId:
+        description: The meeting ID. Field retained for backwards compatibility reasons.
+        format: int64
+        type: integer
+    required:
+      - startTime
+      - createTime
+      - meetingid
+      - maxParticipants
+      - passwordRequired
+      - status
+      - subject
+      - meetingType
+      - endTime
+      - uniqueMeetingId
+      - conferenceCallInfo
+  MeetingStatus:
+    description: The meeting status, i.e whether the meeting is running or not
+    enum:
+      - ACTIVE
+      - INACTIVE
+    type: string
+  MeetingType:
+    description: The meeting type
+    enum:
+      - immediate
+      - recurring
+      - scheduled
+    type: string
+  Organizer:
+    description: Describes an organizer.
+    properties:
+      email:
+        description: The organizer's email address
+        type: string
+      firstName:
+        description: The organizer's first name
+        type: string
+      groupId:
+        description: The key of the group this organizer is assigned to
+        format: int64
+        type: integer
+      groupName:
+        description: The name of the group this organizer is assigned to
+        type: string
+      lastName:
+        description: The organizer's surname
+        type: string
+      maxNumAttendeesAllowed:
+        description: The maximum number of attendees allowed at sessions hosted by this organizer.
+        format: int32
+        type: integer
+      organizerKey:
+        description: The key of the organizer
+        format: int64
+        type: integer
+      products:
+        description: The products the organizer has access to, can be 'G2M', 'G2W', 'G2T' or 'OPENVOICE'
+        items:
+          $ref: "#/definitions/Product"
+        type: array
+      status:
+        $ref: "#/definitions/Status"
+        description: The status of the organizer, i.e. whether the organizer is able to host meetings
+    required:
+      - lastName
+      - groupId
+      - groupName
+      - status
+      - email
+      - organizerKey
+      - firstName
+      - products
+      - maxNumAttendeesAllowed
+  OrganizerByGroup:
+    description: Describes an organizer within a specified group.
+    properties:
+      email:
+        description: The organizer's email address
+        type: string
+      firstName:
+        description: The organizer's first name
+        type: string
+      groupId:
+        description: The key of the group
+        format: int64
+        type: integer
+      groupName:
+        description: The name of the group
+        type: string
+      lastName:
+        description: The organizer's surname
+        type: string
+      maxNumAttendeesAllowed:
+        description: The maximum number of attendees allowed at sessions held by this organizer
+        format: int32
+        type: integer
+      organizerKey:
+        description: The key of the organizer
+        format: int64
+        type: integer
+      products:
+        description: The products the organizer has access to, can be 'G2M', 'G2W', 'G2T' or 'OPENVOICE'
+        items:
+          $ref: "#/definitions/Product"
+        type: array
+      status:
+        $ref: "#/definitions/Status"
+        description: The status of the organizer, i.e. whether the organizer is able to host meetings
+    required:
+      - lastName
+      - groupId
+      - groupName
+      - status
+      - email
+      - organizerKey
+      - firstName
+      - products
+      - maxNumAttendeesAllowed
+  OrganizerReq:
+    description: Describes the information required to create an organizer, with or without assigning a group.
+    properties:
+      firstName:
+        description: The first name of the organizer
+        type: string
+      lastName:
+        description: The surname of the organizer
+        type: string
+      organizerEmail:
+        description: The email address of the organizer
+        type: string
+      productType:
+        $ref: "#/definitions/Product"
+        description: A product the organizer has access to, can be 'G2M', 'G2W', 'G2T' or 'OPENVOICE'
+    required:
+      - organizerEmail
+      - firstName
+      - lastName
+      - productType
+  OrganizerShort:
+    description: Describes a newly created organizer.
+    properties:
+      email:
+        description: The organizer's email address
+        type: string
+      key:
+        description: The organizer's key
+        format: int64
+        type: integer
+    required:
+      - key
+      - email
+  OrganizerStatus:
+    description: Describes the status of an organizer, i.e. whether they are able to host meetings.
+    properties:
+      productType:
+        $ref: "#/definitions/Product"
+        description: The product you want to add to the organizer. The call must be sent once for each product you want to add
+      status:
+        description: The status of the organizer can be set to. Use 'suspended' to remove all products. The formerly used status 'active' is now DEPRECATED for this call. To activate the organizer please assign a product. In this case do not pass this parameter
+        enum:
+          - suspended
+        type: string
+  Product:
+    description: The products the organizer has access to, can be 'G2M', 'G2W', 'G2T' or 'OPENVOICE'
+    enum:
+      - G2M
+      - G2T
+      - G2W
+      - OPENVOICE
+    type: string
+  ScheduledMeetingByGroup:
+    description: Describes a meeting scheduled by an organizer within a specified group.
+    properties:
+      attendees:
+        description: Not in use.
+        type: string
+      conferenceCallInfo:
+        description: Audio options for the meeting.
+        type: string
+      email:
+        description: The email address of the meeting organizer.
+        type: string
+      firstName:
+        description: The first name of the meeting organizer.
+        type: string
+      groupName:
+        description: The name of the group.
+        type: string
+      lastName:
+        description: The surname of the meeting organizer.
+        type: string
+      meetingId:
+        description: The meeting ID.
+        type: string
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      organizerKey:
+        description: The key of the meeting organizer.
+        type: string
+      organizerkey:
+        description: The key of the meeting organizer. Field retained for backwards compatibility reasons.
+        format: int64
+        type: integer
+      passwordRequired:
+        description: Indicates whether a password is required to join the meeting.
+        type: boolean
+      subject:
+        description: The subject of the meeting.
+        type: string
+    required:
+      - organizerkey
+      - attendees
+      - lastName
+      - groupName
+      - passwordRequired
+      - email
+      - subject
+      - meetingId
+      - organizerKey
+      - meetingType
+      - firstName
+      - conferenceCallInfo
+  StartUrl:
+    description: Host URL that can be used to start a meeting
+    properties:
+      hostURL:
+        description: The host URL that can be used to start a meeting.
+        type: string
+    required:
+      - hostURL
+  Status:
+    description: The status of an organizer (or group), i.e. whether the organizer (or the members of the group respectively) are able to host meetings
+    enum:
+      - active
+      - suspended
+    type: string
+  UpcomingMeeting:
+    description: Describes an upcoming meeting.
+    properties:
+      accountKey:
+        description: The key of the company account
+        type: string
+      conferenceCallInfo:
+        description: Audio options for the meeting
+        type: string
+      email:
+        description: The meeting organizer's email address
+        type: string
+      endTime:
+        description: The time the meeting instance ended
+        format: date-time
+        type: string
+      firstName:
+        description: The meeting organizer's first name
+        type: string
+      lastName:
+        description: The surname of the meeting organizer
+        type: string
+      locale:
+        description: The current language setting of the organizer in the web portal
+        type: string
+      meetingId:
+        description: The meeting ID
+        type: string
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      organizerKey:
+        description: The key of the meeting organizer
+        type: string
+      passwordRequired:
+        description: Indicates whether a password is required to join the meeting or not
+        type: boolean
+      startTime:
+        description: The time the meeting instance will start
+        format: date-time
+        type: string
+      status:
+        $ref: "#/definitions/MeetingStatus"
+        description: The meeting status, i.e whether the meeting is running or not
+      subject:
+        description: The subject of the meeting
+        type: string
+    required:
+      - startTime
+      - lastName
+      - accountKey
+      - passwordRequired
+      - email
+      - status
+      - subject
+      - locale
+      - organizerKey
+      - meetingId
+      - meetingType
+      - firstName
+      - endTime
+      - conferenceCallInfo
+  UpcomingMeetingByGroup:
+    description: Describes an upcoming meeting of a group.
+    properties:
+      accountKey:
+        description: The key of the company account
+        type: string
+      email:
+        description: The meeting organizer's email address
+        type: string
+      endTime:
+        description: The time the meeting instance ended
+        format: date-time
+        type: string
+      firstName:
+        description: The meeting organizer's first name
+        type: string
+      groupName:
+        description: The name of the group the meeting belongs to
+        type: string
+      lastName:
+        description: The surname of the meeting organizer
+        type: string
+      locale:
+        description: The current language setting of the organizer in the web portal
+        type: string
+      meetingId:
+        description: The meeting ID
+        type: string
+      meetingType:
+        $ref: "#/definitions/MeetingType"
+        description: The meeting type
+      organizerKey:
+        description: The key of the meeting organizer
+        type: string
+      passwordRequired:
+        description: Indicates whether a password is required to join the meeting or not
+        type: boolean
+      startTime:
+        description: The time the meeting instance will start
+        format: date-time
+        type: string
+      status:
+        $ref: "#/definitions/MeetingStatus"
+        description: DEPRECATED. This status flag is always set to 'INACTIVE'. It exists for backwards compatibility reasons only
+      subject:
+        description: The subject of the meeting
+        type: string
+    required:
+      - startTime
+      - lastName
+      - accountKey
+      - passwordRequired
+      - email
+      - subject
+      - locale
+      - organizerKey
+      - meetingId
+      - meetingType
+      - firstName
+      - endTime
+      - groupName

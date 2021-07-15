@@ -1,0 +1,2795 @@
+openapi: 3.0.1
+servers:
+  - description: API Production Server
+    url: https://listen-api.listennotes.com/api/v2
+info:
+  contact:
+    email: hello@listennotes.com
+    name: Listen Notes
+    url: https://www.listennotes.com/api/
+    x-twitter: listennotes
+  description: |
+    Simple & no-nonsense podcast search & directory API. Search all podcasts and episodes by people, places, or topics.
+  termsOfService: https://www.listennotes.com/api/terms/
+  title: "Listen API: Podcast Search & Directory API"
+  version: "2.0"
+  x-apisguru-categories:
+    - entertainment
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_listennotes_profile_image.jpeg
+  x-origin:
+    - converter:
+        url: https://github.com/mermade/oas-kit
+        version: 7.0.4
+      format: openapi
+      url: https://listen-api.listennotes.com/api/v2/openapi.yaml
+      version: "3.0"
+  x-providerName: listennotes.com
+tags:
+  - description: Endpoints to search podcasts
+    name: Search API
+  - description: Endpoints to fetch podcasts data
+    name: Directory API
+  - description: Endpoints to improve the podcast database
+    name: Podcaster API
+paths:
+  /best_podcasts:
+    get:
+      description: |
+        Get a list of curated best podcasts by genre,
+        which are curated by Listen Notes staffs based on various signals from the Internet, e.g.,
+        top charts on other podcast platforms, recommendations from mainstream media,
+        user activities on listennotes.com...
+        You can get the genre ids from `GET /genres` endpoint.
+        This endpoint returns same data as https://www.listennotes.com/best-podcasts/
+      operationId: getBestPodcasts
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: You can get the id from `GET /genres`. If not specified, it'll be the overall best podcasts, which can be considered as a special genre.
+          explode: true
+          in: query
+          name: genre_id
+          required: false
+          schema:
+            example: "93"
+            type: string
+          style: form
+        - description: Page number of those podcasts in this genre.
+          explode: true
+          in: query
+          name: page
+          required: false
+          schema:
+            example: 2
+            type: integer
+          style: form
+        - description: |
+            Filter best podcasts by country/region.
+            Please note that podcasts that are "best" in a country/region may not be produced in that country/region.
+            For example, a podcast from the US may be very popular in Canada.
+            You can get the supported country codes (e.g., us, jp, gb...) from `GET /regions`.
+            If not specified, you'll get "best podcasts" in United States.
+          explode: true
+          in: query
+          name: region
+          required: false
+          schema:
+            default: us
+            example: us
+            type: string
+          style: form
+        - description: |
+            Filter best podcasts by the publisher's country/region.
+            This is to narrow down the results to include "best podcasts" produced in a specific country/region.
+            You can get the supported country codes (e.g., us, jp, gb...) from `GET /regions`.
+            If not specified, you'll get "best podcasts" produced in any country/region.
+            If you want to get a country/region's "best podcasts" that are also produced in that country/region,
+            then you need to specify both **region** and **publisher_region**,
+            e.g., `region=jp` and `publisher_region=jp`.
+          explode: true
+          in: query
+          name: publisher_region
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: |
+            Filter best podcasts by language.
+            You can get a list of supported languages (e.g., English, Chinese, Japanese...) from `GET /languages`.
+            If not specified, you'll get "best podcasts" in any language.
+          explode: true
+          in: query
+          name: language
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: Whether or not to exclude podcasts with explicit language. 1 is yes, and 0 is no.
+          explode: true
+          in: query
+          name: safe_mode
+          required: false
+          schema:
+            default: 0
+            enum:
+              - 0
+              - 1
+            example: 0
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BestPodcastsResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+          links:
+            paginate:
+              description: Pagination through podcasts.
+              operationId: getBestPodcasts
+              parameters:
+                page: $response.body#/next_page_number
+        "401":
+          description: Wrong api key or your account is suspended.
+        "404":
+          description: Endpoint not exist, or podcast / episode not exist.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch a list of best podcasts by genre
+      tags:
+        - Directory API
+  /curated_podcasts:
+    get:
+      description: |
+        A bunch of curated lists from online media. For each list, you'll get basic info of up to 5 podcasts. To get detailed meta data of all podcasts in a specific list, you need to use `GET /curated_podcasts/{id}`. We add new curated lists to the database on a daily basis.
+      operationId: getCuratedPodcasts
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: Page number of curated lists.
+          example: 2
+          explode: true
+          in: query
+          name: page
+          required: false
+          schema:
+            default: 1
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetCuratedPodcastsResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+          links:
+            paginate:
+              description: Pagination through curated lists.
+              operationId: getCuratedPodcasts
+              parameters:
+                page: $response.body#/next_page_number
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch curated lists of podcasts
+      tags:
+        - Directory API
+  "/curated_podcasts/{id}":
+    get:
+      description: |
+        Get detailed meta data of all podcasts in a specific curated list.
+        This endpoint returns same data as https://www.listennotes.com/curated-podcasts/
+      operationId: getCuratedPodcastById
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: |
+            id for a specific curated list of podcasts. You can get the id from the response of `GET /search?type=curated` or `GET /curated_podcasts`.
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            example: SDFKduyJ47r
+            type: string
+          style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CuratedListFull"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "404":
+          description: Endpoint not exist, or podcast / episode not exist.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch a curated list of podcasts by id
+      tags:
+        - Directory API
+  /episodes:
+    post:
+      description: |
+        Batch fetch basic meta data for up to 10 episodes. This endpoint could be used to implement custom playlists for individual episodes. For detailed meta data of an individual episode, you need to use `GET /episodes/{id}`. This endpoint is available only in the PRO/ENTERPRISE plan.
+      operationId: getEpisodesInBatch
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/GetEpisodesInBatchForm"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetEpisodesInBatchResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Batch fetch basic meta data for episodes
+      tags:
+        - Directory API
+  "/episodes/{id}":
+    get:
+      description: Fetch detailed meta data for a specific episode.
+      operationId: getEpisodeById
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: id for a specific episode. You can get episode id from using other endpoints, e.g., `GET /search`...
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            example: 6b6d65930c5a4f71b254465871fed370
+            type: string
+          style: simple
+        - description: To include the transcript of this episode or not? If it is 1, then include the transcript in the **transcript** field. The default value is 0 - we don't include transcript by default, because 1) it would make the response data very big, thus slow response time; 2) less than 1% of episodes have transcripts. The transcript field is available only in the PRO/ENTERPRISE plan.
+          explode: false
+          in: query
+          name: show_transcript
+          required: false
+          schema:
+            default: 0
+            example: 1
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeFull"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "404":
+          description: Endpoint not exist, or podcast / episode not exist.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch detailed meta data for an episode by id
+      tags:
+        - Directory API
+  "/episodes/{id}/recommendations":
+    get:
+      description: Fetch up to 8 episode recommendations based on the given episode id.
+      operationId: getEpisodeRecommendations
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: Episode id.
+          example: 254444fa6cf64a43a95292a70eb6869b
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: Whether or not to exclude podcasts with explicit language. 1 is yes, and 0 is no.
+          explode: true
+          in: query
+          name: safe_mode
+          required: false
+          schema:
+            default: 0
+            enum:
+              - 0
+              - 1
+            example: 0
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetEpisodeRecommendationsResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "404":
+          description: Endpoint not exist, or podcast / episode not exist.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch recommendations for an episode
+      tags:
+        - Directory API
+  /genres:
+    get:
+      description: |
+        Get a list of podcast genres that are supported in Listen Notes.
+        The genre id can be passed to other endpoints as a parameter to get podcasts in a specific genre,
+        e.g., `GET /best_podcasts`, `GET /search`...
+        You may want to cache the list of genres on the client side.
+      operationId: getGenres
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: |
+            Just show top level genres? If 1, yes, just show top level genres. If 0, no, show all genres.
+          explode: true
+          in: query
+          name: top_level_only
+          required: false
+          schema:
+            default: 0
+            enum:
+              - 0
+              - 1
+            example: 1
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetGenresResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch a list of podcast genres
+      tags:
+        - Directory API
+  /just_listen:
+    get:
+      description: Recently published episodes are more likely to be fetched. Good luck!
+      operationId: justListen
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeSimple"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch a random podcast episode
+      tags:
+        - Directory API
+  /languages:
+    get:
+      description: |
+        Get a list of languages that are supported in Listen Notes database. You can use the language string as query parameter in `GET /search`.
+      operationId: getLanguages
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetLanguagesResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch a list of supported languages for podcasts
+      tags:
+        - Directory API
+  /playlists:
+    get:
+      description: |
+        This endpoint returns same data as listennotes.com/listen under your account.
+        You can use the **page** parameter to do pagination and fetch more playlists.
+      operationId: getPlaylists
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: |
+            How do you want to sort playlists?
+          explode: true
+          in: query
+          name: sort
+          required: false
+          schema:
+            default: recent_added_first
+            enum:
+              - recent_added_first
+              - oldest_added_first
+              - name_a_to_z
+              - name_z_to_a
+            example: recent_added_first
+            type: string
+          style: form
+        - description: |
+            Page number of playlists.
+          explode: true
+          in: query
+          name: page
+          required: false
+          schema:
+            default: 1
+            example: 1
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaylistsResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+          links:
+            paginate:
+              description: Pagination through playlists.
+              operationId: getPlaylists
+              parameters:
+                page: $response.body#/page
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch a list of your playlists.
+      tags:
+        - Playlist API
+  "/playlists/{id}":
+    get:
+      description: |
+        A playlist can be an episode list (i.e., all items are episodes) or a podcast list (i.e., all items are podcasts),
+        which is essentially the same as those created via listennotes.com/listen/.
+        This endpoint fetches a list of items (i.e., episodes or podcasts) in the playlist.
+        You can use the **last_pub_date_ms** parameter to do pagination and fetch more items.
+        A playlist can be **public** (discoverable on ListenNotes.com),
+        **unlisted** (accessible to anyone who knows the playlist id),
+        or **private** (accessible to its owner).
+        You can fetch all playlists created by you, and **public** / **unlisted** playlists created by others.
+      operationId: getPlaylistById
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: |
+            Playlist id (always 11 characters, e.g., m1pe7z60bsw).
+            You can get the podcast id from the url of a playlist, e.g.,
+            m1pe7z60bsw is the playlist id of listennotes.com/listen/podcasts-about-podcasting-m1pe7z60bsw
+          example: m1pe7z60bsw
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: |
+            The type of this playlist, which should be either **episode_list** or **podcast_list**.
+          explode: true
+          in: query
+          name: type
+          required: false
+          schema:
+            default: episode_list
+            enum:
+              - episode_list
+              - podcast_list
+            example: episode_list
+            type: string
+          style: form
+        - description: |
+            For playlist items pagination.
+            It's the value of **last_timestamp_ms** from the response of last request.
+            If it's 0 or not specified, just return the latest or the oldest 20 items,
+            depending on the value of the **sort** parameter.
+          explode: true
+          in: query
+          name: last_timestamp_ms
+          required: false
+          schema:
+            default: 0
+            example: 0
+            type: integer
+          style: form
+        - description: |
+            How do you want to sort playlist items?
+          explode: true
+          in: query
+          name: sort
+          required: false
+          schema:
+            default: recent_added_first
+            enum:
+              - recent_added_first
+              - oldest_added_first
+              - recent_published_first
+              - oldest_published_first
+            example: recent_added_first
+            type: string
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PlaylistResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+          links:
+            paginate:
+              description: Pagination through playlist items.
+              operationId: getPlaylistById
+              parameters:
+                last_timestamp_ms: $response.body#/last_timestamp_ms
+        "401":
+          description: Wrong api key or your account is suspended.
+        "404":
+          description: Endpoint not exist, or podcast / episode not exist.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch a playlist's info and items (i.e., episodes or podcasts).
+      tags:
+        - Playlist API
+  /podcasts:
+    post:
+      description: |
+        Batch fetch basic meta data for up to 10 podcasts.
+        This endpoint could be used to build something like OPML import,
+        allowing users to import a bunch of podcasts via rss urls.
+        For detailed meta data (including episodes) of an individual podcast, you need to use `GET /podcasts/{id}`. This endpoint is available only in the PRO/ENTERPRISE plan.
+      operationId: getPodcastsInBatch
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/GetPodcastsInBatchForm"
+        required: false
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPodcastsInBatchResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+          links:
+            paginate:
+              description: Pagination through latest episodes.
+              operationId: getPodcastsInBatch
+              parameters:
+                next_episode_pub_date: $response.body#/next_episode_pub_date
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Batch fetch basic meta data for podcasts
+      tags:
+        - Directory API
+  /podcasts/submit:
+    post:
+      description: |
+        Podcast hosting services can use this endpoint to help your users directly submit a new podcast to Listen Notes database. If the podcast doesn't exist in the database, "status" in the response will be "in review", and we'll review it within 12 hours. If the podcast exists, "status" in the response will be "found". You can use `POST /podcasts` to check if multiple podcasts exist in the database. If you want to get a notification once the podcast is accepted, you can either specify the "email" parameter or configure a webhook url in the dashboard: listennotes.com/api/dashboard/#webhooks
+      operationId: submitPodcast
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              $ref: "#/components/schemas/SubmitPodcastForm"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SubmitPodcastResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "400":
+          description: Something wrong on your end (Client side errors), e.g., missing required parameters.
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Submit a podcast to Listen Notes database
+      tags:
+        - Podcaster API
+  "/podcasts/{id}":
+    delete:
+      description: |
+        Podcast hosting services can use this endpoint to streamline the process of podcast deletion on behave of their users (podcasters). We will review the deletion request within 12 hours. If the podcast is already deleted, the "status" field in the response will be "deleted". Otherwise, the status field will be "in review". If you want to get a notification once the podcast is deleted, you can configure a webhook url in the dashboard: listennotes.com/api/dashboard/#webhooks
+      operationId: deletePodcastById
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: Podcast id. You can get podcast id from using other endpoints, e.g., `GET /search`, `GET /best_podcasts`...
+          example: 4d3fe717742d4963a85562e9f84d8c79
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: The reason why this podcast should be deleted, e.g., copyright violation, the podcaster wants to delete it... You can put "testing" here to indicate that you are testing this endpoint, so we will not actually delete the podcast.
+          example: the podcaster wants to delete it
+          explode: true
+          in: query
+          name: reason
+          required: false
+          schema:
+            type: string
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DeletePodcastResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "404":
+          description: Endpoint not exist, or podcast / episode not exist.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Request to delete a podcast
+      tags:
+        - Podcaster API
+    get:
+      description: |
+        Fetch detailed meta data and episodes for a specific podcast (up to 10 episodes each time).
+        You can use the **next_episode_pub_date** parameter to do pagination and fetch more episodes.
+      operationId: getPodcastById
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: Podcast id. You can get podcast id from using other endpoints, e.g., `GET /search`, `GET /best_podcasts`...
+          example: 4d3fe717742d4963a85562e9f84d8c79
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: |
+            For episodes pagination. It's the value of **next_episode_pub_date** from the response of last request. If not specified, just return latest 10 episodes or oldest 10 episodes, depending on the value of the **sort** parameter.
+          example: 1479154463000
+          explode: true
+          in: query
+          name: next_episode_pub_date
+          required: false
+          schema:
+            type: integer
+          style: form
+        - description: |
+            How do you want to sort the episodes of this podcast?
+          example: recent_first
+          explode: true
+          in: query
+          name: sort
+          required: false
+          schema:
+            default: recent_first
+            enum:
+              - recent_first
+              - oldest_first
+            type: string
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PodcastFull"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+          links:
+            paginate:
+              description: Pagination through episodes.
+              operationId: getPodcastById
+              parameters:
+                next_episode_pub_date: $response.body#/next_episode_pub_date
+        "401":
+          description: Wrong api key or your account is suspended.
+        "404":
+          description: Endpoint not exist, or podcast / episode not exist.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch detailed meta data and episodes for a podcast by id
+      tags:
+        - Directory API
+  "/podcasts/{id}/recommendations":
+    get:
+      description: Fetch up to 8 podcast recommendations based on the given podcast id.
+      operationId: getPodcastRecommendations
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: Podcast id.
+          example: 25212ac3c53240a880dd5032e547047b
+          explode: false
+          in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: Whether or not to exclude podcasts with explicit language. 1 is yes, and 0 is no.
+          explode: true
+          in: query
+          name: safe_mode
+          required: false
+          schema:
+            default: 0
+            enum:
+              - 0
+              - 1
+            example: 0
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetPodcastRecommendationsResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "404":
+          description: Endpoint not exist, or podcast / episode not exist.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch recommendations for a podcast
+      tags:
+        - Directory API
+  /regions:
+    get:
+      description: |
+        It returns a dictionary of country codes (e.g., us, gb...) & country names (United States, United Kingdom...). The country code is used in the query parameter **region** of `GET /best_podcasts`.
+      operationId: getRegions
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetRegionsResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Fetch a list of supported countries/regions for best podcasts
+      tags:
+        - Directory API
+  /search:
+    get:
+      description: |
+        Full-text search on episodes, podcasts, or curated lists of podcasts.
+        Use the `offset` parameter to paginate through search results.
+        The FREE plan allows to see up to 30 search results (or `offset` < 30) per query.
+        The PRO plan allows to see up to 300 search results (or `offset` < 300) per query.
+        The ENTERPRISE plan allows to see up to 10,000 search results (or `offset` < 10000) per query.
+      operationId: search
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: |
+            Search term, e.g., person, place, topic... You can use double quotes to do verbatim match, e.g., "game of thrones". Otherwise, it's fuzzy search.
+          explode: true
+          in: query
+          name: q
+          required: true
+          schema:
+            example: star wars
+            type: string
+          style: form
+        - description: |
+            Sort by date or not? If 0, then sort by relevance. If 1, then sort by date.
+          explode: true
+          in: query
+          name: sort_by_date
+          required: false
+          schema:
+            default: 0
+            enum:
+              - 0
+              - 1
+            example: 0
+            type: integer
+          style: form
+        - description: |
+            What type of contents do you want to search for? 
+          explode: true
+          in: query
+          name: type
+          required: false
+          schema:
+            default: episode
+            enum:
+              - episode
+              - podcast
+              - curated
+            example: episode
+            type: string
+          style: form
+        - description: |
+            Offset for search results, for pagination. You'll use **next_offset** from response for this parameter.
+          explode: true
+          in: query
+          name: offset
+          required: false
+          schema:
+            default: 0
+            example: 0
+            type: integer
+          style: form
+        - description: |
+            Minimum audio length in minutes. Applicable only when type parameter is **episode**.
+          explode: true
+          in: query
+          name: len_min
+          required: false
+          schema:
+            default: 0
+            example: 10
+            type: integer
+          style: form
+        - description: |
+            Maximum audio length in minutes. Applicable only when type parameter is **episode**.
+          explode: true
+          in: query
+          name: len_max
+          required: false
+          schema:
+            example: 30
+            type: integer
+          style: form
+        - description: |
+            Minimum number of episodes. Applicable only when type parameter is **podcast**.
+          explode: true
+          in: query
+          name: episode_count_min
+          required: false
+          schema:
+            type: integer
+          style: form
+        - description: |
+            Maximum number of episodes. Applicable only when type parameter is **podcast**.
+          explode: true
+          in: query
+          name: episode_count_max
+          required: false
+          schema:
+            type: integer
+          style: form
+        - description: |
+            A comma-delimited string of a list of genre ids. If not specified, then all genres are included. You can find the id and the name of all genres from `GET /genres`. It works only when **type** is *episode* or *podcast*.
+          explode: true
+          in: query
+          name: genre_ids
+          required: false
+          schema:
+            example: 68,82
+            type: string
+          style: form
+        - description: |
+            Only show episodes/podcasts/curated lists published before this timestamp (in milliseconds). If **published_before** & **published_after** are used at the same time, **published_before** should be bigger than **published_after**.
+          explode: true
+          in: query
+          name: published_before
+          required: false
+          schema:
+            example: 1580172454000
+            type: integer
+          style: form
+        - description: |
+            Only show episodes/podcasts/curated lists published after this timestamp (in milliseconds). If **published_before** & **published_after** are used at the same time, **published_before** should be bigger than **published_after**.
+          explode: true
+          in: query
+          name: published_after
+          required: false
+          schema:
+            default: 0
+            example: 0
+            type: integer
+          style: form
+        - description: |
+            A comma-delimited string to search only in specific fields. Allowed values are title, description, author, and audio. If not specified, then search every fields.
+          explode: true
+          in: query
+          name: only_in
+          required: false
+          schema:
+            default: title,description,author,audio
+            example: title,description
+            type: string
+          style: form
+        - description: |
+            Limit search results to a specific language. If not specified, it'll be any language. You can get a list of supported languages from `GET /languages`. It works only when **type** is *episode* or *podcast*.
+          explode: true
+          in: query
+          name: language
+          required: false
+          schema:
+            example: English
+            type: string
+          style: form
+        - description: |
+            Limit search results to a specific region (e.g., us, gb, in...). If not specified, it'll be any region. You can get the supported country codes from `GET /regions`. It works only when **type** is *episode* or *podcast*.
+          explode: true
+          in: query
+          name: region
+          required: false
+          schema:
+            example: ""
+            type: string
+          style: form
+        - description: |
+            A comma-delimited string of podcast ids (up to 5 podcasts) - you can get a podcast id from the **podcast_id** field in response. This parameter is to limit search results from only a few specific podcasts. It works only when **type** is *episode*.
+          explode: true
+          in: query
+          name: ocid
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: |
+            A comma-delimited string of podcast ids (up to 5 podcasts) - you can get a podcast id from the **podcast_id** field in response. This parameter is to exclude search results of a few specific podcasts. It works only when **type** is *episode*.
+          explode: true
+          in: query
+          name: ncid
+          required: false
+          schema:
+            type: string
+          style: form
+        - description: |
+            Whether or not to exclude podcasts/episodes with explicit language. 1 is yes and 0 is no. It works only when **type** is *episode* or *podcast*.
+          explode: true
+          in: query
+          name: safe_mode
+          required: false
+          schema:
+            default: 0
+            enum:
+              - 0
+              - 1
+            example: 0
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SearchResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+          links:
+            paginate:
+              description: Pagination through search results.
+              operationId: search
+              parameters:
+                offset: $response.body#/next_offset
+        "400":
+          description: Something wrong on your end (Client side errors), e.g., missing required parameters.
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Full-text search
+      tags:
+        - Search API
+  /typeahead:
+    get:
+      description: Suggest search terms, podcast genres, and podcasts.
+      operationId: typeahead
+      parameters:
+        - description: Get API Key on listennotes.com/api
+          explode: false
+          in: header
+          name: X-ListenAPI-Key
+          required: true
+          schema:
+            type: string
+          style: simple
+        - description: |
+            Search term, e.g., person, place, topic... You can use double quotes to do verbatim match, e.g., "game of thrones". Otherwise, it's fuzzy search.
+          explode: true
+          in: query
+          name: q
+          required: true
+          schema:
+            example: star wars
+            type: string
+          style: form
+        - description: |
+            Autosuggest podcasts. This only searches podcast title and publisher and returns very limited info of 5 podcasts. 1 is yes, 0 is no. It's a bit slow to autosuggest podcasts, so we turn it off by default. If show_podcasts=1, you can also pass iTunes id (e.g., 474722933) to the q parameter to fetch podcast meta data.
+          explode: true
+          in: query
+          name: show_podcasts
+          required: false
+          schema:
+            default: 0
+            enum:
+              - 0
+              - 1
+            example: 1
+            type: integer
+          style: form
+        - description: |
+            Whether or not to autosuggest genres. 1 is yes, 0 is no.
+          explode: true
+          in: query
+          name: show_genres
+          required: false
+          schema:
+            default: 0
+            enum:
+              - 0
+              - 1
+            example: 1
+            type: integer
+          style: form
+        - description: |
+            Whether or not to exclude podcasts/episodes with explicit language. 1 is yes and 0 is no. It works only when **show_podcasts** is *1*.
+          explode: true
+          in: query
+          name: safe_mode
+          required: false
+          schema:
+            default: 0
+            enum:
+              - 0
+              - 1
+            example: 0
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TypeaheadResponse"
+          description: OK
+          headers:
+            X-ListenAPI-FreeQuota:
+              $ref: "#/components/headers/X-ListenAPI-FreeQuota"
+            X-ListenAPI-NextBillingDate:
+              $ref: "#/components/headers/X-ListenAPI-NextBillingDate"
+            X-ListenAPI-Usage:
+              $ref: "#/components/headers/X-ListenAPI-Usage"
+            X-listenAPI-Latency-Seconds:
+              $ref: "#/components/headers/X-listenAPI-Latency-Seconds"
+        "400":
+          description: Something wrong on your end (Client side errors), e.g., missing required parameters.
+        "401":
+          description: Wrong api key or your account is suspended.
+        "429":
+          description: You are using FREE plan and you exceed the quota limit.
+        5XX:
+          description: Something wrong on our end (Unexpected server errors).
+      summary: Typeahead search
+      tags:
+        - Search API
+components:
+  headers:
+    X-ListenAPI-FreeQuota:
+      description: Free quotas of API requests included in your api plan.
+      explode: false
+      schema:
+        example: 25000
+        type: integer
+      style: simple
+    X-ListenAPI-NextBillingDate:
+      description: The timestamp for the start of next billing cycle. In ISO 8601 format.
+      explode: false
+      schema:
+        example: 2020-04-26T17:27:33.110641Z
+        format: date-time
+        type: string
+      style: simple
+    X-ListenAPI-Usage:
+      description: The number of API requests that you've used in current billing cycle.
+      explode: false
+      schema:
+        example: 19231
+        type: integer
+      style: simple
+    X-listenAPI-Latency-Seconds:
+      description: Latency for this api call, in seconds.
+      explode: false
+      schema:
+        example: 0.056
+        type: number
+      style: simple
+  parameters:
+    apiKeyParam:
+      description: Get API Key on listennotes.com/api
+      explode: false
+      in: header
+      name: X-ListenAPI-Key
+      required: true
+      schema:
+        type: string
+      style: simple
+    genreIdParam:
+      description: You can get the id from `GET /genres`. If not specified, it'll be the overall best podcasts, which can be considered as a special genre.
+      explode: true
+      in: query
+      name: genre_id
+      required: false
+      schema:
+        example: "93"
+        type: string
+      style: form
+    queryParam:
+      description: |
+        Search term, e.g., person, place, topic... You can use double quotes to do verbatim match, e.g., "game of thrones". Otherwise, it's fuzzy search.
+      explode: true
+      in: query
+      name: q
+      required: true
+      schema:
+        example: star wars
+        type: string
+      style: form
+    safeModeParam:
+      description: Whether or not to exclude podcasts with explicit language. 1 is yes, and 0 is no.
+      explode: true
+      in: query
+      name: safe_mode
+      required: false
+      schema:
+        default: 0
+        enum:
+          - 0
+          - 1
+        example: 0
+        type: integer
+      style: form
+  responses:
+    BadRequest:
+      description: Something wrong on your end (Client side errors), e.g., missing required parameters.
+    NotFound:
+      description: Endpoint not exist, or podcast / episode not exist.
+    ServerError:
+      description: Something wrong on our end (Unexpected server errors).
+    TooManyRequests:
+      description: You are using FREE plan and you exceed the quota limit.
+    Unauthorized:
+      description: Wrong api key or your account is suspended.
+  schemas:
+    AudioField:
+      description: Audio url of this episode, which can be played directly.
+      example: https://www.listennotes.com/e/p/11b34041e804491b9704d11f283c74de/
+      type: string
+    AudioLengthSecField:
+      description: Audio length of this episode. In seconds.
+      example: 567
+      type: integer
+    BestPodcastsLNUrlField:
+      description: Url of the list of best podcasts on [ListenNotes.com](https://www.ListenNotes.com).
+      example: https://www.listennotes.com/best-business-news-podcasts-95/
+      type: string
+    BestPodcastsResponse:
+      properties:
+        has_next:
+          example: true
+          type: boolean
+        has_previous:
+          type: boolean
+        id:
+          description: The id of this genre
+          example: 95
+          type: integer
+        listennotes_url:
+          $ref: "#/components/schemas/BestPodcastsLNUrlField"
+        name:
+          description: This genre's name.
+          example: Business News
+          type: string
+        next_page_number:
+          example: 3
+          type: integer
+        page_number:
+          example: 2
+          type: integer
+        parent_id:
+          description: The id of parent genre.
+          example: 93
+          type: integer
+        podcasts:
+          items:
+            $ref: "#/components/schemas/PodcastSimple"
+          type: array
+        previous_page_number:
+          example: 1
+          type: integer
+        total:
+          example: 325
+          type: integer
+      required:
+        - has_next
+        - has_previous
+        - id
+        - listennotes_url
+        - name
+        - next_page_number
+        - page_number
+        - parent_id
+        - podcasts
+        - previous_page_number
+        - total
+      type: object
+    CountryField:
+      description: The country where this podcast is produced.
+      example: United States
+      type: string
+    CuratedDescriptionField:
+      description: This curated list's description.
+      example: Commuting to work is always better when you have a great new podcast to listen to, and this year, we have discovered some of our favorite podcasts yet for readers and book-lovers. These podcasts for readers entertain us and provide no shortage of new book recommendations too.
+      type: string
+    CuratedIdField:
+      description: Curated list id.
+      example: Vb017Sx3l8F
+      type: string
+    CuratedLNUrlField:
+      description: The url of this curated list on [ListenNotes.com](https://www.ListenNotes.com).
+      example: https://www.listennotes.com/curated-podcasts/7-bookish-podcasts-for-avid-readers-on-H2r-TCWai8K/
+      type: string
+    CuratedListFull:
+      properties:
+        description:
+          $ref: "#/components/schemas/CuratedDescriptionField"
+        id:
+          $ref: "#/components/schemas/CuratedIdField"
+        listennotes_url:
+          $ref: "#/components/schemas/CuratedLNUrlField"
+        podcasts:
+          description: Complete meta data of all podcasts in this curated list.
+          items:
+            $ref: "#/components/schemas/PodcastSimple"
+          type: array
+        pub_date_ms:
+          $ref: "#/components/schemas/CuratedPubDateMsField"
+        source_domain:
+          $ref: "#/components/schemas/CuratedSourceDomainField"
+        source_url:
+          $ref: "#/components/schemas/CuratedSourceUrlField"
+        title:
+          $ref: "#/components/schemas/CuratedNameField"
+        total:
+          $ref: "#/components/schemas/CuratedTotalPodcastsField"
+      type: object
+    CuratedListSearchResult:
+      description: When **type** is *curated*.
+      properties:
+        description_highlighted:
+          description: Highlighted segment of this curated list's description
+          example: ...<span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> fans in Reddit shared their favorite podcasts.
+          type: string
+        description_original:
+          description: Plain text of this curated list's description
+          example: Star Wars fans in Reddit shared their favorite podcasts.
+          type: string
+        id:
+          $ref: "#/components/schemas/CuratedIdField"
+        listennotes_url:
+          $ref: "#/components/schemas/CuratedLNUrlField"
+        podcasts:
+          description: Up to 5 podcasts in this curated list.
+          items:
+            $ref: "#/components/schemas/PodcastMinimum"
+          type: array
+        pub_date_ms:
+          $ref: "#/components/schemas/CuratedPubDateMsField"
+        source_domain:
+          $ref: "#/components/schemas/CuratedSourceDomainField"
+        source_url:
+          $ref: "#/components/schemas/CuratedSourceUrlField"
+        title_highlighted:
+          description: Highlighted segment of this curated list's title
+          example: |
+            What are some good <span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> Podcast to listen to?
+          type: string
+        title_original:
+          description: Plain text of this curated list's title
+          example: What are some good Star Wars Podcast to listen to?
+          type: string
+        total:
+          $ref: "#/components/schemas/CuratedTotalPodcastsField"
+      type: object
+    CuratedListSimple:
+      properties:
+        description:
+          $ref: "#/components/schemas/CuratedDescriptionField"
+        id:
+          $ref: "#/components/schemas/CuratedIdField"
+        listennotes_url:
+          $ref: "#/components/schemas/CuratedLNUrlField"
+        podcasts:
+          description: Minimum meta data of up to 5 podcasts in this curated list.
+          items:
+            $ref: "#/components/schemas/PodcastMinimum"
+          type: array
+        pub_date_ms:
+          $ref: "#/components/schemas/CuratedPubDateMsField"
+        source_domain:
+          $ref: "#/components/schemas/CuratedSourceDomainField"
+        source_url:
+          $ref: "#/components/schemas/CuratedSourceUrlField"
+        title:
+          $ref: "#/components/schemas/CuratedNameField"
+        total:
+          $ref: "#/components/schemas/CuratedTotalPodcastsField"
+      type: object
+    CuratedNameField:
+      description: Curated list name.
+      example: 7 Bookish Podcasts for Avid Readers On the Go
+      type: string
+    CuratedPubDateMsField:
+      description: Published date of this curated list. In milliseconds.
+      example: 1556843484301
+      type: integer
+    CuratedSourceDomainField:
+      description: The domain name of the source of this curated list.
+      example: parade.com
+      type: string
+    CuratedSourceUrlField:
+      description: Url of the source of this curated list.
+      example: https://parade.com/718913/ashley_johnson/7-bookish-podcasts-for-avid-readers-on-the-go/
+      type: string
+    CuratedTotalPodcastsField:
+      description: The total number of podcasts in this curated list.
+      example: 25
+      type: integer
+    CustomAudio:
+      description: A custom audio in a playlist, which is a type of playlist item.
+      properties:
+        audio:
+          description: Audio url, which can be played directly.
+          example: https://example.com/audio.mp3
+          type: string
+        audio_length_sec:
+          description: Audio length in seconds.
+          example: 253
+          type: integer
+        image:
+          description: High resolution image url of this custom audio.
+          example: https://cdn-images-1.listennotes.com/playlist/image/6907e8ff6b6c45df94cc059753f369cc.JPEG
+          type: string
+        pub_date_ms:
+          description: |
+            Published date (in milliseconds) of this custom audio.
+            For now, it's the same as **added_at_ms** of this playlist item.
+          example: 1595567028133
+          type: integer
+        thumbnail:
+          description: Low resolution image url of this custom audio.
+          example: https://d3sv2eduhewoas.cloudfront.net/playlist/image/48477deae02649d7ab9d3f1b3966af38.JPEG
+          type: string
+        title:
+          description: Custom audio title.
+          example: An awesome audio to listen.
+          type: string
+      type: object
+    DeletePodcastResponse:
+      properties:
+        status:
+          description: The status of this podcast deletion request.
+          enum:
+            - deleted
+            - in review
+          example: deleted
+          type: string
+      required:
+        - status
+      type: object
+    DeletedItem:
+      description: |
+        A deleted episode or podcast.
+        An episode or a podcast could be deleted from our podcast database.
+        Possible reasons: 1) Podcast producers sometimes delete their old episodes. 2) Copyright issues.
+      properties:
+        error:
+          description: Why this episode or podcast is deleted?
+          example: This episode is deleted from the podcast database, because...
+          type: string
+        id:
+          description: Episode id or podcast id.
+          example: 96fc400171364e32897b25d84a8ed8ec
+          type: string
+        status:
+          description: The status of this episode or podcast. For now, the only possible value is **deleted**.
+          example: deleted
+          type: string
+        title:
+          description: Episode title or podcast title.
+          example: This is a test episode
+          type: string
+      type: object
+    EarliestPubDateMsField:
+      description: The published date of the oldest episode of this podcast. In milliseconds
+      example: 1470667902000
+      type: integer
+    EmailField:
+      description: The email of this podcast's producer. This field is available only in the PRO/ENTERPRISE plan.
+      example: hello@example.com
+      type: string
+    EpisodeDescriptionField:
+      description: Html of this episode's full description
+      example: |
+        <p>Disney chief Bob Iger shared news about Star Wars movies in 2020 and beyond, but some media outlets gave conflicting reports about it. Here's the real scoop. Punch it!</p> <p>***We’re listener supported! Go to http://Patreon.com/sw7x7 to donate to the Star Wars 7x7 podcast, and you’ll get some fabulous rewards for your pledge.*** </p> <p>Check out SW7x7.com for full Star Wars 7x7 show notes and links, and to comment on any of the content of this episode! If you like what you've heard, please leave us a rating or review on iTunes or Stitcher, which will also help more people discover this Star Wars podcast.</p> <p>Don't forget to join the Star Wars 7x7 fun on Facebook at Facebook.com/SW7x7, and follow the breaking news Twitter feed at Twitter.com/SW7x7Podcast. We're also on Pinterest and Instagram as "SW7x7" too, and we'd love to connect with you there!</p>
+      type: string
+    EpisodeFull:
+      properties:
+        audio:
+          $ref: "#/components/schemas/AudioField"
+        audio_length_sec:
+          $ref: "#/components/schemas/AudioLengthSecField"
+        description:
+          $ref: "#/components/schemas/EpisodeDescriptionField"
+        explicit_content:
+          $ref: "#/components/schemas/ExplicitField"
+        id:
+          $ref: "#/components/schemas/EpisodeIdField"
+        image:
+          $ref: "#/components/schemas/EpisodeImageField"
+        link:
+          $ref: "#/components/schemas/LinkField"
+        listennotes_edit_url:
+          $ref: "#/components/schemas/EpisodeLNEditUrlField"
+        listennotes_url:
+          $ref: "#/components/schemas/EpisodeLNUrlField"
+        maybe_audio_invalid:
+          $ref: "#/components/schemas/MaybeAudioInvalidField"
+        podcast:
+          $ref: "#/components/schemas/PodcastSimple"
+        pub_date_ms:
+          $ref: "#/components/schemas/EpisodePubDateMsField"
+        thumbnail:
+          $ref: "#/components/schemas/EpisodeThumbnailField"
+        title:
+          $ref: "#/components/schemas/EpisodeNameField"
+        transcript:
+          $ref: "#/components/schemas/TranscriptField"
+      type: object
+    EpisodeIdField:
+      description: Episode id.
+      example: 4d82e50314174754a3b603912448e812
+      type: string
+    EpisodeImageField:
+      description: |
+        Image url for this episode.
+        If an episode doesn't have its own image, then this field would be the url of the podcast artwork image.
+        If you are using PRO/ENTERPRISE plan, then it's
+        a high resolution image (1400x1400). If you are using FREE plan, then it's the same as **thumbnail**,
+        low resolution image (300x300).
+      example: https://cdn-images-1.listennotes.com/podcasts/exponent-ben-thompson-james-allworth-OaJSjb4xQv3.1400x1400.jpg
+      type: string
+    EpisodeLNEditUrlField:
+      description: Edit url of this episode where you can update the audio url if you find the audio is broken.
+      example: https://www.listennotes.com/e/11b34041e804491b9704d11f283c74de/#edit
+      type: string
+    EpisodeLNUrlField:
+      description: The url of this episode on [ListenNotes.com](https://www.ListenNotes.com).
+      example: https://www.listennotes.com/e/4d82e50314174754a3b603912448e812/
+      type: string
+    EpisodeMinimum:
+      properties:
+        audio:
+          $ref: "#/components/schemas/AudioField"
+        audio_length_sec:
+          $ref: "#/components/schemas/AudioLengthSecField"
+        description:
+          $ref: "#/components/schemas/EpisodeDescriptionField"
+        explicit_content:
+          $ref: "#/components/schemas/ExplicitField"
+        id:
+          $ref: "#/components/schemas/EpisodeIdField"
+        image:
+          $ref: "#/components/schemas/ImageField"
+        link:
+          $ref: "#/components/schemas/LinkField"
+        listennotes_edit_url:
+          $ref: "#/components/schemas/EpisodeLNEditUrlField"
+        listennotes_url:
+          $ref: "#/components/schemas/EpisodeLNUrlField"
+        maybe_audio_invalid:
+          $ref: "#/components/schemas/MaybeAudioInvalidField"
+        pub_date_ms:
+          $ref: "#/components/schemas/EpisodePubDateMsField"
+        thumbnail:
+          $ref: "#/components/schemas/ThumbnailField"
+        title:
+          $ref: "#/components/schemas/EpisodeNameField"
+      type: object
+    EpisodeNameField:
+      description: Episode name.
+      example: "Celebration Recap, Jason Fry and Christian Blauvelt Interviews – SWBW #101"
+      type: string
+    EpisodePubDateMsField:
+      description: Published date for this episode. In millisecond.
+      example: 1474873200000
+      type: integer
+    EpisodeSearchResult:
+      description: When **type** is *episode*.
+      properties:
+        audio:
+          $ref: "#/components/schemas/AudioField"
+        audio_length_sec:
+          $ref: "#/components/schemas/AudioLengthSecField"
+        description_highlighted:
+          description: Highlighted segment of this episode's description
+          example: |
+            ...Go to http://Patreon.com/sw7x7 to donate to the <span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> 7x7 podcast, and you'll get some fabulous rewards for your pledge.***  Check out SW7x7.com for full <span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> 7x7 show notes and links, and to
+          type: string
+        description_original:
+          description: Plain text of this episode's description
+          example: |
+            Yeah, Star Wars Celebration Orlando is 32 days away, but what's the scoop on Celebration 2018? Plus, Rebels Day is Saturday, and much more in our update. Punch it! ***We're listener supported! Go to http://Patreon.com/sw7x7 to donate to the Star Wars 7x7 podcast, and youâ€™ll get some fabulous rewards for your pledge.***  Check out SW7x7.com for full Star Wars 7x7 show notes and links, and to comment on any of the content of this episode! If you like what you've heard, please leave us a rating or review on iTunes or Stitcher, which will also help more people discover this Star Wars podcast. Don't forget to join the Star Wars 7x7 fun on Facebook at Facebook.com/SW7x7, and follow the breaking news Twitter feed at Twitter.com/SW7x7Podcast. We're also on Pinterest and Instagram as "SW7x7" too, and we'd love to connect with you there!
+          type: string
+        explicit_content:
+          $ref: "#/components/schemas/ExplicitField"
+        id:
+          $ref: "#/components/schemas/EpisodeIdField"
+        image:
+          $ref: "#/components/schemas/EpisodeImageField"
+        itunes_id:
+          $ref: "#/components/schemas/iTunesIdField"
+        link:
+          $ref: "#/components/schemas/LinkField"
+        listennotes_url:
+          $ref: "#/components/schemas/EpisodeLNUrlField"
+        podcast:
+          $ref: "#/components/schemas/EpisodeSearchResult_podcast"
+        pub_date_ms:
+          $ref: "#/components/schemas/EpisodePubDateMsField"
+        rss:
+          $ref: "#/components/schemas/RssField"
+        thumbnail:
+          $ref: "#/components/schemas/EpisodeThumbnailField"
+        title_highlighted:
+          description: Highlighted segment of this episode's title
+          example: '815: <span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> 2020 Movie and Beyond!'
+          type: string
+        title_original:
+          description: Plain text of this episode' title
+          example: "815: Star Wars 2020 Movie and Beyond!"
+          type: string
+        transcripts_highlighted:
+          description: Up to 2 highlighted segments of the audio transcript of this episode.
+          items:
+            example: |
+              00:21:27  when Disney bought the <span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> franchise from George Lucas they had a plan lots of <span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> movies new <span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> movies every month another one was just released while I was talking
+            type: string
+          type: array
+      type: object
+    EpisodeSearchResult_podcast:
+      description: The podcast that this episode belongs to.
+      properties:
+        genre_ids:
+          $ref: "#/components/schemas/GenreIdsField"
+        id:
+          $ref: "#/components/schemas/PodcastIdField"
+        image:
+          $ref: "#/components/schemas/ImageField"
+        listen_score:
+          $ref: "#/components/schemas/ListenScoreField"
+        listen_score_global_rank:
+          $ref: "#/components/schemas/ListenScoreGlobalRankField"
+        listennotes_url:
+          $ref: "#/components/schemas/PodcastLNUrlField"
+        publisher_highlighted:
+          $ref: "#/components/schemas/PublisherHighlightedField"
+        publisher_original:
+          $ref: "#/components/schemas/PublisherOriginalField"
+        thumbnail:
+          $ref: "#/components/schemas/ThumbnailField"
+        title_highlighted:
+          $ref: "#/components/schemas/PodcastTitleHighlightedField"
+        title_original:
+          $ref: "#/components/schemas/PodcastTitleOriginalField"
+      type: object
+    EpisodeSimple:
+      properties:
+        audio:
+          $ref: "#/components/schemas/AudioField"
+        audio_length_sec:
+          $ref: "#/components/schemas/AudioLengthSecField"
+        description:
+          $ref: "#/components/schemas/EpisodeDescriptionField"
+        explicit_content:
+          $ref: "#/components/schemas/ExplicitField"
+        id:
+          $ref: "#/components/schemas/EpisodeIdField"
+        image:
+          $ref: "#/components/schemas/EpisodeImageField"
+        link:
+          $ref: "#/components/schemas/LinkField"
+        listennotes_edit_url:
+          $ref: "#/components/schemas/EpisodeLNEditUrlField"
+        listennotes_url:
+          $ref: "#/components/schemas/EpisodeLNUrlField"
+        maybe_audio_invalid:
+          $ref: "#/components/schemas/MaybeAudioInvalidField"
+        podcast:
+          $ref: "#/components/schemas/PodcastMinimum"
+        pub_date_ms:
+          $ref: "#/components/schemas/EpisodePubDateMsField"
+        thumbnail:
+          $ref: "#/components/schemas/EpisodeThumbnailField"
+        title:
+          $ref: "#/components/schemas/EpisodeNameField"
+      type: object
+    EpisodeThumbnailField:
+      description: |
+        Thumbnail image (300x300) url for this episode.
+        If an episode doesn't have its own image, then this field would be the url of the podcast artwork thumbnail image.
+      example: https://cdn-images-1.listennotes.com/podcasts/exponent-ben-thompson-james-allworth-OaJSjb4xQv3.300x300.jpg
+      type: string
+    ExplicitField:
+      description: Whether this podcast contains explicit language.
+      example: false
+      type: boolean
+    Genre:
+      example:
+        id: 140
+        name: Web Design
+        parent_id: 127
+      properties:
+        id:
+          description: Genre id
+          example: 93
+          type: integer
+        name:
+          description: Genre name.
+          example: Business
+          type: string
+        parent_id:
+          description: Parent genre id.
+          example: 95
+          type: integer
+      type: object
+    GenreIdsField:
+      example:
+        - 138
+        - 86
+        - 160
+        - 68
+        - 82
+        - 100
+        - 101
+      items:
+        description: Genre ids.
+        type: integer
+      type: array
+    GetCuratedPodcastsResponse:
+      properties:
+        curated_lists:
+          items:
+            $ref: "#/components/schemas/CuratedListSimple"
+          type: array
+        has_next:
+          example: true
+          type: boolean
+        has_previous:
+          example: true
+          type: boolean
+        next_page_number:
+          example: 3
+          type: integer
+        page_number:
+          example: 2
+          type: integer
+        previous_page_number:
+          example: 1
+          type: integer
+        total:
+          example: 25
+          type: integer
+      required:
+        - curated_lists
+        - has_next
+        - has_previous
+        - next_page_number
+        - page_number
+        - previous_page_number
+        - total
+      type: object
+    GetEpisodeRecommendationsResponse:
+      properties:
+        recommendations:
+          items:
+            $ref: "#/components/schemas/EpisodeSimple"
+          type: array
+      required:
+        - recommendations
+      type: object
+    GetEpisodesInBatchForm:
+      properties:
+        ids:
+          description: Comma-separated list of episode ids.
+          example: c577d55b2b2b483c969fae3ceb58e362,0f34a9099579490993eec9e8c8cebb82
+          type: string
+      required:
+        - ids
+      type: object
+    GetEpisodesInBatchResponse:
+      properties:
+        episodes:
+          items:
+            $ref: "#/components/schemas/EpisodeSimple"
+          type: array
+      required:
+        - episodes
+      type: object
+    GetGenresResponse:
+      properties:
+        genres:
+          items:
+            $ref: "#/components/schemas/Genre"
+          type: array
+      required:
+        - genres
+      type: object
+    GetLanguagesResponse:
+      properties:
+        languages:
+          example:
+            - Any language
+            - Afar
+            - Abkhazian
+            - Afrikaans
+            - Akan
+            - Albanian
+            - Arabic
+            - Azerbaijani
+            - Bambara
+            - Bashkir
+            - Basque
+            - Belarusian
+            - Bulgarian
+            - Catalan
+            - Chamorro
+            - Chinese
+            - Croatian
+            - Czech
+            - Danish
+            - Dutch
+            - English
+            - Estonian
+            - Faeroese
+            - Finnish
+            - French
+            - Gaelic
+            - Galician
+            - German
+            - Greek
+          items:
+            type: string
+          type: array
+      required:
+        - languages
+      type: object
+    GetPodcastRecommendationsResponse:
+      properties:
+        recommendations:
+          items:
+            $ref: "#/components/schemas/PodcastSimple"
+          type: array
+      required:
+        - recommendations
+      type: object
+    GetPodcastsInBatchForm:
+      properties:
+        ids:
+          description: Comma-separated list of podcast ids.
+          example: 3302bc71139541baa46ecb27dbf6071a,68faf62be97149c280ebcc25178aa731,37589a3e121e40debe4cef3d9638932a,9cf19c590ff0484d97b18b329fed0c6a
+          type: string
+        itunes_ids:
+          description: Comma-separated itunes ids.
+          example: 1457514703,1386234384,659155419
+          type: string
+        next_episode_pub_date:
+          description: |
+            For latest episodes pagination. It's the value of **next_episode_pub_date** from the response of last request. If not specified, just return latest 10 episodes.
+          example: 1557394247000
+          type: integer
+        rsses:
+          description: Comma-separated rss urls.
+          example: https://rss.art19.com/recode-decode,https://rss.art19.com/the-daily,https://www.npr.org/rss/podcast.php?id=510331,https://www.npr.org/rss/podcast.php?id=510331
+          type: string
+        show_latest_episodes:
+          default: 0
+          description: |
+            Whether or not to fetch up to 10 latest episodes from these podcasts, sorted by pub_date. 1 is yes, and 0 is no.
+          enum:
+            - 0
+            - 1
+          example: 1
+          type: integer
+      type: object
+    GetPodcastsInBatchResponse:
+      properties:
+        latest_episodes:
+          description: |
+            Up to 10 latest episodes from these podcasts, sorted by **pub_date**. This field shows up only when **show_latest_episodes** is 1.
+          items:
+            $ref: "#/components/schemas/EpisodeSimple"
+          type: array
+        podcasts:
+          items:
+            $ref: "#/components/schemas/PodcastSimple"
+          type: array
+      required:
+        - podcasts
+      type: object
+    GetRegionsResponse:
+      properties:
+        regions:
+          example:
+            au: Australia
+            de: Germany
+            ua: Ukraine
+            us: United States
+          type: object
+      required:
+        - regions
+      type: object
+    ImageField:
+      description: |
+        Image url for this podcast's artwork. If you are using PRO/ENTERPRISE plan, then it's
+        a high resolution image (1400x1400). If you are using FREE plan, then it's the same as **thumbnail**,
+        low resolution image (300x300).
+      example: https://cdn-images-1.listennotes.com/podcasts/exponent-ben-thompson-james-allworth-OaJSjb4xQv3.1400x1400.jpg
+      type: string
+    IsClaimedField:
+      description: Whether this podcast is claimed by its producer on [ListenNotes.com](https://www.ListenNotes.com).
+      example: true
+      type: boolean
+    LanguageField:
+      description: The language of this podcast. You can get all supported languages from `GET /languages`.
+      example: English
+      type: string
+    LatestPubDateMsField:
+      description: The published date of the latest episode of this podcast. In milliseconds
+      example: 1557499770000
+      type: integer
+    LinkField:
+      description: Web link of this episode.
+      example: https://www.npr.org/2020/01/22/798532179/soleimanis-iran
+      type: string
+    ListenScoreField:
+      description: |
+        The estimated popularity score of a podcast compared to all other rss-based public podcasts in the world on a scale from 0 to 100.
+        If the score is not available, it'll be null. Learn more at listennotes.com/listen-score
+      example: 81
+      type: integer
+    ListenScoreGlobalRankField:
+      description: |
+        The estimated popularity ranking of a podcast compared to all other rss-based public podcasts in the world.
+        For example, if the value is 0.5%, then this podcast is one of the top 0.5% most popular shows out of all podcasts globally, ranked by Listen Score.
+        If the ranking is not available, it'll be null. Learn more at listennotes.com/listen-score
+      example: 0.5%
+      type: string
+    MaybeAudioInvalidField:
+      description: Whether or not this episode's audio is invalid. Podcasters may delete the original audio.
+      example: false
+      type: boolean
+    NextEpisodePubDateField:
+      description: Passed to the **next_episode_pub_date** parameter of `GET /podcasts/{id}` to paginate through episodes of that podcast.
+      example: 1470667902000
+      type: integer
+    PlaylistDescriptionField:
+      description: Playlist description.
+      example: A curated playlist of podcasts about podcasting.
+      type: string
+    PlaylistIdField:
+      description: A 11-character playlist id.
+      example: m1pe7z60bsw
+      type: string
+    PlaylistImageField:
+      description: High resolution image url of the playlist.
+      example: https://cdn-images-1.listennotes.com/playlist/image/6907e8ff6b6c45df94cc059753f369cc.JPEG
+      type: string
+    PlaylistItem:
+      description: An item in a playlist
+      properties:
+        added_at_ms:
+          description: Timestamp (in milliseconds) when this item is added.
+          example: 1595567004958
+          type: integer
+        data:
+          oneOf:
+            - $ref: "#/components/schemas/EpisodeSimple"
+            - $ref: "#/components/schemas/PodcastSimple"
+            - $ref: "#/components/schemas/CustomAudio"
+            - $ref: "#/components/schemas/DeletedItem"
+        id:
+          description: Playlist item id.
+          example: 23
+          type: integer
+        notes:
+          description: Notes for this item.
+          example: This is a good episode.
+          type: string
+        type:
+          description: |
+            The type of this playlist item.
+            If a playlist is **episode_list**, then an item could be either **episode** or **custom_audio**.
+            If it's **podcast_list**, then an item can only be **podcast**.
+          enum:
+            - episode
+            - custom_audio
+            - podcast
+          example: episode
+          type: string
+      type: object
+    PlaylistLastTimestampMsField:
+      description: |
+        Passed to the **last_timestamp_ms** parameter of `GET /playlists/{id}` to paginate through items of that playlist.
+      example: 1595641092907
+      type: integer
+    PlaylistListennotesUrlField:
+      description: The url of this playlist on ListenNotes.com.
+      example: https://www.listennotes.com/listen/podcasts-about-podcasting-m1pe7z60bsw/?display=episode
+      type: string
+    PlaylistNameField:
+      description: Playlist name.
+      example: My podcast playlist
+      type: string
+    PlaylistResponse:
+      properties:
+        description:
+          $ref: "#/components/schemas/PlaylistDescriptionField"
+        id:
+          $ref: "#/components/schemas/PlaylistIdField"
+        image:
+          $ref: "#/components/schemas/PlaylistImageField"
+        items:
+          description: A list of playlist items.
+          items:
+            $ref: "#/components/schemas/PlaylistItem"
+          type: array
+        last_timestamp_ms:
+          $ref: "#/components/schemas/PlaylistLastTimestampMsField"
+        listennotes_url:
+          $ref: "#/components/schemas/PlaylistListennotesUrlField"
+        name:
+          $ref: "#/components/schemas/PlaylistNameField"
+        thumbnail:
+          $ref: "#/components/schemas/PlaylistThumbnailField"
+        total:
+          description: Total number of items in this playlist.
+          example: 325
+          type: integer
+        type:
+          description: |
+            The type of this playlist, which should be either **episode_list** or **podcast_list**.
+          enum:
+            - episode_list
+            - podcast_list
+          example: episode_list
+          type: string
+        visibility:
+          $ref: "#/components/schemas/PlaylistVisibilityField"
+      type: object
+    PlaylistThumbnailField:
+      description: Low resolution image url of the playlist.
+      example: https://d3sv2eduhewoas.cloudfront.net/playlist/image/48477deae02649d7ab9d3f1b3966af38.JPEG
+      type: string
+    PlaylistVisibilityField:
+      description: Visibility of this playlist.
+      enum:
+        - public
+        - unlisted
+        - private
+      example: public
+      type: string
+    PlaylistsResponse:
+      properties:
+        has_next:
+          example: true
+          type: boolean
+        has_previous:
+          example: true
+          type: boolean
+        next_page_number:
+          example: 3
+          type: integer
+        page_number:
+          example: 2
+          type: integer
+        playlists:
+          items:
+            $ref: "#/components/schemas/PlaylistsResponse_playlists"
+          type: array
+        previous_page_number:
+          example: 1
+          type: integer
+        total:
+          example: 325
+          type: integer
+      type: object
+    PlaylistsResponse_playlists:
+      description: A playlist
+      properties:
+        description:
+          $ref: "#/components/schemas/PlaylistDescriptionField"
+        episode_count:
+          description: The number of episodes (including custom audio) in this playlist.
+          example: 23
+          type: integer
+        id:
+          $ref: "#/components/schemas/PlaylistIdField"
+        image:
+          $ref: "#/components/schemas/PlaylistImageField"
+        last_timestamp_ms:
+          $ref: "#/components/schemas/PlaylistLastTimestampMsField"
+        listennotes_url:
+          $ref: "#/components/schemas/PlaylistListennotesUrlField"
+        name:
+          $ref: "#/components/schemas/PlaylistNameField"
+        podcast_count:
+          description: The number of podcasts in this playlist.
+          example: 10
+          type: integer
+        thumbnail:
+          $ref: "#/components/schemas/PlaylistThumbnailField"
+        visibility:
+          $ref: "#/components/schemas/PlaylistVisibilityField"
+      type: object
+    PodcastDescriptionField:
+      description: Html of this episode's full description
+      example: <p>The Star Wars 7x7 Podcast is Rebel-rousing fun for everyday Jedi, between 7 and 14 minutes a day, 7 days a week. Join host Allen Voivod for Star Wars news, history, interviews, trivia, and deep dives into the Star Wars story as told in movies, books, comics, games, cartoons, and more. Subscribe now for your daily dose of Star Wars joy. It's destiny unleashed!</p>
+      type: string
+    PodcastExtraField:
+      properties:
+        facebook_handle:
+          description: Facebook username affiliated with this podcast
+          example: sw7x7
+          type: string
+        google_url:
+          description: Google Podcasts url for this podcast
+          example: https://play.google.com/music/listen?u=0#/ps/I7gdcrqcmvhfnhh2cyqkcg32tkq
+          type: string
+        instagram_handle:
+          description: Instagram username affiliated with this podcast
+          example: sw7x7
+          type: string
+        linkedin_url:
+          description: LinkedIn url affiliated with this podcast
+          type: string
+        patreon_handle:
+          description: Patreon username affiliated with this podcast
+          example: sw7x7
+          type: string
+        spotify_url:
+          description: Spotify url for this podcast
+          example: https://open.spotify.com/show/2rQJUP9Y3HxemiW3JHt9WV
+          type: string
+        twitter_handle:
+          description: Twitter username affiliated with this podcast
+          example: SW7x7podcast
+          type: string
+        url1:
+          description: Url affiliated with this podcast
+          type: string
+        url2:
+          description: Url affiliated with this podcast
+          type: string
+        url3:
+          description: Url affiliated with this podcast
+          type: string
+        wechat_handle:
+          description: WeChat username affiliated with this podcast
+          type: string
+        youtube_url:
+          description: YouTube url affiliated with this podcast
+          example: https://www.youtube.com/sw7x7
+          type: string
+      type: object
+    PodcastFull:
+      properties:
+        country:
+          $ref: "#/components/schemas/CountryField"
+        description:
+          $ref: "#/components/schemas/PodcastDescriptionField"
+        earliest_pub_date_ms:
+          $ref: "#/components/schemas/EarliestPubDateMsField"
+        email:
+          $ref: "#/components/schemas/EmailField"
+        episodes:
+          items:
+            $ref: "#/components/schemas/EpisodeMinimum"
+          type: array
+        explicit_content:
+          $ref: "#/components/schemas/ExplicitField"
+        extra:
+          $ref: "#/components/schemas/PodcastExtraField"
+        genre_ids:
+          $ref: "#/components/schemas/GenreIdsField"
+        id:
+          $ref: "#/components/schemas/PodcastIdField"
+        image:
+          $ref: "#/components/schemas/ImageField"
+        is_claimed:
+          $ref: "#/components/schemas/IsClaimedField"
+        itunes_id:
+          $ref: "#/components/schemas/iTunesIdField"
+        language:
+          $ref: "#/components/schemas/LanguageField"
+        latest_pub_date_ms:
+          $ref: "#/components/schemas/LatestPubDateMsField"
+        listen_score:
+          $ref: "#/components/schemas/ListenScoreField"
+        listen_score_global_rank:
+          $ref: "#/components/schemas/ListenScoreGlobalRankField"
+        listennotes_url:
+          $ref: "#/components/schemas/PodcastLNUrlField"
+        looking_for:
+          $ref: "#/components/schemas/PodcastLookingForField"
+        next_episode_pub_date:
+          $ref: "#/components/schemas/NextEpisodePubDateField"
+        publisher:
+          $ref: "#/components/schemas/PublisherField"
+        rss:
+          $ref: "#/components/schemas/RssField"
+        thumbnail:
+          $ref: "#/components/schemas/ThumbnailField"
+        title:
+          $ref: "#/components/schemas/PodcastNameField"
+        total_episodes:
+          $ref: "#/components/schemas/TotalEpisodesField"
+        type:
+          $ref: "#/components/schemas/PodcastTypeField"
+        website:
+          $ref: "#/components/schemas/WebsiteField"
+      type: object
+    PodcastIdField:
+      description: Podcast id.
+      example: 4d3fe717742d4963a85562e9f84d8c79
+      type: string
+    PodcastLNUrlField:
+      description: The url of this podcast on [ListenNotes.com](https://www.ListenNotes.com).
+      example: https://www.listennotes.com/c/4d3fe717742d4963a85562e9f84d8c79/
+      type: string
+    PodcastLookingForField:
+      properties:
+        cohosts:
+          description: Whether this podcast is looking for cohosts.
+          example: true
+          type: boolean
+        cross_promotion:
+          description: Whether this podcast is looking for cross promotion opportunities with other podcasts.
+          example: true
+          type: boolean
+        guests:
+          description: Whether this podcast is looking for guests.
+          example: true
+          type: boolean
+        sponsors:
+          description: Whether this podcast is looking for sponsors.
+          example: true
+          type: boolean
+      type: object
+    PodcastMinimum:
+      properties:
+        id:
+          $ref: "#/components/schemas/PodcastIdField"
+        image:
+          $ref: "#/components/schemas/ImageField"
+        listen_score:
+          $ref: "#/components/schemas/ListenScoreField"
+        listen_score_global_rank:
+          $ref: "#/components/schemas/ListenScoreGlobalRankField"
+        listennotes_url:
+          $ref: "#/components/schemas/PodcastLNUrlField"
+        publisher:
+          $ref: "#/components/schemas/PublisherField"
+        thumbnail:
+          $ref: "#/components/schemas/ThumbnailField"
+        title:
+          $ref: "#/components/schemas/PodcastNameField"
+      type: object
+    PodcastNameField:
+      description: Podcast name.
+      example: Star Wars 7x7 | Star Wars News, Interviews, and More!
+      type: string
+    PodcastSearchResult:
+      description: When **type** is *podcast*.
+      properties:
+        description_highlighted:
+          description: Highlighted segment of podcast description
+          example: |
+            ...Join host Allen Voivod for <span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> news, history, interviews, trivia, and deep dives into the <span class="ln-search-highlight">Star</span> <span class="ln-search-highlight">Wars</span> story as told in movies, books, comics, games, cartoons, and more.
+          type: string
+        description_original:
+          description: Plain text of podcast description
+          example: |
+            The Star Wars 7x7 Podcast is Rebel-rousing fun for everyday Jedi, between 7 and 14 minutes a day, 7 days a week. Join host Allen Voivod for Star Wars news, history, interviews, trivia, and deep dives into the Star Wars story as told in movies, books, comics, games, cartoons, and more. Subscribe now for your daily dose of Star Wars joy. It's destiny unleashed! #SW7x7
+          type: string
+        earliest_pub_date_ms:
+          $ref: "#/components/schemas/EarliestPubDateMsField"
+        email:
+          $ref: "#/components/schemas/EmailField"
+        explicit_content:
+          $ref: "#/components/schemas/ExplicitField"
+        genre_ids:
+          $ref: "#/components/schemas/GenreIdsField"
+        id:
+          $ref: "#/components/schemas/PodcastIdField"
+        image:
+          $ref: "#/components/schemas/ImageField"
+        itunes_id:
+          $ref: "#/components/schemas/iTunesIdField"
+        latest_pub_date_ms:
+          $ref: "#/components/schemas/LatestPubDateMsField"
+        listen_score:
+          $ref: "#/components/schemas/ListenScoreField"
+        listen_score_global_rank:
+          $ref: "#/components/schemas/ListenScoreGlobalRankField"
+        listennotes_url:
+          $ref: "#/components/schemas/PodcastLNUrlField"
+        publisher_highlighted:
+          $ref: "#/components/schemas/PublisherHighlightedField"
+        publisher_original:
+          $ref: "#/components/schemas/PublisherOriginalField"
+        rss:
+          $ref: "#/components/schemas/RssField"
+        thumbnail:
+          $ref: "#/components/schemas/ThumbnailField"
+        title_highlighted:
+          $ref: "#/components/schemas/PodcastTitleHighlightedField"
+        title_original:
+          $ref: "#/components/schemas/PodcastTitleOriginalField"
+        total_episodes:
+          $ref: "#/components/schemas/TotalEpisodesField"
+        website:
+          $ref: "#/components/schemas/WebsiteField"
+      type: object
+    PodcastSimple:
+      properties:
+        country:
+          $ref: "#/components/schemas/CountryField"
+        description:
+          $ref: "#/components/schemas/PodcastDescriptionField"
+        earliest_pub_date_ms:
+          $ref: "#/components/schemas/EarliestPubDateMsField"
+        email:
+          $ref: "#/components/schemas/EmailField"
+        explicit_content:
+          $ref: "#/components/schemas/ExplicitField"
+        extra:
+          $ref: "#/components/schemas/PodcastExtraField"
+        genre_ids:
+          $ref: "#/components/schemas/GenreIdsField"
+        id:
+          $ref: "#/components/schemas/PodcastIdField"
+        image:
+          $ref: "#/components/schemas/ImageField"
+        is_claimed:
+          $ref: "#/components/schemas/IsClaimedField"
+        itunes_id:
+          $ref: "#/components/schemas/iTunesIdField"
+        language:
+          $ref: "#/components/schemas/LanguageField"
+        latest_pub_date_ms:
+          $ref: "#/components/schemas/LatestPubDateMsField"
+        listen_score:
+          $ref: "#/components/schemas/ListenScoreField"
+        listen_score_global_rank:
+          $ref: "#/components/schemas/ListenScoreGlobalRankField"
+        listennotes_url:
+          $ref: "#/components/schemas/PodcastLNUrlField"
+        looking_for:
+          $ref: "#/components/schemas/PodcastLookingForField"
+        publisher:
+          $ref: "#/components/schemas/PublisherField"
+        rss:
+          $ref: "#/components/schemas/RssField"
+        thumbnail:
+          $ref: "#/components/schemas/ThumbnailField"
+        title:
+          $ref: "#/components/schemas/PodcastNameField"
+        total_episodes:
+          $ref: "#/components/schemas/TotalEpisodesField"
+        type:
+          $ref: "#/components/schemas/PodcastTypeField"
+        website:
+          $ref: "#/components/schemas/WebsiteField"
+      type: object
+    PodcastTitleHighlightedField:
+      description: Highlighted segment of podcast name.
+      example: <span class=\"ln-search-highlight\">Star</span> <span class=\"ln-search-highlight\">Wars</span> 7x7 | <span class=\"ln-search-highlight\">Star</span> <span class=\"ln-search-highlight\">Wars</span> News, Interviews, and More!
+      type: string
+    PodcastTitleOriginalField:
+      description: Plain text of podcast name.
+      example: Star Wars 7x7 | Star Wars News, Interviews, and More!
+      type: string
+    PodcastTypeField:
+      description: The type of this podcast - episodic or serial.
+      enum:
+        - episodic
+        - serial
+      example: episodic
+      type: string
+    PodcastTypeaheadResult:
+      properties:
+        explicit_content:
+          $ref: "#/components/schemas/ExplicitField"
+        id:
+          $ref: "#/components/schemas/PodcastIdField"
+        image:
+          $ref: "#/components/schemas/ImageField"
+        publisher_highlighted:
+          $ref: "#/components/schemas/PublisherHighlightedField"
+        publisher_original:
+          $ref: "#/components/schemas/PublisherOriginalField"
+        thumbnail:
+          $ref: "#/components/schemas/ThumbnailField"
+        title_highlighted:
+          $ref: "#/components/schemas/PodcastTitleHighlightedField"
+        title_original:
+          $ref: "#/components/schemas/PodcastTitleOriginalField"
+      type: object
+    PublisherField:
+      description: Podcast publisher name.
+      example: Planet Broadcasting
+      type: string
+    PublisherHighlightedField:
+      description: Highlighted segment of this podcast's publisher name.
+      example: <span class=\"ln-search-highlight\">Star</span> <span class=\"ln-search-highlight\">Wars</span> Daily, by Allen Voivod
+      type: string
+    PublisherOriginalField:
+      description: Plain text of this podcast's publisher name.
+      example: Star Wars Daily, by Allen Voivod
+      type: string
+    RssField:
+      description: RSS url of this podcast. This field is available only in the PRO/ENTERPRISE plan.
+      example: https://sw7x7.libsyn.com/rss
+      type: string
+    SearchResponse:
+      properties:
+        count:
+          description: The number of search results in this page.
+          example: 10
+          type: integer
+        next_offset:
+          description: Pass this value to the **offset** parameter to do pagination of search results.
+          example: 10
+          type: integer
+        results:
+          description: A list of search results.
+          items:
+            oneOf:
+              - $ref: "#/components/schemas/EpisodeSearchResult"
+              - $ref: "#/components/schemas/PodcastSearchResult"
+              - $ref: "#/components/schemas/CuratedListSearchResult"
+          type: array
+        took:
+          description: The time it took to fetch these search results. In seconds.
+          example: 0.093
+          type: number
+        total:
+          description: The total number of search results.
+          example: 1989
+          type: integer
+      type: object
+    SubmitPodcastForm:
+      properties:
+        email:
+          description: A valid email address. If **email** is specified, then we'll notify this email address once the podcast is accepted.
+          example: hello@example.com
+          type: string
+        rss:
+          description: A valid podcast rss url.
+          example: https://feeds.megaphone.fm/committed
+          type: string
+      required:
+        - rss
+      type: object
+    SubmitPodcastResponse:
+      properties:
+        podcast:
+          $ref: "#/components/schemas/PodcastMinimum"
+        status:
+          description: The status of this submission.
+          enum:
+            - found
+            - in review
+          example: found
+          type: string
+      required:
+        - podcast
+        - status
+      type: object
+    ThumbnailField:
+      description: Thumbnail image url for this podcast's artwork (300x300).
+      example: https://cdn-images-1.listennotes.com/podcasts/exponent-ben-thompson-james-allworth-OaJSjb4xQv3.300x300.jpg
+      type: string
+    TotalEpisodesField:
+      description: Total number of episodes in this podcast.
+      example: 324
+      type: integer
+    TranscriptField:
+      description: The transcript of this episode, in plain text (with the newline character \n). If there's not transcript, it is null. This field is available only in the PRO/ENTERPRISE plan.
+      example: |
+        00:00:07 Welcome to this podcast...
+      type: string
+    TypeaheadResponse:
+      properties:
+        genres:
+          description: Genre suggestions. It'll show up when the **show_genres** parameter is *1*.
+          items:
+            $ref: "#/components/schemas/Genre"
+          type: array
+        podcasts:
+          description: Podcast suggestions. It'll show up when the **show_podcasts** parameter is 1.
+          items:
+            $ref: "#/components/schemas/PodcastTypeaheadResult"
+          type: array
+        terms:
+          description: Search term suggestions.
+          example:
+            - startup sales
+            - startup
+            - startups
+            - star wars
+          items:
+            type: string
+          type: array
+      required:
+        - terms
+      type: object
+    WebsiteField:
+      description: Website url of this podcast.
+      example: http://sw7x7.com/
+      type: string
+    iTunesIdField:
+      description: iTunes id for this podcast.
+      example: 896354638
+      type: integer

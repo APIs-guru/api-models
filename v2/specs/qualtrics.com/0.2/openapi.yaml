@@ -1,0 +1,467 @@
+openapi: 3.0.0
+servers:
+  - url: https://fra1.qualtrics.com/API/v3
+info:
+  description: Work with Qualtrics surveys, distributions and response events
+  title: Qualtrics API
+  version: "0.2"
+  x-apisguru-categories:
+    - forms
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_qualtrics.com_apple-touch-icon.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/microsoft/powerplatform-qualtrics-api/main/Qualtrics%20Connector%20Spec%20-%20Swagger%202.0.json
+      version: "2.0"
+  x-providerName: qualtrics.com
+paths:
+  "/directories/{DirectoryId}/mailinglists/{MailingListId}/contacts":
+    post:
+      description: Creates a contact in a given mailing list
+      operationId: CreateContactInMailinglist
+      parameters:
+        - description: ID of the qualtrics directory to create the contact to
+          in: path
+          name: DirectoryId
+          required: true
+          schema:
+            type: string
+          x-ms-summary: Directory ID
+        - description: ID of the mailing list
+          in: path
+          name: MailingListId
+          required: true
+          schema:
+            type: string
+          x-ms-summary: Mailing list ID
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateContactInMailingList"
+        description: Contact data
+        required: true
+        x-ms-summary: Contact data
+      responses:
+        "200":
+          description: OK - Contact created
+          headers: {}
+      summary: Create contact in mailing list
+  /distributions:
+    get:
+      description: Gets all distributions for a given survey
+      operationId: GetDistributions
+      parameters:
+        - description: The survey for which to load the distributions
+          in: query
+          name: surveyId
+          required: true
+          schema:
+            type: string
+          x-ms-summary: Survey ID
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DistributionsResponse"
+          description: Distributions
+          headers: {}
+      summary: Get distributions for survey
+    post:
+      description: Geneates links for individual distribution
+      operationId: GenerateDistributionLinks
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateDistributionLinks"
+        description: Parameters for the link generation
+        required: true
+        x-ms-summary: Link options
+      responses:
+        "200":
+          description: OK
+          headers: {}
+      summary: Generate distribution links
+  "/distributions/{DistributionId}/links":
+    get:
+      description: Retrieves all the individual links for a given distribution
+      operationId: Retrievedistributionlinks
+      parameters:
+        - description: "ID of the survey (eg: SV_123)"
+          in: query
+          name: surveyId
+          required: true
+          schema:
+            type: string
+          x-ms-summary: Survey ID
+        - description: ID of the distribution list
+          in: path
+          name: DistributionId
+          required: true
+          schema:
+            type: string
+          x-ms-summary: Distribution ID
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RetrieveDistributionLinksResponse"
+          description: Generated list of links
+          headers: {}
+      summary: Retrieve distribution links
+  /eventsubscriptions/:
+    delete:
+      description: Remove event subscription
+      operationId: WebhookDelete
+      requestBody:
+        $ref: "#/components/requestBodies/SubscribeToEventBody"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventSubscriptionsResponse"
+          description: ""
+          headers: {}
+      summary: Remove subscription to response event
+    post:
+      description: Subscribe to response event
+      operationId: WhenAResponseIsReceived
+      requestBody:
+        $ref: "#/components/requestBodies/SubscribeToEventBody"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventSubscriptionsResponse"
+          description: OK - web hook registered
+          headers: {}
+      summary: Triggers when a response is submitted to a qualtrics survey
+      x-ms-trigger: single
+    x-ms-notification-content:
+      description: WebHook registration response
+      schema:
+        $ref: "#/components/schemas/EventSubscriptionHookSchema"
+  "/eventsubscriptions/{SubscriptionId}":
+    get:
+      description: Get event subscriptions
+      operationId: GetEventSubscriptions
+      parameters:
+        - description: ID of event subscription - can be obtained from web hook response
+          in: path
+          name: SubscriptionId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EventSubscriptionsResponse"
+          description: Event subscriptions
+          headers: {}
+      summary: Get event subscriptions
+  "/survey-definitions/{SurveyId}":
+    get:
+      description: Gets a single Qualtrics survey speficied by its ID
+      operationId: GetSurvey
+      parameters:
+        - description: ID of survey (eg. SV_123)
+          in: path
+          name: SurveyId
+          required: true
+          schema:
+            type: string
+          x-ms-summary: Survey ID
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SurveyResponse"
+          description: Survey data
+          headers: {}
+        default:
+          description: Operation Failed.
+      summary: Get survey
+components:
+  requestBodies:
+    SubscribeToEventBody:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/SubscribeToEventBody"
+      description: This is the request body of the webhook
+      required: true
+  schemas:
+    CreateContactInMailingList:
+      properties:
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        unsubscribed:
+          type: boolean
+      type: object
+    CreateDistributionLinks:
+      properties:
+        action:
+          default: CreateDistribution
+          type: string
+        description:
+          type: string
+        expirationDate:
+          example: 2021-01-21 00:00:00
+          type: string
+        linkType:
+          type: string
+        mailingListId:
+          type: string
+        surveyId:
+          type: string
+      type: object
+    DistributionsResponse:
+      properties:
+        meta:
+          properties:
+            httpStatus:
+              type: string
+            requestId:
+              type: string
+          type: object
+        result:
+          properties:
+            elements:
+              items:
+                properties:
+                  createdDate:
+                    type: string
+                  customHeaders:
+                    properties: {}
+                    type: object
+                  embeddedData: {}
+                  headers:
+                    properties:
+                      fromEmail: {}
+                      fromName: {}
+                      replyToEmail: {}
+                    type: object
+                  id:
+                    type: string
+                  message:
+                    properties:
+                      libraryId: {}
+                      messageId: {}
+                      messageText: {}
+                    type: object
+                  modifiedDate:
+                    type: string
+                  organizationId:
+                    type: string
+                  ownerId:
+                    type: string
+                  parentDistributionId: {}
+                  recipients:
+                    properties:
+                      contactId: {}
+                      libraryId:
+                        type: string
+                      mailingListId:
+                        type: string
+                      sampleId: {}
+                    type: object
+                  requestStatus:
+                    type: string
+                  requestType:
+                    type: string
+                  sendDate:
+                    type: string
+                  stats:
+                    properties:
+                      blocked:
+                        type: integer
+                      bounced:
+                        type: integer
+                      complaints:
+                        type: integer
+                      failed:
+                        type: integer
+                      finished:
+                        type: integer
+                      opened:
+                        type: integer
+                      sent:
+                        type: integer
+                      skipped:
+                        type: integer
+                      started:
+                        type: integer
+                    type: object
+                  surveyLink:
+                    properties:
+                      expirationDate:
+                        type: string
+                      linkType:
+                        type: string
+                      surveyId:
+                        type: string
+                    type: object
+                required:
+                  - id
+                  - parentDistributionId
+                  - ownerId
+                  - organizationId
+                  - requestStatus
+                  - requestType
+                  - sendDate
+                  - createdDate
+                  - modifiedDate
+                  - customHeaders
+                  - headers
+                  - recipients
+                  - message
+                  - surveyLink
+                  - embeddedData
+                  - stats
+                type: object
+              type: array
+            nextPage: {}
+          type: object
+      type: object
+    EventSubscriptionHookSchema:
+      properties:
+        $content:
+          default: x
+          type: string
+          x-ms-summary: Content
+          x-ms-visibility: internal
+        $content-type:
+          default: application/x-www-form-urlencoded
+          type: string
+          x-ms-summary: Content type
+          x-ms-visibility: internal
+        $formdata:
+          items:
+            properties:
+              key:
+                type: string
+                x-ms-summary: " : Question"
+              value:
+                type: string
+                x-ms-summary: ": Answer"
+            required:
+              - key
+              - value
+            type: object
+          type: array
+          x-ms-summary: Questions and answers
+      required:
+        - $content-type
+        - $content
+      type: object
+    EventSubscriptionsResponse:
+      properties:
+        meta:
+          properties:
+            httpStatus:
+              type: string
+            requestId:
+              type: string
+          type: object
+        result:
+          properties:
+            meta:
+              properties:
+                httpStatus:
+                  type: string
+              type: object
+            result:
+              properties:
+                id:
+                  type: string
+              type: object
+          type: object
+      type: object
+    RetrieveDistributionLinksResponse:
+      properties:
+        meta:
+          properties:
+            httpStatus:
+              type: string
+            requestId:
+              type: string
+          type: object
+        result:
+          properties:
+            elements:
+              items:
+                properties:
+                  contactId:
+                    type: string
+                  email:
+                    type: string
+                  exceededContactFrequency:
+                    type: boolean
+                  externalDataReference: {}
+                  firstName:
+                    type: string
+                  lastName:
+                    type: string
+                  link:
+                    type: string
+                  linkExpiration:
+                    type: string
+                  status:
+                    type: string
+                  transactionId: {}
+                  unsubscribed:
+                    type: boolean
+                required:
+                  - contactId
+                  - transactionId
+                  - link
+                  - exceededContactFrequency
+                  - linkExpiration
+                  - status
+                  - lastName
+                  - firstName
+                  - externalDataReference
+                  - email
+                  - unsubscribed
+                type: object
+              type: array
+            nextPage: {}
+          type: object
+      type: object
+    SubscribeToEventBody:
+      properties:
+        encrypt:
+          type: boolean
+        publicationUrl:
+          description: The internal publication URL - will be generated by PowerAutomate
+          type: string
+          x-ms-notification-url: true
+          x-ms-visibility: internal
+        topics:
+          default: surveyengine.completedResponse.<Insert SurveyID>
+          description: The topics to subscribe to. Must follow the format surveyengine.completedResponse.[SurveyID]
+          type: string
+      required:
+        - topics
+        - publicationUrl
+      type: object
+    SurveyResponse:
+      properties: {}
+      type: object
+  securitySchemes:
+    api_key:
+      in: header
+      name: X-API-TOKEN
+      type: apiKey

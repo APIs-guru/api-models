@@ -1,0 +1,2195 @@
+swagger: "2.0"
+schemes:
+  - https
+basePath: /api/v1
+info:
+  contact:
+    email: developer@opto22.com
+    name: Opto 22
+    url: http://developer.opto22.com
+    x-twitter: opto22
+  description: |
+    #### Revised: 6/15/2018
+
+    ### Overview
+    This API provides secure access to a SNAP-PAC-R or -S series controller's variable and I/O tags. Confidentiality for API transactions is provided by HTTPS. Authentication uses HTTP Basic Authentication with an API key. An API key ID is submitted in the Basic Authentication userid field and API key value in the password field.
+
+    **For more information visit:** [developer.opto22.com](http://developer.opto22.com)
+
+    ### Examples
+
+    **Read an array** of all the integer32 variables defined in the PAC's strategy.
+    For example, on your SNAP-PAC-R or -S series controller at IP address 1.2.3.4, you would use the URL: 
+
+    ```
+    https://1.2.3.4/api/v1/device/strategy/vars/int32s
+    ```
+    and provide appropriate authentication. The GET response will be a JSON array of name-value 
+    pairs such as: 
+    ```json
+    [ { "nMyVeryFavoriteNumber": 22 },
+      { "nWidgetsProducedToday": 22222 },
+      { "DELAY_LOOP_TIME_IN_MSECS"  : 200 } ]
+    ```
+    **Read the engineering units** (EU) of an analog input point configured in the PAC's strategy.
+    For an analog input (I/O point) named aiTemperatureInDegreesF, use 
+
+    `https://1.2.3.4/api/v1/device/strategy/ios/analogInputs/aiTemperatureInDegreesF/eu`
+
+    The GET response will be a single JSON name-value pair such as:
+    ```json
+    { "value": 72.22 }
+    ```    
+
+    ### Note on packet sizes:
+    When doing POSTs or GETs, the JSON payload in the body should not exceed 3k (3072 bytes).
+  title: PAC Control REST API
+  version: R1.0a
+  x-apisguru-categories:
+    - iot
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_opto22_profile_image.jpeg
+  x-origin:
+    - format: swagger
+      url: http://developer.opto22.com/static/generated/pac-rest-api/pac-rest-api.snap-pac.yaml
+      version: "2.0"
+  x-providerName: opto22.com
+  x-serviceName: pac
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  basicAuth:
+    description: HTTP Basic Authentication over HTTPS
+    type: basic
+tags:
+  - description: Everything available through this RESTful API related to the PAC and its strategy
+    name: all
+  - description: PAC's type, firmware version, mac addresses, and uptime
+    name: device
+  - description: Information about the currently loaded strategy
+    name: strategy
+  - description: I/O points in the strategy
+    name: ios
+  - description: Numeric and string tables in the strategy
+    name: tables
+  - description: Numeric and string variables in the strategy
+    name: vars
+paths:
+  /device:
+    get:
+      description: Returns controller's type; firmware version; both mac addresses; and uptime in seconds
+      operationId: readDeviceDetails
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/ControllerResponse"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - device
+  /device/strategy:
+    get:
+      description: Returns the name, date, time, and CRC of the strategy currently in the controller, and the number of charts currently running. Empty strings and a 0 will be returned when there is no strategy.
+      operationId: readStrategyDetails
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/StrategyResponse"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - strategy
+  /device/strategy/ios/analogInputs:
+    get:
+      description: Returns the name and engineering units (EU) for all analog input points in the strategy
+      operationId: readAnalogInputs
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/FloatVar"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+  "/device/strategy/ios/analogInputs/{ioName}/eu":
+    get:
+      description: Reads the value in engineering units (EU) of the specified analog input
+      operationId: readAnalogInputEu
+      parameters:
+        - description: Name of the analog input point to read
+          in: path
+          name: ioName
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FloatValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+  /device/strategy/ios/analogOutputs:
+    get:
+      description: Returns the name and engineering units (EU) for all analog output points in the strategy
+      operationId: readAnalogOutputs
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/FloatVar"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+  "/device/strategy/ios/analogOutputs/{ioName}/eu":
+    get:
+      description: Reads the value in engineering units (EU) of the specified analog output
+      operationId: readAnalogOutputEu
+      parameters:
+        - description: Name of analog output point to read
+          in: path
+          name: ioName
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FloatValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+    post:
+      description: Sets the value of the specified analog output point
+      operationId: writeAnalogOutputEu
+      parameters:
+        - description: Name of the analog output point to write
+          in: path
+          name: ioName
+          required: true
+          type: string
+        - description: Value to write
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/FloatValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+  /device/strategy/ios/digitalInputs:
+    get:
+      description: Returns the name and state (true = on, false = off) of all digital input points in the strategy. If there is no strategy in the controller, or the strategy includes no digital inputs, the returned array will be empty.
+      operationId: readDigitalInputs
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/DigitalPointStateVar"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+  "/device/strategy/ios/digitalInputs/{ioName}/state":
+    get:
+      description: Returns the specified digital input point's state (true = on, false = off)
+      operationId: readDigitalInputState
+      parameters:
+        - description: Name of the digital input point to read
+          in: path
+          name: ioName
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/DigitalPointStateObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+  /device/strategy/ios/digitalOutputs:
+    get:
+      description: Returns the name and state (true = on, false = off) of all digital output points in the strategy
+      operationId: readDigitalOutputs
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/DigitalPointStateVar"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+  "/device/strategy/ios/digitalOutputs/{ioName}/state":
+    get:
+      description: Returns the specified digital output point's state (true = on, false = off)
+      operationId: readDigitalOutputState
+      parameters:
+        - description: Name of the digit output point to read
+          in: path
+          name: ioName
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/DigitalPointStateObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+    post:
+      description: Sets the value of the specified digital output point
+      operationId: writeDigitalOutputState
+      parameters:
+        - description: Name of the digital output point to write
+          in: path
+          name: ioName
+          required: true
+          type: string
+        - description: Value to write
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/DigitalPointStateObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - ios
+  /device/strategy/tables/floats:
+    get:
+      description: Returns an array of the name and length of all the float tables in the strategy
+      operationId: readFloatTables
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/TableDef"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/floats/{tableName}":
+    get:
+      description: |
+        Read table elements
+        #### Examples ####
+        * Read all elements in a table named ftable: https://1.2.3.4/api/v1/device/strategy/tables/floats/ftable
+        * Read elements 5 and up in a table named ftable starting with index 5: https://1.2.3.4/api/v1/device/strategy/tables/floats/ftable?startIndex=5
+        * Read 3 consecutive elements in a table named ftable starting with the element at index 10: https://1.2.3.4/api/v1/device/strategy/tables/floats/ftable?startIndex=10&numElements=3
+      operationId: readFloatTable
+      parameters:
+        - description: Name of float table to read; starting index and number of elements may be specified (defaults to all elements)
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to read (default is 0)
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Number of elements to read (default is number of elements in the table minus startIndex)
+          format: int32
+          in: query
+          name: numElements
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              description: Value of the float variable
+              format: float
+              type: number
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: |
+        Write table elements
+        #### Examples ####
+        * Write the values (1.5, 2.4, 3.5) to 3 consecutive elements in a table named ftable starting with the element at index 10:POST to https://1.2.3.4/api/v1/device/strategy/tables/floats/ftable?startIndex=10  with body of the POST request set to [ 1.5, 2.4, 3.5 ]
+      operationId: writeFloatTable
+      parameters:
+        - description: Name of float table to write; starting index may be specified
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to write (default is 0)
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Array of element values to write starting at startIndex
+          in: body
+          name: floatArray
+          required: true
+          schema:
+            items:
+              description: Value of the float variable
+              format: float
+              type: number
+            type: array
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/floats/{tableName}/{index}":
+    get:
+      description: Read specified table element
+      operationId: readFloatTableElement
+      parameters:
+        - description: Name of float table to read
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to read
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FloatValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: Write specified table element
+      operationId: writeFloatTableElement
+      parameters:
+        - description: Name of float table to write
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to write
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+        - description: Element to write starting at index
+          in: body
+          name: FloatElementObject
+          required: true
+          schema:
+            $ref: "#/definitions/FloatValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  /device/strategy/tables/int32s:
+    get:
+      description: Returns an array of the name and length of all the integer32 tables in the strategy
+      operationId: readInt32Tables
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/TableDef"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/int32s/{tableName}":
+    get:
+      description: |
+        "Read a range of table elements from the specified integer32 table"
+         #### Examples ####
+         * Read all elements in a table named itable: https://1.2.3.4/api/v1/device/strategy/tables/int32s/itable
+         * Read elements 5 and up in a table named itable starting with index 5: https://1.2.3.4/api/v1/device/strategy/tables/int32s/itable?startIndex=5
+         * Read 3 consecutive elements in a table named itable starting with the element at index 10: https://1.2.3.4/api/v1/device/strategy/tables/int32s/itable?startIndex=10&numElements=3
+      operationId: readInt32Table
+      parameters:
+        - description: Name of integer32 table to read; starting index and number of elements may be specified (defaults to all elements)
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to read (default is 0)
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Number of elements to read (default is number of elements in the table minus startIndex)
+          format: int32
+          in: query
+          name: numElements
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              description: Value of the integer32 variable
+              format: int32
+              type: integer
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: |
+        "Write a range of table elements"
+        #### Examples ####
+        * Write the values (1, 2, 3) to 3 consecutive elements in a table named itable starting with the element at index 10:POST to https://1.2.3.4/api/v1/device/strategy/tables/int32s/itable?startIndex=10  with body of the POST request set to [ 1, 2, 3 ]      
+      operationId: writeInt32Table
+      parameters:
+        - description: Name of integer32 table to write; starting index may be specified
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to write (default is 0)
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Array of element values to write starting at startIndex; if the list of elements is too long to fit in the specified table, extra elements will be ignored
+          in: body
+          name: int32Array
+          required: true
+          schema:
+            items:
+              description: Value of the integer32 variable
+              format: int32
+              type: integer
+            type: array
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/int32s/{tableName}/{index}":
+    get:
+      description: Read specified integer32 table element
+      operationId: readInt32TableElement
+      parameters:
+        - description: Name of the integer32 table to read
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to read
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Int32ValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: Write specified integer32 table element
+      operationId: writeInt32TableElement
+      parameters:
+        - description: Name of the integer32 table to write
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to write
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+        - description: Element to write at index specified
+          in: body
+          name: int32ElementObject
+          required: true
+          schema:
+            $ref: "#/definitions/Int32ValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  /device/strategy/tables/int64s:
+    get:
+      description: Returns an array of the name and length of all the integer64 tables in the strategy
+      operationId: readInt64Tables
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/TableDef"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/int64s/{tableName}":
+    get:
+      description: |
+        "Read a range of table elements from the specified integer64 table"
+         #### Examples ####
+         * Read all elements in a table named i64table: https://1.2.3.4/api/v1/device/strategy/tables/int64s/i64table
+         * Read elements 5 and up in a table named i64table starting with index 5: https://1.2.3.4/api/v1/device/strategy/tables/int64s/i64table?startIndex=5
+         * Read 3 consecutive elements in a table named i64table starting with the element at index 10: https://1.2.3.4/api/v1/device/strategy/tables/int64s/i64table?startIndex=10&numElements=3
+      operationId: readInt64Table
+      parameters:
+        - description: Name of the integer64 table to read; starting index and number of elements may be specified (defaults to all elements)
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to read (default is 0)
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Number of elements to read (default is number of elements in the table minus startIndex)
+          format: int32
+          in: query
+          name: numElements
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              description: Value of the integer64 variable
+              format: int64
+              type: integer
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: |
+        "Write a range of table elements"
+        #### Examples ####
+        * Write the values (1, 2, 3) to 3 consecutive elements in a table named i64table starting with the element at index 10:POST to https://1.2.3.4/api/v1/device/strategy/tables/int64s/i64table?startIndex=10  with body of the POST request set to [ 1, 2, 3 ]
+      operationId: writeInt64Table
+      parameters:
+        - description: Name of integer64 table to write; starting index may be specified
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to write; default is 0
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Array of element values to write starting at startIndex; if the array of elements is too long  to fit in the specified table, extra elements will be ignored
+          in: body
+          name: int64Array
+          required: true
+          schema:
+            items:
+              description: Value of the integer64 variable
+              format: int64
+              type: integer
+            type: array
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/int64s/{tableName}/_string":
+    get:
+      description: |
+        "Read a range of table elements from the specified integer64 table"
+         #### Examples ####
+         * Read all elements in a table named i64table: https://1.2.3.4/api/v1/device/strategy/tables/int64s/i64table/_string
+         * Read elements 5 and up in a table named i64table starting with index 5: https://1.2.3.4/api/v1/device/strategy/tables/int64s/i64table/_string?startIndex=5
+         * Read 3 consecutive elements in a table named i64table starting with the element at index 10: https://1.2.3.4/api/v1/device/strategy/tables/int64s/i64table/_string?startIndex=10&numElements=3
+      operationId: readInt64TableAsString
+      parameters:
+        - description: Name of the integer64 table to read; starting index and number of elements may be specified (defaults to all elements)
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to read (default is 0)
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Number of elements to read (default is number of elements in the table minus startIndex)
+          format: int32
+          in: query
+          name: numElements
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              description: Value of the integer64 variable expressed as a decimal string. E.g. "34359738367"
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: |
+        "Write a range of table elements"
+        #### Examples ####
+        * Write the values (1, 2, 3) to 3 consecutive elements in a table named i64table starting with the element at index 10:POST to https://1.2.3.4/api/v1/device/strategy/tables/int64s/i64table/_string?startIndex=10  with body of the POST request set to [ "1", "2", "3" ]
+      operationId: writeInt64TableAsString
+      parameters:
+        - description: Name of integer64 table to write; starting index may be specified
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to write; default is 0.
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Array of element values to write starting at startIndex; if the array of elements is too long  to fit in the specified table, extra elements will be ignored
+          in: body
+          name: int64AsStringArray
+          required: true
+          schema:
+            items:
+              description: Value of the integer64 variable expressed as a decimal string. E.g. "34359738367"
+              type: string
+            type: array
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/int64s/{tableName}/{index}":
+    get:
+      description: Read specified integer64 table element
+      operationId: readInt64TableElement
+      parameters:
+        - description: Name of integer64 table to read
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to read
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Int64ValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: Write specified integer64 table element
+      operationId: writeInt64TableElement
+      parameters:
+        - description: Name of the integer64 table to write
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to write
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+        - description: Element to write starting at index specified
+          in: body
+          name: int64ElementObject
+          required: true
+          schema:
+            $ref: "#/definitions/Int64ValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/int64s/{tableName}/{index}/_string":
+    get:
+      description: Read specified integer64 table element as string
+      operationId: readInt64TableElementAsString
+      parameters:
+        - description: Name of integer64 table to read
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to read
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Int64StringValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: Write specified integer64 table element as string
+      operationId: writeInt64TableElementAsString
+      parameters:
+        - description: Name of the integer64 table to write
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to write
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+        - description: Element to write starting at index specified
+          in: body
+          name: int64ElementObject
+          required: true
+          schema:
+            $ref: "#/definitions/Int64StringValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  /device/strategy/tables/strings:
+    get:
+      description: Returns an array of the name and length of all the string tables in the strategy
+      operationId: readStringTables
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/TableDef"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/strings/{tableName}":
+    get:
+      description: |
+        "Read a range of table elements from the specified string table"
+         #### Examples ####
+         * Read all elements in a table named strTable: https://1.2.3.4/api/v1/device/strategy/tables/strings/strTable
+         * Read elements 5 and up in a table named i64table starting with index 5: https://1.2.3.4/api/v1/device/strategy/tables/strings/strTable?startIndex=5
+         * Read 3 consecutive elements in a table named i64table starting with the element at index 10: https://1.2.3.4/api/v1/device/strategy/tables/strings/strTable?startIndex=10&numElements=3
+      operationId: readStringTable
+      parameters:
+        - description: Name of string table to read; starting index and number of elements may be specified (defaults to all elements)
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to read (default is 0)
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Number of elements to read (default is number of elements in the table minus startIndex)
+          format: int32
+          in: query
+          name: numElements
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              description: The value of a string; string width (max length) for each string table is defined in the strategy
+              maxLength: 1024
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: |
+        "Write a range of table elements"
+        #### Examples ####
+        * Write the values ("first", "second", "third") to 3 consecutive elements in a table named strTable starting with the element at index 10:POST to https://1.2.3.4/api/v1/device/strategy/tables/strings/strtable?startIndex=10  with body of the POST request set to [ "first", "second", "third" ]
+      operationId: writeStringTable
+      parameters:
+        - description: Name of string table to write; starting index may be specified
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of first element to write (default is 0)
+          format: int32
+          in: query
+          name: startIndex
+          required: false
+          type: integer
+        - description: Array of element values to write starting at startIndex; if an element value is longer than the string width, the string will be truncated to fit
+          in: body
+          name: stringArray
+          required: true
+          schema:
+            items:
+              description: The value of a string; string width (max length) for each string variable is defined in the strategy
+              maxLength: 1024
+              type: string
+            type: array
+      responses:
+        "200":
+          description: OK - but check details for any error messages
+          schema:
+            $ref: "#/definitions/ErrorResponse200OKish"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  "/device/strategy/tables/strings/{tableName}/{index}":
+    get:
+      description: Read specified table element
+      operationId: readStringTableElement
+      parameters:
+        - description: Name of string table to read
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to read
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/StringValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+    post:
+      description: Write specified table element
+      operationId: writeStringTableElement
+      parameters:
+        - description: Name of string table to write
+          in: path
+          name: tableName
+          required: true
+          type: string
+        - description: Index of element to write
+          format: int32
+          in: path
+          name: index
+          required: true
+          type: integer
+        - description: Element to write starting at index
+          in: body
+          name: stringElementObject
+          required: true
+          schema:
+            $ref: "#/definitions/StringValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - tables
+  /device/strategy/vars/downTimers:
+    get:
+      description: Returns the name and current value of all down timers in the strategy
+      operationId: readDownTimerVars
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/FloatVar"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  "/device/strategy/vars/downTimers/{downTimerName}/value":
+    get:
+      description: Returns current value of the specified down timer
+      operationId: readDownTimerValue
+      parameters:
+        - description: Name of the down timer variable to read
+          in: path
+          name: downTimerName
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FloatValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  /device/strategy/vars/floats:
+    get:
+      description: Returns the name and value of all (single-precision) float variables in the strategy
+      operationId: readFloatVars
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/FloatVar"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  "/device/strategy/vars/floats/{floatName}":
+    get:
+      description: Returns value of the specified float variable
+      operationId: readFloatVar
+      parameters:
+        - description: Name of float variable to read
+          in: path
+          name: floatName
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FloatValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+    post:
+      description: Sets the value of a float variable
+      operationId: writeFloatVar
+      parameters:
+        - description: Name of the float variable to write
+          in: path
+          name: floatName
+          required: true
+          type: string
+        - description: Value to write to the float variable
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/FloatValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  /device/strategy/vars/int32s:
+    get:
+      description: Returns the name and value of all integer32 variables in the strategy
+      operationId: readInt32Vars
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Int32Var"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  "/device/strategy/vars/int32s/{int32Name}":
+    get:
+      description: Returns value of the specified integer32 variable
+      operationId: readInt32Var
+      parameters:
+        - description: Name of integer32 variable to read
+          in: path
+          name: int32Name
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Int32ValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+    post:
+      description: Sets the value of an integer32 variable
+      operationId: writeInt32Var
+      parameters:
+        - description: Name of integer32 variable to write
+          in: path
+          name: int32Name
+          required: true
+          type: string
+        - description: Value to write to the integer32 variable
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Int32ValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  /device/strategy/vars/int64s:
+    get:
+      description: Returns the name and value of all integer64 variables in the strategy
+      operationId: readInt64Vars
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Int64Var"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  /device/strategy/vars/int64s/_string:
+    get:
+      description: Returns the name and value as a string of all integer64 variables in the strategy
+      operationId: readInt64VarsAsStrings
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Int64VarAsString"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  "/device/strategy/vars/int64s/{int64Name}":
+    get:
+      description: Returns value of the specified integer64 variable
+      operationId: readInt64Var
+      parameters:
+        - description: Name of integer64 variable to read
+          in: path
+          name: int64Name
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Int64ValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+    post:
+      description: Sets the value of an integer64 variable
+      operationId: writeInt64Var
+      parameters:
+        - description: Name of integer64 variable to write
+          in: path
+          name: int64Name
+          required: true
+          type: string
+        - description: Value to write to the integer64 variable
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Int64ValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  "/device/strategy/vars/int64s/{int64Name}/_string":
+    get:
+      description: Returns value of the specified integer64 variable as a string
+      operationId: readInt64VarAsString
+      parameters:
+        - description: Name of integer64 variable to read
+          in: path
+          name: int64Name
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Int64StringValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+    post:
+      description: Sets the value of an integer64 variable as a string
+      operationId: writeInt64VarAsString
+      parameters:
+        - description: Name of integer64 variable to write
+          in: path
+          name: int64Name
+          required: true
+          type: string
+        - description: Value to write to the integer64 variable
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Int64StringValueObject"
+      responses:
+        "200":
+          description: OK
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  /device/strategy/vars/strings:
+    get:
+      description: Returns the name and value of all string variables in the strategy
+      operationId: readStringVars
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/StringVar"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  "/device/strategy/vars/strings/{stringName}":
+    get:
+      description: Returns value of the specified string
+      operationId: readStringVar
+      parameters:
+        - description: Name of string variable to read
+          in: path
+          name: stringName
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/StringValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+    post:
+      description: Sets the value of a string variable
+      operationId: writeStringVar
+      parameters:
+        - description: Name of string variable to write
+          in: path
+          name: stringName
+          required: true
+          type: string
+        - description: String to write. If the value is longer than the string width, the string will be truncated to fit.
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/StringValueObject"
+      responses:
+        "200":
+          description: OK - but check details for any error messages
+          schema:
+            $ref: "#/definitions/ErrorResponse200OKish"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  /device/strategy/vars/upTimers:
+    get:
+      description: Returns the name and current value of all up timers in the strategy
+      operationId: readUpTimerVars
+      parameters: []
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/FloatVar"
+            type: array
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+  "/device/strategy/vars/upTimers/{upTimerName}/value":
+    get:
+      description: Returns current value of the specified up timer
+      operationId: readUpTimerValue
+      parameters:
+        - description: Name of the up timer variable to read
+          in: path
+          name: upTimerName
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/FloatValueObject"
+        "400":
+          description: Bad Request
+          schema:
+            $ref: "#/definitions/ErrorResponse400BadAdminOrValue"
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: "#/definitions/ErrorResponse401BadKeyForBasicAuth"
+        "404":
+          description: Not found
+          schema:
+            $ref: "#/definitions/ErrorResponse404NotFound"
+      security:
+        - basicAuth: []
+      tags:
+        - all
+        - vars
+definitions:
+  ControllerResponse:
+    properties:
+      controllerType:
+        type: string
+      firmwareDate:
+        type: string
+      firmwareTime:
+        type: string
+      firmwareVersion:
+        type: string
+      mac1:
+        type: string
+      mac2:
+        type: string
+      upTimeSeconds:
+        format: int32
+        type: integer
+    type: object
+  DigitalPointStateObject:
+    properties:
+      value:
+        description: State of a digital point (true = on, false = off)
+        type: boolean
+    type: object
+  DigitalPointStateVar:
+    properties:
+      name:
+        description: Name of the tag (strategy variable, i/o point, etc.)
+        maxLength: 50
+        type: string
+      value:
+        description: State of a digital point (true = on, false = off)
+        type: boolean
+    type: object
+  ErrorResponse200OKish:
+    properties:
+      errorCode:
+        description: "Details: ** -23 ** The string you passed is longer than the width of PAC Control string variable or table element you are writing to."
+        format: int32
+        type: integer
+      message:
+        type: string
+    required:
+      - errorCode
+      - message
+    type: object
+  ErrorResponse400BadAdminOrValue:
+    properties:
+      errorCode:
+        description: "Details: ** -1 ** Invalid or no strategy. Use PAC Control to download strategy logic. ** -3 ** Buffer overrun or invalid length. The number or range of table indicies you specified exceeds elements in the PAC Control table. ** -8 ** Invalid data. Check format of data written. Compare to what's read for the same endpoint. ** -12 ** You've passed a table index that is less than zero or greater than the length of the table minus 1. ** -13 ** The value you passed to write is outside of the valid range for the PAC Control data type you're writing to. For example, if you specified the value 999999999999999 for an integer32 (since integer32 data types must be in the range: -2147483648 to 2147483647). ** -17 or -20 ** The controller is busy with another task, for example, downloading a new strategy. Try again later. ** -36 ** Endpoint is not defined. ** -109 ** Attempting to write without write permissions. Check /admin/keys settings. ** -13019 ** Invalid endpoint. Check syntax of the URL (e.g. did you use 'ev' instead of 'eu'). ** 400 ** Before using the API on this device, you must first change the default user name and password via the URL /admin/keys. Use the default User Name: 'admin' and Password: 'password' to log ininitially."
+        format: int32
+        type: integer
+      message:
+        type: string
+    required:
+      - errorCode
+      - message
+    type: object
+  ErrorResponse401BadKeyForBasicAuth:
+    properties:
+      errorCode:
+        description: "Details: ** -104 ** Invalid key ID/value in HTTP header. Before using the API on this device, you must create at least one key ID/value via the URL /admin/keys. Then use one of those in your HTTP header for Basic Authentication."
+        format: int32
+        type: integer
+      message:
+        type: string
+    required:
+      - errorCode
+      - message
+    type: object
+  ErrorResponse404NotFound:
+    properties:
+      errorCode:
+        description: "Details: ** -29 ** The tag (variable, table, timer, I/O point, etc.) you requested exists on the controller but does not match the data type for this endpoint.  ** -28 ** The tag (variable, table, timer, I/O point, etc.) does not currently exist on the controller. Check the tag name and the controller's status. ** 404 ** Endpoint does not exist. Check URL."
+        format: int32
+        type: integer
+      message:
+        type: string
+    required:
+      - errorCode
+      - message
+    type: object
+  FloatValueObject:
+    properties:
+      value:
+        description: Value of the float variable
+        format: float
+        type: number
+    type: object
+  FloatVar:
+    properties:
+      name:
+        description: Name of the tag (strategy variable, i/o point, etc.)
+        maxLength: 50
+        type: string
+      value:
+        description: Value of the float variable
+        format: float
+        type: number
+    type: object
+  Int32ValueObject:
+    properties:
+      value:
+        description: Value of the integer32 variable
+        format: int32
+        type: integer
+    type: object
+  Int32Var:
+    properties:
+      name:
+        description: Name of the tag (strategy variable, i/o point, etc.)
+        maxLength: 50
+        type: string
+      value:
+        description: Value of the integer32 variable
+        format: int32
+        type: integer
+    type: object
+  Int64StringValueObject:
+    properties:
+      value:
+        description: Value of the integer64 variable expressed as decimal string, e.g. "34359738367"
+        type: string
+    type: object
+  Int64ValueObject:
+    properties:
+      value:
+        description: Value of the integer64 variable
+        format: int64
+        type: integer
+    type: object
+  Int64Var:
+    properties:
+      name:
+        description: Name of the tag (strategy variable, i/o point, etc.)
+        maxLength: 50
+        type: string
+      value:
+        description: Value of the integer64 variable
+        format: int64
+        type: integer
+    type: object
+  Int64VarAsString:
+    properties:
+      name:
+        description: Name of the tag (strategy variable, i/o point, etc.)
+        maxLength: 50
+        type: string
+      value:
+        description: Value of the integer64 variable expressed as a decimal string, E.g. "34359738367"
+        type: string
+    type: object
+  StrategyResponse:
+    properties:
+      crc:
+        type: string
+      date:
+        type: string
+      runningCharts:
+        format: int32
+        type: integer
+      strategyName:
+        type: string
+      time:
+        type: string
+    type: object
+  StringValueObject:
+    properties:
+      value:
+        description: The value of a string; string width (max length) for each string variable is defined in the strategy
+        maxLength: 1024
+        type: string
+    type: object
+  StringVar:
+    properties:
+      name:
+        description: Name of the tag (strategy variable, i/o point, etc.)
+        maxLength: 50
+        type: string
+      value:
+        description: The value of a string; string width (max length) for each string variable is defined in the strategy
+        maxLength: 1024
+        type: string
+    type: object
+  TableDef:
+    properties:
+      length:
+        description: Number of elements contained in this table
+        format: int32
+        type: integer
+      name:
+        description: Name of the tag (strategy variable, i/o point, etc.)
+        maxLength: 50
+        type: string
+    type: object

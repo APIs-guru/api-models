@@ -1,0 +1,614 @@
+swagger: "2.0"
+schemes:
+  - https
+host: management.azure.com
+info:
+  description: |
+    The Azure Management Groups API enables consolidation of multiple 
+    subscriptions/resources into an organizational hierarchy and centrally 
+    manage access control, policies, alerting and reporting for those resources.
+  title: Management Groups
+  version: 2017-08-31-preview
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/resources/resource-manager/Microsoft.Management/preview/2017-08-31-preview/management.json
+      version: "2.0"
+  x-providerName: azure.com
+  x-serviceName: resources-management
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    description: Azure Active Directory OAuth2 Flow.
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+security:
+  - azure_auth:
+      - user_impersonation
+parameters:
+  ApiVersionParameter:
+    description: Version of the API to be used with the client request. The current version is 2017-08-31-preview.
+    in: query
+    name: api-version
+    required: true
+    type: string
+  ExpandParameter:
+    description: The $expand=children query string parameter allows clients to request inclusion of children in the response payload.
+    enum:
+      - children
+    in: query
+    name: $expand
+    required: false
+    type: string
+    x-ms-parameter-location: method
+  GroupIdParameter:
+    description: Management Group ID.
+    format: uuid
+    in: path
+    name: groupId
+    required: true
+    type: string
+  RecurseParameter:
+    description: The $recurse=true query string parameter allows clients to request inclusion of entire hierarchy in the response payload.
+    in: query
+    name: $recurse
+    required: false
+    type: boolean
+    x-ms-parameter-location: method
+tags:
+  - description: |
+      A Management Group is a customer defined scope (grouping mechanism) that 
+      provides access control (authorization), policy management and reporting. 
+      Management Groups are organized in a strictly tree-based hierarchy.
+    name: ManagementGroups
+paths:
+  /providers/Microsoft.Management/managementGroups:
+    get:
+      description: |
+        List management groups for the authenticated user.
+      operationId: ManagementGroups_List
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+        - description: |
+            Page continuation token is only used if a previous operation returned a partial result. 
+            If a previous response contains a nextLink element, the value of the nextLink element will include a token parameter that specifies a starting point to use for subsequent calls.
+          in: query
+          name: $skiptoken
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/ManagementGroupListResult"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      tags:
+        - ManagementGroups
+      x-ms-examples:
+        GetManagementGroups:
+          parameters:
+            api-version: 2017-08-31-preview
+          responses:
+            "200":
+              body:
+                value:
+                  - id: /providers/Microsoft.Management/managementGroups/10000000-d002-0000-0000-000000000000
+                    name: 10000000-d002-0000-0000-000000000000
+                    properties:
+                      displayName: Department 2 under Enrollment 1
+                      tenantId: 10000000-0000-0000-0000-000000000000
+                    type: /providers/Microsoft.Management/managementGroups
+                  - id: /providers/Microsoft.Management/managementGroups/10000000-a001-0000-0000-000000000000
+                    name: 10000000-a001-0000-0000-000000000000
+                    properties:
+                      displayName: Account 1, under Department 1
+                      tenantId: 10000000-0000-0000-0000-000000000000
+                    type: /providers/Microsoft.Management/managementGroups
+      x-ms-pageable:
+        nextLinkName: nextLink
+  "/providers/Microsoft.Management/managementGroups/{groupId}":
+    get:
+      description: |
+        Get the details of the management group.
+      operationId: ManagementGroups_Get
+      parameters:
+        - $ref: "#/parameters/GroupIdParameter"
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/ExpandParameter"
+        - $ref: "#/parameters/RecurseParameter"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/ManagementGroupWithHierarchy"
+        default:
+          description: Error
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      tags:
+        - ManagementGroups
+      x-ms-examples:
+        GetManagementGroup:
+          parameters:
+            api-version: 2017-08-31-preview
+            groupId: 20000000-0001-0000-0000-000000000000
+          responses:
+            "200":
+              body:
+                id: /providers/Microsoft.Management/managementGroups/20000000-0001-0000-0000-000000000000
+                name: 20000000-0001-0000-0000-000000000000
+                properties:
+                  details:
+                    managementGroupType: Enrollment
+                    parent: "null"
+                    updatedBy: Test
+                    updatedTime: 2017-01-01T00:00:00.00Z
+                    version: 1
+                  displayName: Group 1 Tenant 2
+                  tenantId: 20000000-0000-0000-0000-000000000000
+                type: /providers/Microsoft.Management/managementGroups
+        GetManagementGroupWithExpand:
+          parameters:
+            $expand: children
+            api-version: 2017-08-31-preview
+            groupId: 10000000-E001-0000-0000-000000000000
+          responses:
+            "200":
+              body:
+                id: /providers/Microsoft.Management/managementGroups/10000000-E001-0000-0000-000000000000
+                name: 10000000-E001-0000-0000-000000000000
+                properties:
+                  children:
+                    - childId: /providers/Microsoft.Management/managementGroups/10000000-D001-0000-0000-000000000000
+                      childType: Department
+                      displayName: Department 1 under Enrollment 1
+                    - childId: /providers/Microsoft.Management/managementGroups/10000000-D002-0000-0000-000000000000
+                      childType: Department
+                      displayName: Department 2 under Enrollment 1
+                    - childId: /providers/Microsoft.Management/managementGroups/10000000-A004-0000-0000-000000000000
+                      childType: Account
+                      displayName: Account 4, under Enrollment 1
+                    - childId: /providers/Microsoft.Management/managementGroups/10000000-A005-0000-0000-000000000000
+                      childType: Account
+                      displayName: Account 5, under Enrollment 1
+                  details:
+                    managementGroupType: Enrollment
+                    updatedBy: "*"
+                    updatedTime: 2017-02-13T00:00:00Z
+                    version: 1
+                  displayName: Enrollment 1, under Tenant 1
+                  tenantId: 10000000-0000-0000-0000-000000000000
+                type: /providers/Microsoft.Management/managementGroups
+        GetManagementGroupsWithExpandAndResurse:
+          parameters:
+            $expand: children
+            $recurse: true
+            api-version: 2017-08-31-preview
+            groupId: 10000000-E001-0000-0000-000000000000
+          responses:
+            "200":
+              body:
+                id: /providers/Microsoft.Management/managementGroups/10000000-e001-0000-0000-000000000000
+                name: 10000000-e001-0000-0000-000000000000
+                properties:
+                  children:
+                    - childId: /providers/Microsoft.Management/managementGroups/10000000-d001-0000-0000-000000000000
+                      childType: Department
+                      children:
+                        - childId: /providers/Microsoft.Management/managementGroups/10000000-a001-0000-0000-000000000000
+                          childType: Account
+                          children:
+                            - childId: /subscriptions/0a64fa3c-9c0d-4fff-8210-0aab1c70a6dd
+                              childType: Subscription
+                              children: []
+                              displayName: 12-Month Plan (Prepaid)
+                              tenantId: d51b909d-c07e-464a-b342-ade31d5847a0
+                            - childId: /subscriptions/160a47c4-58fe-4af0-8ebc-83f90f084650
+                              childType: Subscription
+                              children: []
+                              displayName: Pay-As-You-Go
+                              tenantId: d51b909d-c07e-464a-b342-ade31d5847a0
+                            - childId: /subscriptions/22cf013b-58b3-43a6-be81-d0c490452cd8
+                              childType: Subscription
+                              children: []
+                              displayName: 12-Month Plan (Prepaid)
+                              tenantId: d51b909d-c07e-464a-b342-ade31d5847a0
+                            - childId: /subscriptions/10000000-f001-0000-0000-000000000000
+                              childType: Subscription
+                              children: []
+                              displayName: 10000000-f001-0000-0000-000000000000
+                          displayName: Account 1, under Department 1
+                      displayName: Department 1 under Enrollment 1
+                    - childId: /providers/Microsoft.Management/managementGroups/10000000-d002-0000-0000-000000000000
+                      childType: Department
+                      children:
+                        - childId: /providers/Microsoft.Management/managementGroups/10000000-a002-0000-0000-000000000000
+                          childType: Account
+                          children:
+                            - childId: /subscriptions/440db568-e343-4859-8bf7-5fc96af77d88
+                              childType: Subscription
+                              children: []
+                              displayName: Pay-As-You-Go
+                              tenantId: d51b909d-c07e-464a-b342-ade31d5847a0
+                          displayName: Account 2, under Department 2
+                        - childId: /providers/Microsoft.Management/managementGroups/10000000-a003-0000-0000-000000000000
+                          childType: Account
+                          children:
+                            - childId: /subscriptions/169b81b5-a668-4dad-bc50-fc5e66ba7b91
+                              childType: Subscription
+                              children: []
+                              displayName: Pay-As-You-Go
+                              tenantId: 9aad97db-3d48-4009-ae55-d1bc13ca4936
+                            - childId: /subscriptions/24aa285d-b606-4c08-80a4-207b7554746b
+                              childType: Subscription
+                              children: []
+                              displayName: Pay-As-You-Go
+                              tenantId: 9aad97db-3d48-4009-ae55-d1bc13ca4936
+                            - childId: /subscriptions/6c8932e6-b1b7-4e8b-ac68-47f815ac9325
+                              childType: Subscription
+                              children: []
+                              displayName: Pay-As-You-Go
+                              tenantId: 9aad97db-3d48-4009-ae55-d1bc13ca4936
+                          displayName: Account 3, under Department 2
+                      displayName: Department 2 under Enrollment 1
+                    - childId: /providers/Microsoft.Management/managementGroups/10000000-a004-0000-0000-000000000000
+                      childType: Account
+                      children:
+                        - childId: /providers/Microsoft.Management/managementGroups/10000000-0001-0000-0000-000000000000
+                          children:
+                            - childId: /subscriptions/e9836373-b0a9-4716-b8a9-a55b6286524f
+                              childType: Subscription
+                              children: []
+                              displayName: Pay-As-You-Go
+                              tenantId: 9aad97db-3d48-4009-ae55-d1bc13ca4936
+                            - childId: /subscriptions/978526d0-e5ac-4e56-9d29-57fe370c0817
+                              childType: Subscription
+                              children: []
+                              displayName: Free Trial
+                              tenantId: 9aad97db-3d48-4009-ae55-d1bc13ca4936
+                          displayName: Modern group 1, under Account 4
+                        - childId: /providers/Microsoft.Management/managementGroups/10000000-0002-0000-0000-000000000000
+                          children: []
+                          displayName: Modern Group 2, under Account 4
+                        - childId: /subscriptions/bebc95ad-bf1b-4135-a5d5-a72d5734cfa5
+                          childType: Subscription
+                          children: []
+                          displayName: Pay-As-You-Go-OIDC
+                          tenantId: 9aad97db-3d48-4009-ae55-d1bc13ca4936
+                        - childId: /subscriptions/d7b75696-f99c-454e-aaaf-35de00d8c5b6
+                          childType: Subscription
+                          children: []
+                          displayName: Pay-As-You-Go
+                          tenantId: 9aad97db-3d48-4009-ae55-d1bc13ca4936
+                      displayName: Account 4, under Enrollment 1
+                    - childId: /providers/Microsoft.Management/managementGroups/10000000-a005-0000-0000-000000000000
+                      childType: Account
+                      children: []
+                      displayName: Account 5, under Enrollment 1
+                  details:
+                    managementGroupType: Enrollment
+                    updatedBy: "*"
+                    updatedTime: 2017-02-13T00:00:00Z
+                    version: 1
+                  displayName: Enrollment 1, under Tenant 1
+                  tenantId: 10000000-0000-0000-0000-000000000000
+                type: /providers/Microsoft.Management/managementGroups
+  /providers/Microsoft.Management/operations:
+    get:
+      description: Lists all of the available management REST API operations.
+      operationId: Operations_List
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: OK. The request has succeeded.
+          schema:
+            $ref: "#/definitions/OperationListResult"
+        default:
+          description: Error response describing why the operation failed.
+          schema:
+            $ref: "#/definitions/ErrorResponse"
+      tags:
+        - Operations
+      x-ms-pageable:
+        nextLinkName: nextLink
+definitions:
+  ErrorDetails:
+    description: The details of the error.
+    properties:
+      code:
+        description: One of a server-defined set of error codes.
+        type: string
+      message:
+        description: A human-readable representation of the error.
+        type: string
+      target:
+        description: (Optional) The target of the error.
+        type: string
+  ErrorResponse:
+    description: The error object.
+    properties:
+      error:
+        $ref: "#/definitions/ErrorDetails"
+        title: Error
+  ManagementGroup:
+    description: The management group details.
+    properties:
+      id:
+        description: The ID of the management group. E.g. /providers/Microsoft.Management/managementGroups/20000000-0000-0000-0000-000000000000
+        readOnly: true
+        type: string
+      name:
+        description: The name of the management group. E.g. 20000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
+      properties:
+        $ref: "#/definitions/ManagementGroupProperties"
+        title: Properties
+        x-ms-client-flatten: true
+      type:
+        description: The type of the resource. E.g. /providers/Microsoft.Management/managementGroups
+        readOnly: true
+        type: string
+  ManagementGroupChildInfo:
+    description: The unique identifier (ID) of a management group.
+    properties:
+      childId:
+        description: The ID of the child resource (management group or subscription). E.g. /providers/Microsoft.Management/managementGroups/40000000-0000-0000-0000-000000000000
+        type: string
+      childType:
+        $ref: "#/definitions/ManagementGroupType"
+        title: Managment Group Child Info
+      displayName:
+        description: The friendly name of the child resource.
+        type: string
+      tenantId:
+        description: (Optional) The AAD Tenant ID associated with the child resource.
+        format: uuid
+        type: string
+  ManagementGroupDetailsProperties:
+    description: The details properties of a management group.
+    properties:
+      managementGroupType:
+        $ref: "#/definitions/ManagementGroupType"
+        title: Management Group Type
+      parent:
+        $ref: "#/definitions/ParentGroupInfo"
+        title: Parent
+      updatedBy:
+        description: The identity of the principal or process that updated the object.
+        type: string
+      updatedTime:
+        description: The date and time when this object was last updated.
+        format: date-time
+        type: string
+      version:
+        description: The version number of the object.
+        format: int32
+        type: number
+    type: object
+  ManagementGroupInfo:
+    description: The management group.
+    properties:
+      id:
+        description: The ID of the management group. E.g. /providers/Microsoft.Management/managementGroups/20000000-0000-0000-0000-000000000000
+        readOnly: true
+        type: string
+      name:
+        description: The name of the management group. E.g. 20000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
+      properties:
+        $ref: "#/definitions/ManagementGroupInfoProperties"
+        title: Properties
+        x-ms-client-flatten: true
+      type:
+        description: The type of the resource. E.g. /providers/Microsoft.Management/managementGroups
+        readOnly: true
+        type: string
+  ManagementGroupInfoProperties:
+    description: The generic properties of a management group.
+    properties:
+      displayName:
+        description: The friendly name of the management group.
+        type: string
+      tenantId:
+        description: The AAD Tenant ID associated with the management group. E.g. 10000000-0000-0000-0000-000000000000
+        format: uuid
+        type: string
+    type: object
+  ManagementGroupListResult:
+    description: The result of listing management groups.
+    properties:
+      nextLink:
+        description: The URL to the next page of results.
+        readOnly: true
+        type: string
+      value:
+        description: The list of management groups.
+        items:
+          $ref: "#/definitions/ManagementGroupInfo"
+        type: array
+  ManagementGroupProperties:
+    description: The generic properties of a management group.
+    properties:
+      details:
+        $ref: "#/definitions/ManagementGroupDetailsProperties"
+        title: Details
+      displayName:
+        description: The friendly name of the management group.
+        type: string
+      tenantId:
+        description: The AAD Tenant ID associated with the management group. E.g. 10000000-0000-0000-0000-000000000000
+        format: uuid
+        type: string
+    type: object
+  ManagementGroupPropertiesWithChildren:
+    description: The generic properties of a management group.
+    properties:
+      children:
+        description: The list of children.
+        items:
+          $ref: "#/definitions/ManagementGroupChildInfo"
+        type: array
+      details:
+        $ref: "#/definitions/ManagementGroupDetailsProperties"
+        title: Details
+      displayName:
+        description: The friendly name of the management group.
+        type: string
+      tenantId:
+        description: The AAD Tenant ID associated with the management group. E.g. 10000000-0000-0000-0000-000000000000
+        format: uuid
+        type: string
+    type: object
+  ManagementGroupPropertiesWithHierarchy:
+    description: The generic properties of a management group.
+    properties:
+      children:
+        description: The list of children.
+        items:
+          $ref: "#/definitions/ManagementGroupRecursiveChildInfo"
+        type: array
+      details:
+        $ref: "#/definitions/ManagementGroupDetailsProperties"
+        title: Details
+      displayName:
+        description: The friendly name of the management group.
+        type: string
+      tenantId:
+        description: The AAD Tenant ID associated with the management group. E.g. 10000000-0000-0000-0000-000000000000
+        format: uuid
+        type: string
+    type: object
+  ManagementGroupRecursiveChildInfo:
+    description: The unique identifier (ID) of a management group.
+    properties:
+      childId:
+        description: The ID of the child resource (management group or subscription). E.g. /providers/Microsoft.Management/managementGroups/40000000-0000-0000-0000-000000000000
+        type: string
+      childType:
+        $ref: "#/definitions/ManagementGroupType"
+        title: Managment Group Recursive Child Info
+      children:
+        description: The list of children.
+        items:
+          $ref: "#/definitions/ManagementGroupRecursiveChildInfo"
+        type: array
+      displayName:
+        description: The friendly name of the child resource.
+        type: string
+      tenantId:
+        description: (Optional) The AAD Tenant ID associated with the child resource.
+        format: uuid
+        type: string
+  ManagementGroupType:
+    description: (Optional) The type of the management group.
+    enum:
+      - Enrollment
+      - Department
+      - Account
+      - Subscription
+    type: string
+  ManagementGroupWithChildren:
+    description: The management group details.
+    properties:
+      id:
+        description: The ID of the management group. E.g. /providers/Microsoft.Management/managementGroups/20000000-0000-0000-0000-000000000000
+        readOnly: true
+        type: string
+      name:
+        description: The name of the management group. E.g. 20000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
+      properties:
+        $ref: "#/definitions/ManagementGroupPropertiesWithChildren"
+        title: Properties
+        x-ms-client-flatten: true
+      type:
+        description: The type of the resource. E.g. /providers/Microsoft.Management/managementGroups
+        readOnly: true
+        type: string
+  ManagementGroupWithHierarchy:
+    description: The management group details.
+    properties:
+      id:
+        description: The ID of the management group. E.g. /providers/Microsoft.Management/managementGroups/20000000-0000-0000-0000-000000000000
+        readOnly: true
+        type: string
+      name:
+        description: The name of the management group. E.g. 20000000-0000-0000-0000-000000000000
+        format: uuid
+        readOnly: true
+        type: string
+      properties:
+        $ref: "#/definitions/ManagementGroupPropertiesWithHierarchy"
+        title: Properties
+        x-ms-client-flatten: true
+      type:
+        description: The type of the resource. E.g. /providers/Microsoft.Management/managementGroups
+        readOnly: true
+        type: string
+  Operation:
+    description: A Management REST API operation.
+    properties:
+      display:
+        description: The object that represents the operation.
+        properties:
+          operation:
+            description: "Operation type: Read, write, delete, etc."
+            readOnly: true
+            type: string
+          provider:
+            description: "Service provider: Microsoft.Management."
+            readOnly: true
+            type: string
+          resource:
+            description: "Resource on which the operation is performed: Invoice, etc."
+            readOnly: true
+            type: string
+      name:
+        description: "Operation name: {provider}/{resource}/{operation}."
+        readOnly: true
+        type: string
+    type: object
+  OperationListResult:
+    description: Result listing  operations. It contains a list of operations and a URL link to get the next set of results.
+    properties:
+      nextLink:
+        description: URL to get the next set of operation list results if there are any.
+        readOnly: true
+        type: string
+      value:
+        description: List of management operations supported by the Microsoft.Management resource provider.
+        items:
+          $ref: "#/definitions/Operation"
+        readOnly: true
+        type: array
+  ParentGroupInfo:
+    description: (Optional) The ID of the parent management group.
+    properties:
+      displayName:
+        description: The friendly name of the management group.
+        type: string
+      parentId:
+        description: The ID of the parent management group. E.g. /providers/Microsoft.Management/managementGroups/30000000-0000-0000-0000-000000000000
+        type: string

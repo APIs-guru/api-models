@@ -1,0 +1,148 @@
+swagger: "2.0"
+schemes:
+  - https
+host: developer.o2.cz
+basePath: /mobility/sandbox/api
+info:
+  contact:
+    name: libertyapi@o2.cz
+  description: Transit API can be used to obtain time-aggregated data representing moving the people between various spatial points within the Czech Republic. Having A - 'from' and B - 'to' points, the API can return count of people traveling from A to B or people that are from A and traveling to B, etc. The mobility data is based on moving mobile stations in O2 mobile network.
+  license:
+    name: O2 Czech Republic a.s.
+    url: https://developer.o2.cz/portal/vop
+  title: Mobility API
+  version: 1.2.0
+  x-apisguru-categories:
+    - telecom
+  x-logo:
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_pbs.twimg.com_profile_images_443742048365985792_Zech6Z-m_400x400.png
+  x-origin:
+    - format: swagger
+      url: https://developer.o2.cz/mobility/sandbox/api/swagger.json
+      version: "2.0"
+  x-providerName: o2.cz
+  x-serviceName: mobility
+tags:
+  - name: info
+  - name: transit
+paths:
+  /info:
+    get:
+      consumes:
+        - application/json
+      description: ""
+      operationId: getInfo
+      parameters: []
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Response with the requested content.
+          schema:
+            $ref: "#/definitions/InfoResult"
+      summary: Information about versions of application and data.
+      tags:
+        - info
+  "/transit/{from}/{to}":
+    get:
+      description: Get count of objects that were moving between basic residential units or objects that were visiting these basic residential units. Specific object's occurence type in the base residential unit can be requested. If none occurence type is present in the request or both occurence types are zero, the result will be aggregation of all types of occurence for given base residential units. More about base residential units can be found at https://www.czso.cz/csu/rso/zsj_rso (czech).
+      operationId: transit
+      parameters:
+        - description: source basic residential unit
+          in: path
+          name: from
+          required: true
+          type: string
+          x-example: "127752"
+        - description: destination basic residential unit
+          in: path
+          name: to
+          required: true
+          type: string
+          x-example: "127761"
+        - description: occurence type in the source basic residential unit (1 - transit, 2 - visit, 0 - both)
+          in: query
+          name: fromType
+          required: false
+          type: string
+        - description: occurence type in the destination basic residential unit (1 - transit, 2 - visit, 0 - both)
+          in: query
+          name: toType
+          required: false
+          type: string
+        - description: all or only uniques (0 - all, 1 - uniques)
+          in: query
+          name: uniques
+          required: true
+          type: string
+          x-example: "0"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: Response with the requested content.
+          schema:
+            $ref: "#/definitions/CountResult"
+        "204":
+          description: The request is valid, but the platform is not able to serve the data. The reason may be restriction (e.g. differential privacy) or no data were found.
+        "400":
+          description: Invalid request provided, missing or invalid parameter.
+          schema:
+            $ref: "#/definitions/ErrorResult"
+        "500":
+          description: Internal server error.
+          schema:
+            $ref: "#/definitions/ErrorResult"
+      summary: Transit between basic residential units
+      tags:
+        - transit
+definitions:
+  CountResult:
+    description: Response with the result
+    properties:
+      count:
+        description: Final count as the result of the request
+        example: "62984"
+        type: string
+    type: object
+  ErrorResult:
+    description: Response with error message
+    properties:
+      message:
+        description: Error response message content
+        example: Error message example.
+        type: string
+    type: object
+  InfoResult:
+    description: Response to the info request
+    properties:
+      appName:
+        description: Application name
+        example: Mobility API Frontend
+        type: string
+      appVendor:
+        description: Application vendor
+        example: O2 Czech Republic a.s.
+        type: string
+      appVersion:
+        description: Application version
+        example: 1.0-M6-SNAPSHOT
+        type: string
+      backendAppName:
+        description: Backend application name
+        example: Mobility API Backend
+        type: string
+      backendAppVendor:
+        description: Backend application vendor
+        example: O2 Czech Republic a.s.
+        type: string
+      backendAppVersion:
+        description: Backend application version
+        example: 1.0-M6-SNAPSHOT
+        type: string
+      backendDataFrom:
+        description: For which day are data valid
+        example: 2017-07-31
+        type: string
+    type: object

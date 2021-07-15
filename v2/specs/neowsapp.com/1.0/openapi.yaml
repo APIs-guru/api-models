@@ -1,0 +1,569 @@
+openapi: 3.0.0
+servers:
+  - url: http://www.neowsapp.com/
+info:
+  description: |-
+    A web service for near earth objects. All the data is from the <a href="http://neo.jpl.nasa.gov/" target="_blank">NASA JPL Asteroid team</a>. 
+
+     
+
+    NeoWs is proud to power AsteroidTracker on <a href="https://itunes.apple.com/us/app/asteroid-tracker/id689684901?mt=8" target="_blank">iOS</a> and <a href="https://play.google.com/store/apps/details?id=com.vitruviussoftware.bunifish.asteroidtracker&feature" target="_blank">Android</a> as well as related apps. 
+
+     Follow us on <a href="https://twitter.com/AsteroidTracker" target="_blank">Twitter</a>
+  title: NeoWs - (Near Earth Object Web Service)
+  version: "1.0"
+  x-apisguru-categories:
+    - open_data
+  x-origin:
+    - converter:
+        url: https://github.com/lucybot/api-spec-converter
+        version: 2.7.31
+      format: swagger
+      url: http://www.neowsapp.com/api-docs
+      version: "1.2"
+  x-providerName: neowsapp.com
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+tags:
+  - description: Operations with NearEarthObjects
+    name: feed
+  - description: Operations with NearEarthObjects
+    name: neo
+  - description: Operations with Sentry NearEarthObjects
+    name: neosentry
+  - description: Stats on Near Earth Object data sets
+    name: stats
+paths:
+  /rest/v1/feed:
+    get:
+      deprecated: false
+      description: Get a list of Near Earth Objects within a date range, The max range in one query is 7 days
+      operationId: retrieveNearEarthObjectFeed
+      parameters:
+        - description: "Start of date range search, format: yyyy-MM-dd - (ex: 2015-04-28)"
+          in: query
+          name: start_date
+          required: false
+          schema:
+            type: string
+        - description: "End of date range search, format: yyyy-MM-dd - (ex: 2015-04-28). If left off search will extends 7 days from start_date"
+          in: query
+          name: end_date
+          required: false
+          schema:
+            type: string
+        - description: detailed
+          in: query
+          name: detailed
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearEarthObjectList"
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Find Near Earth Objects by date
+      tags:
+        - feed
+  /rest/v1/feed/today:
+    get:
+      deprecated: false
+      description: Get a list of Near Earth Objects for today
+      operationId: retrieveNEOFeedToday
+      parameters:
+        - description: detailed
+          in: query
+          name: detailed
+          required: false
+          schema:
+            type: boolean
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearEarthObjectList"
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Find Near Earth Objects for today
+      tags:
+        - feed
+  /rest/v1/neo/browse:
+    get:
+      deprecated: false
+      description: Retieve a paginated list of Near Earth Objects
+      operationId: browseNearEarthObjects
+      parameters:
+        - description: page
+          in: query
+          name: page
+          required: false
+          schema:
+            default: 0
+            format: int32
+            type: integer
+        - description: size
+          in: query
+          name: size
+          required: false
+          schema:
+            default: 20
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearEarthObject"
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Browse the Near Earth Objects service
+      tags:
+        - neo
+  /rest/v1/neo/sentry:
+    get:
+      deprecated: false
+      description: Retrieves Near Earth Objects listed in the NASA sentry data set
+      operationId: retrieveSentryRiskData
+      parameters:
+        - description: show current list of Sentry objects, or show removed Sentry objects
+          in: query
+          name: is_active
+          required: false
+          schema:
+            default: true
+            type: boolean
+        - description: page
+          in: query
+          name: page
+          required: false
+          schema:
+            default: 0
+            format: int32
+            type: integer
+        - description: size
+          in: query
+          name: size
+          required: false
+          schema:
+            default: 50
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SentryObjectPagingDto"
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Retrieve Sentry (Impact Risk ) Near Earth Objects
+      tags:
+        - neosentry
+  "/rest/v1/neo/sentry/{asteroid_id}":
+    get:
+      deprecated: false
+      description: Retrieves Sentry Near Earth Object by ID
+      operationId: retrieveSentryRiskDataById
+      parameters:
+        - description: ID of NearEarth object.  ID can be SPK_ID, Asteroid des (designation) or Sentry ID
+          in: path
+          name: asteroid_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SentryImpactRiskObject"
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: "Retrieve Sentry (Impact Risk ) Near Earth Objectby ID "
+      tags:
+        - neosentry
+  "/rest/v1/neo/{asteroid_id}":
+    get:
+      deprecated: false
+      description: Retrieve a Near Earth Objects with a given id
+      operationId: retrieveNearEarthObjectById
+      parameters:
+        - description: "ID of Near Earth Object - (ex: 3729835)"
+          in: path
+          name: asteroid_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NearEarthObject"
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Find Near Earth Objects by id
+      tags:
+        - neo
+  /rest/v1/stats:
+    get:
+      deprecated: false
+      description: retrieveCurrentNeoStatistics
+      operationId: retrieveCurrentNeoStatistics
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Statistics"
+          description: OK
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get the Near Earth Object data set totals
+      tags:
+        - stats
+components:
+  schemas:
+    CloseApproachData:
+      properties:
+        close_approach_date:
+          type: string
+        close_approach_date_full:
+          type: string
+        epoch_date_close_approach:
+          format: int64
+          type: integer
+        miss_distance:
+          $ref: "#/components/schemas/MissDistance"
+        orbiting_body:
+          type: string
+        relative_velocity:
+          $ref: "#/components/schemas/RelVelocity"
+      type: object
+    EstimatedDiameter:
+      properties:
+        estimated_diameter_max:
+          description: An estimate of the maximum size of the Asteroid - bases on the abosolute magnitude
+          format: double
+          type: number
+        estimated_diameter_min:
+          description: An estimate of the minimum size of the Asteroid - bases on the abosolute magnitude
+          format: double
+          type: number
+      type: object
+    EstimatedDiameterContainer:
+      properties:
+        feet:
+          $ref: "#/components/schemas/EstimatedDiameter"
+          description: estimated diameter feet
+        kilometers:
+          $ref: "#/components/schemas/EstimatedDiameter"
+          description: estimated diameter kilometer
+        meters:
+          $ref: "#/components/schemas/EstimatedDiameter"
+          description: estimated diameter meter
+        miles:
+          $ref: "#/components/schemas/EstimatedDiameter"
+          description: estimated diameter miles
+      type: object
+    HashMap_string_List_NearEarthObject_: {}
+    MissDistance:
+      properties:
+        astronomical:
+          type: string
+        kilometers:
+          type: string
+        lunar:
+          type: string
+        miles:
+          type: string
+      type: object
+    NearEarthObject:
+      properties:
+        absolute_magnitude_h:
+          description: Is a measure of an asteroids brightness
+          format: double
+          type: number
+        close_approach_data:
+          description: Close approach information of the Asteroid
+          items:
+            $ref: "#/components/schemas/CloseApproachData"
+          type: array
+        designation:
+          type: string
+        estimated_diameter:
+          $ref: "#/components/schemas/EstimatedDiameterContainer"
+          description: A collection of estimated diameters (kilometers, meters, miles, feet
+        is_potentially_hazardous_asteroid:
+          type: boolean
+        is_sentry_object:
+          type: boolean
+        name:
+          type: string
+        name_limited:
+          type: string
+        nasa_jpl_url:
+          description: A Link to the NASA JPL Small-Body Database website
+          type: string
+        neo_reference_id:
+          description: The reference ID of the Asteroid - This correlates to the SPK ID for the JPL NEO data
+          type: string
+        orbital_data:
+          $ref: "#/components/schemas/OrbitalData"
+          description: Orbital information of t1he asteroid
+        sentry_data:
+          type: string
+      type: object
+    NearEarthObjectList:
+      properties:
+        element_count:
+          description: Number of NEOs in list
+          format: int32
+          type: integer
+        links:
+          description: Hypermedia links to collection
+          type: object
+        near_earth_objects:
+          $ref: "#/components/schemas/HashMap_string_List_NearEarthObject_"
+          description: A collection of NearEarthObjects
+      type: object
+    OrbitClass:
+      properties:
+        orbit_class_description:
+          type: string
+        orbit_class_range:
+          type: string
+        orbit_class_type:
+          enum:
+            - IEO
+            - ATE
+            - APO
+            - AMO
+            - MCA
+            - IMB
+            - MBA
+            - OMB
+            - TJN
+            - CEN
+            - TNO
+            - PAA
+            - HYA
+            - HYP
+            - PAR
+            - COM
+            - JFC
+            - HTC
+            - ETC
+            - CTC
+            - JFc
+          type: string
+      type: object
+    OrbitalData:
+      properties:
+        aphelion_distance:
+          type: string
+        ascending_node_longitude:
+          type: string
+        data_arc_in_days:
+          format: int64
+          type: integer
+        eccentricity:
+          type: string
+        epoch_osculation:
+          type: string
+        equinox:
+          type: string
+        first_observation_date:
+          type: string
+        inclination:
+          type: string
+        jupiter_tisserand_invariant:
+          type: string
+        last_observation_date:
+          type: string
+        mean_anomaly:
+          type: string
+        mean_motion:
+          type: string
+        minimum_orbit_intersection:
+          type: string
+        observations_used:
+          format: int64
+          type: integer
+        orbit_class:
+          $ref: "#/components/schemas/OrbitClass"
+        orbit_determination_date:
+          type: string
+        orbit_id:
+          type: string
+        orbit_uncertainty:
+          type: string
+        orbital_period:
+          type: string
+        perihelion_argument:
+          type: string
+        perihelion_distance:
+          type: string
+        perihelion_time:
+          type: string
+        semi_major_axis:
+          type: string
+      type: object
+    PageMetaData:
+      properties:
+        number:
+          format: int64
+          type: integer
+        size:
+          format: int64
+          type: integer
+        total_elements:
+          format: int64
+          type: integer
+        total_pages:
+          format: int64
+          type: integer
+      type: object
+    RelVelocity:
+      properties:
+        kilometers_per_hour:
+          type: string
+        miles_per_hour:
+          type: string
+      type: object
+    SentryImpactRiskObject:
+      properties:
+        Palermo_scale_max:
+          type: string
+        absolute_magnitude:
+          type: string
+        average_lunar_distance:
+          format: double
+          type: number
+        designation:
+          type: string
+        estimated_diameter:
+          type: string
+        fullname:
+          type: string
+        impact_probability:
+          type: string
+        is_active_sentry_object:
+          type: boolean
+        last_obs:
+          type: string
+        last_obs_jd:
+          type: string
+        palermo_scale_ave:
+          type: string
+        potential_impacts:
+          type: string
+        removal_date:
+          type: string
+        sentryId:
+          type: string
+        torino_scale:
+          type: string
+        v_infinity:
+          type: string
+        year_range_max:
+          type: string
+        year_range_min:
+          type: string
+      type: object
+    SentryObjectPagingDto:
+      properties:
+        links:
+          type: object
+        page:
+          $ref: "#/components/schemas/PageMetaData"
+        sentry_objects:
+          items:
+            $ref: "#/components/schemas/SentryImpactRiskObject"
+          type: array
+      type: object
+    Statistics:
+      properties:
+        close_approach_count:
+          description: Number of Close Approach listings across all NEOs listed in NeoWs
+          format: int64
+          type: integer
+        last_updated:
+          description: TimeStamp the last time the DB was updated
+          type: string
+        nasa_jpl_url:
+          $ref: "#/components/schemas/URL"
+        near_earth_object_count:
+          description: Number of NearEarthObjects listed in NeoWs
+          format: int64
+          type: integer
+        source:
+          type: string
+      type: object
+    URL:
+      properties:
+        authority:
+          type: string
+        content:
+          type: object
+        defaultPort:
+          format: int32
+          type: integer
+        file:
+          type: string
+        host:
+          type: string
+        path:
+          type: string
+        port:
+          format: int32
+          type: integer
+        protocol:
+          type: string
+        query:
+          type: string
+        ref:
+          type: string
+        userInfo:
+          type: string
+      type: object

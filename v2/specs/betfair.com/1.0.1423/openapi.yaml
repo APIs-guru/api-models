@@ -1,0 +1,836 @@
+openapi: 3.0.0
+servers:
+  - url: http://stream-api.betfair.com:443/api
+info:
+  contact:
+    email: bdp@betfair.com
+    name: BDP Support
+    url: https://developer.betfair.com/support/
+    x-twitter: Betfair
+  description: API to receive streamed updates. This is an ssl socket connection of CRLF delimited json messages (see RequestMessage & ResponseMessage)
+  license:
+    name: See BDP site
+  title: "Betfair: Exchange Streaming API"
+  version: 1.0.1423
+  x-apisguru-categories:
+    - entertainment
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_Betfair_profile_image.jpeg
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/betfair/stream-api-sample-code/master/ESASwaggerSchema.json
+      version: "3.0"
+  x-providerName: betfair.com
+paths:
+  /request:
+    post:
+      description: This is a socket protocol delimited by CRLF (not http)
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AllRequestTypesExample"
+        description: Requests are sent to socket
+        required: true
+      responses:
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AllResponseTypesExample"
+          description: Responses are received from socket
+components:
+  schemas:
+    AllRequestTypesExample:
+      properties:
+        authentication:
+          $ref: "#/components/schemas/AuthenticationMessage"
+        heartbeat:
+          $ref: "#/components/schemas/HeartbeatMessage"
+        marketSubscription:
+          $ref: "#/components/schemas/MarketSubscriptionMessage"
+        opTypes:
+          enum:
+            - heartbeat
+            - authentication
+            - marketSubscription
+            - orderSubscription
+          type: string
+        orderSubscriptionMessage:
+          $ref: "#/components/schemas/OrderSubscriptionMessage"
+    AllResponseTypesExample:
+      properties:
+        connection:
+          $ref: "#/components/schemas/ConnectionMessage"
+        marketChangeMessage:
+          $ref: "#/components/schemas/MarketChangeMessage"
+        opTypes:
+          enum:
+            - connection
+            - status
+            - mcm
+            - ocm
+          type: string
+        orderChangeMessage:
+          $ref: "#/components/schemas/OrderChangeMessage"
+        status:
+          $ref: "#/components/schemas/StatusMessage"
+    AuthenticationMessage:
+      allOf:
+        - $ref: "#/components/schemas/RequestMessage"
+        - properties:
+            appKey:
+              type: string
+            session:
+              type: string
+          type: object
+    ConnectionMessage:
+      allOf:
+        - $ref: "#/components/schemas/ResponseMessage"
+        - properties:
+            connectionId:
+              description: The connection id
+              type: string
+          type: object
+    HeartbeatMessage:
+      allOf:
+        - $ref: "#/components/schemas/RequestMessage"
+        - type: object
+    KeyLineDefinition:
+      properties:
+        kl:
+          items:
+            $ref: "#/components/schemas/KeyLineSelection"
+          type: array
+    KeyLineSelection:
+      properties:
+        hc:
+          format: double
+          type: number
+        id:
+          format: int64
+          type: integer
+    MarketChange:
+      properties:
+        con:
+          description: Conflated - have more than a single change been combined (or null if not conflated)
+          type: boolean
+        id:
+          description: Market Id - the id of the market
+          type: string
+        img:
+          description: "Image - replace existing prices / data with the data supplied: it is not a delta (or null if delta)"
+          type: boolean
+        marketDefinition:
+          $ref: "#/components/schemas/MarketDefinition"
+        rc:
+          description: Runner Changes - a list of changes to runners (or null if un-changed)
+          items:
+            $ref: "#/components/schemas/RunnerChange"
+          type: array
+        tv:
+          description: The total amount matched across the market. This value is truncated at 2dp (or null if un-changed)
+          format: double
+          type: number
+    MarketChangeMessage:
+      allOf:
+        - $ref: "#/components/schemas/ResponseMessage"
+        - properties:
+            clk:
+              description: Token value (non-null) should be stored and passed in a MarketSubscriptionMessage to resume subscription (in case of disconnect)
+              type: string
+            conflateMs:
+              description: Conflate Milliseconds - the conflation rate (may differ from that requested if subscription is delayed)
+              format: int64
+              type: integer
+            ct:
+              description: Change Type - set to indicate the type of change - if null this is a delta)
+              enum:
+                - SUB_IMAGE
+                - RESUB_DELTA
+                - HEARTBEAT
+              type: string
+            heartbeatMs:
+              description: "Heartbeat Milliseconds - the heartbeat rate (may differ from requested: bounds are 500 to 30000)"
+              format: int64
+              type: integer
+            initialClk:
+              description: Token value (non-null) should be stored and passed in a MarketSubscriptionMessage to resume subscription (in case of disconnect)
+              type: string
+            mc:
+              description: MarketChanges - the modifications to markets (will be null on a heartbeat
+              items:
+                $ref: "#/components/schemas/MarketChange"
+              type: array
+            pt:
+              description: Publish Time (in millis since epoch) that the changes were generated
+              format: int64
+              type: integer
+            segmentType:
+              description: Segment Type - if the change is split into multiple segments, this denotes the beginning and end of a change, and segments in between. Will be null if data is not segmented
+              enum:
+                - SEG_START
+                - SEG
+                - SEG_END
+              type: string
+            status:
+              description: "Stream status: set to null if the exchange stream data is up to date and 503 if the downstream services are experiencing latencies"
+              format: int32
+              type: integer
+          type: object
+    MarketDataFilter:
+      properties:
+        fields:
+          items:
+            enum:
+              - EX_BEST_OFFERS_DISP
+              - EX_BEST_OFFERS
+              - EX_ALL_OFFERS
+              - EX_TRADED
+              - EX_TRADED_VOL
+              - EX_LTP
+              - EX_MARKET_DEF
+              - SP_TRADED
+              - SP_PROJECTED
+            type: string
+          type: array
+        ladderLevels:
+          format: int32
+          type: integer
+    MarketDefinition:
+      properties:
+        betDelay:
+          format: int32
+          type: integer
+        bettingType:
+          enum:
+            - ODDS
+            - LINE
+            - RANGE
+            - ASIAN_HANDICAP_DOUBLE_LINE
+            - ASIAN_HANDICAP_SINGLE_LINE
+          type: string
+        bspMarket:
+          type: boolean
+        bspReconciled:
+          type: boolean
+        complete:
+          type: boolean
+        countryCode:
+          type: string
+        crossMatching:
+          type: boolean
+        discountAllowed:
+          type: boolean
+        eachWayDivisor:
+          format: double
+          type: number
+        eventId:
+          type: string
+        eventTypeId:
+          description: The Event Type the market is contained within.
+          type: string
+        inPlay:
+          type: boolean
+        keyLineDefinition:
+          $ref: "#/components/schemas/KeyLineDefinition"
+        lineInterval:
+          description: For Handicap and Line markets, the lines available on this market will be between the range of lineMinUnit and lineMaxUnit, in increments of the lineInterval value. e.g. If unit is runs, lineMinUnit=10, lineMaxUnit=20 and lineInterval=0.5, then valid lines include 10, 10.5, 11, 11.5 up to 20 runs.
+          format: double
+          type: number
+        lineMaxUnit:
+          description: For Handicap and Line markets, the maximum value for the outcome, in market units for this market (eg 100 runs).
+          format: double
+          type: number
+        lineMinUnit:
+          description: For Handicap and Line markets, the minimum value for the outcome, in market units for this market (eg 0 runs).
+          format: double
+          type: number
+        marketBaseRate:
+          format: double
+          type: number
+        marketTime:
+          format: date-time
+          type: string
+        marketType:
+          type: string
+        numberOfActiveRunners:
+          format: int32
+          type: integer
+        numberOfWinners:
+          format: int32
+          type: integer
+        openDate:
+          format: date-time
+          type: string
+        persistenceEnabled:
+          type: boolean
+        priceLadderDefinition:
+          $ref: "#/components/schemas/PriceLadderDefinition"
+        raceType:
+          type: string
+        regulators:
+          description: The market regulators.
+          items:
+            type: string
+          type: array
+        runners:
+          items:
+            $ref: "#/components/schemas/RunnerDefinition"
+          type: array
+        runnersVoidable:
+          type: boolean
+        settledTime:
+          format: date-time
+          type: string
+        status:
+          enum:
+            - INACTIVE
+            - OPEN
+            - SUSPENDED
+            - CLOSED
+          type: string
+        suspendTime:
+          format: date-time
+          type: string
+        timezone:
+          type: string
+        turnInPlayEnabled:
+          type: boolean
+        venue:
+          type: string
+        version:
+          format: int64
+          type: integer
+    MarketFilter:
+      properties:
+        bettingTypes:
+          items:
+            enum:
+              - ODDS
+              - LINE
+              - RANGE
+              - ASIAN_HANDICAP_DOUBLE_LINE
+              - ASIAN_HANDICAP_SINGLE_LINE
+            type: string
+          type: array
+        bspMarket:
+          type: boolean
+        countryCodes:
+          items:
+            type: string
+          type: array
+        eventIds:
+          items:
+            type: string
+          type: array
+        eventTypeIds:
+          items:
+            type: string
+          type: array
+        marketIds:
+          items:
+            type: string
+          type: array
+        marketTypes:
+          items:
+            type: string
+          type: array
+        raceTypes:
+          items:
+            type: string
+          type: array
+        turnInPlayEnabled:
+          type: boolean
+        venues:
+          items:
+            type: string
+          type: array
+    MarketSubscriptionMessage:
+      allOf:
+        - $ref: "#/components/schemas/RequestMessage"
+        - properties:
+            clk:
+              description: Token value delta (received in MarketChangeMessage) that should be passed to resume a subscription
+              type: string
+            conflateMs:
+              description: "Conflate Milliseconds - the conflation rate (looped back on initial image after validation: bounds are 0 to 120000)"
+              format: int64
+              type: integer
+            heartbeatMs:
+              description: "Heartbeat Milliseconds - the heartbeat rate (looped back on initial image after validation: bounds are 500 to 5000)"
+              format: int64
+              type: integer
+            initialClk:
+              description: Token value (received in initial MarketChangeMessage) that should be passed to resume a subscription
+              type: string
+            marketDataFilter:
+              $ref: "#/components/schemas/MarketDataFilter"
+            marketFilter:
+              $ref: "#/components/schemas/MarketFilter"
+            segmentationEnabled:
+              description: Segmentation Enabled - allow the server to send large sets of data in segments, instead of a single block
+              type: boolean
+          type: object
+    Order:
+      properties:
+        avp:
+          description: Average Price Matched - the average price the order was matched at (null if the order is not matched). This value is not meaningful for activity on Line markets and is not guaranteed to be returned or maintained for these markets.
+          format: double
+          type: number
+        bsp:
+          description: BSP Liability - the BSP liability of the order (null if the order is not a BSP order)
+          format: double
+          type: number
+        cd:
+          description: Cancelled Date - the date the order was cancelled (null if the order is not cancelled)
+          format: int64
+          type: integer
+        id:
+          description: Bet Id - the id of the order
+          type: string
+        ld:
+          description: Lapsed Date - the date the order was lapsed (null if the order is not lapsed)
+          format: int64
+          type: integer
+        lsrc:
+          description: Lapse Status Reason Code - the reason that some or all of this order has been lapsed (null if no portion of the order is lapsed
+          type: string
+        md:
+          description: Matched Date - the date the order was matched (null if the order is not matched)
+          format: int64
+          type: integer
+        ot:
+          description: Order Type - the type of the order (L = LIMIT, MOC = MARKET_ON_CLOSE, LOC = LIMIT_ON_CLOSE)
+          enum:
+            - L
+            - LOC
+            - MOC
+          type: string
+        p:
+          description: Price - the original placed price of the order. Line markets operate at even-money odds of 2.0. However, price for these markets refers to the line positions available as defined by the markets min-max range and interval steps
+          format: double
+          type: number
+        pd:
+          description: Placed Date - the date the order was placed
+          format: int64
+          type: integer
+        pt:
+          description: Persistence Type - whether the order will persist at in play or not (L = LAPSE, P = PERSIST, MOC = Market On Close)
+          enum:
+            - L
+            - P
+            - MOC
+          type: string
+        rac:
+          description: Regulator Auth Code - the auth code returned by the regulator
+          type: string
+        rc:
+          description: Regulator Code - the regulator of the order
+          type: string
+        rfo:
+          description: Order Reference - the customer's order reference for this order (empty string if one was not set)
+          type: string
+        rfs:
+          description: Strategy Reference - the customer's strategy reference for this order (empty string if one was not set)
+          type: string
+        s:
+          description: Size - the original placed size of the order
+          format: double
+          type: number
+        sc:
+          description: Size Cancelled - the amount of the order that has been cancelled
+          format: double
+          type: number
+        side:
+          description: Side - the side of the order. For Line markets a 'B' bet refers to a SELL line and an 'L' bet refers to a BUY line.
+          enum:
+            - B
+            - L
+          type: string
+        sl:
+          description: Size Lapsed - the amount of the order that has been lapsed
+          format: double
+          type: number
+        sm:
+          description: Size Matched - the amount of the order that has been matched
+          format: double
+          type: number
+        sr:
+          description: Size Remaining - the amount of the order that is remaining unmatched
+          format: double
+          type: number
+        status:
+          description: Status - the status of the order (E = EXECUTABLE, EC = EXECUTION_COMPLETE)
+          enum:
+            - E
+            - EC
+          type: string
+        sv:
+          description: Size Voided - the amount of the order that has been voided
+          format: double
+          type: number
+    OrderChangeMessage:
+      allOf:
+        - $ref: "#/components/schemas/ResponseMessage"
+        - properties:
+            clk:
+              description: Token value (non-null) should be stored and passed in a MarketSubscriptionMessage to resume subscription (in case of disconnect)
+              type: string
+            conflateMs:
+              description: Conflate Milliseconds - the conflation rate (may differ from that requested if subscription is delayed)
+              format: int64
+              type: integer
+            ct:
+              description: Change Type - set to indicate the type of change - if null this is a delta)
+              enum:
+                - SUB_IMAGE
+                - RESUB_DELTA
+                - HEARTBEAT
+              type: string
+            heartbeatMs:
+              description: "Heartbeat Milliseconds - the heartbeat rate (may differ from requested: bounds are 500 to 30000)"
+              format: int64
+              type: integer
+            initialClk:
+              description: Token value (non-null) should be stored and passed in a MarketSubscriptionMessage to resume subscription (in case of disconnect)
+              type: string
+            oc:
+              description: OrderMarketChanges - the modifications to account's orders (will be null on a heartbeat
+              items:
+                $ref: "#/components/schemas/OrderMarketChange"
+              type: array
+            pt:
+              description: Publish Time (in millis since epoch) that the changes were generated
+              format: int64
+              type: integer
+            segmentType:
+              description: Segment Type - if the change is split into multiple segments, this denotes the beginning and end of a change, and segments in between. Will be null if data is not segmented
+              enum:
+                - SEG_START
+                - SEG
+                - SEG_END
+              type: string
+            status:
+              description: "Stream status: set to null if the exchange stream data is up to date and 503 if the downstream services are experiencing latencies"
+              format: int32
+              type: integer
+          type: object
+    OrderFilter:
+      properties:
+        accountIds:
+          description: Internal use only & should not be set on your filter (your subscription is already locked to your account). If set subscription will fail.
+          items:
+            format: int64
+            type: integer
+          type: array
+        customerStrategyRefs:
+          description: "Restricts to specified customerStrategyRefs; this will filter orders and StrategyMatchChanges accordingly (Note: overall postition is not filtered)"
+          items:
+            type: string
+          type: array
+        includeOverallPosition:
+          description: "Returns overall / net position (See: OrderRunnerChange.mb / OrderRunnerChange.ml). Default=true"
+          type: boolean
+        partitionMatchedByStrategyRef:
+          description: "Returns strategy positions (See: OrderRunnerChange.smc=Map<customerStrategyRef, StrategyMatchChange>) - these are sent in delta format as per overall position. Default=false"
+          type: boolean
+    OrderMarketChange:
+      properties:
+        accountId:
+          format: int64
+          type: integer
+        closed:
+          type: boolean
+        fullImage:
+          type: boolean
+        id:
+          description: Market Id - the id of the market the order is on
+          type: string
+        orc:
+          description: Order Changes - a list of changes to orders on a selection
+          items:
+            $ref: "#/components/schemas/OrderRunnerChange"
+          type: array
+    OrderRunnerChange:
+      properties:
+        fullImage:
+          type: boolean
+        hc:
+          description: Handicap - the handicap of the runner (selection) (null if not applicable)
+          format: double
+          type: number
+        id:
+          description: Selection Id - the id of the runner (selection)
+          format: int64
+          type: integer
+        mb:
+          description: Matched Backs - matched amounts by distinct matched price on the Back side for this runner (selection)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        ml:
+          description: Matched Lays - matched amounts by distinct matched price on the Lay side for this runner (selection)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        smc:
+          additionalProperties:
+            $ref: "#/components/schemas/StrategyMatchChange"
+          description: Strategy Matches - Matched Backs and Matched Lays grouped by strategy reference
+          type: object
+        uo:
+          description: Unmatched Orders - orders on this runner (selection) that are not fully matched
+          items:
+            $ref: "#/components/schemas/Order"
+          type: array
+    OrderSubscriptionMessage:
+      allOf:
+        - $ref: "#/components/schemas/RequestMessage"
+        - properties:
+            clk:
+              description: Token value delta (received in MarketChangeMessage) that should be passed to resume a subscription
+              type: string
+            conflateMs:
+              description: "Conflate Milliseconds - the conflation rate (looped back on initial image after validation: bounds are 0 to 120000)"
+              format: int64
+              type: integer
+            heartbeatMs:
+              description: "Heartbeat Milliseconds - the heartbeat rate (looped back on initial image after validation: bounds are 500 to 5000)"
+              format: int64
+              type: integer
+            initialClk:
+              description: Token value (received in initial MarketChangeMessage) that should be passed to resume a subscription
+              type: string
+            orderFilter:
+              $ref: "#/components/schemas/OrderFilter"
+            segmentationEnabled:
+              description: Segmentation Enabled - allow the server to send large sets of data in segments, instead of a single block
+              type: boolean
+          type: object
+    PriceLadderDefinition:
+      properties:
+        type:
+          enum:
+            - CLASSIC
+            - FINEST
+            - LINE_RANGE
+          type: string
+    RequestMessage:
+      discriminator:
+        propertyName: op
+      properties:
+        id:
+          description: Client generated unique id to link request with response (like json rpc)
+          format: int32
+          type: integer
+        op:
+          description: The operation type
+          type: string
+    ResponseMessage:
+      discriminator:
+        propertyName: op
+      properties:
+        id:
+          description: Client generated unique id to link request with response (like json rpc)
+          format: int32
+          type: integer
+        op:
+          description: The operation type
+          type: string
+    RunnerChange:
+      properties:
+        atb:
+          description: Available To Back - PriceVol tuple delta of price changes (0 vol is remove)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        atl:
+          description: Available To Lay - PriceVol tuple delta of price changes (0 vol is remove)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        batb:
+          description: Best Available To Back - LevelPriceVol triple delta of price changes, keyed by level (0 vol is remove)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        batl:
+          description: Best Available To Lay - LevelPriceVol triple delta of price changes, keyed by level (0 vol is remove)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        bdatb:
+          description: Best Display Available To Back (includes virtual prices)- LevelPriceVol triple delta of price changes, keyed by level (0 vol is remove)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        bdatl:
+          description: Best Display Available To Lay (includes virtual prices)- LevelPriceVol triple delta of price changes, keyed by level (0 vol is remove)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        hc:
+          description: Handicap - the handicap of the runner (selection) (null if not applicable)
+          format: double
+          type: number
+        id:
+          description: Selection Id - the id of the runner (selection)
+          format: int64
+          type: integer
+        ltp:
+          description: Last Traded Price - The last traded price (or null if un-changed)
+          format: double
+          type: number
+        spb:
+          description: Starting Price Back - PriceVol tuple delta of price changes (0 vol is remove)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        spf:
+          description: Starting Price Far - The far starting price (or null if un-changed)
+          format: double
+          type: number
+        spl:
+          description: Starting Price Lay - PriceVol tuple delta of price changes (0 vol is remove)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        spn:
+          description: Starting Price Near - The far starting price (or null if un-changed)
+          format: double
+          type: number
+        trd:
+          description: Traded - PriceVol tuple delta of price changes (0 vol is remove)
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        tv:
+          description: The total amount matched. This value is truncated at 2dp.
+          format: double
+          type: number
+    RunnerDefinition:
+      properties:
+        adjustmentFactor:
+          format: double
+          type: number
+        bsp:
+          format: double
+          type: number
+        hc:
+          description: Handicap - the handicap of the runner (selection) (null if not applicable)
+          format: double
+          type: number
+        id:
+          description: Selection Id - the id of the runner (selection)
+          format: int64
+          type: integer
+        removalDate:
+          format: date-time
+          type: string
+        sortPriority:
+          format: int32
+          type: integer
+        status:
+          enum:
+            - ACTIVE
+            - WINNER
+            - LOSER
+            - REMOVED
+            - REMOVED_VACANT
+            - HIDDEN
+            - PLACED
+          type: string
+    StatusMessage:
+      allOf:
+        - $ref: "#/components/schemas/ResponseMessage"
+        - properties:
+            connectionClosed:
+              description: Is the connection now closed
+              type: boolean
+            connectionId:
+              description: The connection id
+              type: string
+            connectionsAvailable:
+              description: The number of connections available for this account at this moment in time. Present on responses to Authentication messages only.
+              format: int32
+              type: integer
+            errorCode:
+              description: The type of error in case of a failure
+              enum:
+                - NO_APP_KEY
+                - INVALID_APP_KEY
+                - NO_SESSION
+                - INVALID_SESSION_INFORMATION
+                - NOT_AUTHORIZED
+                - INVALID_INPUT
+                - INVALID_CLOCK
+                - UNEXPECTED_ERROR
+                - TIMEOUT
+                - SUBSCRIPTION_LIMIT_EXCEEDED
+                - INVALID_REQUEST
+                - CONNECTION_FAILED
+                - MAX_CONNECTION_LIMIT_EXCEEDED
+                - TOO_MANY_REQUESTS
+              type: string
+            errorMessage:
+              description: Additional message in case of a failure
+              type: string
+            statusCode:
+              description: The status of the last request
+              enum:
+                - SUCCESS
+                - FAILURE
+              type: string
+          type: object
+    StrategyMatchChange:
+      properties:
+        mb:
+          description: Matched Backs - matched amounts by distinct matched price on the Back side for this strategy
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array
+        ml:
+          description: Matched Lays - matched amounts by distinct matched price on the Lay side for this strategy
+          items:
+            items:
+              format: double
+              type: number
+            type: array
+          type: array

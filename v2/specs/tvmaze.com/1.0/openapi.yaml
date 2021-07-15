@@ -1,0 +1,1049 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.tvmaze.com/v1
+  - url: http://api.tvmaze.com/v1
+info:
+  contact:
+    url: http://www.tvmaze.com
+  description: |
+    Access to the user API is only possible for users with a [premium](http://www.tvmaze.com/premium) account. A user can only access their own user data.
+
+    Authentication uses HTTP Basic. Use the TVmaze username as authentication username, and the TVmaze API key as authentication password. Your API key can be found on your [dashboard](http://www.tvmaze.com/dashboard). To try out these API calls from this page, click the "Authorize" button on top and input your credentials.
+  title: TVmaze user API
+  version: "1.0"
+  x-apisguru-categories:
+    - media
+  x-logo:
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_tvmaze_profile_image.jpeg
+  x-origin:
+    - format: openapi
+      url: http://static.tvmaze.com/apidoc/v1.yaml
+      version: "3.0"
+  x-providerName: tvmaze.com
+security:
+  - usertoken: []
+paths:
+  /auth/poll:
+    post:
+      description: |
+        Using the token acquired in the `start` endpoint, you can start polling this endpoint once every 10 seconds.
+
+        When the user has confirmed the authentication request on their end, this endpoint will return the user's API key that you can use in subsequent authenticated endpoints. Note that it'll do so only once, subsequent requests after the initial 200 response will return a 404.
+
+        For as long as the user did not yet confirm their authentication request, this endpoint will return a 403.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                token:
+                  type: string
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  apikey:
+                    description: The user's API key
+                    type: string
+                  username:
+                    description: The user's username
+                    type: string
+                type: object
+          description: The user confirmed the authentication request
+        "403":
+          description: The authentication request was not confirmed yet
+        "404":
+          description: The authentication request was not found
+        "429":
+          description: You are polling too quickly, please back off
+      summary: Poll whether an authentication request was confirmed
+      tags:
+        - auth
+  /auth/start:
+    post:
+      description: |
+        If you want to access the TVmaze API on behalf of a user without querying them for their password, use this endpoint.
+
+        To get started, send a POST request containing the user's email address. The response will contain a `token`, which you can use as input to the `poll` endpoint. The user will receive an email prompting them to confirm the authentication request.
+
+        Alternatively, if you expect the user to be logged in to TVmaze on the device they are currently interacting with, you can set `email_confirmation` to false and redirect them to the `confirm_url` URL. If they are logged in to TVmaze, they will be able to confirm the authentication request instantly.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                email:
+                  description: The user's email address
+                  type: string
+                email_confirmation:
+                  default: true
+                  description: Whether to email the user a confirmation link
+                  type: boolean
+              type: object
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  confirm_url:
+                    description: URL where the user can confirm the authentication request
+                    type: string
+                  token:
+                    description: Authentication token to use in the `poll` endpoint
+                    type: string
+                type: object
+          description: The authentication request was succesfully started
+        "401":
+          description: The email address was found, but not confirmed
+        "404":
+          description: The email address was not found
+        "429":
+          description: You are starting authentication requests too quickly, please back off
+      summary: Start an authentication request
+      tags:
+        - auth
+  /auth/validate:
+    get:
+      description: If the credentials supplied as HTTP basic are valid, the user's level of premium - if any - is returned.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  premium:
+                    description: The user's premium level; 1 for Bronze, 2 for Silver, 3 for Gold; or 0 for none
+                    type: integer
+                type: object
+          description: The supplied credentials are valid
+        "401":
+          description: The supplied credentials are not valid
+      summary: Validate your authentication credentials
+      tags:
+        - auth
+  /scrobble/episodes:
+    post:
+      description: This endpoint can be used by all users, even without premium
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                properties:
+                  episode_id:
+                    description: The TVmaze episode ID
+                    type: integer
+                  marked_at:
+                    description: Epoch timestamp for when the user watched the episode, or 0 for unknown.
+                    type: integer
+                  type:
+                    $ref: "#/components/schemas/MarkType"
+                type: object
+              type: array
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkResponse"
+          description: All episodes were succesfully marked
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkResponse"
+          description: Some episodes were succesfully marked, but there are errors
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkResponse"
+          description: None of the episodes were succesfully marked
+      summary: Mark episodes as acquired or watched based on their IDs
+      tags:
+        - scrobbling
+  "/scrobble/episodes/{episode_id}":
+    parameters:
+      - in: path
+        name: episode_id
+        required: true
+        schema:
+          type: integer
+    put:
+      description: This endpoint can be used by all users, even without premium
+      requestBody:
+        $ref: "#/components/requestBodies/MarkedEpisode"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarkedEpisode"
+          description: this episode is now marked
+        "404":
+          description: this episode does not exist
+        "422":
+          description: invalid input data
+      summary: Mark an episode as acquired or watched based on its ID
+      tags:
+        - scrobbling
+  /scrobble/shows:
+    post:
+      description: |
+        To specify a show, supply either `tvmaze_id`, `thetvdb_id` or `imdb_id`. To specify an episode, supply either both `season` and `episode`, or `airdate`.
+
+        This endpoint can be used by all users, even without premium.
+      parameters:
+        - description: The show's TVmaze ID
+          in: query
+          name: tvmaze_id
+          schema:
+            type: integer
+        - description: The show's TheTVDB ID
+          in: query
+          name: thetvdb_id
+          schema:
+            type: integer
+        - description: The show's IMDB ID
+          in: query
+          name: imdb_id
+          schema:
+            type: integer
+      requestBody:
+        content:
+          application/json:
+            schema:
+              items:
+                properties:
+                  airdate:
+                    description: The episode airdate
+                    format: date
+                    type: string
+                  episode:
+                    description: The episode number
+                    type: integer
+                  marked_at:
+                    description: Epoch timestamp for when the user watched the episode, or 0 for unknown.
+                    type: integer
+                  season:
+                    description: The season number
+                    type: integer
+                  type:
+                    $ref: "#/components/schemas/MarkType"
+                type: object
+              type: array
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkResponse"
+          description: All episodes were succesfully marked
+        "207":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkResponse"
+          description: Some episodes were succesfully marked, but there are errors
+        "422":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BulkResponse"
+          description: None of the episodes were succesfully marked
+      summary: Mark episodes within a show as acquired or watched based on their attributes
+      tags:
+        - scrobbling
+  "/scrobble/shows/{show_id}":
+    get:
+      description: This endpoint can be used by all users, even without premium
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/MarkedEpisode"
+                type: array
+          description: An array of marked episodes
+      summary: List watched and acquired episodes for a show
+      tags:
+        - scrobbling
+    parameters:
+      - description: ID of the target show
+        in: path
+        name: show_id
+        required: true
+        schema:
+          type: integer
+      - description: Embed full episode info
+        in: query
+        name: embed
+        required: false
+        schema:
+          enum:
+            - episode
+          type: string
+  /user/episodes:
+    get:
+      parameters:
+        - description: Only return episodes from this specific show
+          in: query
+          name: show_id
+          required: false
+          schema:
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/MarkedEpisode"
+                type: array
+          description: An array of marked episodes
+      summary: List the marked episodes
+      tags:
+        - marked episodes
+  "/user/episodes/{episode_id}":
+    delete:
+      responses:
+        "200":
+          description: the episode is now unmarked
+        "404":
+          description: this episode was not marked
+      summary: Unmark an episode
+      tags:
+        - marked episodes
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarkedEpisode"
+          description: The marked episode
+        "404":
+          description: This episode is not marked
+      summary: Check if an episode is marked
+      tags:
+        - marked episodes
+    parameters:
+      - in: path
+        name: episode_id
+        required: true
+        schema:
+          type: integer
+    put:
+      description: Set `marked_at` to `NULL` or leave it out to use the current time.
+      requestBody:
+        $ref: "#/components/requestBodies/MarkedEpisode"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MarkedEpisode"
+          description: this episode is now marked
+        "404":
+          description: this episode does not exist
+        "422":
+          description: invalid input data
+      summary: Mark an episode
+      tags:
+        - marked episodes
+  /user/follows/networks:
+    get:
+      parameters:
+        - description: Embed full network info
+          in: query
+          name: embed
+          required: false
+          schema:
+            enum:
+              - network
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/NetworkFollow"
+                type: array
+          description: An array of followed networks
+      summary: List the followed networks
+      tags:
+        - followed networks
+  "/user/follows/networks/{network_id}":
+    delete:
+      responses:
+        "200":
+          description: the network is now unfollowed
+        "404":
+          description: this network was not followed
+      summary: Unfollow a network
+      tags:
+        - followed networks
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetworkFollow"
+          description: The followed network
+        "404":
+          description: this network is not followed
+      summary: Check if a network is followed
+      tags:
+        - followed networks
+    parameters:
+      - in: path
+        name: network_id
+        required: true
+        schema:
+          type: integer
+    put:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/NetworkFollow"
+          description: this network is now followed
+        "404":
+          description: this network does not exist
+      summary: Follow a network
+      tags:
+        - followed networks
+  /user/follows/people:
+    get:
+      parameters:
+        - description: Embed full person info
+          in: query
+          name: embed
+          required: false
+          schema:
+            enum:
+              - person
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/PersonFollow"
+                type: array
+          description: An array of followed people
+      summary: List the followed people
+      tags:
+        - followed people
+  "/user/follows/people/{person_id}":
+    delete:
+      responses:
+        "200":
+          description: the person is now unfollowed
+        "404":
+          description: this person was not followed
+      summary: Unfollow a person
+      tags:
+        - followed people
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonFollow"
+          description: The followed person
+        "404":
+          description: this person is not followed
+      summary: Check if a person is followed
+      tags:
+        - followed people
+    parameters:
+      - in: path
+        name: person_id
+        required: true
+        schema:
+          type: integer
+    put:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PersonFollow"
+          description: this person is now followed
+        "404":
+          description: this person does not exist
+      summary: Follow a person
+      tags:
+        - followed people
+  /user/follows/shows:
+    get:
+      parameters:
+        - description: Embed full show info
+          in: query
+          name: embed
+          required: false
+          schema:
+            enum:
+              - show
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ShowFollow"
+                type: array
+          description: An array of followed shows
+      summary: List the followed shows
+      tags:
+        - followed shows
+  "/user/follows/shows/{show_id}":
+    delete:
+      responses:
+        "200":
+          description: The show is now unfollowed
+        "404":
+          description: This show was not followed
+      summary: Unfollow a show
+      tags:
+        - followed shows
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowFollow"
+          description: The followed show
+        "404":
+          description: This show is not followed
+      summary: Check if a show is followed
+      tags:
+        - followed shows
+    parameters:
+      - in: path
+        name: show_id
+        required: true
+        schema:
+          type: integer
+    put:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowFollow"
+          description: This show is now followed
+        "404":
+          description: This show does not exist
+      summary: Follow a show
+      tags:
+        - followed shows
+  /user/follows/webchannels:
+    get:
+      parameters:
+        - description: Embed full webchannel info
+          in: query
+          name: embed
+          required: false
+          schema:
+            enum:
+              - webchannel
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/WebchannelFollow"
+                type: array
+          description: An array of followed webchannels
+      summary: List the followed webchannels
+      tags:
+        - followed webchannels
+  "/user/follows/webchannels/{webchannel_id}":
+    delete:
+      responses:
+        "200":
+          description: the webchannel is now unfollowed
+        "404":
+          description: this webchannel was not followed
+      summary: Unfollow a webchannel
+      tags:
+        - followed webchannels
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebchannelFollow"
+          description: The followed webchannel
+        "404":
+          description: this webchannel is not followed
+      summary: Check if a webchannel is followed
+      tags:
+        - followed webchannels
+    parameters:
+      - in: path
+        name: webchannel_id
+        required: true
+        schema:
+          type: integer
+    put:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WebchannelFollow"
+          description: this webchannel is now followed
+        "404":
+          description: this webchannel does not exist
+      summary: Follow a webchannel
+      tags:
+        - followed webchannels
+  /user/tags:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Tag"
+                type: array
+          description: An array of tags
+      summary: List all tags
+      tags:
+        - tagged shows
+    post:
+      requestBody:
+        $ref: "#/components/requestBodies/Tag"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+          description: The newly created tag
+        "422":
+          description: invalid input data
+      summary: Create a new tag
+      tags:
+        - tagged shows
+  "/user/tags/{tag_id}":
+    delete:
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The tag was deleted
+        "404":
+          description: The tag does not exist
+      summary: Delete a specific tag
+      tags:
+        - tagged shows
+    patch:
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          schema:
+            type: integer
+      requestBody:
+        $ref: "#/components/requestBodies/Tag"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Tag"
+          description: The tag was updated
+        "404":
+          description: The tag does not exist
+        "422":
+          description: The tag could not be updated
+      summary: Update a specific tag
+      tags:
+        - tagged shows
+  "/user/tags/{tag_id}/shows":
+    get:
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          schema:
+            type: integer
+        - description: Embed full show info
+          in: query
+          name: embed
+          required: false
+          schema:
+            enum:
+              - show
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/TagInstance"
+                type: array
+          description: A list of tagged shows
+        "404":
+          description: The tag does not exist
+      summary: List all shows under this tag
+      tags:
+        - tagged shows
+  "/user/tags/{tag_id}/shows/{show_id}":
+    delete:
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: show_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          description: The show was untagged
+        "404":
+          description: The show was not tagged
+      summary: Untag a show
+      tags:
+        - tagged shows
+    put:
+      parameters:
+        - in: path
+          name: tag_id
+          required: true
+          schema:
+            type: integer
+        - in: path
+          name: show_id
+          required: true
+          schema:
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TagInstance"
+          description: The show was tagged
+        "404":
+          description: The show or tag does not exist
+      summary: Tag a show
+      tags:
+        - tagged shows
+  /user/votes/episodes:
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/EpisodeVote"
+                type: array
+          description: An array of episode votes
+      summary: List the episodes voted for
+      tags:
+        - voted episodes
+  "/user/votes/episodes/{episode_id}":
+    delete:
+      responses:
+        "200":
+          description: The episode vote is now removed
+        "404":
+          description: This episode was not voted for
+      summary: Remove an episode vote
+      tags:
+        - voted episodes
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeVote"
+          description: The episode vote
+        "404":
+          description: This episode is not voted for
+      summary: Check if an episode is voted for
+      tags:
+        - voted episodes
+    parameters:
+      - in: path
+        name: episode_id
+        required: true
+        schema:
+          type: integer
+    put:
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EpisodeVote"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/EpisodeVote"
+          description: This episode is now voted for
+        "404":
+          description: This episode does not exist
+      summary: Vote for an episode
+      tags:
+        - voted episodes
+  /user/votes/shows:
+    get:
+      parameters:
+        - description: Embed full show info
+          in: query
+          name: embed
+          required: false
+          schema:
+            enum:
+              - show
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ShowVote"
+                type: array
+          description: An array of show votes
+      summary: List the shows voted for
+      tags:
+        - voted shows
+  "/user/votes/shows/{show_id}":
+    delete:
+      responses:
+        "200":
+          description: The show vote is now removed
+        "404":
+          description: This show was not voted for
+      summary: Remove a show vote
+      tags:
+        - voted shows
+    get:
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowVote"
+          description: The show vote
+        "404":
+          description: This show is not voted for
+      summary: Check if a show is voted for
+      tags:
+        - voted shows
+    parameters:
+      - in: path
+        name: show_id
+        required: true
+        schema:
+          type: integer
+    put:
+      description: Set `voted_at` to `NULL` or leave it out to use the current time.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ShowVote"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ShowVote"
+          description: This show is now voted for
+        "404":
+          description: This show does not exist
+      summary: Vote for a show
+      tags:
+        - voted shows
+components:
+  requestBodies:
+    MarkedEpisode:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/MarkedEpisode"
+    Tag:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/Tag"
+  schemas:
+    BulkResponse:
+      description: A list of responses to your bulk input, ordered the same as your input
+      items:
+        properties:
+          code:
+            description: The HTTP code that corresponds to this item
+            type: integer
+          errors:
+            description: A list of validation errors for this item (in case of error)
+            type: object
+          input:
+            description: The request data that belonged to this response (in case of error)
+            type: object
+          message:
+            description: A human-readable error message (in case of error)
+            type: string
+          result:
+            description: The resulting created/updated object (in case of success)
+            type: object
+      type: array
+    Episode:
+      type: object
+    EpisodeVote:
+      properties:
+        episode_id:
+          readOnly: true
+          type: integer
+        vote:
+          description: The vote number
+          maximum: 10
+          minimum: 1
+          type: integer
+        voted_at:
+          description: Epoch timestamp for when the user voted for the episode
+          readOnly: true
+          type: integer
+      type: object
+    MarkType:
+      description: 0 for watched, 1 for acquired, 2 for skipped
+    MarkedEpisode:
+      properties:
+        _embedded:
+          properties:
+            episode:
+              $ref: "#/components/schemas/Episode"
+          type: object
+        episode_id:
+          readOnly: true
+          type: integer
+        marked_at:
+          description: Epoch timestamp for when the user watched the episode, or 0 for unknown.
+          type: integer
+        type:
+          $ref: "#/components/schemas/MarkType"
+      type: object
+    Network:
+      type: object
+    NetworkFollow:
+      properties:
+        _embedded:
+          properties:
+            network:
+              $ref: "#/components/schemas/Network"
+          type: object
+        network_id:
+          type: integer
+      type: object
+    Person:
+      type: object
+    PersonFollow:
+      properties:
+        _embedded:
+          properties:
+            person:
+              $ref: "#/components/schemas/Person"
+          type: object
+        person_id:
+          type: integer
+      type: object
+    Show:
+      type: object
+    ShowFollow:
+      properties:
+        _embedded:
+          properties:
+            show:
+              $ref: "#/components/schemas/Show"
+          type: object
+        show_id:
+          type: integer
+      type: object
+    ShowVote:
+      properties:
+        show_id:
+          readOnly: true
+          type: integer
+        vote:
+          description: The vote number
+          maximum: 10
+          minimum: 1
+          type: integer
+        voted_at:
+          description: Epoch timestamp for when the user voted for the episode
+          readOnly: true
+          type: integer
+      type: object
+    Tag:
+      properties:
+        id:
+          readOnly: true
+          type: integer
+        name:
+          type: string
+      type: object
+    TagInstance:
+      properties:
+        _embedded:
+          properties:
+            show:
+              $ref: "#/components/schemas/Show"
+          type: object
+        show_id:
+          type: integer
+      type: object
+    Webchannel:
+      type: object
+    WebchannelFollow:
+      properties:
+        _embedded:
+          properties:
+            webchannel:
+              $ref: "#/components/schemas/Webchannel"
+          type: object
+        webchannel_id:
+          type: integer
+      type: object
+  securitySchemes:
+    usertoken:
+      scheme: basic
+      type: http

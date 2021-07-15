@@ -1,0 +1,233 @@
+openapi: 3.0.3
+servers:
+  - description: papiNet Mock Server
+    url: https://papinet.papinet.io
+info:
+  contact:
+    name: papiNet API CWG
+    url: https://github.com/papinet/papiNet-API/issues
+  description: papinet API is a global initiative for the Forst and Paper supply chain.
+  license:
+    name: Apache 2.0
+    url: https://github.com/papinet/papiNet-API/blob/patrice-v1.0.0/LICENSE
+  title: papiNet API
+  version: 1.0.0
+  x-apisguru-categories:
+    - ecommerce
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/papinet/papiNet-API/master/1.0.0/papiNet-API.yaml
+      version: "3.0"
+  x-providerName: papinet.io
+  x-serviceName: order_status
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+paths:
+  /orders:
+    get:
+      description: Gets a paginated list of all `orders`.
+      parameters:
+        - description: Filter by status
+          in: query
+          name: orderStatus
+          required: false
+          schema:
+            enum:
+              - Active
+              - Cancelled
+              - Completed
+            type: string
+        - description: The number of items to skip before starting to collect the result set.
+          in: query
+          name: offset
+          required: false
+          schema:
+            type: string
+        - description: The maximum number of items to return. If the value exceeds the maximum, then the maximum value will be used.
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListOfOrders"
+          description: OK
+      summary: List `orders`
+  "/orders/{orderId}":
+    get:
+      description: Gets the details of a specific `order`, including a paginated list of all its lines.
+      parameters:
+        - description: UUID of the `order` to get
+          in: path
+          name: orderId
+          required: true
+          schema:
+            format: uuid
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/GetOrder"
+          description: OK
+      summary: Get an `order`
+components:
+  schemas:
+    GetOrder:
+      $ref: "#/components/schemas/Order"
+    ListOfOrders:
+      properties:
+        links:
+          $ref: "#/components/schemas/PaginationLinks"
+        orders:
+          items:
+            $ref: "#/components/schemas/OrderHeader"
+          type: array
+      type: object
+    Order:
+      allOf:
+        - $ref: "#/components/schemas/OrderHeader"
+        - properties:
+            links:
+              $ref: "#/components/schemas/PaginationLinks"
+            orderLineItems:
+              items:
+                $ref: "#/components/schemas/OrderLineItem"
+              type: array
+    OrderHeader:
+      properties:
+        id:
+          format: uuid
+          type: string
+        numberOfLineItems:
+          minimum: 0
+          type: integer
+        orderNumber:
+          type: string
+        orderStatus:
+          enum:
+            - Active
+            - Cancelled
+            - Completed
+          type: string
+      required:
+        - id
+        - orderNumber
+        - orderStatus
+        - numberOfLineItems
+      type: object
+    OrderLineItem:
+      properties:
+        changeable:
+          type: boolean
+        id:
+          format: uuid
+          type: string
+        orderLineItemNumber:
+          minimum: 0
+          type: number
+        orderLineItemStatus:
+          enum:
+            - Cancelled
+            - Completed
+            - Confirmed
+            - Pending
+            - ProductionCompleted
+            - ShipmentCompleted
+          type: string
+        quantities:
+          items:
+            properties:
+              quantityContext:
+                enum:
+                  - Confirmed
+                  - Invoiced
+                  - Ordered
+                  - Produced
+                  - Shipped
+                type: string
+              quantityType:
+                enum:
+                  - Area
+                  - Count
+                  - GrossWeight
+                  - Length
+                  - NetNetWeight
+                  - NetWeight
+                  - NominalWeight
+                  - TareWeight
+                type: string
+              quantityUOM:
+                enum:
+                  - Bale
+                  - Box
+                  - Centimeter
+                  - Decimeter
+                  - Foot
+                  - Gram
+                  - HundredPounds
+                  - Inch
+                  - Kilogram
+                  - Kilometer
+                  - Meter
+                  - MetricTon
+                  - Millimeter
+                  - Package
+                  - PalletUnit
+                  - Piece
+                  - Pound
+                  - PulpUnit
+                  - Ream
+                  - Reel
+                  - Sheet
+                  - ShortTon
+                  - Skid
+                  - SquareDecimeter
+                  - SquareFoot
+                  - SquareInch
+                  - SquareMeter
+                  - ThousandPieces
+                  - ThousandSquareCentimeters
+                  - ThousandSquareFeet
+                  - ThousandSquareInches
+                  - Yard
+                type: string
+              quantityValue:
+                type: number
+            type: object
+          type: array
+      required:
+        - id
+        - orderLineItemNumber
+        - orderLineItemStatus
+      type: object
+    PaginationLinks:
+      properties:
+        first:
+          properties:
+            href:
+              type: string
+          type: object
+        last:
+          properties:
+            href:
+              type: string
+          type: object
+        next:
+          properties:
+            href:
+              type: string
+          type: object
+        prev:
+          properties:
+            href:
+              type: string
+          type: object
+      required:
+        - next
+      type: object

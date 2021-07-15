@@ -1,0 +1,2571 @@
+swagger: "2.0"
+host: api.postmarkapp.com
+basePath: /
+info:
+  description: |
+    Postmark makes sending and receiving email
+    incredibly easy.
+  title: Postmark API
+  version: 1.0.0
+  x-apisguru-categories:
+    - email
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_pbs.twimg.com_profile_images_879295889185157120_ZYlwxzeY_400x400.jpg
+  x-origin:
+    - format: swagger
+      url: https://postmarkapp.com/swagger/server.yml
+      version: "2.0"
+  x-providerName: postmarkapp.com
+  x-serviceName: server
+consumes:
+  - application/json
+produces:
+  - application/json
+responses:
+  "422":
+    description: An error was generated due to incorrect use of the API. See the Message associated with this response for more information.
+    schema:
+      $ref: "#/definitions/StandardPostmarkResponse"
+  "500":
+    description: Indicates an internal server error occurred.
+paths:
+  /bounces:
+    get:
+      operationId: getBounces
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Number of bounces to return per request. Max 500.
+          in: query
+          maximum: 500
+          name: count
+          required: true
+          type: integer
+        - description: Number of bounces to skip.
+          in: query
+          name: offset
+          required: true
+          type: integer
+        - description: Filter by type of bounce
+          enum:
+            - HardBounce
+            - Transient
+            - Unsubscribe
+            - Subscribe
+            - AutoResponder
+            - AddressChange
+            - DnsError
+            - SpamNotification
+            - OpenRelayTest
+            - Unknown
+            - SoftBounce
+            - VirusNotification
+            - MailFrontier Matador.
+            - BadEmailAddress
+            - SpamComplaint
+            - ManuallyDeactivated
+            - Unconfirmed
+            - Blocked
+            - SMTPApiError
+            - InboundError
+            - DMARCPolicy
+            - TemplateRenderingFailed
+          in: query
+          name: type
+          type: string
+        - description: Filter by emails that were deactivated by Postmark due to the bounce. Set to true or false. If this isn't specified it will return both active and inactive.
+          in: query
+          name: inactive
+          type: boolean
+        - description: Filter by email address
+          format: email
+          in: query
+          name: emailFilter
+          type: string
+        - description: Filter by messageID
+          in: query
+          name: messageID
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter messages up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+        - description: Filter messages starting from the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/BounceSearchResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get bounces
+      tags:
+        - Bounces API
+  "/bounces/{bounceid}":
+    get:
+      operationId: getSingleBounce
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the bounce to retrieve.
+          format: int64
+          in: path
+          name: bounceid
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/BounceInfoResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get a single bounce
+      tags:
+        - Bounces API
+  "/bounces/{bounceid}/activate":
+    put:
+      operationId: activateBounce
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the Bounce to activate.
+          format: int64
+          in: path
+          name: bounceid
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/BounceActivationResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Activate a bounce
+      tags:
+        - Bounces API
+  "/bounces/{bounceid}/dump":
+    get:
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID for the bounce dump to retrieve.
+          format: int64
+          in: path
+          name: bounceid
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/BounceDumpResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get bounce dump
+      tags:
+        - Bounces API
+  /deliverystats:
+    get:
+      operationId: getDeliveryStats
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/DeliveryStatsResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get delivery stats
+      tags:
+        - Bounces API
+  /email:
+    post:
+      operationId: sendEmail
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/SendEmailRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/SendEmailResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Send a single email
+      tags:
+        - Sending API
+  /email/batch:
+    post:
+      operationId: sendEmailBatch
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/SendEmailBatchRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/SendEmailBatchResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Send a batch of emails
+      tags:
+        - Sending API
+  /email/batchWithTemplates:
+    post:
+      operationId: sendEmailBatchWithTemplates
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/SendEmailTemplatedBatchRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/SendEmailBatchResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Send a batch of email using templates.
+      tags:
+        - Sending API
+        - Templates API
+  /email/withTemplate:
+    post:
+      operationId: sendEmailWithTemplate
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/EmailWithTemplateRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/SendEmailResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Send an email using a Template
+      tags:
+        - Sending API
+        - Templates API
+  /messages/inbound:
+    get:
+      operationId: searchInboundMessages
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Number of messages to return per request. Max 500.
+          in: query
+          name: count
+          required: true
+          type: integer
+        - description: Number of messages to skip
+          in: query
+          name: offset
+          required: true
+          type: integer
+        - description: Filter by the user who was receiving the email
+          format: email
+          in: query
+          name: recipient
+          type: string
+        - description: Filter by the sender email address
+          format: email
+          in: query
+          name: fromemail
+          type: string
+        - description: Filter by email subject
+          in: query
+          name: subject
+          type: string
+        - description: Filter by mailboxhash
+          in: query
+          name: mailboxhash
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter by status (`blocked`, `processed`, `queued`, `failed`, `scheduled`)
+          enum:
+            - blocked
+            - processed
+            - queued
+            - failed
+            - scheduled
+          in: query
+          name: status
+          type: string
+        - description: Filter messages up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+        - description: Filter messages starting from the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/InboundSearchResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Inbound message search
+      tags:
+        - Messages API
+  "/messages/inbound/{messageid}/bypass":
+    put:
+      operationId: bypassRulesForInboundMessage
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the message which should bypass inbound rules.
+          in: path
+          name: messageid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/StandardPostmarkResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Bypass rules for a blocked inbound message
+      tags:
+        - Messages API
+  "/messages/inbound/{messageid}/details":
+    get:
+      operationId: getInboundMessageDetails
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the message for which to details will be retrieved.
+          in: path
+          name: messageid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/InboundMessageFullDetailsResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Inbound message details
+      tags:
+        - Messages API
+  "/messages/inbound/{messageid}/retry":
+    put:
+      operationId: retryInboundMessageProcessing
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the inbound message on which we should retry processing.
+          in: path
+          name: messageid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/StandardPostmarkResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Retry a failed inbound message for processing
+      tags:
+        - Messages API
+  /messages/outbound:
+    get:
+      operationId: searchOutboundMessages
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Number of messages to return per request. Max 500.
+          in: query
+          name: count
+          required: true
+          type: integer
+        - description: Number of messages to skip
+          in: query
+          name: offset
+          required: true
+          type: integer
+        - description: Filter by the user who was receiving the email
+          format: email
+          in: query
+          name: recipient
+          type: string
+        - description: Filter by the sender email address
+          format: email
+          in: query
+          name: fromemail
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter by status (`queued` or `sent`)
+          enum:
+            - queued
+            - sent
+          in: query
+          name: status
+          type: string
+        - description: Filter messages up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+        - description: Filter messages starting from the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/OutboundSearchResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Outbound message search
+      tags:
+        - Messages API
+  /messages/outbound/clicks:
+    get:
+      operationId: searchClicksForOutboundMessages
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Number of message clicks to return per request. Max 500.
+          in: query
+          name: count
+          required: true
+          type: integer
+        - description: Number of messages to skip
+          in: query
+          name: offset
+          required: true
+          type: integer
+        - description: Filter by To, Cc, Bcc
+          in: query
+          name: recipient
+          required: false
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          required: false
+          type: string
+        - description: Filter by client name, i.e. Outlook, Gmail
+          in: query
+          name: client_name
+          required: false
+          type: string
+        - description: Filter by company, i.e. Microsoft, Apple, Google
+          in: query
+          name: client_company
+          required: false
+          type: string
+        - description: Filter by client family, i.e. OS X, Chrome
+          in: query
+          name: client_family
+          required: false
+          type: string
+        - description: Filter by full OS name and specific version, i.e. OS X 10.9 Mavericks, Windows 7
+          in: query
+          name: os_name
+          required: false
+          type: string
+        - description: Filter by kind of OS used without specific version, i.e. OS X, Windows
+          in: query
+          name: os_family
+          required: false
+          type: string
+        - description: Filter by company which produced the OS, i.e. Apple Computer, Inc., Microsoft Corporation
+          in: query
+          name: os_company
+          required: false
+          type: string
+        - description: Filter by platform, i.e. webmail, desktop, mobile
+          in: query
+          name: platform
+          required: false
+          type: string
+        - description: Filter by country messages were opened in, i.e. Denmark, Russia
+          in: query
+          name: country
+          required: false
+          type: string
+        - description: Filter by full name of region messages were opened in, i.e. Moscow, New York
+          in: query
+          name: region
+          required: false
+          type: string
+        - description: Filter by full name of region messages were opened in, i.e. Moscow, New York
+          in: query
+          name: city
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/MessageClickSearchResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Clicks for a all messages
+      tags:
+        - Messages API
+  "/messages/outbound/clicks/{messageid}":
+    get:
+      operationId: getClicksForSingleOutboundMessage
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the Outbound Message for which click statistics should be retrieved.
+          in: path
+          name: messageid
+          required: true
+          type: string
+        - default: 1
+          description: Number of message clicks to return per request. Max 500.
+          in: query
+          maximum: 500
+          minimum: 1
+          name: count
+          required: true
+          type: integer
+        - default: 0
+          description: Number of messages to skip.
+          in: query
+          minimum: 0
+          name: offset
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/MessageClickSearchResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Retrieve Message Clicks
+      tags:
+        - Messages API
+  /messages/outbound/opens:
+    get:
+      operationId: searchOpensForOutboundMessages
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Number of message opens to return per request. Max 500.
+          in: query
+          name: count
+          required: true
+          type: integer
+        - description: Number of messages to skip
+          in: query
+          name: offset
+          required: true
+          type: integer
+        - description: Filter by To, Cc, Bcc
+          in: query
+          name: recipient
+          required: false
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          required: false
+          type: string
+        - description: Filter by client name, i.e. Outlook, Gmail
+          in: query
+          name: client_name
+          required: false
+          type: string
+        - description: Filter by company, i.e. Microsoft, Apple, Google
+          in: query
+          name: client_company
+          required: false
+          type: string
+        - description: Filter by client family, i.e. OS X, Chrome
+          in: query
+          name: client_family
+          required: false
+          type: string
+        - description: Filter by full OS name and specific version, i.e. OS X 10.9 Mavericks, Windows 7
+          in: query
+          name: os_name
+          required: false
+          type: string
+        - description: Filter by kind of OS used without specific version, i.e. OS X, Windows
+          in: query
+          name: os_family
+          required: false
+          type: string
+        - description: Filter by company which produced the OS, i.e. Apple Computer, Inc., Microsoft Corporation
+          in: query
+          name: os_company
+          required: false
+          type: string
+        - description: Filter by platform, i.e. webmail, desktop, mobile
+          in: query
+          name: platform
+          required: false
+          type: string
+        - description: Filter by country messages were opened in, i.e. Denmark, Russia
+          in: query
+          name: country
+          required: false
+          type: string
+        - description: Filter by full name of region messages were opened in, i.e. Moscow, New York
+          in: query
+          name: region
+          required: false
+          type: string
+        - description: Filter by full name of region messages were opened in, i.e. Moscow, New York
+          in: query
+          name: city
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/MessageOpenSearchResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Opens for all messages
+      tags:
+        - Messages API
+  "/messages/outbound/opens/{messageid}":
+    get:
+      operationId: getOpensForSingleOutboundMessage
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the Outbound Message for which open statistics should be retrieved.
+          in: path
+          name: messageid
+          required: true
+          type: string
+        - default: 1
+          description: Number of message opens to return per request. Max 500.
+          in: query
+          maximum: 500
+          minimum: 1
+          name: count
+          required: true
+          type: integer
+        - default: 0
+          description: Number of messages to skip.
+          in: query
+          minimum: 0
+          name: offset
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/MessageOpenSearchResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Retrieve Message Opens
+      tags:
+        - Messages API
+  "/messages/outbound/{messageid}/details":
+    get:
+      operationId: getOutboundMessageDetails
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the message for which to retrieve details.
+          in: path
+          name: messageid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/OutboundMessageDetailsResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Outbound message details
+      tags:
+        - Messages API
+  "/messages/outbound/{messageid}/dump":
+    get:
+      operationId: getOutboundMessageDump
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the message for which to retrieve a dump.
+          in: path
+          name: messageid
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/OutboundMessageDumpResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Outbound message dump
+      tags:
+        - Messages API
+  /server:
+    get:
+      operationId: getCurrentServerConfiguration
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/ServerConfigurationResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get Server Configuration
+      tags:
+        - Server Configuration API
+    put:
+      operationId: editCurrentServerConfiguration
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The settings that should be modified for the current server.
+          in: body
+          name: body
+          schema:
+            $ref: "#/definitions/EditServerConfigurationRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/ServerConfigurationResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Edit Server Configuration
+      tags:
+        - Server Configuration API
+  /stats/outbound:
+    get:
+      operationId: getOutboundOverviewStatistics
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/OutboundOverviewStatsResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get outbound overview
+      tags:
+        - Stats API
+  /stats/outbound/bounces:
+    get:
+      operationId: getBounceCounts
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              Days:
+                items:
+                  properties:
+                    Date:
+                      type: string
+                    HardBounce:
+                      type: integer
+                    SMTPApiError:
+                      type: integer
+                    SoftBounce:
+                      type: integer
+                    Transient:
+                      type: integer
+                type: array
+              HardBounce:
+                type: integer
+              SMTPApiError:
+                type: integer
+              SoftBounce:
+                type: integer
+              Transient:
+                type: integer
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get bounce counts
+      tags:
+        - Stats API
+  /stats/outbound/clicks:
+    get:
+      operationId: getOutboundClickCounts
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/DynamicResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get click counts
+      tags:
+        - Stats API
+  /stats/outbound/clicks/browserfamilies:
+    get:
+      operationId: getOutboundClickCountsByBrowserFamily
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: object
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get browser usage by family
+      tags:
+        - Stats API
+  /stats/outbound/clicks/location:
+    get:
+      operationId: getOutboundClickCountsByLocation
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/DynamicResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get clicks by body location
+      tags:
+        - Stats API
+  /stats/outbound/clicks/platforms:
+    get:
+      operationId: getOutboundClickCountsByPlatform
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/DynamicResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get browser plaform usage
+      tags:
+        - Stats API
+  /stats/outbound/opens:
+    get:
+      operationId: getOutboundOpenCounts
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              Days:
+                items:
+                  properties:
+                    Date:
+                      type: string
+                    Opens:
+                      type: integer
+                    Unique:
+                      type: integer
+                type: array
+              Opens:
+                type: integer
+              Unique:
+                type: integer
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get email open counts
+      tags:
+        - Stats API
+  /stats/outbound/opens/emailclients:
+    get:
+      operationId: getOutboundOpenCountsByEmailClient
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              Days:
+                items:
+                  $ref: "#/definitions/DynamicResponse"
+                type: array
+              Desktop:
+                type: integer
+              Mobile:
+                type: integer
+              Unknown:
+                type: integer
+              WebMail:
+                type: integer
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get email client usage
+      tags:
+        - Stats API
+  /stats/outbound/opens/platforms:
+    get:
+      operationId: getOutboundOpenCountsByPlatform
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              Days:
+                items:
+                  properties:
+                    Date:
+                      type: string
+                    Desktop:
+                      type: integer
+                    Mobile:
+                      type: integer
+                    Unknown:
+                      type: integer
+                    WebMail:
+                      type: integer
+                type: array
+              Desktop:
+                type: integer
+              Mobile:
+                type: integer
+              Unknown:
+                type: integer
+              WebMail:
+                type: integer
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get email platform usage
+      tags:
+        - Stats API
+  /stats/outbound/sends:
+    get:
+      operationId: getSentCounts
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/SentCountsResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get sent counts
+      tags:
+        - Stats API
+  /stats/outbound/spam:
+    get:
+      operationId: getSpamComplaints
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats up to the date specified. e.g. `2014-02-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              Days:
+                items:
+                  properties:
+                    Date:
+                      type: string
+                    SpamComplaint:
+                      type: integer
+                type: array
+              SpamComplaint:
+                type: integer
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get spam complaints
+      tags:
+        - Stats API
+  /stats/outbound/tracked:
+    get:
+      operationId: getTrackedEmailCounts
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Filter by tag
+          in: query
+          name: tag
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: fromdate
+          type: string
+        - description: Filter stats starting from the date specified. e.g. `2014-01-01`
+          format: date
+          in: query
+          name: todate
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              Days:
+                items:
+                  properties:
+                    Date:
+                      type: string
+                    Tracked:
+                      type: integer
+                type: array
+              Tracked:
+                type: integer
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get tracked email counts
+      tags:
+        - Stats API
+  /templates:
+    get:
+      operationId: listTemplates
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The number of Templates to return
+          format: int
+          in: query
+          name: Count
+          required: true
+          type: number
+        - description: The number of Templates to "skip" before returning results.
+          format: int
+          in: query
+          name: Offset
+          required: true
+          type: number
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/TemplateListingResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get the Templates associated with this Server
+      tags:
+        - Templates API
+    post:
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateTemplateRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/TemplateRecordResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Create a Template
+      tags:
+        - Templates API
+  /templates/validate:
+    post:
+      operationId: testTemplateContent
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/TemplateValidationRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/TemplateValidationResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Test Template Content
+      tags:
+        - Templates API
+  "/templates/{templateIdOrAlias}":
+    delete:
+      operationId: deleteTemplate
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The 'TemplateID' or 'Alias' value for the Template you wish to delete.
+          in: path
+          name: templateIdOrAlias
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/TemplateDetailResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Delete a Template
+      tags:
+        - Templates API
+    get:
+      operationId: getSingleTemplate
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The 'TemplateID' or 'Alias' value for the Template you wish to retrieve.
+          in: path
+          name: templateIdOrAlias
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/TemplateDetailResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Get a Template
+      tags:
+        - Templates API
+    put:
+      operationId: updateTemplate
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The 'TemplateID' or 'Alias' value for the Template you wish to update.
+          in: path
+          name: templateIdOrAlias
+          required: true
+          type: string
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/EditTemplateRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/TemplateRecordResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Update a Template
+      tags:
+        - Templates API
+  /triggers/inboundrules:
+    get:
+      operationId: listInboundRules
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: Number of records to return per request.
+          in: query
+          name: count
+          required: true
+          type: integer
+        - description: Number of records to skip.
+          in: query
+          name: offset
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              InboundRules:
+                items:
+                  properties:
+                    ID:
+                      type: integer
+                    Rule:
+                      format: email
+                      type: string
+                type: array
+              TotalCount:
+                type: integer
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: List inbound rule triggers
+      tags:
+        - Inbound Rules API
+    post:
+      operationId: createInboundRule
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - in: body
+          name: body
+          schema:
+            $ref: "#/definitions/CreateInboundRuleRequest"
+      responses:
+        "200":
+          description: OK
+          schema:
+            properties:
+              ID:
+                type: integer
+              Rule:
+                type: string
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Create an inbound rule trigger
+      tags:
+        - Inbound Rules API
+  "/triggers/inboundrules/{triggerid}":
+    delete:
+      operationId: deleteInboundRule
+      parameters:
+        - description: The token associated with the Server on which this request will operate.
+          in: header
+          name: X-Postmark-Server-Token
+          required: true
+          type: string
+        - description: The ID of the Inbound Rule that should be deleted.
+          in: path
+          name: triggerid
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/StandardPostmarkResponse"
+        "422":
+          $ref: "#/responses/422"
+        "500":
+          $ref: "#/responses/500"
+      summary: Delete a single trigger
+      tags:
+        - Inbound Rules API
+definitions:
+  Attachment:
+    description: An attachment for an email message.
+    properties:
+      Content:
+        type: string
+      ContentID:
+        type: string
+      ContentType:
+        type: string
+      Name:
+        type: string
+  AttachmentCollection:
+    items:
+      $ref: "#/definitions/Attachment"
+    type: array
+  BounceActivationResponse:
+    properties:
+      Bounce:
+        $ref: "#/definitions/BounceInfoResponse"
+      Message:
+        type: string
+  BounceCountElement:
+    properties:
+      Count:
+        type: integer
+      Name:
+        type: string
+      Type:
+        type: string
+  BounceDumpResponse:
+    properties:
+      Body:
+        description: Raw source of bounce. If no dump is available this will return an empty string.
+        type: string
+  BounceInfoResponse:
+    properties:
+      BouncedAt:
+        format: date-time
+        type: string
+      CanActivate:
+        type: boolean
+      Content:
+        type: string
+      Description:
+        type: string
+      Details:
+        type: string
+      DumpAvailable:
+        type: boolean
+      Email:
+        format: email
+        type: string
+      ID:
+        type: string
+      Inactive:
+        type: boolean
+      MessageID:
+        type: string
+      Name:
+        type: string
+      Subject:
+        type: string
+      Tag:
+        type: string
+      Type:
+        type: string
+      TypeCode:
+        type: integer
+  BounceSearchResponse:
+    description: ""
+    properties:
+      Bounces:
+        items:
+          $ref: "#/definitions/BounceInfoResponse"
+        type: array
+      TotalCount:
+        type: integer
+  CreateInboundRuleRequest:
+    description: ""
+    properties:
+      Rule:
+        format: email
+        type: string
+  CreateTemplateRequest:
+    description: The contents required for creating a new template.
+    properties:
+      Alias:
+        description: The optional string identifier for referring to this Template (numbers, letters, and '.', '-', '_' characters, starts with a letter).
+        type: string
+      HtmlBody:
+        description: The HTML template definition for this Template.
+        type: string
+      Name:
+        description: The friendly display name for the template.
+        type: string
+      Subject:
+        description: The Subject template definition for this Template.
+        type: string
+      TextBody:
+        description: The Text template definition for this Template.
+        type: string
+    required:
+      - Name
+      - Subject
+  DeliveryStatsResponse:
+    description: ""
+    properties:
+      Bounces:
+        items:
+          $ref: "#/definitions/BounceCountElement"
+        type: array
+      InactiveMails:
+        type: integer
+  DynamicResponse:
+    description: The properties of this object will vary based request parameters.
+  EditServerConfigurationRequest:
+    properties:
+      BounceHookUrl:
+        type: string
+      ClickHookUrl:
+        description: Webhook url allowing real-time notification when tracked links are clicked.
+        type: string
+      Color:
+        enum:
+          - purple
+          - blue
+          - turqoise
+          - green
+          - red
+          - yellow
+          - grey
+        type: string
+      DeliveryHookUrl:
+        type: string
+      InboundDomain:
+        type: string
+      InboundHookUrl:
+        type: string
+      InboundSpamThreshold:
+        type: integer
+      Name:
+        type: string
+      OpenHookUrl:
+        type: string
+      PostFirstOpenOnly:
+        type: boolean
+      RawEmailEnabled:
+        type: boolean
+      SmtpApiActivated:
+        type: boolean
+      TrackLinks:
+        enum:
+          - None
+          - HtmlAndText
+          - HtmlOnly
+          - TextOnly
+        type: string
+      TrackOpens:
+        type: boolean
+  EditTemplateRequest:
+    description: The contents required for creating a new template.
+    properties:
+      Alias:
+        description: The optional string identifier for referring to this Template (numbers, letters, and '.', '-', '_' characters, starts with a letter).
+        type: string
+      HtmlBody:
+        description: The HTML template definition for this Template.
+        type: string
+      Name:
+        description: The friendly display name for the template.
+        type: string
+      Subject:
+        description: The Subject template definition for this Template.
+        type: string
+      TextBody:
+        description: The Text template definition for this Template.
+        type: string
+    required:
+      - TemplateId
+  EmailNameAddressPair:
+    description: ""
+    properties:
+      Email:
+        type: string
+      Name:
+        type: string
+  EmailWithTemplateRequest:
+    properties:
+      Attachments:
+        $ref: "#/definitions/AttachmentCollection"
+      Bcc:
+        format: email
+        type: string
+      Cc:
+        format: email
+        type: string
+      From:
+        format: email
+        type: string
+      Headers:
+        $ref: "#/definitions/HeaderCollection"
+      InlineCss:
+        default: true
+        type: boolean
+      ReplyTo:
+        type: string
+      Tag:
+        type: string
+      TemplateAlias:
+        description: Required if 'TemplateId' is not specified.
+        type: string
+      TemplateId:
+        description: Required if 'TemplateAlias' is not specified.
+        type: integer
+      TemplateModel:
+        type: object
+      To:
+        format: email
+        type: string
+      TrackLinks:
+        description: Replace links in content to enable "click tracking" stats. Default is 'null', which uses the server's LinkTracking setting'.
+        enum:
+          - None
+          - HtmlAndText
+          - HtmlOnly
+          - TextOnly
+        type: string
+      TrackOpens:
+        description: Activate open tracking for this email.
+        type: boolean
+    required:
+      - TemplateId
+      - TemplateAlias
+      - TemplateModel
+      - To
+      - From
+  ExtendedMessageClickEventInformation:
+    description: ""
+    properties:
+      ClickLocation:
+        type: string
+      Client:
+        description: ""
+        properties:
+          Company:
+            type: string
+          Family:
+            type: string
+          Name:
+            type: string
+      Geo:
+        properties:
+          City:
+            type: string
+          Coords:
+            type: string
+          Country:
+            type: string
+          CountryISOCode:
+            type: string
+          IP:
+            type: string
+          Region:
+            type: string
+          RegionISOCode:
+            type: string
+          Zip:
+            type: string
+      MessageID:
+        type: string
+      OS:
+        properties:
+          Company:
+            type: string
+          Family:
+            type: string
+          Name:
+            type: string
+      OriginalLink:
+        type: string
+      Platform:
+        type: string
+      ReceivedAt:
+        format: date-time
+        type: string
+      Recipient:
+        format: email
+        type: string
+      Tag:
+        type: string
+      UserAgent:
+        type: string
+  ExtendedMessageOpenEventInformation:
+    description: ""
+    properties:
+      Client:
+        description: ""
+        properties:
+          Company:
+            type: string
+          Family:
+            type: string
+          Name:
+            type: string
+      FirstOpen:
+        type: boolean
+      Geo:
+        properties:
+          City:
+            type: string
+          Coords:
+            type: string
+          Country:
+            type: string
+          CountryISOCode:
+            type: string
+          IP:
+            type: string
+          Region:
+            type: string
+          RegionISOCode:
+            type: string
+          Zip:
+            type: string
+      MessageID:
+        type: string
+      OS:
+        properties:
+          Company:
+            type: string
+          Family:
+            type: string
+          Name:
+            type: string
+      Platform:
+        type: string
+      ReceivedAt:
+        format: date-time
+        type: string
+      Recipient:
+        format: email
+        type: string
+      Tag:
+        type: string
+      UserAgent:
+        type: string
+  HeaderCollection:
+    items:
+      $ref: "#/definitions/MessageHeader"
+    type: array
+  InboundMessageDetail:
+    description: ""
+    properties:
+      Attachments:
+        $ref: "#/definitions/AttachmentCollection"
+      Cc:
+        type: string
+      CcFull:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+      Date:
+        type: string
+      From:
+        type: string
+      FromFull:
+        description: ""
+        properties:
+          Email:
+            type: string
+          Name:
+            type: string
+      FromName:
+        type: string
+      MailboxHash:
+        type: string
+      MessageID:
+        type: string
+      OriginalRecipient:
+        type: string
+      ReplyTo:
+        type: string
+      Status:
+        type: string
+      Subject:
+        type: string
+      Tag:
+        type: string
+      To:
+        type: string
+      ToFull:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+  InboundMessageFullDetailsResponse:
+    properties:
+      Attachments:
+        $ref: "#/definitions/AttachmentCollection"
+      BlockedReason:
+        type: string
+      Cc:
+        type: string
+      CcFull:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+      Date:
+        type: string
+      From:
+        type: string
+      FromFull:
+        description: ""
+        properties:
+          Email:
+            type: string
+          Name:
+            type: string
+      FromName:
+        type: string
+      Headers:
+        $ref: "#/definitions/HeaderCollection"
+      HtmlBody:
+        type: string
+      MailboxHash:
+        type: string
+      MessageID:
+        type: string
+      OriginalRecipient:
+        type: string
+      ReplyTo:
+        type: string
+      Status:
+        type: string
+      Subject:
+        type: string
+      Tag:
+        type: string
+      TextBody:
+        type: string
+      To:
+        type: string
+      ToFull:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+  InboundSearchResponse:
+    description: ""
+    properties:
+      InboundMessages:
+        items:
+          $ref: "#/definitions/InboundMessageDetail"
+        type: array
+      TotalCount:
+        type: integer
+  MessageClickSearchResponse:
+    properties:
+      Clicks:
+        items:
+          $ref: "#/definitions/ExtendedMessageClickEventInformation"
+        type: array
+      TotalCount:
+        type: integer
+  MessageEventDetails:
+    description: ""
+    properties:
+      Details:
+        properties:
+          BounceID:
+            type: string
+          DeliveryMessage:
+            type: string
+          DestinationIP:
+            type: string
+          DestinationServer:
+            type: string
+          Summary:
+            type: string
+      ReceivedAt:
+        format: date-time
+        type: string
+      Recipient:
+        type: string
+      Type:
+        type: string
+  MessageHeader:
+    description: A single header for an email message.
+    properties:
+      Name:
+        description: The header's name.
+        type: string
+      Value:
+        description: The header's value.
+        type: string
+  MessageOpenSearchResponse:
+    properties:
+      Opens:
+        items:
+          $ref: "#/definitions/ExtendedMessageOpenEventInformation"
+        type: array
+      TotalCount:
+        type: integer
+  OutboundMessageDetail:
+    description: ""
+    properties:
+      Attachments:
+        $ref: "#/definitions/AttachmentCollection"
+      Bcc:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+      Cc:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+      From:
+        type: string
+      MessageID:
+        type: string
+      ReceivedAt:
+        format: date-time
+        type: string
+      Recipients:
+        items:
+          type: string
+        type: array
+      Status:
+        type: string
+      Subject:
+        type: string
+      Tag:
+        type: string
+      To:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+      TrackLinks:
+        enum:
+          - None
+          - HtmlAndText
+          - HtmlOnly
+          - TextOnly
+        type: string
+      TrackOpens:
+        type: boolean
+  OutboundMessageDetailsResponse:
+    properties:
+      Attachments:
+        $ref: "#/definitions/AttachmentCollection"
+      Bcc:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+      Body:
+        type: string
+      Cc:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+      From:
+        type: string
+      HtmlBody:
+        type: string
+      MessageEvents:
+        items:
+          $ref: "#/definitions/MessageEventDetails"
+        type: array
+      MessageID:
+        type: string
+      ReceivedAt:
+        format: date-time
+        type: string
+      Recipients:
+        items:
+          type: string
+        type: array
+      Status:
+        type: string
+      Subject:
+        type: string
+      Tag:
+        type: string
+      TextBody:
+        type: string
+      To:
+        items:
+          $ref: "#/definitions/EmailNameAddressPair"
+        type: array
+      TrackLinks:
+        enum:
+          - None
+          - HtmlAndText
+          - HtmlOnly
+          - TextOnly
+        type: string
+      TrackOpens:
+        type: boolean
+  OutboundMessageDumpResponse:
+    properties:
+      Body:
+        description: Raw source of message. If no dump is available this will return an empty string.
+        type: string
+  OutboundOverviewStatsResponse:
+    description: ""
+    properties:
+      BounceRate:
+        type: integer
+      Bounced:
+        type: integer
+      Opens:
+        type: integer
+      SMTPAPIErrors:
+        type: integer
+      Sent:
+        type: integer
+      SpamComplaints:
+        type: integer
+      SpamComplaintsRate:
+        type: integer
+      TotalClicks:
+        type: integer
+      TotalTrackedLinksSent:
+        type: integer
+      Tracked:
+        type: integer
+      UniqueLinksClicked:
+        type: integer
+      UniqueOpens:
+        type: integer
+      WithClientRecorded:
+        type: integer
+      WithLinkTracking:
+        type: integer
+      WithOpenTracking:
+        type: integer
+      WithPlatformRecorded:
+        type: integer
+  OutboundSearchResponse:
+    description: ""
+    properties:
+      Messages:
+        items:
+          $ref: "#/definitions/OutboundMessageDetail"
+        type: array
+      TotalCount:
+        type: integer
+  SendEmailBatchRequest:
+    items:
+      $ref: "#/definitions/SendEmailRequest"
+    type: array
+  SendEmailBatchResponse:
+    items:
+      $ref: "#/definitions/SendEmailResponse"
+    type: array
+  SendEmailRequest:
+    properties:
+      Attachments:
+        $ref: "#/definitions/AttachmentCollection"
+      Bcc:
+        description: Bcc recipient email address. Multiple addresses are comma seperated. Max 50.
+        type: string
+      Cc:
+        description: Recipient email address. Multiple addresses are comma seperated. Max 50.
+        type: string
+      From:
+        description: The sender email address. Must have a registered and confirmed Sender Signature.
+        type: string
+      Headers:
+        $ref: "#/definitions/HeaderCollection"
+      HtmlBody:
+        description: If no TextBody specified HTML email message
+        type: string
+      ReplyTo:
+        description: Reply To override email address. Defaults to the Reply To set in the sender signature.
+        type: string
+      Subject:
+        description: Email Subject
+        type: string
+      Tag:
+        description: Email tag that allows you to categorize outgoing emails and get detailed statistics.
+        type: string
+      TextBody:
+        description: If no HtmlBody specified Plain text email message
+        type: string
+      To:
+        description: Recipient email address. Multiple addresses are comma seperated. Max 50.
+        type: string
+      TrackLinks:
+        description: Replace links in content to enable "click tracking" stats. Default is 'null', which uses the server's LinkTracking setting'.
+        enum:
+          - None
+          - HtmlAndText
+          - HtmlOnly
+          - TextOnly
+        type: string
+      TrackOpens:
+        description: Activate open tracking for this email.
+        type: boolean
+  SendEmailResponse:
+    description: The standard response when a postmark message is sent
+    properties:
+      ErrorCode:
+        type: integer
+      Message:
+        type: string
+      MessageID:
+        type: string
+      SubmittedAt:
+        format: date-time
+        type: string
+      To:
+        type: string
+  SendEmailTemplatedBatchRequest:
+    properties:
+      Messages:
+        items:
+          $ref: "#/definitions/EmailWithTemplateRequest"
+        type: array
+  SentCountsResponse:
+    description: The result of a get sent counts operation.
+    properties:
+      Days:
+        items:
+          properties:
+            Date:
+              type: string
+            Sent:
+              type: integer
+        type: array
+      Sent:
+        type: integer
+  ServerConfigurationResponse:
+    properties:
+      ApiTokens:
+        items:
+          type: string
+        type: array
+      BounceHookUrl:
+        type: string
+      ClickHookUrl:
+        type: string
+      Color:
+        enum:
+          - purple
+          - blue
+          - turqoise
+          - green
+          - red
+          - yellow
+          - grey
+        type: string
+      DeliveryHookUrl:
+        type: string
+      ID:
+        type: integer
+      InboundAddress:
+        format: email
+        type: string
+      InboundDomain:
+        type: string
+      InboundHash:
+        type: string
+      InboundHookUrl:
+        type: string
+      InboundSpamThreshold:
+        type: integer
+      Name:
+        type: string
+      OpenHookUrl:
+        type: string
+      PostFirstOpenOnly:
+        type: boolean
+      RawEmailEnabled:
+        type: boolean
+      ServerLink:
+        type: string
+      SmtpApiActivated:
+        type: boolean
+      TrackLinks:
+        enum:
+          - None
+          - HtmlAndText
+          - HtmlOnly
+          - TextOnly
+        type: string
+      TrackOpens:
+        type: boolean
+  StandardPostmarkResponse:
+    description: A Postmark API error.
+    properties:
+      ErrorCode:
+        type: integer
+      Message:
+        type: string
+  TemplateDetailResponse:
+    properties:
+      Active:
+        description: Indicates that this template may be used for sending email.
+        type: boolean
+      Alias:
+        description: The user-supplied alias for this template.
+        type: string
+      AssociatedServerId:
+        description: The ID of the Server with which this template is associated.
+        type: integer
+      HtmlBody:
+        description: The content to use for the HtmlBody when this template is used to send email.
+        type: string
+      Name:
+        description: The display name for the template.
+        type: string
+      Subject:
+        description: The content to use for the Subject when this template is used to send email.
+        type: string
+      TemplateID:
+        description: The ID associated with the template.
+        type: integer
+      TextBody:
+        description: The content to use for the TextBody when this template is used to send email.
+        type: string
+  TemplateListingResponse:
+    properties:
+      Templates API:
+        description: Basic information for each Template returned from the query.
+        items:
+          $ref: "#/definitions/TemplateRecordResponse"
+        type: array
+      TotalCount:
+        description: The total number of Templates API associated with this server.
+        type: number
+  TemplateRecordResponse:
+    properties:
+      Active:
+        description: True if this template is currently available for use.
+        type: boolean
+      Alias:
+        description: The user-supplied alias for this template.
+        type: string
+      Name:
+        description: The display name for this template.
+        type: string
+      TemplateId:
+        description: The associated ID for this template.
+        format: int
+        type: number
+  TemplateValidationError:
+    properties:
+      CharacterPosition:
+        type: integer
+      Line:
+        type: integer
+      Message:
+        type: string
+  TemplateValidationRequest:
+    properties:
+      HtmlBody:
+        description: |
+          The html body content to validate. Must be specified if Subject or
+          TextBody are not. See our template language documentation for more
+          information on the syntax for this field.
+        type: string
+      InlineCssForHtmlTestRender:
+        default: true
+        description: |
+          When HtmlBody is specified, the test render will have style blocks
+          inlined as style attributes on matching html elements. You may disable
+          the css inlining behavior by passing false for this parameter.
+        type: boolean
+      Subject:
+        description: |
+          The subject content to validate. Must be specified if HtmlBody or
+          TextBody are not. See our template language documentation for more
+          information on the syntax for this field.
+        type: string
+      TestRenderModel:
+        description: The model to be used when rendering test content.
+        type: object
+      TextBody:
+        description: |
+          The text body content to validate. Must be specified if HtmlBody or
+          Subject are not. See our template language documentation for more
+          information on the syntax for this field.
+        type: string
+  TemplateValidationResponse:
+    properties:
+      AllContentIsValid:
+        type: boolean
+      HtmlBody:
+        $ref: "#/definitions/TemplateValidationResult"
+      Subject:
+        $ref: "#/definitions/TemplateValidationResult"
+      SuggestedTemplateModel:
+        type: object
+      TextBody:
+        $ref: "#/definitions/TemplateValidationResult"
+  TemplateValidationResult:
+    properties:
+      ContentIsValid:
+        type: boolean
+      RenderedContent:
+        type: string
+      ValidationErrors:
+        items:
+          $ref: "#/definitions/TemplateValidationError"
+        type: array

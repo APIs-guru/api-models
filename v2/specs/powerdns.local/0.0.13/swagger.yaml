@@ -1,0 +1,1238 @@
+swagger: "2.0"
+basePath: /api/v1
+info:
+  license:
+    name: MIT
+  title: PowerDNS Authoritative HTTP API
+  version: 0.0.13
+  x-apisguru-categories:
+    - developer_tools
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/PowerDNS/pdns/master/docs/http-api/swagger/authoritative-api-swagger.yaml
+      version: "2.0"
+  x-providerName: powerdns.local
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  APIKeyHeader:
+    in: header
+    name: X-API-Key
+    type: apiKey
+security:
+  - APIKeyHeader: []
+paths:
+  /servers:
+    get:
+      operationId: listServers
+      responses:
+        "200":
+          description: An array of servers
+          schema:
+            items:
+              $ref: "#/definitions/Server"
+            type: array
+      summary: List all servers
+      tags:
+        - servers
+  "/servers/{server_id}":
+    get:
+      operationId: listServer
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: An server
+          schema:
+            $ref: "#/definitions/Server"
+      summary: List a server
+      tags:
+        - servers
+  "/servers/{server_id}/cache/flush":
+    put:
+      operationId: cacheFlushByName
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The domain name to flush from the cache
+          in: query
+          name: domain
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Flush successful
+          schema:
+            $ref: "#/definitions/CacheFlushResult"
+      summary: Flush a cache-entry by name
+      tags:
+        - servers
+  "/servers/{server_id}/config":
+    get:
+      operationId: getConfig
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: List of config values
+          schema:
+            items:
+              $ref: "#/definitions/ConfigSetting"
+            type: array
+      summary: Returns all ConfigSettings for a single server
+      tags:
+        - config
+  "/servers/{server_id}/config/{config_setting_name}":
+    get:
+      description: NOT IMPLEMENTED
+      operationId: getConfigSetting
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The name of the setting to retrieve
+          in: path
+          name: config_setting_name
+          required: true
+          type: string
+      responses:
+        "200":
+          description: List of config values
+          schema:
+            $ref: "#/definitions/ConfigSetting"
+      summary: Returns a specific ConfigSetting for a single server
+      tags:
+        - config
+  "/servers/{server_id}/search-data":
+    get:
+      description: Search the data inside PowerDNS for search_term and return at most max_results. This includes zones, records and comments. The * character can be used in search_term as a wildcard character and the ? character can be used as a wildcard for a single character.
+      operationId: searchData
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The string to search for
+          in: query
+          name: q
+          required: true
+          type: string
+        - description: Maximum number of entries to return
+          in: query
+          name: max
+          required: true
+          type: integer
+        - description: Type of data to search for, one of “all”, “zone”, “record”, “comment”
+          in: query
+          name: object_type
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Returns a JSON array with results
+          schema:
+            $ref: "#/definitions/SearchResults"
+      summary: Search the data inside PowerDNS
+      tags:
+        - search
+  "/servers/{server_id}/statistics":
+    get:
+      description: Query PowerDNS internal statistics.
+      operationId: getStats
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: |
+            When set to the name of a specific statistic, only this value is returned.
+            If no statistic with that name exists, the response has a 422 status and an error message.
+          in: query
+          name: statistic
+          required: false
+          type: string
+        - default: true
+          description: “true” (default) or “false”, whether to include the Ring items, which can contain thousands of log messages or queried domains. Setting this to ”false” may make the response a lot smaller.
+          in: query
+          name: includerings
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: List of Statistic Items
+          schema:
+            items:
+              - $ref: "#/definitions/StatisticItem"
+              - $ref: "#/definitions/MapStatisticItem"
+              - $ref: "#/definitions/RingStatisticItem"
+            type: array
+        "422":
+          description: Returned when a non-existing statistic name has been requested. Contains an error message
+      summary: Query statistics.
+      tags:
+        - stats
+  "/servers/{server_id}/tsigkeys":
+    get:
+      operationId: listTSIGKeys
+      responses:
+        "200":
+          description: List of TSIGKey objects
+          schema:
+            items:
+              $ref: "#/definitions/TSIGKey"
+            type: array
+        "500":
+          description: Internal Server Error, keys could not be retrieved. Contains error message
+          schema:
+            $ref: "#/definitions/Error"
+      summary: Get all TSIGKeys on the server, except the actual key
+      tags:
+        - tsigkey
+    parameters:
+      - description: The id of the server
+        in: path
+        name: server_id
+        required: true
+        type: string
+    post:
+      description: This methods add a new TSIGKey. The actual key can be generated by the server or be provided by the client
+      operationId: createTSIGKey
+      parameters:
+        - description: The TSIGKey to add
+          in: body
+          name: tsigkey
+          required: true
+          schema:
+            $ref: "#/definitions/TSIGKey"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/TSIGKey"
+        "409":
+          description: Conflict. A key with this name already exists
+          schema:
+            $ref: "#/definitions/Error"
+        "422":
+          description: Unprocessable Entry, the TSIGKey provided has issues.
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error. There was a problem creating the key
+          schema:
+            $ref: "#/definitions/Error"
+      summary: Add a TSIG key
+      tags:
+        - tsigkey
+  "/servers/{server_id}/tsigkeys/{tsigkey_id}":
+    delete:
+      operationId: deleteTSIGKey
+      responses:
+        "204":
+          description: OK, key was deleted
+        "404":
+          description: Not found. The TSIGKey with the specified tsigkey_id does not exist
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error. Contains error message
+          schema:
+            $ref: "#/definitions/Error"
+      summary: Delete the TSIGKey with tsigkey_id
+      tags:
+        - tsigkey
+    get:
+      operationId: getTSIGKey
+      responses:
+        "200":
+          description: OK.
+          schema:
+            $ref: "#/definitions/TSIGKey"
+        "404":
+          description: Not found. The TSIGKey with the specified tsigkey_id does not exist
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error, keys could not be retrieved. Contains error message
+          schema:
+            $ref: "#/definitions/Error"
+      summary: Get a specific TSIGKeys on the server, including the actual key
+      tags:
+        - tsigkey
+    parameters:
+      - description: The id of the server to retrieve the key from
+        in: path
+        name: server_id
+        required: true
+        type: string
+      - description: The id of the TSIGkey. Should match the "id" field in the TSIGKey object
+        in: path
+        name: tsigkey_id
+        required: true
+        type: string
+    put:
+      description: |
+        The TSIGKey at tsigkey_id can be changed in multiple ways:
+         * Changing the Name, this will remove the key with tsigkey_id after adding.
+         * Changing the Algorithm
+         * Changing the Key
+
+        Only the relevant fields have to be provided in the request body.
+      operationId: putTSIGKey
+      parameters:
+        - description: A (possibly stripped down) TSIGKey object with the new values
+          in: body
+          name: tsigkey
+          required: true
+          schema:
+            $ref: "#/definitions/TSIGKey"
+      responses:
+        "200":
+          description: OK. TSIGKey is changed.
+          schema:
+            $ref: "#/definitions/TSIGKey"
+        "404":
+          description: Not found. The TSIGKey with the specified tsigkey_id does not exist
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: Internal Server Error. Contains error message
+          schema:
+            $ref: "#/definitions/Error"
+      tags:
+        - tsigkey
+  "/servers/{server_id}/zones":
+    get:
+      operationId: listZones
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: |
+            When set to the name of a zone, only this zone is returned.
+            If no zone with that name exists, the response is an empty array.
+            This can e.g. be used to check if a zone exists in the database without having to guess/encode the zone's id or to check if a zone exists.
+          in: query
+          name: zone
+          required: false
+          type: string
+        - default: true
+          description: “true” (default) or “false”, whether to include the “dnssec” and ”edited_serial” fields in the Zone objects. Setting this to ”false” will make the query a lot faster.
+          in: query
+          name: dnssec
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: An array of Zones
+          schema:
+            items:
+              $ref: "#/definitions/Zone"
+            type: array
+      summary: List all Zones in a server
+      tags:
+        - zones
+    post:
+      operationId: createZone
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - default: true
+          description: “true” (default) or “false”, whether to include the “rrsets” in the response Zone object.
+          in: query
+          name: rrsets
+          type: boolean
+        - description: The zone struct to patch with
+          in: body
+          name: zone_struct
+          required: true
+          schema:
+            $ref: "#/definitions/Zone"
+      responses:
+        "201":
+          description: A zone
+          schema:
+            $ref: "#/definitions/Zone"
+      summary: Creates a new domain, returns the Zone on creation.
+      tags:
+        - zones
+  "/servers/{server_id}/zones/{zone_id}":
+    delete:
+      operationId: deleteZone
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+      responses:
+        "204":
+          description: Returns 204 No Content on success.
+      summary: Deletes this zone, all attached metadata and rrsets.
+      tags:
+        - zones
+    get:
+      operationId: listZone
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+        - default: true
+          description: “true” (default) or “false”, whether to include the “rrsets” in the response Zone object.
+          in: query
+          name: rrsets
+          type: boolean
+      responses:
+        "200":
+          description: A Zone
+          schema:
+            $ref: "#/definitions/Zone"
+      summary: zone managed by a server
+      tags:
+        - zones
+    patch:
+      operationId: patchZone
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: The zone struct to patch with
+          in: body
+          name: zone_struct
+          required: true
+          schema:
+            $ref: "#/definitions/Zone"
+      responses:
+        "204":
+          description: Returns 204 No Content on success.
+      summary: Creates/modifies/deletes RRsets present in the payload and their comments. Returns 204 No Content on success.
+      tags:
+        - zones
+    put:
+      description: "The only fields in the zone structure which can be modified are: kind, masters, account, soa_edit, soa_edit_api, api_rectify, dnssec, and nsec3param. All other fields are ignored."
+      operationId: putZone
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: The zone struct to patch with
+          in: body
+          name: zone_struct
+          required: true
+          schema:
+            $ref: "#/definitions/Zone"
+      responses:
+        "204":
+          description: Returns 204 No Content on success.
+      summary: Modifies basic zone data.
+      tags:
+        - zones
+  "/servers/{server_id}/zones/{zone_id}/axfr-retrieve":
+    put:
+      description: Fails when zone kind is not Slave, or slave is disabled in the configuration. Clients MUST NOT send a body.
+      operationId: axfrRetrieveZone
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+      summary: Retrieve slave zone from its master.
+      tags:
+        - zones
+  "/servers/{server_id}/zones/{zone_id}/cryptokeys":
+    get:
+      operationId: listCryptokeys
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: List of Cryptokey objects
+          schema:
+            items:
+              $ref: "#/definitions/Cryptokey"
+            type: array
+      summary: Get all CryptoKeys for a zone, except the privatekey
+      tags:
+        - zonecryptokey
+    post:
+      description: This method adds a new key to a zone. The key can either be generated or imported by supplying the content parameter. if content, bits and algo are null, a key will be generated based on the default-ksk-algorithm and default-ksk-size settings for a KSK and the default-zsk-algorithm and default-zsk-size options for a ZSK.
+      operationId: createCryptokey
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: Add a Cryptokey
+          in: body
+          name: cryptokey
+          required: true
+          schema:
+            $ref: "#/definitions/Cryptokey"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/Cryptokey"
+      summary: Creates a Cryptokey
+      tags:
+        - zonecryptokey
+  "/servers/{server_id}/zones/{zone_id}/cryptokeys/{cryptokey_id}":
+    delete:
+      operationId: deleteCryptokey
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: The id value of the Cryptokey
+          in: path
+          name: cryptokey_id
+          required: true
+          type: string
+      responses:
+        "204":
+          description: OK
+        "422":
+          description: Returned when something is wrong with the content of the request. Contains an error message
+      summary: This method deletes a key specified by cryptokey_id.
+      tags:
+        - zonecryptokey
+    get:
+      operationId: getCryptokey
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: The id value of the CryptoKey
+          in: path
+          name: cryptokey_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Cryptokey
+          schema:
+            $ref: "#/definitions/Cryptokey"
+      summary: Returns all data about the CryptoKey, including the privatekey.
+      tags:
+        - zonecryptokey
+    put:
+      operationId: modifyCryptokey
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: Cryptokey to manipulate
+          in: path
+          name: cryptokey_id
+          required: true
+          type: string
+        - description: the Cryptokey
+          in: body
+          name: cryptokey
+          required: true
+          schema:
+            $ref: "#/definitions/Cryptokey"
+      responses:
+        "204":
+          description: OK
+        "422":
+          description: Returned when something is wrong with the content of the request. Contains an error message
+      summary: This method (de)activates a key from zone_name specified by cryptokey_id
+      tags:
+        - zonecryptokey
+  "/servers/{server_id}/zones/{zone_id}/export":
+    get:
+      operationId: axfrExportZone
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Returns the zone in AXFR format.
+      tags:
+        - zones
+  "/servers/{server_id}/zones/{zone_id}/metadata":
+    get:
+      operationId: listMetadata
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: List of Metadata objects
+          schema:
+            items:
+              $ref: "#/definitions/Metadata"
+            type: array
+      summary: Get all the Metadata associated with the zone.
+      tags:
+        - zonemetadata
+    post:
+      description: Creates a set of metadata entries of given kind for the zone. Existing metadata entries for the zone with the same kind are not overwritten.
+      operationId: createMetadata
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: Metadata object with list of values to create
+          in: body
+          name: metadata
+          required: true
+          schema:
+            $ref: "#/definitions/Metadata"
+      responses:
+        "204":
+          description: OK
+      summary: Creates a set of metadata entries
+      tags:
+        - zonemetadata
+  "/servers/{server_id}/zones/{zone_id}/metadata/{metadata_kind}":
+    delete:
+      operationId: deleteMetadata
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: The kind of metadata
+          in: path
+          name: metadata_kind
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+      summary: Delete all items of a single kind of domain metadata.
+      tags:
+        - zonemetadata
+    get:
+      operationId: getMetadata
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: The kind of metadata
+          in: path
+          name: metadata_kind
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Metadata object with list of values
+          schema:
+            $ref: "#/definitions/Metadata"
+      summary: Get the content of a single kind of domain metadata as a Metadata object.
+      tags:
+        - zonemetadata
+    put:
+      description: Creates a set of metadata entries of given kind for the zone. Existing metadata entries for the zone with the same kind are removed.
+      operationId: modifyMetadata
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - in: path
+          name: zone_id
+          required: true
+          type: string
+        - description: The kind of metadata
+          in: path
+          name: metadata_kind
+          required: true
+          type: string
+        - description: metadata to add/create
+          in: body
+          name: metadata
+          required: true
+          schema:
+            $ref: "#/definitions/Metadata"
+      responses:
+        "200":
+          description: Metadata object with list of values
+          schema:
+            $ref: "#/definitions/Metadata"
+      summary: Replace the content of a single kind of domain metadata.
+      tags:
+        - zonemetadata
+  "/servers/{server_id}/zones/{zone_id}/notify":
+    put:
+      description: Fails when zone kind is not Master or Slave, or master and slave are disabled in the configuration. Only works for Slave if renotify is on. Clients MUST NOT send a body.
+      operationId: notifyZone
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+      summary: Send a DNS NOTIFY to all slaves.
+      tags:
+        - zones
+  "/servers/{server_id}/zones/{zone_id}/rectify":
+    put:
+      description: This does not take into account the API-RECTIFY metadata. Fails on slave zones and zones that do not have DNSSEC.
+      operationId: rectifyZone
+      parameters:
+        - description: The id of the server to retrieve
+          in: path
+          name: server_id
+          required: true
+          type: string
+        - description: The id of the zone to retrieve
+          in: path
+          name: zone_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+      summary: Rectify the zone data.
+      tags:
+        - zones
+definitions:
+  CacheFlushResult:
+    description: The result of a cache-flush
+    properties:
+      count:
+        description: Amount of entries flushed
+        type: number
+      result:
+        description: A message about the result like "Flushed cache"
+        type: string
+    title: CacheFlushResult
+  Comment:
+    description: A comment about an RRSet.
+    properties:
+      account:
+        description: Name of an account that added the comment
+        type: string
+      content:
+        description: The actual comment
+        type: string
+      modified_at:
+        description: Timestamp of the last change to the comment
+        type: integer
+    title: Comment
+  ConfigSetting:
+    properties:
+      name:
+        description: set to "ConfigSetting"
+        type: string
+      type:
+        description: The name of this setting (e.g. ‘webserver-port’)
+        type: string
+      value:
+        description: The value of setting name
+        type: string
+    title: ConfigSetting
+  Cryptokey:
+    description: Describes a DNSSEC cryptographic key
+    properties:
+      active:
+        description: Whether or not the key is in active use
+        type: boolean
+      algorithm:
+        description: The name of the algorithm of the key, should be a mnemonic
+        type: string
+      bits:
+        description: The size of the key
+        type: integer
+      dnskey:
+        description: The DNSKEY record for this key
+        type: string
+      ds:
+        description: An array of DS records for this key
+        items:
+          type: string
+        type: array
+      id:
+        description: The internal identifier, read only
+        type: integer
+      keytype:
+        enum:
+          - ksk
+          - zsk
+          - csk
+        type: string
+      privatekey:
+        description: The private key in ISC format
+        type: string
+      published:
+        description: Whether or not the DNSKEY record is published in the zone
+        type: boolean
+      type:
+        description: set to "Cryptokey"
+        type: string
+    title: Cryptokey
+  Error:
+    description: Returned when the server encounters an error. Either in client input or internally
+    properties:
+      error:
+        description: A human readable error message
+        type: string
+      errors:
+        description: Optional array of multiple errors encountered during processing
+        items:
+          type: string
+        type: array
+    required:
+      - error
+    title: Error
+  MapStatisticItem:
+    properties:
+      name:
+        description: Item name
+        type: string
+      type:
+        description: Set to "MapStatisticItem"
+        type: string
+      value:
+        description: Named values
+        items:
+          $ref: "#/definitions/SimpleStatisticItem"
+        type: array
+    title: MapStatisticItem
+  Metadata:
+    description: Represents zone metadata
+    properties:
+      kind:
+        description: Name of the metadata
+        type: string
+      metadata:
+        description: Array with all values for this metadata kind.
+        items:
+          type: string
+        type: array
+    title: Metadata
+  RRSet:
+    description: This represents a Resource Record Set (all records with the same name and type).
+    properties:
+      changetype:
+        description: "MUST be added when updating the RRSet. Must be REPLACE or DELETE. With DELETE, all existing RRs matching name and type will be deleted, including all comments. With REPLACE: when records is present, all existing RRs matching name and type will be deleted, and then new records given in records will be created. If no records are left, any existing comments will be deleted as well. When comments is present, all existing comments for the RRs matching name and type will be deleted, and then new comments given in comments will be created."
+        type: string
+      comments:
+        description: List of Comment. Must be empty when changetype is set to DELETE. An empty list results in deletion of all comments. modified_at is optional and defaults to the current server time.
+        items:
+          $ref: "#/definitions/Comment"
+        type: array
+      name:
+        description: Name for record set (e.g. “www.powerdns.com.”)
+        type: string
+      records:
+        description: All records in this RRSet. When updating Records, this is the list of new records (replacing the old ones). Must be empty when changetype is set to DELETE. An empty list results in deletion of all records (and comments).
+        items:
+          $ref: "#/definitions/Record"
+        type: array
+      ttl:
+        description: DNS TTL of the records, in seconds. MUST NOT be included when changetype is set to “DELETE”.
+        type: integer
+      type:
+        description: Type of this record (e.g. “A”, “PTR”, “MX”)
+        type: string
+    required:
+      - name
+      - type
+      - ttl
+      - changetype
+      - records
+    title: RRSet
+  Record:
+    description: The RREntry object represents a single record.
+    properties:
+      content:
+        description: The content of this record
+        type: string
+      disabled:
+        description: Whether or not this record is disabled. When unset, the record is not disabled
+        type: boolean
+    required:
+      - content
+    title: Record
+  RingStatisticItem:
+    properties:
+      name:
+        description: Item name
+        type: string
+      size:
+        description: Ring size
+        type: integer
+      type:
+        description: Set to "RingStatisticItem"
+        type: string
+      value:
+        description: Named values
+        items:
+          $ref: "#/definitions/SimpleStatisticItem"
+        type: array
+    title: RingStatisticItem
+  SearchResult:
+    properties:
+      content:
+        type: string
+      disabled:
+        type: boolean
+      name:
+        type: string
+      object_type:
+        description: set to one of "record, zone, comment"
+        type: string
+      ttl:
+        type: integer
+      type:
+        type: string
+      zone:
+        type: string
+      zone_id:
+        type: string
+    title: SearchResult
+  SearchResultComment:
+    properties:
+      content:
+        type: string
+      name:
+        type: string
+      object_type:
+        description: set to "comment"
+        type: string
+      zone:
+        type: string
+      zone_id:
+        type: string
+    title: SearchResultComment
+  SearchResultRecord:
+    properties:
+      content:
+        type: string
+      disabled:
+        type: boolean
+      name:
+        type: string
+      object_type:
+        description: set to "record"
+        type: string
+      ttl:
+        type: integer
+      type:
+        type: string
+      zone:
+        type: string
+      zone_id:
+        type: string
+    title: SearchResultRecord
+  SearchResultZone:
+    properties:
+      name:
+        type: string
+      object_type:
+        description: set to "zone"
+        type: string
+      zone_id:
+        type: string
+    title: SearchResultZone
+  SearchResults:
+    items:
+      $ref: "#/definitions/SearchResult"
+    type: array
+  Server:
+    properties:
+      config_url:
+        description: The API endpoint for this server’s configuration
+        type: string
+      daemon_type:
+        description: “recursor” for the PowerDNS Recursor and “authoritative” for the Authoritative Server
+        type: string
+      id:
+        description: The id of the server, “localhost”
+        type: string
+      type:
+        description: Set to “Server”
+        type: string
+      url:
+        description: The API endpoint for this server
+        type: string
+      version:
+        description: The version of the server software
+        type: string
+      zones_url:
+        description: The API endpoint for this server’s zones
+        type: string
+    title: Server
+  Servers:
+    items:
+      $ref: "#/definitions/Server"
+    type: array
+  SimpleStatisticItem:
+    properties:
+      name:
+        description: Item name
+        type: string
+      value:
+        description: Item value
+        type: string
+    title: SimpleStatisticItem
+    type: object
+  StatisticItem:
+    properties:
+      name:
+        description: Item name
+        type: string
+      type:
+        description: set to "StatisticItem"
+        type: string
+      value:
+        description: Item value
+        type: string
+    title: StatisticItem
+  TSIGKey:
+    description: A TSIG key that can be used to authenticate NOTIFY, AXFR, and DNSUPDATE queries.
+    properties:
+      algorithm:
+        description: The algorithm of the TSIG key
+        type: string
+      id:
+        description: The ID for this key, used in the TSIGkey URL endpoint.
+        readOnly: true
+        type: string
+      key:
+        description: The Base64 encoded secret key, empty when listing keys. MAY be empty when POSTing to have the server generate the key material
+        type: string
+      name:
+        description: The name of the key
+        type: string
+      type:
+        description: Set to "TSIGKey"
+        readOnly: true
+        type: string
+    title: TSIGKey
+  Zone:
+    description: This represents an authoritative DNS Zone.
+    properties:
+      account:
+        description: MAY be set. Its value is defined by local policy
+        type: string
+      api_rectify:
+        description: " Whether or not the zone will be rectified on data changes via the API"
+        type: boolean
+      dnssec:
+        description: Whether or not this zone is DNSSEC signed (inferred from presigned being true XOR presence of at least one cryptokey with active being true)
+        type: boolean
+      edited_serial:
+        description: The SOA serial as seen in query responses. Calculated using the SOA-EDIT metadata, default-soa-edit and default-soa-edit-signed settings
+        type: integer
+      id:
+        description: Opaque zone id (string), assigned by the server, should not be interpreted by the application. Guaranteed to be safe for embedding in URLs.
+        type: string
+      kind:
+        description: Zone kind, one of “Native”, “Master”, “Slave”
+        enum:
+          - Native
+          - Master
+          - Slave
+        type: string
+      master_tsig_key_ids:
+        description: The id of the TSIG keys used for master operation in this zone
+        externalDocs:
+          url: https://doc.powerdns.com/authoritative/tsig.html#provisioning-outbound-axfr-access
+        items:
+          type: string
+        type: array
+      masters:
+        description: " List of IP addresses configured as a master for this zone (“Slave” type zones only)"
+        items:
+          type: string
+        type: array
+      name:
+        description: Name of the zone (e.g. “example.com.”) MUST have a trailing dot
+        type: string
+      nameservers:
+        description: MAY be sent in client bodies during creation, and MUST NOT be sent by the server. Simple list of strings of nameserver names, including the trailing dot. Not required for slave zones.
+        items:
+          type: string
+        type: array
+      notified_serial:
+        description: The SOA serial notifications have been sent out for
+        type: integer
+      nsec3narrow:
+        description: Whether or not the zone uses NSEC3 narrow
+        type: boolean
+      nsec3param:
+        description: The NSEC3PARAM record
+        type: string
+      presigned:
+        description: Whether or not the zone is pre-signed
+        type: boolean
+      rrsets:
+        description: RRSets in this zone (for zones/{zone_id} endpoint only; omitted during GET on the .../zones list endpoint)
+        items:
+          $ref: "#/definitions/RRSet"
+        type: array
+      serial:
+        description: The SOA serial number
+        type: integer
+      slave_tsig_key_ids:
+        description: The id of the TSIG keys used for slave operation in this zone
+        externalDocs:
+          url: https://doc.powerdns.com/authoritative/tsig.html#provisioning-signed-notification-and-axfr-requests
+        items:
+          type: string
+        type: array
+      soa_edit:
+        description: The SOA-EDIT metadata item
+        type: string
+      soa_edit_api:
+        description: The SOA-EDIT-API metadata item
+        type: string
+      type:
+        description: Set to “Zone”
+        type: string
+      url:
+        description: API endpoint for this zone
+        type: string
+      zone:
+        description: MAY contain a BIND-style zone file when creating a zone
+        type: string
+    title: Zone
+  Zones:
+    items:
+      $ref: "#/definitions/Zone"
+    type: array

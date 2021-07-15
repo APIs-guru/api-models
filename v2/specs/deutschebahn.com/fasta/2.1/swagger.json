@@ -1,0 +1,346 @@
+{
+  "swagger": "2.0",
+  "schemes": [
+    "https",
+    "http"
+  ],
+  "host": "api.deutschebahn.com",
+  "basePath": "/fasta/v2",
+  "info": {
+    "contact": {
+      "email": "michael.binzen@deutschebahn.com",
+      "name": "Michael Binzen"
+    },
+    "description": "A RESTful webservice to retrieve data about the operational state of public elevators and escalators in german railway stations.",
+    "license": {
+      "name": "CC-BY 4.0",
+      "url": "https://creativecommons.org/licenses/by/4.0/"
+    },
+    "termsOfService": "http://data.deutschebahn.com/nutzungsbedingungen.html",
+    "title": "FaSta - Station Facilities Status",
+    "version": "2.1",
+    "x-apisguru-categories": [
+      "transport",
+      "open_data"
+    ],
+    "x-logo": {
+      "backgroundColor": "#FFFFFF",
+      "url": "https://api.apis.guru/v2/cache/logo/https_pbs.twimg.com_profile_images_591140150413025280_Cjcqjl2J.png"
+    },
+    "x-origin": [
+      {
+        "format": "swagger",
+        "url": "https://developer.deutschebahn.com/store/api-docs/DBOpenData/FaSta-Station_Facilities_Status/v2",
+        "version": "2.0"
+      }
+    ],
+    "x-providerName": "deutschebahn.com",
+    "x-serviceName": "fasta"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "UserSecurity": {
+      "in": "header",
+      "name": "Authorization",
+      "type": "apiKey"
+    }
+  },
+  "security": [
+    {
+      "UserSecurity": []
+    }
+  ],
+  "paths": {
+    "/facilities": {
+      "get": {
+        "description": "Access to public facilities (escalators and elevators) in railway stations",
+        "operationId": "findFacilities",
+        "parameters": [
+          {
+            "collectionFormat": "csv",
+            "default": [
+              "ESCALATOR",
+              "ELEVATOR"
+            ],
+            "description": "Type of the facility.",
+            "in": "query",
+            "items": {
+              "enum": [
+                "ESCALATOR",
+                "ELEVATOR"
+              ],
+              "type": "string"
+            },
+            "name": "type",
+            "required": false,
+            "type": "array",
+            "uniqueItems": true
+          },
+          {
+            "collectionFormat": "csv",
+            "default": [
+              "ACTIVE",
+              "INACTIVE",
+              "UNKNOWN"
+            ],
+            "description": "Operational state of the facility.",
+            "in": "query",
+            "items": {
+              "enum": [
+                "ACTIVE",
+                "INACTIVE",
+                "UNKNOWN"
+              ],
+              "type": "string"
+            },
+            "name": "state",
+            "required": false,
+            "type": "array",
+            "uniqueItems": true
+          },
+          {
+            "collectionFormat": "csv",
+            "description": "List of equipmentnumbers to select.",
+            "in": "query",
+            "items": {
+              "format": "int64",
+              "maxItems": 100,
+              "type": "integer"
+            },
+            "name": "equipmentnumbers",
+            "required": false,
+            "type": "array",
+            "uniqueItems": true
+          },
+          {
+            "description": "Number of the station the facilities belong to.",
+            "format": "int64",
+            "in": "query",
+            "minimum": 1,
+            "name": "stationnumber",
+            "required": false,
+            "type": "integer"
+          },
+          {
+            "collectionFormat": "csv",
+            "description": "Geo coordinate rectangle in WGS84-format to filter facilities by geographical position. Parameters must be 4 numbers exactly as follows: longitudeWest, latitudeSouth, longitudeEast, latitudeNorth.",
+            "in": "query",
+            "items": {
+              "type": "string"
+            },
+            "maxItems": 4,
+            "minItems": 4,
+            "name": "area",
+            "required": false,
+            "type": "array",
+            "uniqueItems": false
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "facility data",
+            "schema": {
+              "items": {
+                "$ref": "#/definitions/facility"
+              },
+              "type": "array"
+            }
+          },
+          "400": {
+            "description": "The given filters contained invalid values."
+          },
+          "406": {
+            "description": "The requested representation format is not available."
+          },
+          "500": {
+            "description": "A processing error has occurred."
+          },
+          "503": {
+            "description": "The service has been disabled temporarily."
+          }
+        },
+        "x-auth-type": "Application & Application User",
+        "x-throttling-tier": "Unlimited"
+      }
+    },
+    "/facilities/{equipmentnumber}": {
+      "get": {
+        "description": "Returns the facility identified by its equipmentnumber.",
+        "operationId": "getFacilityByEquipmentNumber",
+        "parameters": [
+          {
+            "description": "Equipmentnumber of the facility to fetch.",
+            "format": "int64",
+            "in": "path",
+            "minimum": 1,
+            "name": "equipmentnumber",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "Facility data",
+            "schema": {
+              "$ref": "#/definitions/facility"
+            }
+          },
+          "404": {
+            "description": "The requested facility could not be found."
+          },
+          "406": {
+            "description": "The requested representation format is not available."
+          },
+          "500": {
+            "description": "A processing error has occurred."
+          },
+          "503": {
+            "description": "The service has been disabled temporarily."
+          }
+        },
+        "x-auth-type": "Application & Application User",
+        "x-throttling-tier": "Unlimited"
+      }
+    },
+    "/stations/{stationnumber}": {
+      "get": {
+        "description": "Returns information about a station (and its corresponding facilities) identified by a stationnumber.",
+        "operationId": "findStationByStationNumber",
+        "parameters": [
+          {
+            "description": "Number of the station to fetch.",
+            "format": "int64",
+            "in": "path",
+            "minimum": 1,
+            "name": "stationnumber",
+            "required": true,
+            "type": "integer"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "station data",
+            "schema": {
+              "$ref": "#/definitions/station"
+            }
+          },
+          "404": {
+            "description": "The requested station could not be found."
+          },
+          "406": {
+            "description": "Requested representation format is not available."
+          },
+          "500": {
+            "description": "A processing error has occurred."
+          },
+          "503": {
+            "description": "The service has been disabled temporarily."
+          }
+        },
+        "x-auth-type": "Application & Application User",
+        "x-throttling-tier": "Unlimited"
+      }
+    }
+  },
+  "definitions": {
+    "facility": {
+      "description": "A facility provided by this API is either a public elevator or escalator located at a German railway station.",
+      "properties": {
+        "description": {
+          "description": "Textual description of the facility.",
+          "type": "string"
+        },
+        "equipmentnumber": {
+          "description": "Unique identifier of the facility.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "geocoordX": {
+          "description": "Longitude component of geocoordinate in WGS84 format.",
+          "format": "double",
+          "type": "number"
+        },
+        "geocoordY": {
+          "description": "Latitude component of geocoordinate in WGS84 format.",
+          "format": "double",
+          "type": "number"
+        },
+        "operatorname": {
+          "description": "The name of the operator of the facility.",
+          "type": "string"
+        },
+        "state": {
+          "description": "Operational state of the facility.",
+          "enum": [
+            "ACTIVE",
+            "INACTIVE",
+            "UNKNOWN"
+          ],
+          "type": "string"
+        },
+        "stateExplanation": {
+          "description": "Detailed description of the state.",
+          "type": "string"
+        },
+        "stationnumber": {
+          "description": "Number of the station the facility belongs to.",
+          "format": "int64",
+          "type": "integer"
+        },
+        "type": {
+          "description": "Type of the facility.",
+          "enum": [
+            "ESCALATOR",
+            "ELEVATOR"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "equipmentnumber",
+        "type",
+        "state",
+        "stationnumber"
+      ],
+      "type": "object"
+    },
+    "station": {
+      "properties": {
+        "facilities": {
+          "items": {
+            "$ref": "#/definitions/facility"
+          },
+          "type": "array"
+        },
+        "name": {
+          "description": "Name of the station.",
+          "type": "string"
+        },
+        "stationnumber": {
+          "description": "Unique identifier of the station.",
+          "format": "int64",
+          "type": "integer"
+        }
+      },
+      "required": [
+        "stationnumber",
+        "name"
+      ],
+      "type": "object"
+    }
+  }
+}

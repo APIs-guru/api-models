@@ -1,0 +1,4103 @@
+openapi: 3.0.1
+servers:
+  - url: /v2
+info:
+  description: |-
+    # Introduction
+
+    This API allows resellers to manage their resources in a simple, programmatic way using HTTP requests.
+
+    # Conventions
+
+    ## Requests
+
+    The API supports different methods depending on the required action.
+
+    | Method	| Description
+    | ---		| ---
+    | GET		| Retrieve resources in a collection or get a single resource.<br/>Getters will never have any effect on the queried resources.
+    | POST		| Create a new resource in a collection.
+    | PUT		| Update an existing resource with its new representation.
+    | DELETE	| Delete an existing resource.
+
+    ## HTTP status codes
+
+    The API will reply with different HTTP statuscodes:
+
+    | StatusCode				| Description
+    | ---						| ---
+    | 200 OK					| The requests was processed and you receive data as a result.
+    | 201 CREATED				| The resource has been created. Either the Location header contains a link to the created resource, or links are being returned in the response body. The applied method will be indicated in the documentation.
+    | 202 ACCEPTED				| The request has been validated and accepted. Because we need to do some background processing prior to returning the result, we cannot send back a useful representation.
+    | 204 NOCONTENT				| The request has been processed, but no details can be returned.
+    | 400 BADREQUEST			| Your request is malformed.
+    | 401 UNAUTHORIZED			| You are not authorized. Follow the instructions in the Authorization documentation.
+    | 403 FORBIDDEN				| Access to the resource or operation is not allowed.
+    | 404 NOTFOUND				| The resource cannot be found.
+    | 410 GONE                  | The resource is permanently no longer available.
+    | 429 TOOMANYREQUESTS		| The ratelimit has been exceeded. Please refer to the documentation on rate limiting for more details.
+    | 500 INTERNALSERVERERROR	| An error occurred during the processing of the request. The error is unexpected and most likely due to a bug in the api.
+
+    In the event of a problem, the body of the response will usually contain an errorcode and errormessage.
+    In rare cases additional details about the error are reported.
+
+    Errorcodes 400-499 are considered to be client errors and indicate that there was an issue with the request.
+    We will not take any action besides monitoring. 
+
+    Errorcodes 500-599 are considered to be server errors. The errors are monitored AND action will be taken to resolve the error.
+
+    ## Formatting
+
+    Snake casing is applied on resources and query parameters.
+    The API is strictly returning JSON. No other formats are supported.
+
+    Datetimes are returned in ISO-8601 format.
+
+    ## Pagination
+
+    Pagination is on by default on collections and is controlled by specifying *skip* and *take* parameters.  
+    **Skip** indicates the number of results to skip and where to start the new take.  
+    **Take** indicates the number of records to return. The returned number of items can be smaller than the requested take.
+
+    Paged results will have headers with useful information regarding the paging.
+
+    | Header				| Description
+    | ---					| ---
+    | X-Paging-Skipped		| The number of results that have been skipped.
+    | X-Paging-Take			| The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+    | X-Paging-TotalResults | The total number of results regardless of paging.
+
+    ## Rate limiting
+
+    The number of requests per interval is limited. Detailed information on the rate limiting can be found in specific headers which will be sent on each request.
+
+    | Header				| Description
+    | ---					| ---
+    | X-RateLimit-Limit		| The number of requests that can be made in a specific time interval.
+    | X-RateLimit-Usage		| The number of requests already made in the current time interval.
+    | X-RateLimit-Remaining	| The number of requests remaining until the reset.
+    | X-RateLimit-Reset		| The number of seconds until the reset.<br />After the reset you are allowed to make as many requests as specified by the X-RateLimit-Limit header.
+    | Retry-After			| The number of seconds you have to wait until you can make new requests.<br />This header is only present when the rate limit has been reached. It is identical to X-RateLimit-Reset.
+
+    When the ratelimit has been reached, all requests will return with a HTTP statuscode 429 and ReasonPhrase '*Too many requests, retry later.*'.
+
+    # Authentication
+
+    The Api uses HMAC authentication.  
+    Hash-based message authentication code (HMAC) is a mechanism for calculating a message authentication code involving a hash function in combination with a secret key.  
+    Both the integrity and the authenticity of the message are verified this way.
+
+    ## Steps to generate the HMAC
+
+    1. Get your api key and secret from your controlpanel.  
+    It is absolutely vital that the secret is never exposed. Once the secret is out, anyone would be able to generate hmacs to impersonate you.  
+    In case your secret is compromised, you can generate a new api key and secret on your controlpanel.
+    2. Construct the input value for generating the hmac.  
+    Concatenate:apikey, request method, path and querystring information, unix timestamp, nonce and content.
+
+    |										| Description
+    | ---									| ---
+    | apikey								| The key that is linked to your user.
+    | request method						| lowercased (eg: get, post, delete,...)
+    | path and querystring information		| urlencoding of the lowercased relative path and querystring.<br />The path **MUST start with the api version (/v2)**.<br />The hexadecimal codes (percent encoding) MUST be uppercased.
+    | unix timestamp						| the unix timestamp in **seconds**.
+    | nonce									| a	unique string for each request. It should be a random string, not related to the request. The nonce (in combination with the unix timestamp) protects you from replay attacks in case anyone was able to intercept a request.
+    | content								| When the request body is not empty, this should be the Base64 encoded Md5 hash of the request body.<br />An empty body should not be encoded.
+
+    3. Hash the concatenated string using your api secret and the SHA-256 algorithm.
+    4. Base64 encode the result of the hash function. This is the hmac signature you will need to send an authorized request.
+
+    ## Sending an authorized request
+
+    An authorized request can be made by sending the generated HMAC in the authorization header.  
+    A correct authorizationheader uses the hmac authorization scheme and a correctly formatted authorization parameter.
+
+    Create the authorization parameter by concatenating:
+      * apikey
+      * colon ':'
+      * generated HMAC signature (see above)
+      * colon ':'
+      * nonce (the one used to generate the signature)
+      * colon ':'
+      * unix timestamp (the one used to generate the signature)
+
+    A sample (illustrated):
+
+    * The first line is the string you create to feed to the hashing algorithm.
+    * The second line is the authorization header that should be sent in the request.
+
+    ![hmac authorization header illustrated](/v2/images/authentication_illustration.jpg "authorization header illustrated")
+
+    ## IP whitelisting
+
+    Access is by default restricted for all IP addresses. You need to explicitly whitelist an IP in your controlpanel.
+
+    # Versioning
+
+    Because of breaking contract changes compared to v1, we released v2 of the API.  
+    V1 will still be available, but you are strongly encouraged to migrate to the latest version.  
+    New features will only be available on v2.
+
+    # Policy
+
+    ### Fair use policy
+
+    Please respect the rate limits and do not use the api for any purposes of abuse.  
+    All requests are being monitored and logged.  
+    Intentional abuse might result in api key revocation.
+
+    # Errors
+
+    The API attempts to return appropriate HTTP status codes for every request.  
+    When the status code indicates failure, the API will also provide an error message in most cases.
+
+    An error message contains a machine-parseable error code accompanied by a descriptive error text.  
+    The text for an error message might change over time, but codes will stay the same.
+
+    [An overview of error codes can be found here](/v2/documentation/errorcodes).
+
+    # Change log
+
+    [An overview of new changes can be found here](/v2/documentation/changelog).
+
+    # Provisioning information
+
+    ## Terminology
+
+    | Term			| Definition																|
+    | ---			| ---																		|
+    | Servicepack	| Defines a set of assets that belong together. An example is a hosting package which offers Linux hosting, a domain name, a couple of mailboxes and databases.<br/>It also limits the size of individual assets within the same account. |
+    | Account		| Represents an instance of the servicepack. It contains one or more assets. The number and size of assets is defined by the servicepack. |
+    | Asset			| A manageable service. For example: a mysql database, a linux hosting, a mailbox,...<br/>Some assets are created at the moment when the account is created. Other assets can be created afterwards.
+    	
+    ## Common provisioning scenario
+
+    **Provisioning of an account with Linux hosting with one MySql database**
+
+    *Without a pre-existing account:*
+
+    1. Create a new account.<br/>Perform a POST on the accounts route and provide the desired servicepack id and identifier (domain name).
+    2. Read the Location header from the response and perform a GET of the provided resource (a provisioning job).
+    3. When the response returns 200(OK), you should repeat the GET operation after a certain interval (Repeat this step).<br/>
+    When the response returns 201(Created), you should read the response body. This will contain links to the created resources.<br/>
+    This will usually hold only one link, but to be futureproof, this has been designed to return a collection.
+    4. The created resource will point to an account. You now know the account's Id and can continue with the provisioning of a MySql database on this account.
+    5. Perform a POST on the mysqldatabases route and provide the account id along with other requested information.
+    6. Read the Location header from the response and perform a GET of the provided resource (a provisioning job).
+    7. When the response returns 200(OK), you should repeat the GET operation after a certain interval (Repeat this step).<br/>
+    When the response returns 201(Created), you should read the response body. This will contain links to the created resources.<br/>
+    This will usually hold only one link, but to be futureproof, this has been designed to return a collection.
+    8. The created resource will point to a MySql database resource.
+
+    ## SSL certificate requests
+
+    **Requesting an SSL certificate causes the purchase of a paying product.**
+
+    1. A certificate is created by adding an ssl certificate request.
+    2. Upon statuscode 201 you should query for certificate completion on the resource provided in the location response header.
+    3. The resource request can respond with different statuscodes:
+    <ul>
+        <li>200: the certificate request is ongoing.<br/>
+    Check the validations collection for validation values that are not auto_validated. Those should be set by you system.<br/>
+    Call verify domain validations once all validation values are in place. It might take some time for verification to take place. It is not necessary to call this method more than once.</li>
+        <li>303: the certificate request is complete; there is no more certificate request resource available. Check the location header value to retrieve the representation of the resulting ssl certificate.</li>
+        <li>410: the certificate request does not exist anymore, there is no certificate created as a result of the request.</li>
+    </ul>
+  title: Public Api
+  version: v2
+  x-apisguru-categories:
+    - hosting
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_www.combell.com_build_website_images_favicons_apple-icon-57x57.png
+  x-origin:
+    - format: openapi
+      url: https://api.combell.com/v2/documentation/swagger-v2.json
+      version: "3.0"
+  x-providerName: combell.com
+tags:
+  - name: Accounts
+  - description: "Manage the dns records for a domain name.<p>The interface allows you to manage following records: A, CNAME, MX, SRV, ALIAS and TXT."
+    name: DNS records
+  - description: Manage your domains.
+    name: Domains
+  - description: Manage your linux hostings.
+    name: Linux hostings
+  - description: Manage your mailboxes.
+    name: Mailboxes
+  - description: Manage your mail zones.
+    name: Mail zones
+  - description: Manage your MySql databases.
+    name: MySql databases
+  - name: Provisioning jobs
+  - name: Servicepacks
+  - name: SSH
+  - description: Create new SSL certificates. In the provisioning documentation you can find more info on the flow that should be followed.
+    name: SSL certificate requests
+  - description: Manage your SSL certificates.
+    name: SSL certificates
+  - description: Manage your windows hostings.
+    name: Windows hostings
+paths:
+  /accounts:
+    get:
+      operationId: GetAccounts
+      parameters:
+        - description: The number of items to skip in the resultset.
+          in: query
+          name: skip
+          schema:
+            description: The number of items to skip in the resultset.
+            format: int32
+            type: integer
+        - description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+          in: query
+          name: take
+          schema:
+            description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+            format: int32
+            type: integer
+        - description: Filters the list, returning only accounts containing the specified asset type.
+          in: query
+          name: asset_type
+          schema:
+            $ref: "#/components/schemas/AssetType"
+        - description: Return only accounts, matching the specified identifier.
+          in: query
+          name: identifier
+          schema:
+            description: Return only accounts, matching the specified identifier.
+            nullable: true
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Account"
+                type: array
+          description: Success
+          headers:
+            X-Paging-Skipped:
+              description: The number of results that have been skipped.
+              schema:
+                type: integer
+            X-Paging-Take:
+              description: The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+              schema:
+                type: integer
+            X-Paging-TotalResults:
+              description: The total number of results regardless of paging.
+              schema:
+                type: integer
+      summary: Overview of accounts
+      tags:
+        - Accounts
+    post:
+      description: The creation of an account requires some background processing. There is no instant feedback of the creation status.
+      operationId: CreateAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAccount"
+        description: ""
+      responses:
+        "202":
+          description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+          description: Bad Request
+      summary: Create a new account
+      tags:
+        - Accounts
+  "/accounts/{accountId}":
+    get:
+      description: ""
+      operationId: GetAccount
+      parameters:
+        - description: The id of the account.
+          in: query
+          name: account_id
+          required: true
+          schema:
+            description: The id of the account.
+            format: int32
+            type: integer
+        - description: Automatically added
+          in: path
+          name: accountId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountDetail"
+          description: Success
+      summary: Get a specific account
+      tags:
+        - Accounts
+  "/dns/{domainName}/records":
+    get:
+      parameters:
+        - description: The domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The domain name.
+            type: string
+        - description: The number of items to skip in the resultset.
+          in: query
+          name: skip
+          schema:
+            description: The number of items to skip in the resultset.
+            format: int32
+            type: integer
+        - description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+          in: query
+          name: take
+          schema:
+            description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+            format: int32
+            type: integer
+        - description: Filters records matching the type. Most other filters only apply when this filter is specified.
+          in: query
+          name: type
+          schema:
+            description: Filters records matching the type. Most other filters only apply when this filter is specified.
+            nullable: true
+            type: string
+        - description: Filters records matching the record name. This filter only applies to lookups of A, CNAME, TXT, ALIAS and TLSA records.
+          in: query
+          name: record_name
+          schema:
+            description: Filters records matching the record name. This filter only applies to lookups of A, CNAME, TXT, ALIAS and TLSA records.
+            nullable: true
+            type: string
+        - description: Filters records for the service. This filter only applies to lookups of SRV records.
+          in: query
+          name: service
+          schema:
+            description: Filters records for the service. This filter only applies to lookups of SRV records.
+            nullable: true
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/DnsRecord"
+                type: array
+          description: Success
+          headers:
+            X-Paging-Skipped:
+              description: The number of results that have been skipped.
+              schema:
+                type: integer
+            X-Paging-Take:
+              description: The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+              schema:
+                type: integer
+            X-Paging-TotalResults:
+              description: The total number of results regardless of paging.
+              schema:
+                type: integer
+      summary: Get records
+      tags:
+        - DNS records
+    post:
+      parameters:
+        - description: The domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DnsRecord"
+        description: The record to create
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+      summary: Create a record
+      tags:
+        - DNS records
+  "/dns/{domainName}/records/{recordId}":
+    delete:
+      parameters:
+        - description: The domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The domain name.
+            type: string
+        - description: The id of the record.
+          in: query
+          name: record_id
+          required: true
+          schema:
+            description: The id of the record.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: recordId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+      summary: Delete a record
+      tags:
+        - DNS records
+    get:
+      parameters:
+        - description: The domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The domain name.
+            type: string
+        - description: The id of the record.
+          in: query
+          name: record_id
+          required: true
+          schema:
+            description: The id of the record.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: recordId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DnsRecord"
+          description: Success
+      summary: Get specific record
+      tags:
+        - DNS records
+    put:
+      parameters:
+        - description: The domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The domain name.
+            type: string
+        - description: The id of the record.
+          in: query
+          name: record_id
+          required: true
+          schema:
+            description: The id of the record.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: recordId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DnsRecord"
+        description: The record with updated values.
+      responses:
+        "200":
+          description: Success
+      summary: Edit a record
+      tags:
+        - DNS records
+  /domains:
+    get:
+      operationId: Domains
+      parameters:
+        - description: The number of items to skip in the resultset.
+          in: query
+          name: skip
+          schema:
+            description: The number of items to skip in the resultset.
+            format: int32
+            type: integer
+        - description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+          in: query
+          name: take
+          schema:
+            description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Domain"
+                type: array
+          description: Success
+          headers:
+            X-Paging-Skipped:
+              description: The number of results that have been skipped.
+              schema:
+                type: integer
+            X-Paging-Take:
+              description: The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+              schema:
+                type: integer
+            X-Paging-TotalResults:
+              description: The total number of results regardless of paging.
+              schema:
+                type: integer
+      summary: Overviews of domains
+      tags:
+        - Domains
+  /domains/registrations:
+    post:
+      description: Registers an available domain.<br />Domain names with extension '.ca' are only available for registrants with country code 'CA'.
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RegisterDomain"
+        description: ""
+      responses:
+        "202":
+          description: Success
+      summary: Register a domain
+      tags:
+        - Domains
+  "/domains/{domainName}":
+    get:
+      parameters:
+        - description: The domain name
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The domain name
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DomainDetail"
+          description: Success
+      summary: Details of a domain
+      tags:
+        - Domains
+  "/domains/{domainName}/nameservers":
+    put:
+      description: ""
+      parameters:
+        - description: The domain name
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The domain name
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditNameServers"
+        description: ""
+      responses:
+        "204":
+          description: Success
+      summary: Edit domain name servers
+      tags:
+        - Domains
+  "/domains/{domainName}/renew":
+    put:
+      description: "Allowed if can_toggle_renew is true on the domain detail:<br /><ul><li>If there are no unpaid invoices for the domain name anymore.</li><li>If the renewal won't start within 1 month.</li></ul>\r
+
+        Allowed if the requesting user has the finance role."
+      operationId: ConfigureDomain
+      parameters:
+        - description: The domain name
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The domain name
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditDomainWillRenewRequest"
+        description: Contains the domain renew information
+      responses:
+        "204":
+          description: Success
+      summary: Edit domain name renew state
+      tags:
+        - Domains
+  /linuxhostings:
+    get:
+      operationId: GetLinuxHostings
+      parameters:
+        - description: The number of items to skip in the resultset.
+          in: query
+          name: skip
+          schema:
+            description: The number of items to skip in the resultset.
+            format: int32
+            type: integer
+        - description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+          in: query
+          name: take
+          schema:
+            description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/LinuxHosting"
+                type: array
+          description: Success
+          headers:
+            X-Paging-Skipped:
+              description: The number of results that have been skipped.
+              schema:
+                type: integer
+            X-Paging-Take:
+              description: The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+              schema:
+                type: integer
+            X-Paging-TotalResults:
+              description: The total number of results regardless of paging.
+              schema:
+                type: integer
+      summary: Overview of linux hostings
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}":
+    get:
+      operationId: GetLinuxHosting
+      parameters:
+        - description: The Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/LinuxHostingDetail"
+          description: Success
+      summary: Linux hosting detail
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/ftp/configuration":
+    put:
+      operationId: ConfigureFtp
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/FtpConfiguration"
+        description: ""
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Configure FTP
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/phpsettings/apcu":
+    put:
+      operationId: ChangeApcu
+      parameters:
+        - description: Linux hosting domain name
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePhpAPcuRequest"
+        description: Php APcu config
+      responses:
+        "204":
+          description: Success
+      summary: Configure PHP APCu setting
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/phpsettings/availableversions":
+    get:
+      operationId: GetAvailablePhpVersions
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/PhpVersion"
+                type: array
+          description: Success
+      summary: Get the available PHP versions.
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/phpsettings/memorylimit":
+    put:
+      operationId: ChangePhpMemoryLimit
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdatePhpMemoryLimitRequest"
+        description: Memory limit config
+      responses:
+        "204":
+          description: Success
+      summary: Configure PHP memory limit
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/phpsettings/version":
+    put:
+      operationId: ChangePhpVersion
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PhpVersion"
+        description: The new PHP version.
+      responses:
+        "204":
+          description: Success
+      summary: Change the Linux hosting PHP version.
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/scheduledtasks":
+    get:
+      description: Manage scheduled tasks which are also manageable via the control panel.
+      operationId: GetScheduledTasks
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/ScheduledTask"
+                type: array
+          description: Success
+      summary: Overview of scheduled tasks
+      tags:
+        - Linux hostings
+    post:
+      operationId: AddScheduledTasks
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledTask"
+        description: ""
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+      summary: Add a scheduled task
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/scheduledtasks/{scheduledTaskId}":
+    delete:
+      operationId: DeleteScheduledTask
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Id of the scheduled task.
+          in: query
+          name: scheduled_task_id
+          required: true
+          schema:
+            description: Id of the scheduled task.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: scheduledTaskId
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Delete a scheduled task
+      tags:
+        - Linux hostings
+    get:
+      operationId: GetScheduledTask
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Id of the scheduled task.
+          in: query
+          name: scheduled_task_id
+          required: true
+          schema:
+            description: Id of the scheduled task.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: scheduledTaskId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScheduledTask"
+          description: Success
+      summary: Get scheduled task detail
+      tags:
+        - Linux hostings
+    put:
+      operationId: ConfigureScheduledTask
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Id of the scheduled task.
+          in: query
+          name: scheduled_task_id
+          required: true
+          schema:
+            description: Id of the scheduled task.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: scheduledTaskId
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ScheduledTask"
+        description: ""
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Configure a scheduled task
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/settings/gzipcompression":
+    put:
+      operationId: ChangeGzipCompression
+      parameters:
+        - description: Linux hosting domain name
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/GzipConfig"
+        description: Whether GZIP compression is enabled or not.
+      responses:
+        "204":
+          description: Success
+      summary: Enable/disable GZIP compression
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/sites/{siteName}/hostheaders":
+    post:
+      operationId: CreateHostHeader
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Name of the site on the linux hosting.
+          in: query
+          name: site_name
+          required: true
+          schema:
+            description: Name of the site on the linux hosting.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: siteName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddHostHeaderRequest"
+        description: Add host header request
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+      summary: Create a host header
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/sites/{siteName}/http2/configuration":
+    put:
+      operationId: ConfigureHttp2
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: "Site name where HTTP/2 should be configured.<br />\r
+
+            For HTTP/2 to work correctly, the site must have ssl enabled."
+          in: query
+          name: site_name
+          required: true
+          schema:
+            description: "Site name where HTTP/2 should be configured.<br />\r
+
+              For HTTP/2 to work correctly, the site must have ssl enabled."
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: siteName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/Http2Configuration"
+        description: ""
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Configure HTTP/2
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/ssh/configuration":
+    put:
+      operationId: ConfigureSsh
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/SshConfiguration"
+        description: ""
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Configure SSH
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/ssh/keys":
+    get:
+      operationId: GetSshKeys
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/SshKey"
+                type: array
+          description: Success
+      summary: Overview of SSH keys
+      tags:
+        - Linux hostings
+    post:
+      operationId: AddSshKey
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSshKeyRequest"
+        description: SSH key public key.
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+      summary: Add a SSH key
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/ssh/keys/{fingerprint}":
+    delete:
+      operationId: DeleteSshKey
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Fingerprint of public key.
+          in: path
+          name: fingerprint
+          required: true
+          schema:
+            description: Fingerprint of public key.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Delete a SSH key
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/sslsettings/{hostname}/autoredirect":
+    put:
+      operationId: ChangeAutoRedirect
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Specific hostname.
+          in: path
+          name: hostname
+          required: true
+          schema:
+            description: Specific hostname.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutoRedirectConfig"
+        description: Auto redirect config.
+      responses:
+        "204":
+          description: Success
+      summary: Configure auto redirect
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/sslsettings/{hostname}/letsencrypt":
+    put:
+      operationId: ChangeLetsEncrypt
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Specific hostname.
+          in: path
+          name: hostname
+          required: true
+          schema:
+            description: Specific hostname.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LetsEncryptConfig"
+        description: Let's encrypt config.
+      responses:
+        "204":
+          description: Success
+      summary: Configure let's encrypt
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/subsites":
+    post:
+      operationId: CreateSubsite
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AddSubsiteRequest"
+        description: Add subsite request
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+      summary: Create a subsite
+      tags:
+        - Linux hostings
+  "/linuxhostings/{domainName}/subsites/{siteName}":
+    delete:
+      operationId: DeleteSubsite
+      parameters:
+        - description: Linux hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Linux hosting domain name.
+            type: string
+        - description: Name of the site on the linux hosting.
+          in: query
+          name: site_name
+          required: true
+          schema:
+            description: Name of the site on the linux hosting.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: siteName
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Delete a subsite
+      tags:
+        - Linux hostings
+  /mailboxes:
+    get:
+      description: Currently only supports getting the mailboxes filtered by domain name.
+      operationId: GetMailboxes
+      parameters:
+        - description: Obligated domain name for getting mailboxes.
+          in: query
+          name: domain_name
+          schema:
+            description: Obligated domain name for getting mailboxes.
+            nullable: true
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Mailbox"
+                type: array
+          description: Success
+      summary: Gets your mailboxes.
+      tags:
+        - Mailboxes
+    post:
+      operationId: CreateMailbox
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMailboxRequest"
+        description: The add mailbox request.
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+      summary: Create a new mailbox.
+      tags:
+        - Mailboxes
+  "/mailboxes/{mailboxName}":
+    delete:
+      operationId: DeleteMailbox
+      parameters:
+        - description: Mailbox name.
+          in: query
+          name: mailbox_name
+          required: true
+          schema:
+            description: Mailbox name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: mailboxName
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Delete a mailbox
+      tags:
+        - Mailboxes
+    get:
+      operationId: GetMailbox
+      parameters:
+        - description: Mailbox name.
+          in: query
+          name: mailbox_name
+          required: true
+          schema:
+            description: Mailbox name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: mailboxName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailboxDetail"
+          description: Success
+      summary: Get a specific mailbox
+      tags:
+        - Mailboxes
+  "/mailboxes/{mailboxName}/autoforward":
+    put:
+      operationId: ConfigureMailboxAutoForward
+      parameters:
+        - description: Mailbox name.
+          in: query
+          name: mailbox_name
+          required: true
+          schema:
+            description: Mailbox name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: mailboxName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutoForward"
+        description: Contains the auto-forward information.
+      responses:
+        "204":
+          description: Success
+      summary: Configure auto-forward for mailbox
+      tags:
+        - Mailboxes
+  "/mailboxes/{mailboxName}/autoreply":
+    put:
+      operationId: ConfigureMailboxAutoReply
+      parameters:
+        - description: Mailbox name.
+          in: query
+          name: mailbox_name
+          required: true
+          schema:
+            description: Mailbox name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: mailboxName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutoReply"
+        description: Contains the auto-reply information.
+      responses:
+        "204":
+          description: Success
+      summary: Configure auto-reply for mailbox
+      tags:
+        - Mailboxes
+  "/mailboxes/{mailboxName}/password":
+    put:
+      operationId: ChangeMailboxPassword
+      parameters:
+        - description: Mailbox name.
+          in: query
+          name: mailbox_name
+          required: true
+          schema:
+            description: Mailbox name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: mailboxName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateMailboxPasswordRequest"
+        description: Contains the new password.
+      responses:
+        "204":
+          description: Success
+      summary: Change password for mailbox
+      tags:
+        - Mailboxes
+  "/mailzones/{domainName}":
+    get:
+      operationId: GetMailZone
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MailZone"
+          description: Success
+      summary: Get the mail zone.
+      tags:
+        - Mail zones
+  "/mailzones/{domainName}/aliases":
+    post:
+      operationId: CreateAlias
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateAliasRequest"
+        description: Contains the alias information.
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+          description: Bad Request
+      summary: Create a new alias
+      tags:
+        - Mail zones
+  "/mailzones/{domainName}/aliases/{emailAddress}":
+    delete:
+      operationId: DeleteAlias
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: Alias e-mail address.
+          in: query
+          name: email_address
+          required: true
+          schema:
+            description: Alias e-mail address.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: emailAddress
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Delete a alias
+      tags:
+        - Mail zones
+    put:
+      operationId: ConfigureAlias
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: Alias e-mail address.
+          in: query
+          name: email_address
+          required: true
+          schema:
+            description: Alias e-mail address.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: emailAddress
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAliasRequest"
+        description: Contains the alias information.
+      responses:
+        "202":
+          description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+          description: Bad Request
+      summary: Configure a alias
+      tags:
+        - Mail zones
+  "/mailzones/{domainName}/antispam":
+    put:
+      operationId: ConfigureAntiSpam
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateAntiSpamRequest"
+        description: Contains the anti-spam information.
+      responses:
+        "204":
+          description: Success
+      summary: Configure anti-spam for mail zone
+      tags:
+        - Mail zones
+  "/mailzones/{domainName}/catchall":
+    post:
+      operationId: CreateCatchAll
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateCatchAllRequest"
+        description: Contains the catch-all information.
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+      summary: Create a catch-all on the mail zone
+      tags:
+        - Mail zones
+  "/mailzones/{domainName}/catchall/{emailAddress}":
+    delete:
+      operationId: DeleteCatchAll
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: E-mail address to which all e-mails are sent to inexistent mailboxes or aliases.
+          in: query
+          name: email_address
+          required: true
+          schema:
+            description: E-mail address to which all e-mails are sent to inexistent mailboxes or aliases.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: emailAddress
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+      summary: Delete a catch-all on the mail zone
+      tags:
+        - Mail zones
+  "/mailzones/{domainName}/smtpdomains":
+    post:
+      operationId: CreateSmtpDomain
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSmtpDomainRequest"
+        description: Contains the smtp domain information.
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+          description: Bad Request
+      summary: Create an extra smtp domain
+      tags:
+        - Mail zones
+  "/mailzones/{domainName}/smtpdomains/{hostname}":
+    delete:
+      operationId: DeleteSmtpDomain
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: Smtp domain name.
+          in: path
+          name: hostname
+          required: true
+          schema:
+            description: Smtp domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Delete an extra smtp domain
+      tags:
+        - Mail zones
+    put:
+      operationId: ConfigureSmtpDomain
+      parameters:
+        - description: Mail zone domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: Mail zone domain name.
+            type: string
+        - description: Smtp domain name.
+          in: path
+          name: hostname
+          required: true
+          schema:
+            description: Smtp domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateSmtpDomainRequest"
+        description: Contains the smtp domain information.
+      responses:
+        "202":
+          description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+          description: Bad Request
+      summary: Configure an extra smtp domain
+      tags:
+        - Mail zones
+  /mysqldatabases:
+    get:
+      operationId: GetMySqlDatabases
+      parameters:
+        - description: The number of items to skip in the resultset.
+          in: query
+          name: skip
+          schema:
+            description: The number of items to skip in the resultset.
+            format: int32
+            type: integer
+        - description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+          in: query
+          name: take
+          schema:
+            description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/MySqlDatabase"
+                type: array
+          description: Success
+          headers:
+            X-Paging-Skipped:
+              description: The number of results that have been skipped.
+              schema:
+                type: integer
+            X-Paging-Take:
+              description: The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+              schema:
+                type: integer
+            X-Paging-TotalResults:
+              description: The total number of results regardless of paging.
+              schema:
+                type: integer
+      summary: Overview of mysql databases
+      tags:
+        - MySql databases
+    post:
+      operationId: CreateMySqlDatabase
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMySqlDatabase"
+        description: ""
+      responses:
+        "202":
+          description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+          description: Bad Request
+      summary: Create a new mysql database
+      tags:
+        - MySql databases
+  "/mysqldatabases/{databaseName}":
+    delete:
+      operationId: DeleteDatabase
+      parameters:
+        - description: Name of the database.
+          in: query
+          name: database_name
+          required: true
+          schema:
+            description: Name of the database.
+            type: string
+        - description: Automatically added
+          in: path
+          name: databaseName
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Delete a mysql database
+      tags:
+        - MySql databases
+    get:
+      operationId: GetMySqlDatabase
+      parameters:
+        - in: query
+          name: database_name
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: databaseName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MySqlDatabase"
+          description: Success
+      summary: Get a specific database
+      tags:
+        - MySql databases
+  "/mysqldatabases/{databaseName}/users":
+    get:
+      operationId: GetDatabaseUsers
+      parameters:
+        - description: Name of the database.
+          in: query
+          name: database_name
+          required: true
+          schema:
+            description: Name of the database.
+            type: string
+        - description: Automatically added
+          in: path
+          name: databaseName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/MySqlUser"
+                type: array
+          description: Success
+      summary: Overview of mysql users
+      tags:
+        - MySql databases
+    post:
+      description: The creation of a new mysql user will result in a user with read_only rights.
+      operationId: CreateMySqlUser
+      parameters:
+        - description: Name of the database.
+          in: query
+          name: database_name
+          required: true
+          schema:
+            description: Name of the database.
+            type: string
+        - description: Automatically added
+          in: path
+          name: databaseName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateMySqlUser"
+        description: ""
+      responses:
+        "202":
+          description: Success
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/BadRequestResponse"
+          description: Bad Request
+      summary: Create a new mysql user
+      tags:
+        - MySql databases
+  "/mysqldatabases/{databaseName}/users/{userName}":
+    delete:
+      description: The deletion of a mysql user is allowed for users with read_only rights.
+      operationId: DeleteDatabaseUser
+      parameters:
+        - description: Name of the database.
+          in: query
+          name: database_name
+          required: true
+          schema:
+            description: Name of the database.
+            type: string
+        - description: Name of the user.
+          in: query
+          name: user_name
+          required: true
+          schema:
+            description: Name of the user.
+            type: string
+        - description: Automatically added
+          in: path
+          name: databaseName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: userName
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: Success
+        "400":
+          description: Bad Request
+      summary: Delete a mysql user
+      tags:
+        - MySql databases
+  "/mysqldatabases/{databaseName}/users/{userName}/password":
+    put:
+      operationId: ChangeDatabaseUserPassword
+      parameters:
+        - description: Name of the database.
+          in: query
+          name: database_name
+          required: true
+          schema:
+            description: Name of the database.
+            type: string
+        - description: Name of the user.
+          in: query
+          name: user_name
+          required: true
+          schema:
+            description: Name of the user.
+            type: string
+        - description: Automatically added
+          in: path
+          name: databaseName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: userName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserPasswordRequest"
+        description: Contains the new password.
+      responses:
+        "204":
+          description: Success
+      summary: Change password for mysql user
+      tags:
+        - MySql databases
+  "/mysqldatabases/{databaseName}/users/{userName}/status":
+    put:
+      operationId: ChangeDatabaseUserStatus
+      parameters:
+        - description: Name of the database.
+          in: query
+          name: database_name
+          required: true
+          schema:
+            description: Name of the database.
+            type: string
+        - description: Name of the user.
+          in: query
+          name: user_name
+          required: true
+          schema:
+            description: Name of the user.
+            type: string
+        - description: Automatically added
+          in: path
+          name: databaseName
+          required: true
+          schema:
+            type: string
+        - description: Automatically added
+          in: path
+          name: userName
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserStatusRequest"
+        description: Whether the user is enabled or not.
+      responses:
+        "204":
+          description: Success
+      summary: Enable/disable mysql user
+      tags:
+        - MySql databases
+  "/provisioningjobs/{jobId}":
+    get:
+      description: "Provisioning failures may occur. Contact support in the event of a failure or wait for error resolution.<br />\r
+
+        Do NOT retry provisioning until the job reports finished or cancelled."
+      parameters:
+        - in: query
+          name: job_id
+          required: true
+          schema:
+            format: uuid
+            type: string
+        - description: Automatically added
+          in: path
+          name: jobId
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProvisioningJobInfo"
+          description: Success
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProvisioningJobCompletion"
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+      summary: Detail of a provisioning job
+      tags:
+        - Provisioning jobs
+  /servicepacks:
+    get:
+      operationId: Servicepacks
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Servicepack"
+                type: array
+          description: Success
+      summary: Overview of service packs
+      tags:
+        - Servicepacks
+  /ssh:
+    get:
+      operationId: GetAllSshKeys
+      parameters:
+        - description: The number of items to skip in the resultset.
+          in: query
+          name: skip
+          schema:
+            description: The number of items to skip in the resultset.
+            format: int32
+            type: integer
+        - description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+          in: query
+          name: take
+          schema:
+            description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/SshKeyDetail"
+                type: array
+          description: Success
+          headers:
+            X-Paging-Skipped:
+              description: The number of results that have been skipped.
+              schema:
+                type: integer
+            X-Paging-Take:
+              description: The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+              schema:
+                type: integer
+            X-Paging-TotalResults:
+              description: The total number of results regardless of paging.
+              schema:
+                type: integer
+      summary: Overview of SSH keys
+      tags:
+        - SSH
+  /sslcertificaterequests:
+    get:
+      operationId: GetSslCertificateRequests
+      parameters:
+        - description: The number of items to skip in the resultset.
+          in: query
+          name: skip
+          schema:
+            description: The number of items to skip in the resultset.
+            format: int32
+            type: integer
+        - description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+          in: query
+          name: take
+          schema:
+            description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/SslCertificateRequest"
+                type: array
+          description: Success
+          headers:
+            X-Paging-Skipped:
+              description: The number of results that have been skipped.
+              schema:
+                type: integer
+            X-Paging-Take:
+              description: The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+              schema:
+                type: integer
+            X-Paging-TotalResults:
+              description: The total number of results regardless of paging.
+              schema:
+                type: integer
+      summary: Overview of SSL certificate requests
+      tags:
+        - SSL certificate requests
+    post:
+      description: "Executing this method causes the purchase of a paying product.<br />\r
+
+        Log on to our website to see your current (renewal) prices or contact our Sales department.<br />\r
+
+        Please note that promotional pricing does not apply for purchases made through our API."
+      operationId: AddSslCertificateRequest
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateSslCertificateRequest"
+        description: ""
+      responses:
+        "201":
+          description: Success
+          headers:
+            Location:
+              description: The location of the created resource.
+              schema:
+                type: string
+      summary: Add a SSL certificate request
+      tags:
+        - SSL certificate requests
+  "/sslcertificaterequests/{id}":
+    get:
+      operationId: GetSslCertificateRequest
+      parameters:
+        - description: The id of the certificate request.
+          in: path
+          name: id
+          required: true
+          schema:
+            description: The id of the certificate request.
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SslCertificateRequestDetail"
+          description: Success
+        "303":
+          description: Redirect
+          headers:
+            Location:
+              description: The location referring to a resource that replaced the original resource.
+              schema:
+                type: string
+        "410":
+          description: The resource existed in the past, but is no longer available.
+      summary: Detail of a SSL certificate request
+      tags:
+        - SSL certificate requests
+    put:
+      operationId: VerifySslCertificateRequestDomainValidations
+      parameters:
+        - description: The id of the certificate request.
+          in: path
+          name: id
+          required: true
+          schema:
+            description: The id of the certificate request.
+            format: int32
+            type: integer
+      responses:
+        "202":
+          description: Success
+        "303":
+          description: Redirect
+          headers:
+            Location:
+              description: The location referring to a resource that replaced the original resource.
+              schema:
+                type: string
+        "410":
+          description: The resource existed in the past, but is no longer available.
+      summary: Verify the SSL certificate request domain validations
+      tags:
+        - SSL certificate requests
+  /sslcertificates:
+    get:
+      operationId: GetSslCertificates
+      parameters:
+        - description: The number of items to skip in the resultset.
+          in: query
+          name: skip
+          schema:
+            description: The number of items to skip in the resultset.
+            format: int32
+            type: integer
+        - description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+          in: query
+          name: take
+          schema:
+            description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/SslCertificate"
+                type: array
+          description: Success
+          headers:
+            X-Paging-Skipped:
+              description: The number of results that have been skipped.
+              schema:
+                type: integer
+            X-Paging-Take:
+              description: The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+              schema:
+                type: integer
+            X-Paging-TotalResults:
+              description: The total number of results regardless of paging.
+              schema:
+                type: integer
+      summary: Overview of SSL certificates
+      tags:
+        - SSL certificates
+  "/sslcertificates/{sha1Fingerprint}":
+    get:
+      operationId: GetSslCertificate
+      parameters:
+        - description: The SHA-1 fingerprint of the certificate.
+          in: query
+          name: sha1_fingerprint
+          required: true
+          schema:
+            description: The SHA-1 fingerprint of the certificate.
+            type: string
+        - description: Automatically added
+          in: path
+          name: sha1Fingerprint
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SslCertificateDetail"
+          description: Success
+      summary: Detail of a SSL certificate
+      tags:
+        - SSL certificates
+  "/sslcertificates/{sha1Fingerprint}/download":
+    get:
+      description: Returns the certifcate as binary data with the content-type and the filename information in the response headers.
+      operationId: DownloadCertificate
+      parameters:
+        - description: The SHA-1 fingerprint of the certificate.
+          in: query
+          name: sha1_fingerprint
+          required: true
+          schema:
+            description: The SHA-1 fingerprint of the certificate.
+            type: string
+        - description: "The file format of the returned file stream:\r
+
+            <ul><li>PFX: Also known as PKCS #12, is a single, password protected certificate archive that contains the entire certificate chain plus the matching private key.</li></ul>"
+          in: query
+          name: file_format
+          required: true
+          schema:
+            $ref: "#/components/schemas/SslCertificateFileFormat"
+        - description: The password used to protect the certificate file.<br />
+          in: query
+          name: password
+          required: true
+          schema:
+            description: The password used to protect the certificate file.<br />
+            type: string
+        - description: Automatically added
+          in: path
+          name: sha1Fingerprint
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                format: binary
+                type: string
+          description: Success
+        "400":
+          description: Invalid file_format or invalid password
+      summary: Download a SSL certificate
+      tags:
+        - SSL certificates
+  /windowshostings:
+    get:
+      operationId: GetWindowsHostings
+      parameters:
+        - description: The number of items to skip in the resultset.
+          in: query
+          name: skip
+          schema:
+            description: The number of items to skip in the resultset.
+            format: int32
+            type: integer
+        - description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+          in: query
+          name: take
+          schema:
+            description: The number of items to return in the resultset. The returned count can be equal or less than this number.
+            format: int32
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/WindowsHosting"
+                type: array
+          description: Success
+          headers:
+            X-Paging-Skipped:
+              description: The number of results that have been skipped.
+              schema:
+                type: integer
+            X-Paging-Take:
+              description: The number of items in the current take. The number might differ from the requested take. It represents the actual number of items returned in the response.
+              schema:
+                type: integer
+            X-Paging-TotalResults:
+              description: The total number of results regardless of paging.
+              schema:
+                type: integer
+      summary: Overview of windows hostings
+      tags:
+        - Windows hostings
+  "/windowshostings/{domainName}":
+    get:
+      operationId: GetWindowsHosting
+      parameters:
+        - description: The Windows hosting domain name.
+          in: query
+          name: domain_name
+          required: true
+          schema:
+            description: The Windows hosting domain name.
+            type: string
+        - description: Automatically added
+          in: path
+          name: domainName
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WindowsHostingDetail"
+          description: Success
+      summary: Windows hosting detail
+      tags:
+        - Windows hostings
+components:
+  schemas:
+    Account:
+      additionalProperties: false
+      properties:
+        id:
+          description: The id of the account
+          format: int32
+          type: integer
+        identifier:
+          description: Identifier for the account
+          type: string
+        servicepack_id:
+          description: The servicepack id that defines the account.
+          format: int32
+          type: integer
+      type: object
+    AccountDetail:
+      additionalProperties: false
+      description: A detailed representation of an account.
+      properties:
+        addons:
+          description: A list of addons applied to the account.
+          items:
+            $ref: "#/components/schemas/Addon"
+          type: array
+        id:
+          description: The id of the account
+          format: int32
+          type: integer
+        identifier:
+          description: Identifier for the account
+          type: string
+        servicepack:
+          $ref: "#/components/schemas/Servicepack"
+      type: object
+    AddHostHeaderRequest:
+      additionalProperties: false
+      properties:
+        domain_name:
+          description: Host header domain name (e.g. alias.be or alias.site.be).
+          type: string
+      type: object
+    AddSshKeyRequest:
+      additionalProperties: false
+      properties:
+        public_key:
+          description: Public key
+          type: string
+      type: object
+    AddSubsiteRequest:
+      additionalProperties: false
+      properties:
+        domain_name:
+          description: Subsite domain name (e.g. alias.be or subsite.site.be).
+          type: string
+        path:
+          description: "Folder location for the subsite (when empty we use /subsites/site (e.g. /subsites/subsite.site.be)<br />\r
+
+            The path MUST pre-exist on the server. It WILL NOT be created automatically."
+          type: string
+      type: object
+    AdditionalValidationAttribute:
+      additionalProperties: false
+      properties:
+        name:
+          description: Additional validation attribute field name.
+          type: string
+        value:
+          description: Additional validation attribute field value.
+          type: string
+      type: object
+    Addon:
+      additionalProperties: false
+      description: Addon information
+      properties:
+        id:
+          description: The id of the addon
+          format: int32
+          type: integer
+        name:
+          description: The name of the addon
+          type: string
+      type: object
+    Alias:
+      additionalProperties: false
+      properties:
+        destinations:
+          description: The alias destination e-mail addresses
+          items:
+            type: string
+          type: array
+        email_address:
+          description: The alias e-mail address
+          type: string
+      type: object
+    AntiSpam:
+      additionalProperties: false
+      properties:
+        allowed_types:
+          description: Allowed types of anti-spam scanning for this mail zone
+          items:
+            $ref: "#/components/schemas/AntiSpamTypes"
+          type: array
+        type:
+          $ref: "#/components/schemas/AntiSpamTypes"
+      type: object
+    AntiSpamTypes:
+      description: Types of anti-spam scanning
+      enum:
+        - none
+        - advanced
+        - basic
+      type: string
+    ApplicationPool:
+      additionalProperties: false
+      description: The application pool for the hosting account.
+      properties:
+        installed_net_core_runtimes:
+          description: The installed .NET Core runtimes for the hosting account.
+          items:
+            type: string
+          type: array
+        pipeline_mode:
+          description: The active pipeline mode for the hosting account.
+          type: string
+        runtime:
+          description: The active runtime for the hosting account.
+          type: string
+      type: object
+    AssetType:
+      description: Asset types
+      enum:
+        - domain
+        - linux_hosting
+        - mysql
+        - dns
+        - mailbox
+        - windows_hosting
+      type: string
+    AutoForward:
+      additionalProperties: false
+      properties:
+        copy_to_myself:
+          description: Copy to myself
+          type: boolean
+        email_addresses:
+          description: E-mail addresses to which e-mails are forwarded
+          items:
+            type: string
+          type: array
+        enabled:
+          description: Enabled
+          type: boolean
+      type: object
+    AutoRedirectConfig:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enabled
+          type: boolean
+      type: object
+    AutoReply:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enabled
+          type: boolean
+        message:
+          description: Message
+          type: string
+        subject:
+          description: Subject
+          type: string
+      type: object
+    BadRequestResponse:
+      additionalProperties: false
+      properties:
+        validation_errors:
+          description: A list of validation errors that occurred when processing the request.
+          items:
+            $ref: "#/components/schemas/ValidationErrorMessage"
+          type: array
+      type: object
+    CatchAll:
+      additionalProperties: false
+      properties:
+        email_addresses:
+          description: E-mail addresses to which all e-mails are sent to inexistent mailboxes or aliases
+          items:
+            type: string
+          type: array
+      type: object
+    CompletionEstimation:
+      additionalProperties: false
+      properties:
+        estimate:
+          description: "The estimated time when the job should be finished.<br />\r
+
+            Unexpected delays can always occur.<br />\r
+
+            The value is subject to change during the provisioning."
+          format: date-time
+          type: string
+      type: object
+    CreateAccount:
+      additionalProperties: false
+      properties:
+        ftp_password:
+          description: "Ftp password for the account.<br />\r
+
+            Applies only if the servicepack contains hosting.<br />\r
+
+            Passwords have to adhere to following rules:<br /><ul><li>Between 8-20 characters.</li><li>Must be a mix of letters and digits.</li><li>Must contain at least one digit (0-9).</li><li>Must contain at least one letter (a-z).</li><li>Cannot contain spaces.</li><li>Cannot contain characters: * € $ & + } { ' \" \\ </li></ul>"
+          type: string
+        identifier:
+          description: "An identifier for the account.<br />\r
+
+            Should be a domain name for hosting accounts."
+          type: string
+        servicepack_id:
+          description: The servicepack id that defines the account.
+          format: int32
+          type: integer
+      type: object
+    CreateAliasRequest:
+      additionalProperties: false
+      properties:
+        destinations:
+          description: The alias destination e-mail addresses
+          items:
+            type: string
+          type: array
+        email_address:
+          description: The alias e-mail
+          type: string
+      type: object
+    CreateCatchAllRequest:
+      additionalProperties: false
+      properties:
+        email_address:
+          description: E-mail address to which all e-mails are sent to inexistent mailboxes or aliases
+          type: string
+      type: object
+    CreateMailboxRequest:
+      additionalProperties: false
+      properties:
+        account_id:
+          description: Mail zone account id
+          format: int32
+          type: integer
+        email_address:
+          description: E-mail address
+          type: string
+        password:
+          description: "The password for the mailbox.<br />\r
+
+            Passwords have to adhere to following rules:<br /><ul><li>Between 8-20 characters.</li><li>Must be a mix of letters and digits.</li><li>Must contain at least one digit (0-9).</li><li>Must contain at least one letter (a-z).</li><li>Cannot contain spaces.</li><li>Cannot contain characters: * € $ & + } { ' \" \\ </li></ul>"
+          type: string
+      type: object
+    CreateMySqlDatabase:
+      additionalProperties: false
+      properties:
+        account_id:
+          description: The id of the account on which to create the database.
+          format: int32
+          type: integer
+        database_name:
+          description: "The name for the database. This will be prefixed during provisioning.\r
+
+            The provided name during creation will be different from the provisioned database name."
+          type: string
+        password:
+          description: "The password for the database user.<br />\r
+
+            Passwords have to adhere to following rules:<br /><ul><li>Between 8-20 characters.</li><li>Must be a mix of letters and digits.</li><li>Must contain at least one digit (0-9).</li><li>Must contain at least one letter (a-z).</li><li>Cannot contain spaces.</li><li>Cannot contain characters: * € $ & + } { ' \" \\ </li></ul>"
+          type: string
+      type: object
+    CreateMySqlUser:
+      additionalProperties: false
+      properties:
+        name:
+          description: "User name<br />\r
+
+            User names have to adhere to following rules:<br /><ul><li>Between 2-14 characters.</li><li>Must be a mix of letters and/or digits.</li><li>Must be lower cased.</li><li>Cannot contain spaces.</li></ul>"
+          type: string
+        password:
+          description: "The password for the database user.<br />\r
+
+            Passwords have to adhere to following rules:<br /><ul><li>Between 8-20 characters.</li><li>Must be a mix of letters and digits.</li><li>Must contain at least one digit (0-9).</li><li>Must contain at least one letter (a-z).</li><li>Cannot contain spaces.</li><li>Cannot contain characters: * € $ & + } { ' \" \\ </li></ul>"
+          type: string
+      type: object
+    CreateSmtpDomainRequest:
+      additionalProperties: false
+      properties:
+        hostname:
+          description: The smtp domain name
+          type: string
+      type: object
+    CreateSslCertificateRequest:
+      additionalProperties: false
+      properties:
+        additional_validation_attributes:
+          description: "List of additional validation attributes for the certificate when choosing organization or extended validation.\r
+
+            <table><tr><th>Name</th><th>Info</th><th>Required</th></tr><tr><td>Firstname</td><td>Firstname of the technical contact</td><td>Yes</td></tr><tr><td>Lastname</td><td>Lastname of the technical contact</td><td>Yes</td></tr><tr><td>Phone</td><td>Phone of the technical contact</td><td>Yes</td></tr><tr><td>EmailAddress</td><td>Email address of the technical contact</td><td>Yes</td></tr><tr><td>Street</td><td>Address street of the organization</td><td>Yes</td></tr><tr><td>Number</td><td>Address house number of the organization</td><td>Yes</td></tr><tr><td>PostalCode</td><td>Address postal code of the organization</td><td>Yes</td></tr><tr><td>VatCountryCode</td><td>VAT country code of the organization, ISO 3166-1 alpha-2 country code</td><td>Yes</td></tr><tr><td>OrganizationNumber</td><td>Business number of the organization</td><td>No</td></tr></table>"
+          items:
+            $ref: "#/components/schemas/AdditionalValidationAttribute"
+          type: array
+        certificate_type:
+          $ref: "#/components/schemas/SslCertificateType"
+        csr:
+          description: "The certificate signing request data.<br />\r
+
+            The certificate signing request subject should contain following attributes:<br /><table><tr><th>Name</th><th>Code</th><th>Format</th></tr><tr><td>CommonName</td><td>CN</td><td>Valid domain name, for example site.be, alias.site.be or *.site.be</td></tr><tr><td>Country</td><td>C</td><td>ISO 3166-1 alpha-2 country code</td></tr><tr><td>State</td><td>ST</td><td></td></tr><tr><td>Locality</td><td>L</td><td></td></tr><tr><td>Organization</td><td>O</td><td></td></tr><tr><td>OrganizationUnit</td><td>OU</td><td></td></tr><tr><td>EmailAddress</td><td>E</td><td>Valid email address</td></tr></table>\r
+
+            The certificate signing request should also contain all the additional aliases and domains (SAN's) for the certificate."
+          type: string
+        validation_level:
+          $ref: "#/components/schemas/SslCertificateValidationLevel"
+      type: object
+    DnsRecord:
+      additionalProperties: false
+      properties:
+        content:
+          description: "Variable data depending on the record type.\r
+
+            <ul><li>A: the IPv4 address.</li><li>CNAME: canonical name of an alias.</li><li>MX: fully qualified domain name of a mail host.</li><li>SRV: does not apply. Data for the SRV records can be found in specific properties.</li><li>TXT: free form text data.</li><li>ALIAS: canonical name of an alias.</li><li>TLSA: format should match specific values for usage, selector, matching type and data: \"{usage} {selector} {matching_type} {data}\"\r
+
+            \        <ul><li>The usage. The first field after the TLSA text in the DNS RR, specifies how to verify the certificate.<br /><ul><li>A value of 0 is for what is commonly called CA constraint (and PKIX-TA). The certificate provided when establishing TLS must be issued by the listed root-CA or one of its intermediate CAs, with a valid certification path to a root-CA already trusted by the application doing the verification.</li><li>A value of 1 is for what is commonly called Service certificate constraint (and PKIX-EE). The certificate used must match the TLSA record exactly, and it must also pass PKIX certification path validation to a trusted root-CA.</li><li>A value of 2 is for what is commonly called Trust Anchor Assertion (and DANE-TA). The certificate used has a valid certification path pointing back to the certificate mention in this record, but there is no need for it to pass the PKIX certification path validation to a trusted root-CA.</li><li>A value of 3 is for what is commonly called Domain issued certificate (and DANE-EE). The services uses a self-signed certificate. It is not signed by anyone else, and is exactly this record.</li></ul></li><li>The selector. When connecting to the service and a certificate is received, the selector field specifies which parts of it should be checked.<br /><ul><li>A value of 0 means to select the entire certificate for matching.</li><li>A value of 1 means to select just the public key for certificate matching. Matching the public key is often sufficient, as this is likely to be unique.</li></ul></li><li>The matching type.<br /><ul><li>A type of 0 means the entire information selected is present in the certificate association data.</li><li>A type of 1 means to do a SHA-256 hash of the selected data.</li><li>A type of 2 means to do a SHA-512 hash of the selected data.</li></ul></li><li>The actual data to be matched given the settings of the other fields. This is a long text string of hexadecimal data.</li></ul></li></ul>"
+          type: string
+        id:
+          description: "The id of the record\r
+
+            This value is ignored for creation of new records."
+          type: string
+        port:
+          description: "The port for SRV records.<br />\r
+
+            The value MUST be a positive integer.<br />\r
+
+            Editing the value is not possible. You should add a new SRV record and delete the existing record."
+          format: int32
+          type: integer
+        priority:
+          default: 10
+          description: "The priority for MX or SRV records.<br />\r
+
+            A lower value means more preferred.<br />\r
+
+            The value MUST be a positive integer less or equal to 9999."
+          format: int32
+          type: integer
+        protocol:
+          default: TCP
+          description: "Used for the creation of SRV records. Possible options: TCP, UDP, ...<br />\r
+
+            Editing the value is not possible. You should add a new SRV record and delete the existing record."
+          type: string
+        record_name:
+          description: "The name of the record.<br />\r
+
+            This is the host name, alias defined by the record.<br />\r
+
+            An empty record or '@' is equal to the domain name.<br />\r
+
+            Applies to A, MX, CNAME, TXT, ALIAS and TLSA records.<br />\r
+
+            When type is TLSA the recommended value format is port number, protocol and host: _25._tcp.<br />\r
+
+            Does not apply for SRV records."
+          type: string
+        service:
+          description: "The symbolic name of the desired service for SRV records.<br />\r
+
+            Editing the value is not possible. You should add a new SRV record and can delete the existing record."
+          type: string
+        target:
+          description: "The canonical hostname of the machine providing the service for SRV records.<br />\r
+
+            Editing the value is not possible. You should add a new SRV record and delete the existing record."
+          type: string
+        ttl:
+          default: 3600
+          description: "Time to live of the record in seconds.<br />\r
+
+            It defines the time frame that clients can cache the information.<br />\r
+
+            The value MUST be between 60 and 86400. The default value is 3600 (= 1 hour)."
+          format: int32
+          type: integer
+        type:
+          description: The type of the record (A, MX, CNAME, SRV, TXT, ALIAS and TLSA).
+          type: string
+        weight:
+          default: 0
+          description: "The weight for SRV records with the same priority.<br />\r
+
+            A higher value means more preferred."
+          format: int32
+          type: integer
+      type: object
+    Domain:
+      additionalProperties: false
+      properties:
+        domain_name:
+          description: The domain name
+          type: string
+        expiration_date:
+          description: Expiration date of the domain
+          format: date-time
+          type: string
+        will_renew:
+          description: "Indication of renewal.<br />\r
+
+            No value indicates that the renewal state could not be determined at the moment."
+          type: boolean
+      type: object
+    DomainDetail:
+      additionalProperties: false
+      properties:
+        can_toggle_renew:
+          description: Indication if the domain renew state can be changed.
+          type: boolean
+        domain_name:
+          description: The domain name
+          type: string
+        expiration_date:
+          description: Expiration date of the domain
+          format: date-time
+          type: string
+        name_servers:
+          description: Nameservers of the domain
+          items:
+            $ref: "#/components/schemas/NameServer"
+          type: array
+        registrant:
+          $ref: "#/components/schemas/Registrant"
+        will_renew:
+          description: "Indication of renewal.<br />\r
+
+            No value indicates that the renewal state could not be determined at the moment."
+          type: boolean
+      type: object
+    EditDomainWillRenewRequest:
+      additionalProperties: false
+      properties:
+        will_renew:
+          description: Indication of renewal.
+          type: boolean
+      type: object
+    EditNameServers:
+      additionalProperties: false
+      properties:
+        domain_name:
+          description: The domain name to register.
+          type: string
+        name_servers:
+          description: List of name servers.
+          items:
+            type: string
+          type: array
+      type: object
+    ExtraField:
+      additionalProperties: false
+      properties:
+        name:
+          description: Registrant extra field name.
+          type: string
+        value:
+          description: Registrant extra field value.
+          type: string
+      type: object
+    FtpConfiguration:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enable or disable FTP.
+          type: boolean
+      type: object
+    GzipConfig:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enabled
+          type: boolean
+      type: object
+    HostHeader:
+      additionalProperties: false
+      description: A host header identifies a web domain.
+      properties:
+        enabled:
+          description: Indicates if the host header is applied on the web server.
+          type: boolean
+        name:
+          description: The name of the host header.
+          type: string
+      type: object
+    Http2Configuration:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enable or disable HTTP/2.
+          type: boolean
+      type: object
+    LetsEncryptConfig:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enabled
+          type: boolean
+      type: object
+    LinuxHosting:
+      additionalProperties: false
+      properties:
+        domain_name:
+          description: Domain name for the Linux hosting account.
+          type: string
+        servicepack_id:
+          description: Id of Linux hosting service package.
+          format: int32
+          type: integer
+      type: object
+    LinuxHostingDetail:
+      additionalProperties: false
+      properties:
+        actual_size:
+          description: Used webspace size in MB
+          format: int32
+          type: integer
+        domain_name:
+          description: Domain name for the Linux hosting account.
+          type: string
+        ftp_enabled:
+          description: Indicates whether ftp is enabled for the hosting account.
+          type: boolean
+        ftp_username:
+          description: Ftp username
+          type: string
+        ip:
+          description: Linux hosting IP address
+          type: string
+        ip_type:
+          $ref: "#/components/schemas/LinuxIpType"
+        max_size:
+          description: Maximum webspace size in MB
+          format: int32
+          type: integer
+        max_webspace_size:
+          deprecated: true
+          description: "Maximum webspace size in MB<br />\r
+
+            Use max_size instead."
+          format: int32
+          type: integer
+        mysql_database_names:
+          description: "A list of mysql databases linked to the hosting account.<br />\r
+
+            Details of the database can be read using the mysql database detail."
+          items:
+            type: string
+          type: array
+        php_version:
+          description: The active php version for the hosting account.
+          type: string
+        servicepack_id:
+          description: Id of Linux hosting service package.
+          format: int32
+          type: integer
+        sites:
+          description: A list of websites on the hosting account.
+          items:
+            $ref: "#/components/schemas/LinuxSite"
+          type: array
+        ssh_host:
+          description: Ssh host of the linux hosting account
+          type: string
+        ssh_username:
+          description: Ssh username
+          type: string
+        webspace_usage:
+          deprecated: true
+          description: "Used webspace size in MB<br />\r
+
+            Use actual_size instead."
+          format: int32
+          type: integer
+      type: object
+    LinuxIpType:
+      description: Type of the hosting IP address (dedicated or shared)
+      enum:
+        - dedicated
+        - shared
+      type: string
+    LinuxSite:
+      additionalProperties: false
+      properties:
+        host_headers:
+          description: Host headers for the website.
+          items:
+            $ref: "#/components/schemas/HostHeader"
+          type: array
+        http2_enabled:
+          description: Indicates whether http/2 protocol is enabled for the website.
+          type: boolean
+        https_redirect_enabled:
+          description: Indicates whether automatic https redirection is enabled for the website.
+          type: boolean
+        name:
+          description: The name of the website.
+          type: string
+        path:
+          description: The path of the website.
+          type: string
+        ssl_enabled:
+          description: Indicates whether ssl is enabled for the website.
+          type: boolean
+      type: object
+    MailZone:
+      additionalProperties: false
+      properties:
+        aliases:
+          description: "List of aliases on the mail zone<br />\r
+
+            An alias is an e-mail address (alias) that automatically forwards received e-mails to another e-mail address (destination)."
+          items:
+            $ref: "#/components/schemas/Alias"
+          type: array
+        anti_spam:
+          $ref: "#/components/schemas/AntiSpam"
+        available_accounts:
+          description: List of mail zone accounts with their mailbox size.
+          items:
+            $ref: "#/components/schemas/MailZoneAccount"
+          type: array
+        catch_all:
+          $ref: "#/components/schemas/CatchAll"
+        enabled:
+          description: Indicates whether the mail zone is enabled.
+          type: boolean
+        name:
+          type: string
+        smtp_domains:
+          description: "List of extra smtp domains on the mail zone<br />\r
+
+            SMTP domain names allow you to link multiple domain names to a single e-mail address.<br />\r
+
+            E-mails sent to an SMTP domain will be caught by the respective e-mail address on the main domain name."
+          items:
+            $ref: "#/components/schemas/SmtpDomain"
+          type: array
+      type: object
+    MailZoneAccount:
+      additionalProperties: false
+      properties:
+        account_id:
+          description: Mail zone account id, use this value to create a mailbox
+          format: int32
+          type: integer
+        size:
+          description: Size of mailbox(es) in MB
+          format: int32
+          type: integer
+      type: object
+    Mailbox:
+      additionalProperties: false
+      properties:
+        actual_size:
+          description: Used size in MB
+          format: int32
+          type: integer
+        max_size:
+          description: Maximum size in MB
+          format: int32
+          type: integer
+        name:
+          type: string
+      type: object
+    MailboxDetail:
+      additionalProperties: false
+      properties:
+        actual_size:
+          description: Used size in MB
+          format: int32
+          type: integer
+        auto_forward:
+          $ref: "#/components/schemas/AutoForward"
+        auto_reply:
+          $ref: "#/components/schemas/AutoReply"
+        login:
+          description: Login to connect with the mailbox
+          type: string
+        max_size:
+          description: Maximum size in MB
+          format: int32
+          type: integer
+        name:
+          type: string
+      type: object
+    MySqlDatabase:
+      additionalProperties: false
+      properties:
+        account_id:
+          description: The account id for the database.
+          format: int32
+          type: integer
+        actual_size:
+          description: The actual size in MB for the database.
+          format: int32
+          type: integer
+        hostname:
+          description: Hostname
+          type: string
+        max_size:
+          description: The maximim size in MB for the database.
+          format: int32
+          type: integer
+        name:
+          description: Database name
+          type: string
+        user_count:
+          description: The number of users.
+          format: int32
+          type: integer
+      type: object
+    MySqlUser:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: User status
+          type: boolean
+        name:
+          description: User name
+          type: string
+        rights:
+          $ref: "#/components/schemas/UserRights"
+      type: object
+    NameServer:
+      additionalProperties: false
+      properties:
+        ip:
+          description: Nameserver ip
+          type: string
+        name:
+          description: Nameserver name
+          type: string
+      type: object
+    PhpVersion:
+      additionalProperties: false
+      properties:
+        version:
+          description: Php version
+          type: string
+      type: object
+    ProvisioningJobCompletion:
+      additionalProperties: false
+      properties:
+        id:
+          description: The id of the job.
+          type: string
+        resource_links:
+          description: Links to the created resource(s).
+          items:
+            type: string
+          type: array
+      type: object
+    ProvisioningJobInfo:
+      additionalProperties: false
+      properties:
+        completion:
+          $ref: "#/components/schemas/CompletionEstimation"
+        id:
+          description: The id of the job.
+          type: string
+        status:
+          $ref: "#/components/schemas/ProvisioningJobStatus"
+      type: object
+    ProvisioningJobStatus:
+      description: Current job status
+      enum:
+        - ongoing
+        - cancelled
+        - failed
+        - finished
+      type: string
+    RegisterDomain:
+      additionalProperties: false
+      properties:
+        domain_name:
+          description: "The domain name to register.<br />\r
+
+            Only pass the domain part and the tld.<br /><i>For abc.com, abc is the domain part, com is the tld.</i>"
+          type: string
+        name_servers:
+          description: List of name servers. When empty, the registation will be done on default name servers.
+          items:
+            type: string
+          type: array
+        registrant:
+          $ref: "#/components/schemas/RegistrantInput"
+      type: object
+    Registrant:
+      additionalProperties: false
+      properties:
+        address:
+          description: Address of the registrant.
+          type: string
+        city:
+          description: City of the registrant.
+          type: string
+        company_name:
+          description: "Company name of the registrant.<br />\r
+
+            The registrant is a company if not empty, otherwise the registrant is an individual when validating extra fields."
+          type: string
+        country_code:
+          description: "Country code of the registrant.\r
+
+            Syntax: 'BE', 'NL, 'FR', ..."
+          type: string
+        email:
+          description: Email of the registrant.
+          type: string
+        enterprise_number:
+          description: "Enterprise number of the registrant.<br />\r
+
+            Syntax: 'BE0123456789'"
+          type: string
+        fax:
+          description: "Fax of the registrant.\r
+
+            Syntax: '+32.123456789'"
+          type: string
+        first_name:
+          description: First name of the registrant.
+          type: string
+        language_code:
+          description: "Language code of the registrant.\r
+
+            Syntax: 'nl', 'fr', 'en', 'de', ..."
+          type: string
+        last_name:
+          description: Last name of the registrant.
+          type: string
+        phone:
+          description: "Phone of the registrant.<br />\r
+
+            Syntax: '+32.123456789'"
+          type: string
+        postal_code:
+          description: Postal code of the registrant.
+          type: string
+      type: object
+    RegistrantInput:
+      additionalProperties: false
+      properties:
+        address:
+          description: Address of the registrant.
+          type: string
+        city:
+          description: City of the registrant.
+          type: string
+        company_name:
+          description: "Company name of the registrant.<br />\r
+
+            The registrant is a company if not empty, otherwise the registrant is an individual when validating extra fields."
+          type: string
+        country_code:
+          description: "Country code of the registrant.\r
+
+            Syntax: 'BE', 'NL, 'FR', ..."
+          type: string
+        email:
+          description: Email of the registrant.
+          type: string
+        enterprise_number:
+          description: "Enterprise number of the registrant.<br />\r
+
+            Syntax: 'BE0123456789'"
+          type: string
+        extra_fields:
+          description: "List of registrant extra fields for the domain name.\r
+
+            <table><tr><th>Extension</th><th>Registrant specifics</th><th>Required extra field(s)</th></tr><tr><td>.dk</td><td>is a company</td><td>CompanyNumber</td></tr><tr><td>.es</td><td>is a company</td><td>CompanyNumber</td></tr><tr><td>.es</td><td>is an individual</td><td>PassportNumber</td></tr><tr><td>.fr</td><td>is a company</td><td>CompanyNumber</td></tr><tr><td>.it</td><td>is an individual and has country code 'IT'</td><td>CodiceFiscal</td></tr><tr><td>.it</td><td>is an individual and has not country code 'IT'</td><td>PassportNumber</td></tr><tr><td>.nu</td><td>is a company</td><td>CompanyNumber</td></tr><tr><td>.nu</td><td>is an individual</td><td>PassportNumber</td></tr><tr><td>.se</td><td>is a company</td><td>CompanyNumber</td></tr><tr><td>.se</td><td>is an individual</td><td>PassportNumber</td></tr></table>"
+          items:
+            $ref: "#/components/schemas/ExtraField"
+          type: array
+        fax:
+          description: "Fax of the registrant.\r
+
+            Syntax: '+32.123456789'"
+          type: string
+        first_name:
+          description: First name of the registrant.
+          type: string
+        language_code:
+          description: "Language code of the registrant.\r
+
+            Syntax: 'nl', 'fr', 'en', 'de', ..."
+          type: string
+        last_name:
+          description: Last name of the registrant.
+          type: string
+        phone:
+          description: "Phone of the registrant.<br />\r
+
+            Syntax: '+32.123456789'"
+          type: string
+        postal_code:
+          description: Postal code of the registrant.
+          type: string
+      type: object
+    ScheduledTask:
+      additionalProperties: false
+      properties:
+        cron_expression:
+          description: "Cron expression of scheduled task.<br />\r
+
+            5-digit expressions (*/5 * * * *) are required in the following sequence:<br /><ul><li>Minute (0 - 59, also */5, */10, */15 and */30 as every 5 minutes, every 10 minutes, every quarter or every half-hour are allowed)</li><li>Hour (0 - 23, also * as every hour is allowed)</li><li>Day of the month (1 - 31, also * as every day is allowed)</li><li>Month (1 - 12 as January to December, also * as every month is allowed)</li><li>Day of the week (1 - 7 as Monday to Sunday, also * as every day is allowed)</li></ul>"
+          type: string
+        enabled:
+          description: Enabled.
+          type: boolean
+        id:
+          description: "The id of the scheduled task.<br />\r
+
+            This value is ignored for creation of new scheduled tasks."
+          type: string
+        script_location:
+          description: Absolute path from this linux hosting to execute.
+          type: string
+      type: object
+    Servicepack:
+      additionalProperties: false
+      description: Servicepack information.
+      properties:
+        id:
+          description: The id of the service pack
+          format: int32
+          type: integer
+        name:
+          description: The name of the service pack
+          type: string
+      type: object
+    SiteBinding:
+      additionalProperties: false
+      description: A site binding identifies a web domain.
+      properties:
+        cert_thumbprint:
+          description: The certificate thumbprint of the site binding.
+          type: string
+        host_name:
+          description: The host name of the site binding.
+          type: string
+        ip_address:
+          description: The IP address of the site binding.
+          type: string
+        port:
+          description: The port of the site binding.
+          format: int32
+          type: integer
+        protocol:
+          description: The protocol of the site binding.
+          type: string
+        ssl_enabled:
+          description: Indicates whether ssl is enabled for the binding.
+          type: boolean
+      type: object
+    SmtpDomain:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enabled
+          type: boolean
+        hostname:
+          description: The smtp domain name
+          type: string
+      type: object
+    SshConfiguration:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enable or disable SSH.
+          type: boolean
+      type: object
+    SshKey:
+      additionalProperties: false
+      properties:
+        fingerprint:
+          description: "The fingerprint of the public key.<br />\r
+
+            This value is ignored for creation of new SSH keys."
+          type: string
+        public_key:
+          description: Public key
+          type: string
+      type: object
+    SshKeyDetail:
+      additionalProperties: false
+      properties:
+        fingerprint:
+          description: "The fingerprint of the public key.<br />\r
+
+            This value is ignored for creation of new SSH keys."
+          type: string
+        linux_hostings:
+          description: List of Linux hostings where SSH key is attached
+          items:
+            type: string
+          type: array
+        public_key:
+          description: Public key
+          type: string
+      type: object
+    SslCertificate:
+      additionalProperties: false
+      properties:
+        common_name:
+          description: The common name (e.g. domain.com) of the certificate.
+          type: string
+        expires_after:
+          description: The exact time the certificate will expire.
+          format: date-time
+          type: string
+        sha1_fingerprint:
+          description: "The SHA-1 fingerprint of the certificate.<br />\r
+
+            The fingerprint is a cryptographic hash which is a short unique identification of the certificate."
+          type: string
+        type:
+          $ref: "#/components/schemas/SslCertificateType"
+        validation_level:
+          $ref: "#/components/schemas/SslCertificateValidationLevel"
+      type: object
+    SslCertificateDetail:
+      additionalProperties: false
+      properties:
+        common_name:
+          description: The common name (e.g. domain.com) of the certificate.
+          type: string
+        expires_after:
+          description: The exact time the certificate will expire.
+          format: date-time
+          type: string
+        sha1_fingerprint:
+          description: "The SHA-1 fingerprint of the certificate.<br />\r
+
+            The fingerprint is a cryptographic hash which is a short unique identification of the certificate."
+          type: string
+        subject_alt_names:
+          description: The list of all supported dns names in the certificate.
+          items:
+            $ref: "#/components/schemas/SslSubjectAltName"
+          type: array
+        type:
+          $ref: "#/components/schemas/SslCertificateType"
+        validation_level:
+          $ref: "#/components/schemas/SslCertificateValidationLevel"
+      type: object
+    SslCertificateFileFormat:
+      description: "The file format of the returned file stream:\r
+
+        <ul><li>PFX: Also known as PKCS #12, is a single, password protected certificate archive that contains the entire certificate chain plus the matching private key.</li></ul>"
+      enum:
+        - pfx
+      type: string
+    SslCertificateRequest:
+      additionalProperties: false
+      properties:
+        certificate_type:
+          $ref: "#/components/schemas/SslCertificateType"
+        common_name:
+          description: The common name of the certificate request.
+          type: string
+        id:
+          description: The id of the certificate request.
+          format: int32
+          type: integer
+        order_code:
+          description: The order code of the certificate request.
+          type: string
+        validation_level:
+          $ref: "#/components/schemas/SslCertificateValidationLevel"
+        vendor:
+          $ref: "#/components/schemas/SslCertificateVendor"
+      type: object
+    SslCertificateRequestDetail:
+      additionalProperties: false
+      properties:
+        certificate_type:
+          $ref: "#/components/schemas/SslCertificateType"
+        common_name:
+          description: The common name of the certificate request.
+          type: string
+        id:
+          description: The id of the certificate request.
+          format: int32
+          type: integer
+        order_code:
+          description: The order code of the certificate request.
+          type: string
+        subject_alt_names:
+          description: The list of all supported domains in the certificate.
+          items:
+            $ref: "#/components/schemas/SslSubjectAltName"
+          type: array
+        validation_level:
+          $ref: "#/components/schemas/SslCertificateValidationLevel"
+        validations:
+          description: The list of dns names to be validated with the information related to domain verification.
+          items:
+            $ref: "#/components/schemas/SslCertificateRequestValidation"
+          type: array
+        vendor:
+          $ref: "#/components/schemas/SslCertificateVendor"
+      type: object
+    SslCertificateRequestValidation:
+      additionalProperties: false
+      properties:
+        auto_validated:
+          description: Returns true if no user interaction is required and the domain validation will be verified automatic.
+          type: boolean
+        cname_validation_content:
+          description: The value-part (Point To) of the CNAME-record that must be created as part of domain verification.
+          type: string
+        cname_validation_name:
+          description: The host-part (Name) of the CNAME-record that must be created as part of domain verification.
+          type: string
+        dns_name:
+          description: A domain name of the certificate.
+          type: string
+        email_addresses:
+          description: An array of eligible domain verification email addresses.
+          items:
+            type: string
+          type: array
+        file_validation_content:
+          description: The content your verification file must contain, consisting of three lines of plain-text.
+          items:
+            type: string
+          type: array
+        file_validation_url_http:
+          description: The URL (http format) your verification file must be uploaded to as part of domain verification.
+          type: string
+        file_validation_url_https:
+          description: The URL (https format) your verification file must be uploaded to as part of domain verification.
+          type: string
+        type:
+          $ref: "#/components/schemas/SslCertificateRequestValidationType"
+      type: object
+    SslCertificateRequestValidationType:
+      description: The domain validation verification type.
+      enum:
+        - dns
+        - file
+        - email
+      type: string
+    SslCertificateType:
+      description: "The type of the certificate:\r
+
+        <ul><li>Standard: Certificate for a single domain.</li><li>Multi domain: Certificate for multiple (sub)domains belonging to the same owner.</li><li>Wildcard: Certificate for all the subdomains.</li></ul>"
+      enum:
+        - standard
+        - multi_domain
+        - wildcard
+      type: string
+    SslCertificateValidationLevel:
+      description: "The validation level of the certificate:\r
+
+        <ul><li>Domain validated: Basic check of the identity of the owner of the domain name.</li><li>Organization validated: Company details are verified and integrated in the certificate.</li><li>Extended validated: A thorough verification of your domain name and company details.</li></ul>"
+      enum:
+        - domain_validated
+        - organization_validated
+        - extended_validated
+      type: string
+    SslCertificateVendor:
+      description: The vendor of the certificate.
+      enum:
+        - sectigo
+      type: string
+    SslSubjectAltName:
+      additionalProperties: false
+      properties:
+        type:
+          $ref: "#/components/schemas/SslSubjectAltNameType"
+        value:
+          description: The value of the alt name.
+          type: string
+      type: object
+    SslSubjectAltNameType:
+      description: "The type of the alt name:\r
+
+        <ul><li>Dns</li><li>Ip</li></ul>"
+      enum:
+        - dns
+        - ip
+      type: string
+    UpdateAliasRequest:
+      additionalProperties: false
+      properties:
+        destinations:
+          description: The alias destination e-mail addresses
+          items:
+            type: string
+          type: array
+      type: object
+    UpdateAntiSpamRequest:
+      additionalProperties: false
+      properties:
+        type:
+          $ref: "#/components/schemas/AntiSpamTypes"
+      type: object
+    UpdateMailboxPasswordRequest:
+      additionalProperties: false
+      properties:
+        password:
+          description: "The password for the database user.<br />\r
+
+            Passwords have to adhere to following rules:<br /><ul><li>Between 8-20 characters.</li><li>Must be a mix of letters and digits.</li><li>Must contain at least one digit (0-9).</li><li>Must contain at least one letter (a-z).</li><li>Cannot contain spaces.</li><li>Cannot contain characters: * € $ & + } { ' \" \\ </li></ul>"
+          type: string
+      type: object
+    UpdatePhpAPcuRequest:
+      additionalProperties: false
+      properties:
+        apcu_size:
+          description: The APcu size.
+          format: int32
+          type: integer
+        enabled:
+          description: Enables or disables APC.
+          type: boolean
+      type: object
+    UpdatePhpMemoryLimitRequest:
+      additionalProperties: false
+      properties:
+        memory_limit:
+          description: The php memory limit
+          format: int32
+          type: integer
+      type: object
+    UpdateSmtpDomainRequest:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enabled
+          type: boolean
+      type: object
+    UpdateUserPasswordRequest:
+      additionalProperties: false
+      properties:
+        password:
+          description: "The password for the database user.<br />\r
+
+            Passwords have to adhere to following rules:<br /><ul><li>Between 8-20 characters.</li><li>Must be a mix of letters and digits.</li><li>Must contain at least one digit (0-9).</li><li>Must contain at least one letter (a-z).</li><li>Cannot contain spaces.</li><li>Cannot contain characters: * € $ & + } { ' \" \\ </li></ul>"
+          type: string
+      type: object
+    UpdateUserStatusRequest:
+      additionalProperties: false
+      properties:
+        enabled:
+          description: Enabled
+          type: boolean
+      type: object
+    UserRights:
+      description: User rights
+      enum:
+        - read_and_write
+        - read_only
+      type: string
+    ValidationErrorMessage:
+      additionalProperties: false
+      properties:
+        error_code:
+          type: string
+        error_text:
+          type: string
+      type: object
+    WindowsHosting:
+      additionalProperties: false
+      properties:
+        domain_name:
+          description: Domain name for the Windows hosting account.
+          type: string
+        servicepack_id:
+          description: Id of Windows hosting service package.
+          format: int32
+          type: integer
+      type: object
+    WindowsHostingDetail:
+      additionalProperties: false
+      properties:
+        actual_size:
+          description: Used webspace size in MB
+          format: int32
+          type: integer
+        application_pool:
+          $ref: "#/components/schemas/ApplicationPool"
+        domain_name:
+          description: Domain name for the Windows hosting account.
+          type: string
+        ftp_username:
+          description: Ftp username
+          type: string
+        ip:
+          description: Windows hosting IP address
+          type: string
+        ip_type:
+          $ref: "#/components/schemas/WindowsIpType"
+        max_size:
+          description: Maximum webspace size in MB
+          format: int32
+          type: integer
+        mssql_database_names:
+          description: A list of mssql databases linked to the hosting account.<br />
+          items:
+            type: string
+          type: array
+        servicepack_id:
+          description: Id of Windows hosting service package.
+          format: int32
+          type: integer
+        sites:
+          description: A list of websites on the hosting account.
+          items:
+            $ref: "#/components/schemas/WindowsSite"
+          type: array
+      type: object
+    WindowsIpType:
+      description: Type of the hosting IP address (dedicated or shared)
+      enum:
+        - dedicated
+        - shared
+      type: string
+    WindowsSite:
+      additionalProperties: false
+      properties:
+        bindings:
+          description: The bindings for the website.
+          items:
+            $ref: "#/components/schemas/SiteBinding"
+          type: array
+        name:
+          description: The name of the website.
+          type: string
+        path:
+          description: The path of the website.
+          type: string
+      type: object

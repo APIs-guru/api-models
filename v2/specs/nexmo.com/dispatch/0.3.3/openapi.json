@@ -1,0 +1,750 @@
+{
+  "openapi": "3.0.0",
+  "servers": [
+    {
+      "url": "https://api.nexmo.com/v0.1/dispatch"
+    }
+  ],
+  "info": {
+    "contact": {
+      "email": "devrel@vonage.com",
+      "name": "Vonage DevRel",
+      "url": "https://developer.nexmo.com/"
+    },
+    "description": "The Dispatch API enables the developer to specify a multiple message workflow. A workflow follows a template. The first one we are adding is the failover template. The failover template instructs the Messages API to first send a message to the specified channel. If that message fails immediately or if the condition_status is not reached within the given time period the next message is sent. The developer will also receive status webhooks from the messages resource for each delivery and read event. This API is currently in Beta.",
+    "title": "Dispatch API",
+    "version": "0.3.3",
+    "x-label": "Beta",
+    "x-origin": [
+      {
+        "format": "openapi",
+        "url": "https://raw.githubusercontent.com/nexmo/api-specification/master/definitions/dispatch.yml",
+        "version": "3.0"
+      }
+    ],
+    "x-providerName": "nexmo.com",
+    "x-serviceName": "dispatch",
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg"
+    }
+  },
+  "paths": {
+    "/": {
+      "post": {
+        "callbacks": {
+          "final-report": {
+            "{$request.body#/callback}": {
+              "post": {
+                "description": "The final workflow callback is sent when The condition_status was met within the expiry_time. If we take the example API call above. If we received a delivered status at 300 seconds (within the expiry_time) the workflow would be marked as completed. We would not send an SMS. We would then send the final callback. The final message in the failover is delivered. If the message Errors on the last step we will send the final callback. Please note GET is not currently supported. You will notice we have an href to a resource in some of the callbacks. These will fail to load but we wanted to maintain the same structure so that we can seamlessly integrate GET later.",
+                "operationId": "final-report",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/finalReport"
+                      }
+                    }
+                  },
+                  "required": true
+                },
+                "responses": {
+                  "200": {
+                    "description": "Your server returns this code if it accepts the callback"
+                  }
+                },
+                "summary": "The Final Report",
+                "x-example-path": "/webhooks/final-report"
+              }
+            }
+          },
+          "message-status": {
+            "{$request.body#/callback}": {
+              "post": {
+                "description": "status of the message read or delivered etc.",
+                "operationId": "message-status",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/MessageStatus"
+                      }
+                    }
+                  },
+                  "required": true
+                },
+                "responses": {
+                  "200": {
+                    "description": "Your server returns this code if it accepts the callback"
+                  }
+                },
+                "summary": "Message Status",
+                "x-example-path": "/webhooks/message-status"
+              }
+            }
+          }
+        },
+        "operationId": "createWorkflow",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/createWorkflow"
+              }
+            }
+          },
+          "description": "Please note that last message does not have failover attribute inside it. All other messages must contain a failover attribute.",
+          "required": true,
+          "x-hide-request": true
+        },
+        "responses": {
+          "202": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Response"
+                }
+              }
+            },
+            "description": "Accepted"
+          },
+          "400": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            },
+            "description": "Bad Request"
+          }
+        },
+        "security": [
+          {
+            "bearerAuth": []
+          },
+          {
+            "basicAuth": []
+          }
+        ],
+        "summary": "Create a workflow"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "AudioProperty": {
+        "properties": {
+          "url": {
+            "description": "The URL of the audio attachment. `messenger` supports .mp3. `whatsapp` supports .aac, .m4a, .amr, .mp3 and .opus.",
+            "example": "https://example.com/audio.mp3",
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Error": {
+        "description": "The error format is standardized to the 4xx/5xx range with a code and a human readable explanation.",
+        "properties": {
+          "detail": {
+            "example": "Your request parameters did not validate.",
+            "type": "string"
+          },
+          "instance": {
+            "example": null,
+            "type": "string"
+          },
+          "invalid_parameters": {
+            "properties": {
+              "name": {
+                "example": "Invalid `from` parameter",
+                "type": "string"
+              },
+              "reason": {
+                "example": "Invalid `from` parameter",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "type": {
+            "example": "https://www.nexmo.com/messages/Errors#InvalidParams",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "detail",
+          "instance"
+        ],
+        "type": "object"
+      },
+      "FailoverProperty": {
+        "description": "Please note that last message does not have failover attribute inside it. All other messages must contain a failover attribute.",
+        "properties": {
+          "condition_status": {
+            "description": "Set the status the message must reach in the expiry_time before failing over. Options are delivered or read.",
+            "enum": [
+              "delivered",
+              "read"
+            ],
+            "example": "delivered",
+            "type": "string"
+          },
+          "expiry_time": {
+            "description": "In seconds. Minimum value is 15 and maximum value is 86,400 seconds (1 day).",
+            "example": 600,
+            "maximum": 86400,
+            "minimum": 15,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "FileProperty": {
+        "properties": {
+          "caption": {
+            "description": "Additional text to accompany the image. Supported by WhatsApp and MMS.",
+            "example": "Additional text to accompany the image.",
+            "maxLength": 3000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "url": {
+            "description": "The URL of the file attachment. `messenger` supports a wide range of attachments including .zip, .csv and .pdf. `whatsapp` supports .pdf, .doc(x), .ppt(x) and .xls(x).",
+            "example": "https://example.com/file.zip",
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "FromProperty": {
+        "properties": {
+          "id": {
+            "description": "Your ID for the platform that you are sending from.\n\n**Messenger**: This value should be the `to.id` value you received in the inbound messenger event.\n\n**Viber**: This is your Service Message ID given to you by your Vonage Account Manager. To find out more please visit [vonage.com](https://www.vonage.com/communications-apis/messages/).\n\n**SMS**: **MMS**: or **WhatsApp** This value is not required.\n",
+            "example": "0123456789012345",
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "number": {
+            "description": "**SMS**: or **MMS**: The phone number of the message sender in the [E.164](https://en.wikipedia.org/wiki/E.164) format.\n\n**WhatsApp**: This is your WhatsApp Business Number given to you by your Vonage Account Manager. To find out more please visit [vonage.com](https://www.vonage.com/communications-apis/messages/).\n\n**Messenger**: or **Viber**: This value is not required.\n",
+            "example": "447700900000",
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of message that you want to send.",
+            "enum": [
+              "sms",
+              "viber_service_msg",
+              "messenger",
+              "whatsapp"
+            ],
+            "example": "sms",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "ImageProperty": {
+        "properties": {
+          "caption": {
+            "description": "Additional text to accompany the image. Supported by WhatsApp and MMS.",
+            "example": "Additional text to accompany the image.",
+            "maxLength": 3000,
+            "minLength": 1,
+            "type": "string"
+          },
+          "url": {
+            "description": "The URL of the image attachment. `messenger` and `mms` supports .jpg, .jpeg, .png and .gif. `viber_service_msg` supports .jpg .jpeg, and .png. `whatsapp` supports .jpg .jpeg, and .png.",
+            "example": "https://example.com/image.jpg",
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "MessageProperty": {
+        "properties": {
+          "content": {
+            "properties": {
+              "audio": {
+                "$ref": "#/components/schemas/AudioProperty"
+              },
+              "file": {
+                "$ref": "#/components/schemas/FileProperty"
+              },
+              "image": {
+                "$ref": "#/components/schemas/ImageProperty"
+              },
+              "template": {
+                "$ref": "#/components/schemas/TemplateProperty"
+              },
+              "text": {
+                "description": "The text of the message.\n\n**Messenger**: Is limited to 640 characters\n\n**SMS** or **Viber**: Is 1000 characters\n\n**WhatsApp**: is 4096 characters\n",
+                "example": "Vonage Verification code: 64873. Valid for 10 minutes.",
+                "maxLength": 4096,
+                "minLength": 1,
+                "type": "string"
+              },
+              "type": {
+                "description": "The type of message that you are sending.\n\n**Messenger**: supports `text`, `image`, `audio`, `video` and `file`.\n\n**Viber Service Messages**: supports `image` and `text`.\n\n**WhatsApp**: supports `template`, `text`, `image`, `audio`, `video` and `file`.\n\n**SMS**: supports `text`.\n",
+                "enum": [
+                  "text",
+                  "image",
+                  "audio",
+                  "video",
+                  "file",
+                  "template",
+                  "custom"
+                ],
+                "example": "text",
+                "type": "string"
+              },
+              "video": {
+                "$ref": "#/components/schemas/VideoProperty"
+              }
+            },
+            "required": [
+              "type"
+            ],
+            "type": "object"
+          },
+          "messenger": {
+            "properties": {
+              "category": {
+                "description": "The use of different category tags enables the business to send messages for different use cases. For Facebook Messenger they need to comply with their [Messaging Types policy]( https://developers.facebook.com/docs/messenger-platform/send-messages#messaging_types). Vonage maps our `category` to their `messaging_type`. If `message_tag` is used, then an additional `tag` for that type is mandatory. By default Vonage sends the `response` category to Facebook Messenger.",
+                "enum": [
+                  "response",
+                  "update",
+                  "message_tag"
+                ],
+                "example": "message_tag",
+                "type": "string"
+              },
+              "tag": {
+                "description": "‘A full list of the possible tags is available on [developers.facebook.com](https://developers.facebook.com/docs/messenger-platform/send-messages/message-tags)'",
+                "example": "ticket_update",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "viber_service_msg": {
+            "properties": {
+              "category": {
+                "description": "The use of different category tags enables the business to send messages for different use cases. For Viber Service Messages the first message sent from a business to a user must be personal, informative and a targeted message - not promotional. By default Vonage sends the `transaction` category to Viber Service Messages.",
+                "enum": [
+                  "transaction",
+                  "promotion"
+                ],
+                "example": "transaction",
+                "type": "string"
+              },
+              "ttl": {
+                "description": "Only valid for Viber Service Messages. Set the time-to-live of message to be delivered in seconds. i.e. if the message is not delivered in 600 seconds then delete the message.",
+                "example": 600,
+                "maximum": 86400,
+                "minimum": 30,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          },
+          "whatsapp": {
+            "properties": {
+              "locale": {
+                "description": "We are using the industry standard, BCP 47, for locales. So in your API call to the /messages API you will need to put “en-GB” and this will refer to the “en_GB” template for WhatsApp. A full list of the possible locales is available on [developers.facebook.com](https://developers.facebook.com/docs/whatsapp/message-templates/creation#translations).",
+                "example": "en-GB",
+                "type": "string"
+              },
+              "policy": {
+                "description": "Please note that WhatsApp will deprecate `fallback` policy in January 2020. There are two policies that you can specify when sending a Message Template: `deterministic` and `fallback`. `deterministic` — Deliver the Message Template in exactly the language and locale asked for. `fallback` — Deliver the Message Template in the language that matches users language/locale setting on device. If one can not be found, deliver using the specified fallback language.",
+                "enum": [
+                  "fallback",
+                  "deterministic"
+                ],
+                "example": "deterministic",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "required": [
+          "content"
+        ],
+        "type": "object"
+      },
+      "MessageStatus": {
+        "description": "The callbacks for the message status are the same as defined in the Messaging API. The only difference will be that dispatch_uuid and link will be appended.",
+        "properties": {
+          "_links": {
+            "properties": {
+              "workflow": {
+                "properties": {
+                  "dispatch_uuid": {
+                    "example": "aaaaaaaa-bbbb-cccc-dddd-0123456789ab",
+                    "type": "string"
+                  },
+                  "href": {
+                    "description": "Please note GET is not currently supported",
+                    "example": "/workflows/aaaaaaaa-bbbb-cccc-dddd-0123456789ab",
+                    "type": "string"
+                  }
+                },
+                "type": "object"
+              }
+            },
+            "type": "object"
+          },
+          "error": {
+            "properties": {
+              "code": {
+                "description": "The error code. See [our errors list](/api-errors/messages-olympus) for a list of possible errors",
+                "example": 1300,
+                "type": "integer"
+              },
+              "reason": {
+                "description": "Text describing the error. See [our errors list](/api-errors/messages-olympus) for a list of possible errors",
+                "example": "Not part of the provider network",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          "from": {
+            "$ref": "#/components/schemas/FromProperty"
+          },
+          "message_uuid": {
+            "example": "aaaaaaaa-bbbb-cccc-dddd-0123456789ab",
+            "type": "string"
+          },
+          "status": {
+            "description": "The status of the message.",
+            "enum": [
+              "submitted",
+              "delivered",
+              "read",
+              "rejected",
+              "undeliverable"
+            ],
+            "example": "delivered",
+            "type": "string"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/TimestampProperty"
+          },
+          "to": {
+            "$ref": "#/components/schemas/ToProperty"
+          },
+          "usage": {
+            "properties": {
+              "currency": {
+                "description": "The charge currency in ISO 4217 format.",
+                "enum": [
+                  "EUR"
+                ],
+                "example": "EUR",
+                "type": "string"
+              },
+              "price": {
+                "description": "The charge amount as a stringified number.",
+                "example": "0.0333",
+                "type": "string"
+              }
+            },
+            "type": "object"
+          }
+        },
+        "type": "object"
+      },
+      "Response": {
+        "properties": {
+          "dispatch_uuid": {
+            "description": "The parent ID for workflow request.",
+            "example": "aaaaaaaa-bbbb-cccc-dddd-0123456789ab",
+            "type": "string"
+          }
+        },
+        "required": [
+          "dispatch_uuid"
+        ],
+        "type": "object"
+      },
+      "TemplateProperty": {
+        "properties": {
+          "name": {
+            "description": "The name of the template.",
+            "example": "whatsapp:hsm:technology:vonage:verify",
+            "type": "string"
+          },
+          "parameters": {
+            "items": {
+              "properties": {
+                "default": {
+                  "description": "The parameters are an array. The first value being {{1}} in the template.",
+                  "example": "1234",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "TimestampProperty": {
+        "description": "The datetime of when the event occurred.",
+        "example": "2020-01-01T14:00:00.000Z",
+        "format": "ISO 8601",
+        "type": "string"
+      },
+      "ToProperty": {
+        "properties": {
+          "id": {
+            "description": "The ID of the message recipient.\n\n**Messenger**: This value should be the `from.id` value you received in the inbound messenger event.\n\n**SMS**: or **Viber**: or **WhatsApp** This value is not required.\n",
+            "example": "0123456789012345",
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "number": {
+            "description": "**SMS**: or **MMS**: or **Viber**: or **WhatsApp** The phone number of the message recipient in the [E.164](https://en.wikipedia.org/wiki/E.164) format. Don't use a leading + or 00 when entering a phone number, start with the country code, for example, 447700900000.\n\n**Messenger**: This value is not required.\n",
+            "example": "447700900000",
+            "maxLength": 50,
+            "minLength": 1,
+            "type": "string"
+          },
+          "type": {
+            "description": "The type of message that you want to send.",
+            "enum": [
+              "sms",
+              "viber_service_msg",
+              "messenger",
+              "whatsapp"
+            ],
+            "example": "sms",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type"
+        ],
+        "type": "object"
+      },
+      "VideoProperty": {
+        "properties": {
+          "url": {
+            "description": "The URL of the video attachment.\n\n**messenger** supports .mp4\n\n**whatsapp** supports .mp4 and .3gpp. Note, only H.264 video codec and AAC audio codec is supported.\n",
+            "example": "https://example.com/video.mp4",
+            "maxLength": 2000,
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "createWorkflow": {
+        "properties": {
+          "template": {
+            "description": "The template that the Dispatch API will execute. For the initial version of the API the only available value will be failover",
+            "enum": [
+              "failover"
+            ],
+            "example": "failover",
+            "type": "string"
+          },
+          "workflow": {
+            "description": "Contains a message object that must reflect the current /messages resource. All parameters within the content object reflect the /messages docs.",
+            "items": {
+              "oneOf": [
+                {
+                  "$ref": "#/components/schemas/sendWithFailoverMessage"
+                },
+                {
+                  "$ref": "#/components/schemas/sendMessage"
+                }
+              ]
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "finalReport": {
+        "properties": {
+          "_links": {
+            "properties": {
+              "messages": {
+                "items": {
+                  "properties": {
+                    "channel": {
+                      "enum": [
+                        "messenger",
+                        "viber_sevice_msg",
+                        "sms",
+                        "whatsapp",
+                        "mms"
+                      ],
+                      "example": "viber_service_msg",
+                      "type": "string"
+                    },
+                    "href": {
+                      "description": "Please note GET is not currently supported",
+                      "example": "aaaaaaaa-bbbb-cccc-dddd-0123456789ab",
+                      "type": "string"
+                    },
+                    "message_uuid": {
+                      "example": "aaaaaaaa-bbbb-cccc-dddd-0123456789ab",
+                      "type": "string"
+                    },
+                    "status": {
+                      "enum": [
+                        "submitted",
+                        "delivered",
+                        "read",
+                        "rejected",
+                        "undeliverable"
+                      ],
+                      "type": "string"
+                    },
+                    "usage": {
+                      "properties": {
+                        "currency": {
+                          "description": "The charge currency in ISO 4217 format.",
+                          "enum": [
+                            "EUR"
+                          ],
+                          "example": "EUR",
+                          "type": "string"
+                        },
+                        "price": {
+                          "description": "The charge amount as a stringified number.",
+                          "example": "0.0333",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  },
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "dispatch_uuid": {
+            "example": "aaaaaaaa-bbbb-cccc-dddd-0123456789ab",
+            "type": "string"
+          },
+          "status": {
+            "enum": [
+              "completed",
+              "error"
+            ],
+            "example": "completed",
+            "type": "string"
+          },
+          "template": {
+            "enum": [
+              "failover"
+            ],
+            "example": "failover",
+            "type": "string"
+          },
+          "timestamp": {
+            "$ref": "#/components/schemas/TimestampProperty"
+          },
+          "usage": {
+            "description": "This is the total cost of your Workflow request. Please note if a preceding message in the workflow request is delivered after the final message in the workflow is delivered it may not reflect the true total cost of the workflow.",
+            "properties": {
+              "currency": {
+                "description": "The charge currency in ISO 4217 format.",
+                "enum": [
+                  "EUR"
+                ],
+                "example": "EUR",
+                "type": "string"
+              },
+              "price": {
+                "description": "The charge amount as a stringified number.",
+                "example": "0.02",
+                "type": "string"
+              }
+            },
+            "type": "object",
+            "x-nexmo-developer-collection-description-shown": true
+          }
+        },
+        "type": "object"
+      },
+      "sendMessage": {
+        "description": "Send Message",
+        "properties": {
+          "from": {
+            "$ref": "#/components/schemas/FromProperty"
+          },
+          "message": {
+            "$ref": "#/components/schemas/MessageProperty"
+          },
+          "to": {
+            "$ref": "#/components/schemas/ToProperty"
+          }
+        },
+        "required": [
+          "to",
+          "from",
+          "message"
+        ],
+        "type": "object"
+      },
+      "sendWithFailoverMessage": {
+        "description": "Send With Failover Message",
+        "properties": {
+          "failover": {
+            "$ref": "#/components/schemas/FailoverProperty"
+          },
+          "from": {
+            "$ref": "#/components/schemas/FromProperty"
+          },
+          "message": {
+            "$ref": "#/components/schemas/MessageProperty"
+          },
+          "to": {
+            "$ref": "#/components/schemas/ToProperty"
+          }
+        },
+        "required": [
+          "to",
+          "from",
+          "message"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "scheme": "basic",
+        "type": "http"
+      },
+      "bearerAuth": {
+        "bearerFormat": "JWT",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  }
+}

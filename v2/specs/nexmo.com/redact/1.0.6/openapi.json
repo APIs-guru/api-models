@@ -1,0 +1,398 @@
+{
+  "openapi": "3.0.0",
+  "servers": [
+    {
+      "url": "https://api.nexmo.com/v1/redact"
+    }
+  ],
+  "info": {
+    "contact": {
+      "email": "devrel@vonage.com",
+      "name": "Vonage DevRel",
+      "url": "https://developer.nexmo.com/"
+    },
+    "description": "The [Redact API](/redact/overview) helps organisations meet their privacy compliance obligations. It provides controlled, on-demand redaction of private information from transactional records in the long-term storage. Note, Redact API does not have the capability to redact the short-lived server logs that are retained for a few weeks. For SMS customers that need immediate redaction, Vonage suggests using [Advanced Auto-redact](/redact/overview#auto-redact-vs-redact-api).",
+    "title": "Redact API",
+    "version": "1.0.6",
+    "x-origin": [
+      {
+        "format": "openapi",
+        "url": "https://raw.githubusercontent.com/nexmo/api-specification/master/definitions/redact.yml",
+        "version": "3.0"
+      }
+    ],
+    "x-providerName": "nexmo.com",
+    "x-serviceName": "redact",
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg"
+    }
+  },
+  "paths": {
+    "/transaction": {
+      "post": {
+        "description": "",
+        "operationId": "redact-message",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/RedactTransaction"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Success"
+          },
+          "401": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorUnauthorized"
+                }
+              }
+            },
+            "description": "Authentication failure"
+          },
+          "403": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorPrematureRedaction"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorUnprovisioned"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Authorisation denied"
+          },
+          "404": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorInvalidId"
+                }
+              }
+            },
+            "description": "No such record"
+          },
+          "422": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/ErrorInvalidJson"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorUnsupportedProduct"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Invalid JSON body"
+          },
+          "429": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ErrorThrottled"
+                }
+              }
+            },
+            "description": "Rate Limited"
+          }
+        },
+        "security": [
+          {
+            "basicAuth": []
+          }
+        ],
+        "summary": "Redact a specific message"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "ErrorInvalidId": {
+        "properties": {
+          "detail": {
+            "description": "Additional information about the error",
+            "example": "ID '0A000000B0C9A1234' could not be found (type=MT)",
+            "type": "string"
+          },
+          "instance": {
+            "description": "Internal Trace ID",
+            "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+            "type": "string"
+          },
+          "title": {
+            "description": "Generic error message",
+            "example": "Invalid ID",
+            "type": "string"
+          },
+          "type": {
+            "description": "Link to error / remediation options",
+            "example": "https://developer.nexmo.com/api-errors#invalid-id",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "detail",
+          "instance"
+        ],
+        "type": "object"
+      },
+      "ErrorInvalidJson": {
+        "description": "Invalid JSON",
+        "properties": {
+          "detail": {
+            "description": "Additional information about the error",
+            "example": "Unexpected character ('\"' (code 34)): was expecting comma to separate Object entries",
+            "type": "string"
+          },
+          "instance": {
+            "description": "Internal Trace ID",
+            "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+            "type": "string"
+          },
+          "title": {
+            "description": "Generic error message",
+            "example": "Invalid JSON",
+            "type": "string"
+          },
+          "type": {
+            "description": "Link to error / remediation options",
+            "example": "https://developer.nexmo.com/api-errors#invalid-json",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "detail",
+          "instance"
+        ],
+        "type": "object"
+      },
+      "ErrorPrematureRedaction": {
+        "description": "Premature Redaction",
+        "properties": {
+          "detail": {
+            "description": "Additional information about the error",
+            "example": "You must wait 60 minutes before redacting ID '0A000000B0C9A1234'",
+            "type": "string"
+          },
+          "instance": {
+            "description": "Internal Trace ID",
+            "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+            "type": "string"
+          },
+          "title": {
+            "description": "Generic error message",
+            "example": "Premature Redaction",
+            "type": "string"
+          },
+          "type": {
+            "description": "Link to error / remediation options",
+            "example": "https://developer.nexmo.com/api-errors/redact#premature-redaction",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "detail",
+          "instance"
+        ],
+        "type": "object"
+      },
+      "ErrorThrottled": {
+        "properties": {
+          "detail": {
+            "description": "Additional information about the error",
+            "example": "Please wait, then retry your request",
+            "type": "string"
+          },
+          "instance": {
+            "description": "Internal Trace ID",
+            "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+            "type": "string"
+          },
+          "title": {
+            "description": "Generic error message",
+            "example": "Rate Limit Hit",
+            "type": "string"
+          },
+          "type": {
+            "description": "Link to error / remediation options",
+            "example": "https://developer.nexmo.com/api-errors/redact#rate-limit",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "detail",
+          "instance"
+        ],
+        "type": "object"
+      },
+      "ErrorUnauthorized": {
+        "properties": {
+          "error_title": {
+            "description": "Error title",
+            "example": "Unauthorized",
+            "type": "string"
+          },
+          "type": {
+            "description": "Machine readable error type",
+            "example": "UNAUTHORIZED",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "error_title"
+        ],
+        "type": "object"
+      },
+      "ErrorUnprovisioned": {
+        "description": "Unprovisioned",
+        "properties": {
+          "detail": {
+            "description": "Additional information about the error",
+            "example": "User=ABC123 is not provisioned to redact product=SMS",
+            "type": "string"
+          },
+          "instance": {
+            "description": "Internal Trace ID",
+            "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+            "type": "string"
+          },
+          "title": {
+            "description": "Generic error message",
+            "example": "Authorisation error",
+            "type": "string"
+          },
+          "type": {
+            "description": "Link to error / remediation options",
+            "example": "https://developer.nexmo.com/api-errors#unprovisioned",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "detail",
+          "instance"
+        ],
+        "type": "object"
+      },
+      "ErrorUnsupportedProduct": {
+        "description": "Unsupported Product",
+        "properties": {
+          "detail": {
+            "description": "Additional information about the error",
+            "example": "No product corresponding to supplied string sms2!",
+            "type": "string"
+          },
+          "instance": {
+            "description": "Internal Trace ID",
+            "example": "bf0ca0bf927b3b52e3cb03217e1a1ddf",
+            "type": "string"
+          },
+          "title": {
+            "description": "Generic error message",
+            "example": "Invalid Product",
+            "type": "string"
+          },
+          "type": {
+            "description": "Link to error / remediation options",
+            "example": "https://developer.nexmo.com/api-errors/redact#invalid-product",
+            "type": "string"
+          }
+        },
+        "required": [
+          "type",
+          "title",
+          "detail",
+          "instance"
+        ],
+        "type": "object"
+      },
+      "RedactTransaction": {
+        "properties": {
+          "id": {
+            "description": "The transaction ID to redact",
+            "example": "209ab3c7536542b91e8b5aef032f6861",
+            "type": "string"
+          },
+          "product": {
+            "description": "Product name that the ID provided relates to",
+            "enum": [
+              "sms",
+              "voice",
+              "number-insight",
+              "verify",
+              "verify-sdk",
+              "messages"
+            ],
+            "example": "sms",
+            "type": "string"
+          },
+          "type": {
+            "default": "outbound",
+            "description": "Required if redacting SMS data",
+            "enum": [
+              "inbound",
+              "outbound"
+            ],
+            "example": "outbound",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "product",
+          "type"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "basicAuth": {
+        "scheme": "basic",
+        "type": "http"
+      }
+    }
+  },
+  "x-errors": {
+    "invalid-product": {
+      "description": "The provided product is invalid",
+      "link": {
+        "text": "View API reference",
+        "url": "/api/redact#transaction"
+      },
+      "resolution": "Modify your request to provide a valid product"
+    },
+    "premature-redaction": {
+      "description": "There is a 1 hour time period before data can be redacted to allow for all data to propagate through the Vonage system",
+      "resolution": "Wait until the data becomes valid for redaction"
+    },
+    "rate-limit": {
+      "description": "The request was rate limited",
+      "resolution": "The Redact API supports 170 requests per second. Slow down your request rate"
+    }
+  }
+}

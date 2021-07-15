@@ -1,0 +1,5258 @@
+openapi: 3.0.0
+servers:
+  - url: http://example.com/setup
+    variables: {}
+info:
+  contact: {}
+  description: |-
+    # Google Home Local API
+    This is an unofficial documentation of the local API used by the Home app to communicate with GH devices.
+    [GitHub Repo](https://github.com/rithvikvibhu/GHLocalApi)
+
+    [![GitHub stars](https://img.shields.io/github/stars/rithvikvibhu/GHLocalApi)](https://github.com/rithvikvibhu/GHLocalApi/stargazers) [![GitHub license](https://img.shields.io/github/license/rithvikvibhu/GHLocalApi)](https://github.com/rithvikvibhu/GHLocalApi/blob/master/LICENSE.md)
+
+    ## Getting Started
+
+    Requests must be made over HTTPS, port 8443, so the base URL for these endpoints is: `https://<google-home-ip>:8443/setup/`
+
+    Get the IP of Google Home from the Google Home app (Device Settings -> End of the list) or from your router.
+
+    GET requests are simple, in the browser kind.  
+    POST requests need to set the header (when there's a body): `content-type: application/json`
+
+    ## Authentication
+
+    Since June 2019, most requests (with exceptions like `/setup/eureka_info`) need a local authorization token.
+
+    There are 3 kinds of tokens involved here:
+
+    ### Local Authorization Token
+    This token must be sent in all requests in the header `cast-local-authorization-token`. It is short-lived (~1 day) and may change unexpectedly (with a sync, change in homegraph, etc.)
+    ##### Get this token
+    - With access to an android device, [get this token directly by either method](https://gist.github.com/rithvikvibhu/1a0f4937af957ef6a78453e3be482c1f).
+    - Without a device, or to integrate it with a script, use an access token to get the homegraph and extract the token. To get an access token, read the next section. Check the example section for more info.
+
+    ### Access Token
+    This is a standard google oauth2 access token. It is in the form `ya29.***`.
+    This gives access to the Google Home Foyer API. These expire in an hour.
+    Use this to get the homegraph (and then the local authorization token above).
+    ##### Get this token
+    To get this access token, either a Google account username/password or a Google Master Token is needed. More info in the gist.
+    Use the script [from this gist](https://gist.github.com/rithvikvibhu/952f83ea656c6782fbd0f1645059055d).
+
+    ### Master Token
+    This is in the form `aas_et/***` and can be used to request access tokens.
+    ##### Get this token
+    The same [script in the gist](https://gist.github.com/rithvikvibhu/952f83ea656c6782fbd0f1645059055d) that gets the access token can also get the master token. Needs Google account creds.
+
+    ## Example
+
+    Here's the whole flow from just a pair of username/password to using the local API.
+
+    Prerequisites:
+    - [grpcurl](https://github.com/fullstorydev/grpcurl)
+    - [Proto files](https://drive.google.com/drive/folders/1RvnN3y-G23pd2SWHmfV_7sef8QU5GNF4?usp=sharing) (preserve folder structure)
+
+    ### 1. Get an access token with the script
+    - Download get_tokens.py
+    - Fill in username and password
+    ```sh
+    python3 get_tokens.py
+    # Note down the access token printed.
+    ```
+
+    ### 2. Use the access token and get home graph
+    - This prints the json and uses jq to parse and filter out the fields deviceName and localAuthToken
+    - This will give a list of all devices and their local auth tokens
+    ```sh
+    ./grpcurl -H 'authorization: Bearer ya29.a0Af****' \
+    	-import-path /path/to/protos \
+    	-proto /path/to/protos/google/internal/home/foyer/v1.proto \
+    	googlehomefoyer-pa.googleapis.com:443 \
+    	google.internal.home.foyer.v1.StructuresService/GetHomeGraph | jq '.home.devices[] | {deviceName, localAuthToken}'
+    # Note down the local auth token for the device you want.
+    ```
+
+    ### 3. Make the call to the local device using the local auth token
+    ```sh
+    curl -H "cast-local-authorization-token: LOCAL_AUTH_TOKEN" --verbose --insecure https://192.168.0.18:8443/setup/bluetooth/status
+    ```
+  title: Google Home
+  version: "2.0"
+  x-codegen-settings:
+    AllowSkippingSSLCertVerification: false
+    AndroidHttpClient: ANDROID_OK
+    AndroidUseAppManifest: false
+    AppendContentHeaders: true
+    ApplyCustomizations: []
+    ArraySerialization: Indexed
+    BackoffFactor: 0
+    BodySerialization: 0
+    CSharpHttpClient: UNIREST
+    CollectParameters: false
+    DisableDocs: false
+    DisableLinting: false
+    DoNotSplitWords: []
+    EnableAdditionalModelProperties: false
+    EnableGlobalUserAgent: true
+    EnableHttpCache: false
+    EnableImmutableModels: false
+    EnableLogging: false
+    EnablePHPComposerVersionString: false
+    EncodeTemplateParameters: true
+    ForceKeywordArgsInRuby: false
+    GenerateAdvancedDocs: true
+    GenerateAppveyorConfig: false
+    GenerateAsyncCode: true
+    GenerateCircleConfig: false
+    GenerateEnums: true
+    GenerateExceptions: true
+    GenerateInterfaces: false
+    GenerateJenkinsConfig: false
+    GenerateModels: true
+    GenerateTravisConfig: false
+    IgnoreIfNullJson: false
+    IsLatestVersion: false
+    JavaHttpClient: JAVA_OK
+    JavaUsePropertiesConfig: false
+    LiftParameterDescriptionFromCustomType: false
+    ModelSerializationScheme: Json
+    NodeHttpClient: NODE_REQUEST
+    Nullify404: false
+    ObjCHttpClient: UNIREST
+    PHPHttpClient: UNIREST
+    ParameterArrayFormat: ParamArrayWithIndex
+    PreserveParameterOrder: true
+    ResponseMapping:
+      Type: Simple
+    Retries: 0
+    RetryInterval: 1
+    ReturnCompleteHttpResponse: false
+    RunscopeEnabled: false
+    SecurityProtocols:
+      - Ssl3
+      - Tls
+    SortResources: false
+    StoreTimezoneInformation: false
+    SymbolizeHashKeysInRuby: false
+    ThrowForHttpErrorStatusCodes: true
+    Timeout: 0
+    UnderscoreNumbers: true
+    UsageExampleEndpoint:
+      Description: ""
+      EndpointGroupName: ""
+      EndpointName: ""
+    UseCommonSDKLibrary: false
+    UseConstructorsForConfig: false
+    UseControllerPrefix: true
+    UseEndpointMethodName: false
+    UseEnumPostfix: true
+    UseExceptionPrefix: true
+    UseMethodPrefix: true
+    UseModelPostfix: false
+    UseSingletonPattern: true
+    UserConfigurableRetries: true
+    ValidateRequiredParameters: false
+    iOSGenerateCoreData: false
+    iOSUseAppInfoPlist: false
+  x-image-uri: ""
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/rithvikvibhu/GHLocalApi/master/GoogleHome.openapi3.json
+      version: "3.0"
+  x-providerName: google.home
+  x-server-configuration:
+    default-environment: production
+    default-server: Server 1
+    environments:
+      - name: production
+        servers:
+          - name: Server 1
+            url: http://example.com/setup
+    parameters: []
+  x-unofficialSpec: true
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+security:
+  - cast-local-authorization-token: []
+tags:
+  - description: Endpoints in this folder give information about the device.
+    name: Device Info
+  - description: This folder consists of all endpoints to modify and control the device.
+    name: Device Settings
+  - description: This folder contains all endpoints related to Assistant's tasks like Do Not Disturb, Alarms and Timers, Accessibility and equalizer.
+    name: Assistant
+  - description: This folder contains Bluetooth related endpoints.
+    name: Bluetooth
+  - description: This folder contains Wi-Fi related endpoints.
+    name: Wifi
+  - description: This folder contains a list of static files stored in Home.
+    name: Static Files
+paths:
+  /NOTICE.html.gz:
+    get:
+      deprecated: false
+      description: All licenses of programs used by Home.
+      operationId: LegalNotice
+      parameters: []
+      responses:
+        "200":
+          content:
+            text/plain:
+              example: <html><!-- a long page --></html>
+              schema:
+                example: <html><!-- a long page --></html>
+                type: string
+          description: ""
+          headers: {}
+      summary: Legal Notice
+      tags:
+        - Static Files
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: <html><!-- a long page --></html>
+            headers:
+              Access-Control-Allow-Headers: Range
+              Access-Control-Allow-Methods: GET, OPTIONS
+              Content-Encoding: gzip
+              Content-Length: "131302"
+              Content-Type: text/html
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: RAW
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /NOTICE.html.gz
+          x-testDescription: All licenses of programs used by Home.
+          x-testEnabled: false
+          x-testName: Legal Notice
+          x-testShouldPass: true
+  /assistant/a11y_mode:
+    post:
+      deprecated: false
+      description: |-
+        This controls Accessibility sounds. `hotword_enabled` is for 'Play start sound' and `endpoint_enabled` is for 'Play end sound'.  
+        Sending an empty-body POST request returns the current values.  
+        Either of the fields or both can be sent and new values will be saved.
+      operationId: Accessibility
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              endpoint_enabled: false
+              hotword_enabled: false
+            schema:
+              $ref: "#/components/schemas/AccessibilityRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                endpoint_enabled: false
+                hotword_enabled: false
+              schema:
+                $ref: "#/components/schemas/Getcurrentvalues"
+          description: ""
+          headers: {}
+      summary: Accessibility
+      tags:
+        - Assistant
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: '{"endpoint_enabled":false,"hotword_enabled":false}'
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "50"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"hotword_enabled\": false,\r
+
+              \  \"endpoint_enabled\": false\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /assistant/a11y_mode
+          x-testDescription: |-
+            This controls Accessibility sounds. `hotword_enabled` is for 'Play start sound' and `endpoint_enabled` is for 'Play end sound'.  
+            Sending an empty-body POST request returns the current values.  
+            Either of the fields or both can be sent and new values will be saved.
+          x-testEnabled: true
+          x-testName: Accessibility
+          x-testShouldPass: true
+  /assistant/alarms:
+    get:
+      deprecated: false
+      description: |-
+        This gives a list of all active alarms and timers.
+
+        Both alarms and timers have `id`s which can be used to delete them. (There is no known way of creating/deleting yet). The value of `status` have different meanings for alarms and timers (given below).
+
+        Alarms have `date_pattern` and `time_pattern` with day, month, year, hour, minute, second. `fire_time` is the same in unix time (milliseconds, not seconds).  
+        `status` is 1 for set up and 2 for ringing.
+
+        Timers have `original_duration` is the original duration.  
+        `status` is 1 for set up and 3 for ringing.
+      operationId: GetAlarmsandTimers
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                alarm:
+                  - date_pattern:
+                      day: 15
+                      month: 1
+                      year: 2018
+                    fire_time: 1515995400000
+                    id: alarm/xxx
+                    status: 1
+                    time_pattern:
+                      hour: 6
+                      minute: 50
+                      second: 0
+                timer:
+                  - fire_time: 1516176765589
+                    id: timer/xxx
+                    original_duration: 20000
+                    status: 1
+              schema:
+                $ref: "#/components/schemas/Example18"
+          description: ""
+          headers: {}
+      summary: Get Alarms and Timers
+      tags:
+        - Assistant
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: "{\r
+
+              \  \"alarm\": [\r
+
+              \    {\r
+
+              \      \"date_pattern\": {\r
+
+              \        \"day\": 15,\r
+
+              \        \"month\": 1,\r
+
+              \        \"year\": 2018\r
+
+              \      },\r
+
+              \      \"time_pattern\": {\r
+
+              \        \"hour\": 6,\r
+
+              \        \"minute\": 50,\r
+
+              \        \"second\": 0\r
+
+              \      },\r
+
+              \      \"fire_time\": 1515995400000.0,\r
+
+              \      \"id\": \"alarm/xxx\",\r
+
+              \      \"status\": 1\r
+
+              \    }\r
+
+              \  ],\r
+
+              \  \"timer\": [\r
+
+              \    {\r
+
+              \      \"fire_time\": 1516176765589,\r
+
+              \      \"id\": \"timer/xxx\",\r
+
+              \      \"original_duration\": 20000,\r
+
+              \      \"status\": 1\r
+
+              \    }\r
+
+              \  ]\r
+
+              }"
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "23"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /assistant/alarms
+          x-testDescription: |-
+            This gives a list of all active alarms and timers.
+
+            Both alarms and timers have `id`s which can be used to delete them. (There is no known way of creating/deleting yet). The value of `status` have different meanings for alarms and timers (given below).
+
+            Alarms have `date_pattern` and `time_pattern` with day, month, year, hour, minute, second. `fire_time` is the same in unix time (milliseconds, not seconds).  
+            `status` is 1 for set up and 2 for ringing.
+
+            Timers have `original_duration` is the original duration.  
+            `status` is 1 for set up and 3 for ringing.
+          x-testEnabled: true
+          x-testName: Get Alarms and Timers
+          x-testShouldPass: true
+  /assistant/alarms/delete:
+    post:
+      deprecated: false
+      description: |-
+        This deletes alarms and timers by their id.
+
+        `ids` is a list of ids to be deleted. Sending invalid id still returns a 200 OK. The `/` in the ids have to be escaped like `\/`.
+      operationId: DeleteAlarmsandTimers
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              ids:
+                - timer/xxx
+                - alarm/xxx
+            schema:
+              $ref: "#/components/schemas/DeleteAlarmsandTimersRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                success: true
+              schema:
+                $ref: "#/components/schemas/Example19"
+          description: ""
+          headers: {}
+      summary: Delete Alarms and Timers
+      tags:
+        - Assistant
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: '{"success":true}'
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "16"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"ids\": [\r
+
+              \    \"timer/xxx\",\r
+
+              \    \"alarm/xxx\"\r
+
+              \  ]\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /assistant/alarms/delete
+          x-testDescription: |-
+            This deletes alarms and timers by their id.
+
+            `ids` is a list of ids to be deleted. Sending invalid id still returns a 200 OK. The `/` in the ids have to be escaped like `\/`.
+          x-testEnabled: true
+          x-testName: Delete Alarms and Timers
+          x-testShouldPass: true
+  /assistant/alarms/volume:
+    post:
+      deprecated: false
+      description: |-
+        This gets and sets alarms and timers volume.  
+        **Note:** This is not the same as normal volume.
+
+        Volume is a float number in [0, 1] where 0 is minimum and 1 is maximum.  
+        Sending an empty body gets the volume. Sending `volume` sets the volume.
+      operationId: AlarmVolume
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              volume: 1
+            schema:
+              $ref: "#/components/schemas/AlarmVolumeRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                volume: 1
+              schema:
+                $ref: "#/components/schemas/Getvolume"
+          description: ""
+          headers: {}
+      summary: Alarm Volume
+      tags:
+        - Assistant
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: '{"volume":1.0}'
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "14"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            body: "{\r\n  \"volume\": 1\r\n}"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /assistant/alarms/volume
+          x-testDescription: |-
+            This gets and sets alarms and timers volume.  
+            **Note:** This is not the same as normal volume.
+
+            Volume is a float number in [0, 1] where 0 is minimum and 1 is maximum.  
+            Sending an empty body gets the volume. Sending `volume` sets the volume.
+          x-testEnabled: true
+          x-testName: Alarm Volume
+          x-testShouldPass: true
+  /assistant/check_ready_status:
+    post:
+      deprecated: false
+      description: |-
+        **Update:** This seems to have changed now and is no longer possible. The error is also new.
+
+        Setting `play_ready_message` to true plays a welcome message on the device saying "Hi, I'm your Google Assistant. I'm here to help. To learn a few things you can do, continue in the Google Home app."
+      operationId: CheckReadyStatus
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              play_ready_message: true
+              user_id: xxxxx
+            schema:
+              $ref: "#/components/schemas/CheckReadyStatusRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                can_enroll: true
+                enrollment_state: 0
+                error_code: 0
+                ready: false
+                retryable: true
+              schema:
+                $ref: "#/components/schemas/Example13"
+          description: ""
+          headers: {}
+      summary: Check Ready Status
+      tags:
+        - Device Info
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: "{\r
+
+              \  \"can_enroll\": true,\r
+
+              \  \"enrollment_state\": 0,\r
+
+              \  \"error_code\": 0,\r
+
+              \  \"ready\": false,\r
+
+              \  \"retryable\": true\r
+
+              }"
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "86"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"play_ready_message\": true,\r
+
+              \  \"user_id\": \"xxxxx\"\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /assistant/check_ready_status
+          x-testDescription: |-
+            **Update:** This seems to have changed now and is no longer possible. The error is also new.
+
+            Setting `play_ready_message` to true plays a welcome message on the device saying "Hi, I'm your Google Assistant. I'm here to help. To learn a few things you can do, continue in the Google Home app."
+          x-testEnabled: true
+          x-testName: Check Ready Status
+          x-testShouldPass: true
+  /assistant/notifications:
+    post:
+      deprecated: false
+      description: This is for the Do Not Disturb option. Sending an empty-body POST returns the current value. Sending a new value changes it.
+      operationId: DoNotDisturb
+      parameters:
+        - in: header
+          name: Content-Type
+          required: true
+          schema:
+            example: application/json
+            type: string
+          style: simple
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                notifications_enabled: true
+              schema:
+                $ref: "#/components/schemas/Getcurrentstate"
+          description: ""
+          headers: {}
+      summary: Do Not Disturb
+      tags:
+        - Assistant
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: '{"notifications_enabled":true}'
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "30"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /assistant/notifications
+          x-testDescription: This is for the Do Not Disturb option. Sending an empty-body POST returns the current value. Sending a new value changes it.
+          x-testEnabled: true
+          x-testName: Do Not Disturb
+          x-testShouldPass: true
+  /assistant/set_night_mode_params:
+    post:
+      deprecated: false
+      description: |-
+        This sets night mode options.  
+        To view currently set values, use /setup/eureka_info.  
+        If `enabled` is set to false, night mode is disabled and the other values do not matter.  
+        `led_brightness` and `volume` refer to the maximum LED Brightness and Volume that is set during night mode.  
+        `demo_to_user` is always set to `true` so change in values will be visible in realtime (like brightness).  
+        `windows`: A combination of `length_hours` and `start_hour` is used to define start and end times for night mode. In this example, night mode starts at 10 PM (22) and ends at 6 AM (8 hours later). `windows.days` is an array of days of week when night mode will be enabled. Example: 0->Sunday, 1-> Monday, ..., 6->Saturday.
+      operationId: NightModesettings
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              demo_to_user: true
+              do_not_disturb: true
+              enabled: false
+              led_brightness: 0.44999998807907104
+              volume: 0.46000000834465027
+              windows:
+                - days:
+                    - 0
+                    - 1
+                    - 2
+                    - 3
+                    - 4
+                    - 5
+                    - 6
+                  length_hours: 8
+                  start_hour: 22
+            schema:
+              $ref: "#/components/schemas/NightModesettingsRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                do_not_disturb: true
+                enabled: false
+                led_brightness: 0.44999998807907104
+                volume: 0.46000000834465027
+                windows:
+                  - days:
+                      - 0
+                      - 1
+                      - 2
+                      - 3
+                      - 4
+                      - 5
+                      - 6
+                    length_hours: 8
+                    start_hour: 22
+              schema:
+                $ref: "#/components/schemas/Example17"
+          description: ""
+          headers: {}
+      summary: Night Mode settings
+      tags:
+        - Device Settings
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: '{"do_not_disturb":true,"enabled":false,"led_brightness":0.44999998807907104,"volume":0.46000000834465027,"windows":[{"days":[0,1,2,3,4,5,6],"length_hours":8.0,"start_hour":22.0}]}'
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "179"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"enabled\": false,\r
+
+              \  \"do_not_disturb\": true,\r
+
+              \  \"led_brightness\": 0.44999998807907104,\r
+
+              \  \"volume\": 0.46000000834465027,\r
+
+              \  \"demo_to_user\": true,\r
+
+              \  \"windows\": [\r
+
+              \    {\r
+
+              \      \"length_hours\": 8,\r
+
+              \      \"days\": [\r
+
+              \        0,\r
+
+              \        1,\r
+
+              \        2,\r
+
+              \        3,\r
+
+              \        4,\r
+
+              \        5,\r
+
+              \        6\r
+
+              \      ],\r
+
+              \      \"start_hour\": 22\r
+
+              \    }\r
+
+              \  ]\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /assistant/set_night_mode_params
+          x-testDescription: |-
+            This sets night mode options.  
+            To view currently set values, use /setup/eureka_info.  
+            If `enabled` is set to false, night mode is disabled and the other values do not matter.  
+            `led_brightness` and `volume` refer to the maximum LED Brightness and Volume that is set during night mode.  
+            `demo_to_user` is always set to `true` so change in values will be visible in realtime (like brightness).  
+            `windows`: A combination of `length_hours` and `start_hour` is used to define start and end times for night mode. In this example, night mode starts at 10 PM (22) and ends at 6 AM (8 hours later). `windows.days` is an array of days of week when night mode will be enabled. Example: 0->Sunday, 1-> Monday, ..., 6->Saturday.
+          x-testEnabled: true
+          x-testName: Night Mode settings
+          x-testShouldPass: true
+  /bluetooth/bond:
+    post:
+      deprecated: false
+      description: |-
+        *See note for Bluetooth under `/setup/bluetooth/status`*
+
+        **For both parts**
+
+        This is to forget paired devices by mac address. Works for both kinds of devices (Part 1 and Part 2).
+      operationId: Forgetpaireddevice
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              bond: false
+              mac_address: xx:xx:xx:xx:xx:xx
+            schema:
+              $ref: "#/components/schemas/ForgetpaireddeviceRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: object
+                x-is-dynamic: true
+          description: ""
+          headers: {}
+      summary: Forget paired device
+      tags:
+        - Bluetooth
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers: {}
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"mac_address\": \"xx:xx:xx:xx:xx:xx\",\r
+
+              \  \"bond\": false\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /bluetooth/bond
+          x-testDescription: |-
+            *See note for Bluetooth under `/setup/bluetooth/status`*
+
+            **For both parts**
+
+            This is to forget paired devices by mac address. Works for both kinds of devices (Part 1 and Part 2).
+          x-testEnabled: true
+          x-testName: Forget paired device
+          x-testShouldPass: true
+  /bluetooth/connect:
+    post:
+      deprecated: false
+      description: |-
+        *See note for Bluetooth under `/setup/bluetooth/status`*
+
+        **For Part 2 only**
+
+        This pairs with other bluetooth speakers by mac address.
+      operationId: PairwithSpeaker
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              connect: true
+              mac_address: 54:13:79:49:19:22
+              profile: 2
+            schema:
+              $ref: "#/components/schemas/PairwithSpeakerRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: object
+                x-is-dynamic: true
+          description: ""
+          headers: {}
+      summary: Pair with Speaker
+      tags:
+        - Bluetooth
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "0"
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"mac_address\": \"54:13:79:49:19:22\",\r
+
+              \  \"connect\": true,\r
+
+              \  \"profile\": 2\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /bluetooth/connect
+          x-testDescription: |-
+            *See note for Bluetooth under `/setup/bluetooth/status`*
+
+            **For Part 2 only**
+
+            This pairs with other bluetooth speakers by mac address.
+          x-testEnabled: true
+          x-testName: Pair with Speaker
+          x-testShouldPass: true
+  /bluetooth/discovery:
+    post:
+      deprecated: false
+      description: |-
+        *See note for Bluetooth under `/setup/bluetooth/status`*
+
+        **For Part 1 only**
+
+        This enables/disables Home's bluetooth discovery and other devices can pair with Home (where Home acts as a speaker).
+      operationId: ChangeDiscoverability
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              enable_discovery: true
+            schema:
+              $ref: "#/components/schemas/ChangeDiscoverabilityRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: object
+                x-is-dynamic: true
+          description: ""
+          headers: {}
+      summary: Change Discoverability
+      tags:
+        - Bluetooth
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers: {}
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"enable_discovery\": true\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /bluetooth/discovery
+          x-testDescription: |-
+            *See note for Bluetooth under `/setup/bluetooth/status`*
+
+            **For Part 1 only**
+
+            This enables/disables Home's bluetooth discovery and other devices can pair with Home (where Home acts as a speaker).
+          x-testEnabled: true
+          x-testName: Change Discoverability
+          x-testShouldPass: true
+  /bluetooth/get_bonded:
+    get:
+      deprecated: false
+      description: |-
+        *See note for Bluetooth under `/setup/bluetooth/status`*
+
+        **For both parts**
+
+        This gives a list of all paired or 'bonded' devices. The response field names are self-descriptive.
+      operationId: GetPairedDevices
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                - bond_date: 1503212407260.55
+                  device_class: 5898764
+                  device_type: 1
+                  last_connect_date: 1514807829482.111
+                  mac_address: xx:xx:xx:xx:xx:xx
+                  name: Device Name
+                  rssi: -255
+                  service_uuids:
+                    - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                    - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+              schema:
+                items:
+                  $ref: "#/components/schemas/Example111"
+                type: array
+          description: ""
+          headers: {}
+      summary: Get Paired Devices
+      tags:
+        - Bluetooth
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: "[\r
+
+              \  {\r
+
+              \    \"bond_date\": 1503212407260.55,\r
+
+              \    \"device_class\": 5898764,\r
+
+              \    \"device_type\": 1,\r
+
+              \    \"last_connect_date\": 1514807829482.1111,\r
+
+              \    \"mac_address\": \"xx:xx:xx:xx:xx:xx\",\r
+
+              \    \"name\": \"Device Name\",\r
+
+              \    \"rssi\": -255,\r
+
+              \    \"service_uuids\": [\r
+
+              \      \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \      \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"\r
+
+              \    ]\r
+
+              \  }\r
+
+              ]"
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "2"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /bluetooth/get_bonded
+          x-testDescription: |-
+            *See note for Bluetooth under `/setup/bluetooth/status`*
+
+            **For both parts**
+
+            This gives a list of all paired or 'bonded' devices. The response field names are self-descriptive.
+          x-testEnabled: true
+          x-testName: Get Paired Devices
+          x-testShouldPass: true
+  /bluetooth/scan:
+    post:
+      deprecated: false
+      description: |-
+        *See note for Bluetooth under `/setup/bluetooth/status`*
+
+        **For Part 2 only**
+
+        This initiates scan for other bluetooth speakers/devices. Scan results will be updated continuously for `timeout` seconds.  
+        To get the scan results, see /setup/bluetooth/scan_results.
+      operationId: Scanfordevices
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              clear_results: true
+              enable: true
+              timeout: 60
+            schema:
+              $ref: "#/components/schemas/ScanfordevicesRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: object
+                x-is-dynamic: true
+          description: ""
+          headers: {}
+      summary: Scan for devices
+      tags:
+        - Bluetooth
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "0"
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"enable\": true,\r
+
+              \  \"clear_results\": true,\r
+
+              \  \"timeout\": 60\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /bluetooth/scan
+          x-testDescription: |-
+            *See note for Bluetooth under `/setup/bluetooth/status`*
+
+            **For Part 2 only**
+
+            This initiates scan for other bluetooth speakers/devices. Scan results will be updated continuously for `timeout` seconds.  
+            To get the scan results, see /setup/bluetooth/scan_results.
+          x-testEnabled: true
+          x-testName: Scan for devices
+          x-testShouldPass: true
+  /bluetooth/scan_results:
+    get:
+      deprecated: false
+      description: |-
+        *See note for Bluetooth under `/setup/bluetooth/status`*
+
+        **For Part 2 only**
+
+        This returns a list of all nearby bluetooth devices. While the Home app only shows speakers, this list contains all devices including TVs, mobiles, etc.
+
+        `rssi` is signal strength, `name` is name, `mac_address` is mac address.  
+        `device_class` and `device_type` are bluetooth codes.  
+
+        The Home app only lists those devices with `expected_profiles` > 0. Basically, the device should function as a speaker.
+      operationId: GetScanResults
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                - device_class: 525372
+                  device_type: 3
+                  expected_profiles: 0
+                  mac_address: xx:xx:xx:xx:xx:xx
+                  name: KD-49X8200E
+                  rssi: -90
+                - device_class: 5898764
+                  device_type: 1
+                  expected_profiles: 0
+                  mac_address: xx:xx:xx:xx:xx:xx
+                  name: vivo 1714
+                  rssi: -96
+                - device_class: 2491396
+                  device_type: 1
+                  expected_profiles: 1
+                  mac_address: xx:xx:xx:xx:xx:xx
+                  name: Bluetooth Speaker
+                  rssi: -93
+              schema:
+                items:
+                  $ref: "#/components/schemas/Example112"
+                type: array
+          description: ""
+          headers: {}
+      summary: Get Scan Results
+      tags:
+        - Bluetooth
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: "[\r
+
+              \  {\r
+
+              \    \"device_class\": 525372,\r
+
+              \    \"device_type\": 3,\r
+
+              \    \"expected_profiles\": 0,\r
+
+              \    \"mac_address\": \"xx:xx:xx:xx:xx:xx\",\r
+
+              \    \"name\": \"KD-49X8200E\",\r
+
+              \    \"rssi\": -90\r
+
+              \  },\r
+
+              \  {\r
+
+              \    \"device_class\": 5898764,\r
+
+              \    \"device_type\": 1,\r
+
+              \    \"expected_profiles\": 0,\r
+
+              \    \"mac_address\": \"xx:xx:xx:xx:xx:xx\",\r
+
+              \    \"name\": \"vivo 1714\",\r
+
+              \    \"rssi\": -96\r
+
+              \  },\r
+
+              \  {\r
+
+              \    \"device_class\": 2491396,\r
+
+              \    \"device_type\": 1,\r
+
+              \    \"expected_profiles\": 1,\r
+
+              \    \"mac_address\": \"xx:xx:xx:xx:xx:xx\",\r
+
+              \    \"name\": \"Bluetooth Speaker\",\r
+
+              \    \"rssi\": -93\r
+
+              \  }\r
+
+              ]"
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "256"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /bluetooth/scan_results
+          x-testDescription: |-
+            *See note for Bluetooth under `/setup/bluetooth/status`*
+
+            **For Part 2 only**
+
+            This returns a list of all nearby bluetooth devices. While the Home app only shows speakers, this list contains all devices including TVs, mobiles, etc.
+
+            `rssi` is signal strength, `name` is name, `mac_address` is mac address.  
+            `device_class` and `device_type` are bluetooth codes.  
+
+            The Home app only lists those devices with `expected_profiles` > 0. Basically, the device should function as a speaker.
+          x-testEnabled: true
+          x-testName: Get Scan Results
+          x-testShouldPass: true
+  /bluetooth/status:
+    get:
+      deprecated: false
+      description: |-
+        > **There are 2 parts of Bluetooth.**
+        >
+        > *Part 1*: Devices like phones connect to Home and play audio through Home.  
+        > For this, /setup/bluetooth/discovery is used to make Home discoverable. Then devices can connect to it as if Home is just another bluetooth speaker.
+        >
+        > *Part 2*: Bluetooth speakers connect to Home and Home plays audio through the speakers.
+        > For this, /setup/bluetooth/scan and /setup/bluetooth/scan_results are used to connect to other speakers.
+        >
+        > The other endpoints are common for both parts.
+
+
+        **For both parts**
+
+        This gives the status of all bluetooth things.
+        - Not sure what `audio_mode` is.
+        - `discovery_enabled` states whether Home is discoverable. (**Part 1**)
+        - `connecting_devices` is a list of all media sources (like phones) connected to Home. (**Part 1**)
+        - `scanning_enabled` states whether Home scanning for other bluetooth speakers/devices. (**Part 2**)
+        - `connected_devices` is a list of all speakers connected to Home. (**Part 2**)
+      operationId: Status
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                audio_mode: 0
+                connected_devices:
+                  - device:
+                      bond_date: 1529248165656.613
+                      device_class: 2491396
+                      device_type: 1
+                      last_connect_date: 0
+                      mac_address: xx:xx:xx:xx:xx:xx
+                      name: PHILIPS BT64
+                      rssi: -255
+                      service_uuids:
+                        - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                        - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                        - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                        - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                        - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                        - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                    enabled_profiles: 2
+                connecting_devices: []
+                discovery_enabled: false
+                remote_sink:
+                  bond_date: 1529248165656.613
+                  device_class: 2491396
+                  device_type: 1
+                  last_connect_date: 0
+                  mac_address: xx:xx:xx:xx:xx:xx
+                  name: PHILIPS BT64
+                  rssi: -255
+                  service_uuids:
+                    - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                    - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                    - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                    - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                    - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                    - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                scanning_enabled: false
+              schema:
+                $ref: "#/components/schemas/Example110"
+          description: ""
+          headers: {}
+      summary: Status
+      tags:
+        - Bluetooth
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: "{\r
+
+              \  \"audio_mode\": 0,\r
+
+              \  \"connecting_devices\": [],\r
+
+              \  \"connected_devices\": [\r
+
+              \    {\r
+
+              \      \"device\": {\r
+
+              \        \"bond_date\": 1529248165656.613,\r
+
+              \        \"device_class\": 2491396,\r
+
+              \        \"device_type\": 1,\r
+
+              \        \"last_connect_date\": 0,\r
+
+              \        \"mac_address\": \"xx:xx:xx:xx:xx:xx\",\r
+
+              \        \"name\": \"PHILIPS BT64\",\r
+
+              \        \"rssi\": -255,\r
+
+              \        \"service_uuids\": [\r
+
+              \          \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \          \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \          \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \          \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \          \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \          \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"\r
+
+              \        ]\r
+
+              \      },\r
+
+              \      \"enabled_profiles\": 2\r
+
+              \    }\r
+
+              \  ],\r
+
+              \  \"remote_sink\": {\r
+
+              \    \"bond_date\": 1529248165656.613,\r
+
+              \    \"device_class\": 2491396,\r
+
+              \    \"device_type\": 1,\r
+
+              \    \"last_connect_date\": 0,\r
+
+              \    \"mac_address\": \"xx:xx:xx:xx:xx:xx\",\r
+
+              \    \"name\": \"PHILIPS BT64\",\r
+
+              \    \"rssi\": -255,\r
+
+              \    \"service_uuids\": [\r
+
+              \      \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \      \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \      \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \      \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \      \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\",\r
+
+              \      \"xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx\"\r
+
+              \    ]\r
+
+              \  },\r
+
+              \  \"discovery_enabled\": false,\r
+
+              \  \"scanning_enabled\": false\r
+
+              }"
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "114"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /bluetooth/status
+          x-testDescription: |-
+            > **There are 2 parts of Bluetooth.**
+            >
+            > *Part 1*: Devices like phones connect to Home and play audio through Home.  
+            > For this, /setup/bluetooth/discovery is used to make Home discoverable. Then devices can connect to it as if Home is just another bluetooth speaker.
+            >
+            > *Part 2*: Bluetooth speakers connect to Home and Home plays audio through the speakers.
+            > For this, /setup/bluetooth/scan and /setup/bluetooth/scan_results are used to connect to other speakers.
+            >
+            > The other endpoints are common for both parts.
+
+
+            **For both parts**
+
+            This gives the status of all bluetooth things.
+            - Not sure what `audio_mode` is.
+            - `discovery_enabled` states whether Home is discoverable. (**Part 1**)
+            - `connecting_devices` is a list of all media sources (like phones) connected to Home. (**Part 1**)
+            - `scanning_enabled` states whether Home scanning for other bluetooth speakers/devices. (**Part 2**)
+            - `connected_devices` is a list of all speakers connected to Home. (**Part 2**)
+          x-testEnabled: true
+          x-testName: Status
+          x-testShouldPass: true
+  /configured_networks:
+    get:
+      deprecated: false
+      description: |-
+        This gets a list of all saved Wi-Fi networks.
+
+        Each network has `ssid`, `wpa_auth`, `wpa_cipher` and `wpa_id`.  
+        `wpa_id` is an incrementing number used to identify a saved network.  
+        #TODO: Add values for `wpa_auth` and `wpa_cipher`.
+      operationId: GetSavedNetworks
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                - ssid: Wifi name
+                  wpa_auth: 7
+                  wpa_cipher: 4
+                  wpa_id: 0
+              schema:
+                items:
+                  $ref: "#/components/schemas/Example113"
+                type: array
+          description: ""
+          headers: {}
+      summary: Get Saved Networks
+      tags:
+        - Wifi
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: "[\r
+
+              \  {\r
+
+              \    \"ssid\": \"Wifi name\",\r
+
+              \    \"wpa_auth\": 7,\r
+
+              \    \"wpa_cipher\": 4,\r
+
+              \    \"wpa_id\": 0\r
+
+              \  }\r
+
+              ]"
+            headers: {}
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /configured_networks
+          x-testDescription: |-
+            This gets a list of all saved Wi-Fi networks.
+
+            Each network has `ssid`, `wpa_auth`, `wpa_cipher` and `wpa_id`.  
+            `wpa_id` is an incrementing number used to identify a saved network.  
+            #TODO: Add values for `wpa_auth` and `wpa_cipher`.
+          x-testEnabled: true
+          x-testName: Get Saved Networks
+          x-testShouldPass: true
+  /connect_wifi:
+    post:
+      deprecated: false
+      description: "**Note:** Not sure how the password is encrypted. Might be using the public certificate from /setup/eureka_info. So this cannot be used as of now. If someone figures it out, please [create a new issue here](https://github.com/rithvikvibhu/GHLocalApi/issues/new)."
+      operationId: ConnecttoWi-FiNetwork
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              bssid: 5c:0a:xx:xx:xx:xx
+              enc_passwd: xxxxxfPY=
+              signal_level: -42
+              ssid: myotherssid
+              wpa_auth: 7
+              wpa_cipher: 4
+            schema:
+              $ref: "#/components/schemas/ConnecttoWi-FiNetworkRequest"
+        required: true
+      responses:
+        "200":
+          description: ""
+          headers: {}
+      summary: Connect to Wi-Fi Network
+      tags:
+        - Wifi
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers: {}
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"bssid\": \"5c:0a:xx:xx:xx:xx\",\r
+
+              \  \"signal_level\": -42,\r
+
+              \  \"ssid\": \"myotherssid\",\r
+
+              \  \"wpa_auth\": 7,\r
+
+              \  \"wpa_cipher\": 4,\r
+
+              \  \"enc_passwd\": \"xxxxxfPY=\"\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /connect_wifi
+          x-testDescription: "**Note:** Not sure how the password is encrypted. Might be using the public certificate from /setup/eureka_info. So this cannot be used as of now. If someone figures it out, please [create a new issue here](https://github.com/rithvikvibhu/GHLocalApi/issues/new)."
+          x-testEnabled: true
+          x-testName: Connect to Wi-Fi Network
+          x-testShouldPass: true
+  /eureka_info:
+    get:
+      deprecated: false
+      description: |-
+        This gives most of the device info. The GET parameter `param` is a comma separated list of json keys to fetch. Currently, these params are known: `version,audio,name,build_info,detail,device_info,net,wifi,setup,settings,opt_in,opencast,multizone,proxy,night_mode_params,user_eq,room_equalizer,sign,aogh,ultrasound,mesh`
+
+        Nested items can also be filtered using the dot notation. Example: `audio.digital`
+
+        The `options` GET parameter is always set to `detail` or `detail,sign`. `sign` signs the `nonce` and returns some value.
+
+        The `nonce` GET parameter is an integer value signed with needed (see `option` parameter above).
+      operationId: EurekaInfo
+      parameters:
+        - explode: true
+          in: query
+          name: params
+          required: true
+          schema:
+            example: version,audio,name,build_info,detail,device_info,net,wifi,setup,settings,opt_in,opencast,multizone,proxy,night_mode_params,user_eq,room_equalizer,sign,aogh,ultrasound,mesh
+            type: string
+          style: form
+        - explode: true
+          in: query
+          name: options
+          required: true
+          schema:
+            example: detail,sign
+            type: string
+          style: form
+        - explode: true
+          in: query
+          name: nonce
+          required: true
+          schema:
+            example: 1234512345
+            format: int32
+            type: integer
+          style: form
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                aogh:
+                  aogh_api_version: "2"
+                audio:
+                  digital: false
+                build_info:
+                  build_type: 2
+                  cast_build_revision: 1.46.195690
+                  cast_control_version: 1
+                  preview_channel_state: 4
+                  release_track: preview-joining-stable-channel
+                  system_build_number: "195690"
+                detail:
+                  icon_list:
+                    - depth: 32
+                      height: 55
+                      mimetype: image/png
+                      url: /setup/icon.png
+                      width: 98
+                  locale:
+                    display_string: English (United States)
+                  timezone:
+                    display_string: India Standard Time (Kolkata)
+                    offset: 330
+                device_info:
+                  4k_blocked: 0
+                  capabilities:
+                    aogh_supported: true
+                    assistant_supported: true
+                    audio_hdr_supported: false
+                    audio_surround_mode_supported: false
+                    ble_supported: true
+                    bluetooth_audio_sink_supported: true
+                    bluetooth_audio_source_supported: true
+                    bluetooth_supported: true
+                    cloudcast_supported: true
+                    content_filters_supported: true
+                    display_supported: false
+                    fdr_supported: false
+                    hdmi_prefer_50hz_supported: false
+                    hdmi_prefer_high_fps_supported: false
+                    hotspot_supported: true
+                    https_setup_supported: true
+                    input_management_supported: true
+                    keep_hotspot_until_connected_supported: true
+                    multi_user_supported: true
+                    multichannel_group_supported: true
+                    multizone_supported: true
+                    night_mode_supported: true
+                    night_mode_supported_v2: true
+                    opencast_supported: false
+                    preview_channel_supported: true
+                    reboot_supported: true
+                    remote_ducking_supported: true
+                    separate_tts_volume_supported: true
+                    setup_supported: true
+                    sleep_mode_supported: true
+                    stats_supported: true
+                    system_sound_effects_supported: false
+                    user_eq_supported: true
+                    wifi_auto_save_supported: true
+                    wifi_regulatory_domain_locked: true
+                    wifi_supported: true
+                  cloud_device_id: 003D...
+                  factory_country_code: US
+                  hotspot_bssid: FA:8F:CA:30:41:71
+                  local_authorization_token_hash: hBt2...
+                  mac_address: F4:F5:...
+                  manufacturer: Google Inc.
+                  model_name: Google Home
+                  product_name: pineapple
+                  public_key: MIIB...
+                  ssdp_udn: baab...
+                  uma_client_id: 8ce0...
+                  uptime: 48509.169282
+                  weave_device_id: ""
+                multizone:
+                  audio_output_delay: 0
+                  audio_output_delay_hdmi: 0
+                  audio_output_delay_oem: 0
+                  aux_in_group: ""
+                  dynamic_groups: []
+                  groups: []
+                  multichannel_status: 0
+                name: Bedroom Speaker
+                net:
+                  ethernet_connected: false
+                  ip_address: 192.168.0.18
+                  online: true
+                night_mode_params:
+                  device_override_do_not_disturb: 0
+                  do_not_disturb: true
+                  enabled: true
+                  led_brightness: 0.5799999833106995
+                  volume: 0.5899999737739563
+                  windows:
+                    - days:
+                        - 0
+                        - 1
+                        - 2
+                        - 3
+                        - 4
+                        - 5
+                        - 6
+                      length_hours: 6
+                      start_hour: 23
+                opencast:
+                  pin_code: ""
+                opt_in:
+                  audio_hdr: false
+                  audio_surround_mode: 0
+                  autoplay_on_signal: true
+                  cloud_ipc: true
+                  hdmi_prefer_50hz: false
+                  hdmi_prefer_high_fps: true
+                  managed_mode: false
+                  opencast: true
+                  preview_channel: true
+                  remote_ducking: true
+                  stats: true
+                  ui_flipped: false
+                  wpa3_support_enabled: false
+                proxy:
+                  mode: system
+                settings:
+                  closed_caption: {}
+                  control_notifications: 1
+                  country_code: IN
+                  locale: en-US
+                  network_standby: 0
+                  system_sound_effects: true
+                  time_format: 1
+                  timezone: Asia/Kolkata
+                  wake_on_cast: 1
+                setup:
+                  qr_ssid_suffix: ""
+                  setup_state: 60
+                  ssid_suffix: k
+                  stats:
+                    num_check_connectivity: 0
+                    num_connect_wifi: 0
+                    num_connected_wifi_not_saved: 0
+                    num_initial_eureka_info: 0
+                    num_obtain_ip: 0
+                  tos_accepted: true
+                sign:
+                  certificate: |
+                    -----BEGIN CERTIFICATE-----
+                    MIID...Oeb0
+                    -----END CERTIFICATE-----
+                  intermediate_certs:
+                    - |
+                      -----BEGIN CERTIFICATE-----
+                      MIID...O/bYS
+                      -----END CERTIFICATE-----
+                  nonce: "1234512345"
+                  signed_data: Rr5Q...
+                user_eq:
+                  high_shelf:
+                    frequency: 4500
+                    gain_db: 0
+                    quality: 0.707
+                  low_shelf:
+                    frequency: 150
+                    gain_db: 0
+                    quality: 0.707
+                  max_peaking_eqs: 0
+                  peaking_eqs: []
+                version: 10
+                wifi:
+                  bssid: a0:ab:...
+                  has_changes: false
+                  noise_level: -90
+                  signal_level: -50
+                  ssid: Nucl...
+                  wpa_configured: true
+                  wpa_id: 1
+                  wpa_state: 10
+              schema:
+                $ref: "#/components/schemas/Example1"
+          description: ""
+          headers: {}
+      summary: Eureka Info
+      tags:
+        - Device Info
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: "{\r
+
+              \  \"aogh\": {\r
+
+              \    \"aogh_api_version\": \"2\"\r
+
+              \  },\r
+
+              \  \"audio\": {\r
+
+              \    \"digital\": false\r
+
+              \  },\r
+
+              \  \"build_info\": {\r
+
+              \    \"build_type\": 2,\r
+
+              \    \"cast_build_revision\": \"1.46.195690\",\r
+
+              \    \"cast_control_version\": 1,\r
+
+              \    \"preview_channel_state\": 4,\r
+
+              \    \"release_track\": \"preview-joining-stable-channel\",\r
+
+              \    \"system_build_number\": \"195690\"\r
+
+              \  },\r
+
+              \  \"detail\": {\r
+
+              \    \"icon_list\": [\r
+
+              \      {\r
+
+              \        \"depth\": 32,\r
+
+              \        \"height\": 55,\r
+
+              \        \"mimetype\": \"image/png\",\r
+
+              \        \"url\": \"/setup/icon.png\",\r
+
+              \        \"width\": 98\r
+
+              \      }\r
+
+              \    ],\r
+
+              \    \"locale\": {\r
+
+              \      \"display_string\": \"English (United States)\"\r
+
+              \    },\r
+
+              \    \"timezone\": {\r
+
+              \      \"display_string\": \"India Standard Time (Kolkata)\",\r
+
+              \      \"offset\": 330\r
+
+              \    }\r
+
+              \  },\r
+
+              \  \"device_info\": {\r
+
+              \    \"4k_blocked\": 0,\r
+
+              \    \"capabilities\": {\r
+
+              \      \"aogh_supported\": true,\r
+
+              \      \"assistant_supported\": true,\r
+
+              \      \"audio_hdr_supported\": false,\r
+
+              \      \"audio_surround_mode_supported\": false,\r
+
+              \      \"ble_supported\": true,\r
+
+              \      \"bluetooth_audio_sink_supported\": true,\r
+
+              \      \"bluetooth_audio_source_supported\": true,\r
+
+              \      \"bluetooth_supported\": true,\r
+
+              \      \"cloudcast_supported\": true,\r
+
+              \      \"content_filters_supported\": true,\r
+
+              \      \"display_supported\": false,\r
+
+              \      \"fdr_supported\": false,\r
+
+              \      \"hdmi_prefer_50hz_supported\": false,\r
+
+              \      \"hdmi_prefer_high_fps_supported\": false,\r
+
+              \      \"hotspot_supported\": true,\r
+
+              \      \"https_setup_supported\": true,\r
+
+              \      \"input_management_supported\": true,\r
+
+              \      \"keep_hotspot_until_connected_supported\": true,\r
+
+              \      \"multi_user_supported\": true,\r
+
+              \      \"multichannel_group_supported\": true,\r
+
+              \      \"multizone_supported\": true,\r
+
+              \      \"night_mode_supported\": true,\r
+
+              \      \"night_mode_supported_v2\": true,\r
+
+              \      \"opencast_supported\": false,\r
+
+              \      \"preview_channel_supported\": true,\r
+
+              \      \"reboot_supported\": true,\r
+
+              \      \"remote_ducking_supported\": true,\r
+
+              \      \"separate_tts_volume_supported\": true,\r
+
+              \      \"setup_supported\": true,\r
+
+              \      \"sleep_mode_supported\": true,\r
+
+              \      \"stats_supported\": true,\r
+
+              \      \"system_sound_effects_supported\": false,\r
+
+              \      \"user_eq_supported\": true,\r
+
+              \      \"wifi_auto_save_supported\": true,\r
+
+              \      \"wifi_regulatory_domain_locked\": true,\r
+
+              \      \"wifi_supported\": true\r
+
+              \    },\r
+
+              \    \"cloud_device_id\": \"003D...\",\r
+
+              \    \"factory_country_code\": \"US\",\r
+
+              \    \"hotspot_bssid\": \"FA:8F:CA:30:41:71\",\r
+
+              \    \"local_authorization_token_hash\": \"hBt2...\",\r
+
+              \    \"mac_address\": \"F4:F5:...\",\r
+
+              \    \"manufacturer\": \"Google Inc.\",\r
+
+              \    \"model_name\": \"Google Home\",\r
+
+              \    \"product_name\": \"pineapple\",\r
+
+              \    \"public_key\": \"MIIB...\",\r
+
+              \    \"ssdp_udn\": \"baab...\",\r
+
+              \    \"uma_client_id\": \"8ce0...\",\r
+
+              \    \"uptime\": 48509.169282,\r
+
+              \    \"weave_device_id\": \"\"\r
+
+              \  },\r
+
+              \  \"multizone\": {\r
+
+              \    \"audio_output_delay\": 0,\r
+
+              \    \"audio_output_delay_hdmi\": 0,\r
+
+              \    \"audio_output_delay_oem\": 0,\r
+
+              \    \"aux_in_group\": \"\",\r
+
+              \    \"dynamic_groups\": [],\r
+
+              \    \"groups\": [],\r
+
+              \    \"multichannel_status\": 0\r
+
+              \  },\r
+
+              \  \"name\": \"Bedroom Speaker\",\r
+
+              \  \"net\": {\r
+
+              \    \"ethernet_connected\": false,\r
+
+              \    \"ip_address\": \"192.168.0.18\",\r
+
+              \    \"online\": true\r
+
+              \  },\r
+
+              \  \"night_mode_params\": {\r
+
+              \    \"device_override_do_not_disturb\": 0,\r
+
+              \    \"do_not_disturb\": true,\r
+
+              \    \"enabled\": true,\r
+
+              \    \"led_brightness\": 0.57999998331069946,\r
+
+              \    \"volume\": 0.5899999737739563,\r
+
+              \    \"windows\": [\r
+
+              \      {\r
+
+              \        \"days\": [\r
+
+              \          0,\r
+
+              \          1,\r
+
+              \          2,\r
+
+              \          3,\r
+
+              \          4,\r
+
+              \          5,\r
+
+              \          6\r
+
+              \        ],\r
+
+              \        \"length_hours\": 6,\r
+
+              \        \"start_hour\": 23\r
+
+              \      }\r
+
+              \    ]\r
+
+              \  },\r
+
+              \  \"opencast\": {\r
+
+              \    \"pin_code\": \"\"\r
+
+              \  },\r
+
+              \  \"opt_in\": {\r
+
+              \    \"audio_hdr\": false,\r
+
+              \    \"audio_surround_mode\": 0,\r
+
+              \    \"autoplay_on_signal\": true,\r
+
+              \    \"cloud_ipc\": true,\r
+
+              \    \"hdmi_prefer_50hz\": false,\r
+
+              \    \"hdmi_prefer_high_fps\": true,\r
+
+              \    \"managed_mode\": false,\r
+
+              \    \"opencast\": true,\r
+
+              \    \"preview_channel\": true,\r
+
+              \    \"remote_ducking\": true,\r
+
+              \    \"stats\": true,\r
+
+              \    \"ui_flipped\": false,\r
+
+              \    \"wpa3_support_enabled\": false\r
+
+              \  },\r
+
+              \  \"proxy\": {\r
+
+              \    \"mode\": \"system\"\r
+
+              \  },\r
+
+              \  \"settings\": {\r
+
+              \    \"closed_caption\": {},\r
+
+              \    \"control_notifications\": 1,\r
+
+              \    \"country_code\": \"IN\",\r
+
+              \    \"locale\": \"en-US\",\r
+
+              \    \"network_standby\": 0,\r
+
+              \    \"system_sound_effects\": true,\r
+
+              \    \"time_format\": 1,\r
+
+              \    \"timezone\": \"Asia/Kolkata\",\r
+
+              \    \"wake_on_cast\": 1\r
+
+              \  },\r
+
+              \  \"setup\": {\r
+
+              \    \"qr_ssid_suffix\": \"\",\r
+
+              \    \"setup_state\": 60,\r
+
+              \    \"ssid_suffix\": \"k\",\r
+
+              \    \"stats\": {\r
+
+              \      \"num_check_connectivity\": 0,\r
+
+              \      \"num_connect_wifi\": 0,\r
+
+              \      \"num_connected_wifi_not_saved\": 0,\r
+
+              \      \"num_initial_eureka_info\": 0,\r
+
+              \      \"num_obtain_ip\": 0\r
+
+              \    },\r
+
+              \    \"tos_accepted\": true\r
+
+              \  },\r
+
+              \  \"sign\": {\r
+
+              \    \"certificate\": \"-----BEGIN CERTIFICATE-----\\nMIID...Oeb0\\n-----END CERTIFICATE-----\\n\",\r
+
+              \    \"intermediate_certs\": [\r
+
+              \      \"-----BEGIN CERTIFICATE-----\\nMIID...O/bYS\\n-----END CERTIFICATE-----\\n\"\r
+
+              \    ],\r
+
+              \    \"nonce\": \"1234512345\",\r
+
+              \    \"signed_data\": \"Rr5Q...\"\r
+
+              \  },\r
+
+              \  \"user_eq\": {\r
+
+              \    \"high_shelf\": {\r
+
+              \      \"frequency\": 4500,\r
+
+              \      \"gain_db\": 0,\r
+
+              \      \"quality\": 0.707\r
+
+              \    },\r
+
+              \    \"low_shelf\": {\r
+
+              \      \"frequency\": 150,\r
+
+              \      \"gain_db\": 0,\r
+
+              \      \"quality\": 0.707\r
+
+              \    },\r
+
+              \    \"max_peaking_eqs\": 0,\r
+
+              \    \"peaking_eqs\": []\r
+
+              \  },\r
+
+              \  \"version\": 10,\r
+
+              \  \"wifi\": {\r
+
+              \    \"bssid\": \"a0:ab:...\",\r
+
+              \    \"has_changes\": false,\r
+
+              \    \"noise_level\": -90,\r
+
+              \    \"signal_level\": -50,\r
+
+              \    \"ssid\": \"Nucl...\",\r
+
+              \    \"wpa_configured\": true,\r
+
+              \    \"wpa_id\": 1,\r
+
+              \    \"wpa_state\": 10\r
+
+              \  }\r
+
+              }"
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "7380"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /eureka_info?params=version%2Caudio%2Cname%2Cbuild_info%2Cdetail%2Cdevice_info%2Cnet%2Cwifi%2Csetup%2Csettings%2Copt_in%2Copencast%2Cmultizone%2Cproxy%2Cnight_mode_params%2Cuser_eq%2Croom_equalizer%2Csign%2Caogh%2Cultrasound%2Cmesh&options=detail%2Csign&nonce=1234512345
+          x-testDescription: |-
+            This gives most of the device info. The GET parameter `param` is a comma separated list of json keys to fetch. Currently, these params are known: `version,audio,name,build_info,detail,device_info,net,wifi,setup,settings,opt_in,opencast,multizone,proxy,night_mode_params,user_eq,room_equalizer,sign,aogh,ultrasound,mesh`
+
+            Nested items can also be filtered using the dot notation. Example: `audio.digital`
+
+            The `options` GET parameter is always set to `detail` or `detail,sign`. `sign` signs the `nonce` and returns some value.
+
+            The `nonce` GET parameter is an integer value signed with needed (see `option` parameter above).
+          x-testEnabled: true
+          x-testName: Eureka Info
+          x-testShouldPass: true
+  /forget_wifi:
+    post:
+      deprecated: false
+      description: This is to forget a saved network by `wpa_id`. Get the `wpa_id` from /setup/configured_networks
+      operationId: ForgetWi-FiNetwork
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              wpa_id: 0
+            schema:
+              $ref: "#/components/schemas/ForgetWi-FiNetworkRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: object
+                x-is-dynamic: true
+          description: ""
+          headers: {}
+      summary: Forget Wi-Fi Network
+      tags:
+        - Wifi
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers: {}
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            body: "{\r\n  \"wpa_id\": 0\r\n}"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /forget_wifi
+          x-testDescription: This is to forget a saved network by `wpa_id`. Get the `wpa_id` from /setup/configured_networks
+          x-testEnabled: true
+          x-testName: Forget Wi-Fi Network
+          x-testShouldPass: true
+  /get_app_device_id:
+    post:
+      deprecated: false
+      description: |-
+        This gives "app device id", "certificate" and "signed data".  
+        The `app_id` in the request is mandatory and refers to Chromecast backdrop/screensaver app. It has to be set to `E8C28D3C`.  
+
+        The certificate is valid and issued by `Chromecast ICA 6 (Audio Assist), Google Inc`.
+
+        Not sure what the other two are.
+      operationId: AppDeviceID
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              app_id: E8C28D3C
+            schema:
+              $ref: "#/components/schemas/AppDeviceIDRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                app_device_id: ...
+                certificate: |
+                  -----BEGIN CERTIFICATE-----
+                  MIID...Oeb0
+                  -----END CERTIFICATE-----
+                signed_data: HAjp...
+              schema:
+                $ref: "#/components/schemas/Example11"
+          description: ""
+          headers: {}
+        "404":
+          description: Not Found
+      summary: App Device ID
+      tags:
+        - Device Info
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: "{\r
+
+              \  \"app_device_id\": \"...\",\r
+
+              \  \"certificate\": \"-----BEGIN CERTIFICATE-----\\nMIID...Oeb0\\n-----END CERTIFICATE-----\\n\",\r
+
+              \  \"signed_data\": \"HAjp...\"\r
+
+              }"
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "1828"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            body: "{\r\n  \"app_id\": \"E8C28D3C\"\r\n}"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /get_app_device_id
+          x-testDescription: |-
+            This gives "app device id", "certificate" and "signed data".  
+            The `app_id` in the request is mandatory and refers to Chromecast backdrop/screensaver app. It has to be set to `E8C28D3C`.  
+
+            The certificate is valid and issued by `Chromecast ICA 6 (Audio Assist), Google Inc`.
+
+            Not sure what the other two are.
+          x-testEnabled: true
+          x-testName: App Device ID
+          x-testShouldPass: true
+  /icon.png:
+    get:
+      deprecated: false
+      description: |-
+        **Update:** This no longer exists. It's not useful, anyway.
+
+        A redirect to `http://www.gstatic.com/eureka/images/eureka_device.png`
+      operationId: ChromecastIcon
+      parameters: []
+      responses:
+        "200":
+          description: ""
+          headers: {}
+      summary: Chromecast Icon
+      tags:
+        - Static Files
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers: {}
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /icon.png
+          x-testDescription: |-
+            **Update:** This no longer exists. It's not useful, anyway.
+
+            A redirect to `http://www.gstatic.com/eureka/images/eureka_device.png`
+          x-testEnabled: true
+          x-testName: Chromecast Icon
+          x-testShouldPass: true
+  /offer:
+    get:
+      deprecated: false
+      description: |-
+        This gives a token which is used by the Home app to get offers. The offers themselves are not stored on the device.  
+        A new token is generated for every request.
+      operationId: Offer
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                token: ADtq...
+              schema:
+                $ref: "#/components/schemas/Example12"
+          description: ""
+          headers: {}
+      summary: Offer
+      tags:
+        - Device Info
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: '{"token":"ADtq..."}'
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "240"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /offer
+          x-testDescription: |-
+            This gives a token which is used by the Home app to get offers. The offers themselves are not stored on the device.  
+            A new token is generated for every request.
+          x-testEnabled: true
+          x-testName: Offer
+          x-testShouldPass: true
+  /reboot:
+    post:
+      deprecated: false
+      description: 'This can simply reboot the device (`params: "now"`) or factory reset the device (`params: "fdr"`).'
+      operationId: RebootandFactoryReset
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              params: now
+            schema:
+              $ref: "#/components/schemas/RebootandFactoryResetRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: object
+                x-is-dynamic: true
+          description: ""
+          headers: {}
+      summary: Reboot and Factory Reset
+      tags:
+        - Device Settings
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "0"
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            body: "{\r\n  \"params\": \"now\"\r\n}"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /reboot
+          x-testDescription: 'This can simply reboot the device (`params: "now"`) or factory reset the device (`params: "fdr"`).'
+          x-testEnabled: true
+          x-testName: Reboot and Factory Reset
+          x-testShouldPass: true
+  /scan_results:
+    get:
+      deprecated: false
+      description: |-
+        This gets a list of all nearby Wi-Fi access points.
+
+        The list only has the connected AP by default. Once a scan is triggered by `/setup/scan_wifi`, the whole list is cached for ~3 minutes. Then it will revert to returning only the connected AP again.
+      operationId: GetWi-FiScanResults
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                - bssid: APBSSID1
+                  signal_level: -20
+                  ssid: APSSID1
+                  wpa_auth: 7
+                  wpa_cipher: 4
+                  wpa_id: 0
+              schema:
+                items:
+                  $ref: "#/components/schemas/Example114"
+                type: array
+          description: ""
+          headers: {}
+      summary: Get Wi-Fi Scan Results
+      tags:
+        - Wifi
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: "[\r
+
+              \  {\r
+
+              \    \"bssid\": \"APBSSID1\",\r
+
+              \    \"signal_level\": -20,\r
+
+              \    \"ssid\": \"APSSID1\",\r
+
+              \    \"wpa_auth\": 7,\r
+
+              \    \"wpa_cipher\": 4,\r
+
+              \    \"wpa_id\": 0\r
+
+              \  }\r
+
+              ]"
+            headers: {}
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /scan_results
+          x-testDescription: |-
+            This gets a list of all nearby Wi-Fi access points.
+
+            The list only has the connected AP by default. Once a scan is triggered by `/setup/scan_wifi`, the whole list is cached for ~3 minutes. Then it will revert to returning only the connected AP again.
+          x-testEnabled: true
+          x-testName: Get Wi-Fi Scan Results
+          x-testShouldPass: true
+  /scan_wifi:
+    post:
+      deprecated: false
+      description: |-
+        This initiates scanning for Wi-Fi networks.
+
+        The results can be obtained with `/setup/scan_results` after triggering the scan with this request.
+      operationId: ScanforNetworks
+      parameters: []
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: object
+                x-is-dynamic: true
+          description: ""
+          headers: {}
+      summary: Scan for Networks
+      tags:
+        - Wifi
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers: {}
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            method: POST
+            uri: /scan_wifi
+          x-testDescription: |-
+            This initiates scanning for Wi-Fi networks.
+
+            The results can be obtained with `/setup/scan_results` after triggering the scan with this request.
+          x-testEnabled: true
+          x-testName: Scan for Networks
+          x-testShouldPass: true
+  /set_eureka_info:
+    post:
+      deprecated: false
+      description: |-
+        This can set custom values to some options.
+
+        Only fields to be modified need to be sent, not all. The example has some modifiable fields.
+
+        TODO: List all modifiable fields.
+
+        Sending non-existant fields will still return a 200 OK, but they are not saved.
+      operationId: SetEurekaInfo
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              name: Living Room
+              opt_in:
+                opencast: true
+                preview_channel: true
+                remote_ducking: true
+                stats: true
+              settings:
+                control_notifications: 2
+            schema:
+              $ref: "#/components/schemas/SetEurekaInfoRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: object
+                x-is-dynamic: true
+          description: ""
+          headers: {}
+      summary: Set Eureka Info
+      tags:
+        - Device Settings
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "0"
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"name\": \"Living Room\",\r
+
+              \  \"settings\": {\r
+
+              \    \"control_notifications\": 2\r
+
+              \  },\r
+
+              \  \"opt_in\": {\r
+
+              \    \"opencast\": true,\r
+
+              \    \"preview_channel\": true,\r
+
+              \    \"remote_ducking\": true,\r
+
+              \    \"stats\": true\r
+
+              \  }\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /set_eureka_info
+          x-testDescription: |-
+            This can set custom values to some options.
+
+            Only fields to be modified need to be sent, not all. The example has some modifiable fields.
+
+            TODO: List all modifiable fields.
+
+            Sending non-existant fields will still return a 200 OK, but they are not saved.
+          x-testEnabled: true
+          x-testName: Set Eureka Info
+          x-testShouldPass: true
+  /supported_locales:
+    get:
+      deprecated: false
+      description: Simply returns a list of all supported locales.
+      operationId: Locales
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                - display_string: Arabic - العربية
+                  locale: ar
+                - display_string: German - Deutsch
+                  locale: de
+                - display_string: English (United States)
+                  locale: en-US
+              schema:
+                items:
+                  $ref: "#/components/schemas/Example15"
+                type: array
+          description: ""
+          headers: {}
+      summary: Locales
+      tags:
+        - Device Info
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: |-
+              [
+                {
+                  "display_string": "Arabic - العربية",
+                  "locale": "ar"
+                },
+                {
+                  "display_string": "German - Deutsch",
+                  "locale": "de"
+                },
+                {
+                  "display_string": "English (United States)",
+                  "locale": "en-US"
+                }
+              ]
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "3553"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /supported_locales
+          x-testDescription: Simply returns a list of all supported locales.
+          x-testEnabled: false
+          x-testName: Locales
+          x-testShouldPass: true
+  /supported_timezones:
+    get:
+      deprecated: false
+      description: Simply returns a list of all supported timezones.
+      operationId: Timezones
+      parameters: []
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                - display_string: Samoa Standard Time (Midway)
+                  offset: -660
+                  timezone: Pacific/Midway
+                - display_string: Hawaii-Aleutian Standard Time (Honolulu)
+                  offset: -600
+                  timezone: Pacific/Honolulu
+              schema:
+                items:
+                  $ref: "#/components/schemas/Example14"
+                type: array
+          description: ""
+          headers: {}
+      summary: Timezones
+      tags:
+        - Device Info
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: |-
+              [
+                {
+                  "display_string": "Samoa Standard Time (Midway)",
+                  "offset": -660,
+                  "timezone": "Pacific/Midway"
+                },
+                {
+                  "display_string": "Hawaii-Aleutian Standard Time (Honolulu)",
+                  "offset": -600,
+                  "timezone": "Pacific/Honolulu"
+                }
+              ]
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "11800"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            method: GET
+            uri: /supported_timezones
+          x-testDescription: Simply returns a list of all supported timezones.
+          x-testEnabled: false
+          x-testName: Timezones
+          x-testShouldPass: true
+  /test_internet_download_speed:
+    post:
+      deprecated: false
+      description: |-
+        **Update:** This seems to have been removed. Returns 404 Not Found.
+
+        This endpoint tests internet download speed. Any sample file URL can be provided.
+      operationId: TestInternetDownloadSpeed
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              url: https://storage.googleapis.com/reliability-speedtest/random.txt
+            schema:
+              $ref: "#/components/schemas/TestInternetDownloadSpeedRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              example:
+                bytes_received: 31457280
+                response_code: 200
+                time_for_data_fetch: 4722
+                time_for_http_response: 316
+              schema:
+                $ref: "#/components/schemas/Example16"
+          description: ""
+          headers: {}
+      summary: Test Internet Download Speed
+      tags:
+        - Device Info
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            body: '{"bytes_received":31457280,"response_code":200,"time_for_data_fetch":4722,"time_for_http_response":316}'
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "103"
+              Content-Type: application/json
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: KEYS
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"url\": \"https://storage.googleapis.com/reliability-speedtest/random.txt\"\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /test_internet_download_speed
+          x-testDescription: |-
+            **Update:** This seems to have been removed. Returns 404 Not Found.
+
+            This endpoint tests internet download speed. Any sample file URL can be provided.
+          x-testEnabled: true
+          x-testName: Test Internet Download Speed
+          x-testShouldPass: true
+  /user_eq/set_equalizer:
+    post:
+      deprecated: false
+      description: |-
+        This can only set new equalizer values. To get already set values, use /setup/eureka_info.
+
+        The body is mandatory. It can either contain `low_shelf` or `high_shelf` or both.
+
+        `low_shelf.gain_db` and `high_shelf.gain_db` refer to **bass** and **treble** respectively.
+
+        Default values are 0 for both.  
+        While the slider in the Home app only ranges from -6 to +6, they can be set to any integer like 50 or -100. These changes persist.
+      operationId: SetEqualizerValues
+      parameters: []
+      requestBody:
+        content:
+          application/json:
+            example:
+              high_shelf:
+                gain_db: 0
+              low_shelf:
+                gain_db: 0
+            schema:
+              $ref: "#/components/schemas/SetEqualizerValuesRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            text/plain:
+              schema:
+                type: object
+                x-is-dynamic: true
+          description: ""
+          headers: {}
+      summary: Set Equalizer Values
+      tags:
+        - Assistant
+      x-operation-settings:
+        AllowDynamicFormParameters: false
+        AllowDynamicQueryParameters: false
+        CollectParameters: false
+        IsMultiContentStreaming: false
+      x-unitTests:
+        - expectedResponse:
+            headers:
+              Access-Control-Allow-Headers: Content-Type
+              Cache-Control: no-cache
+              Content-Length: "0"
+            statusCode: "200"
+            x-allowExtraHeaders: true
+            x-arrayCheckCount: false
+            x-arrayOrderedMatching: false
+            x-bodyMatchMode: NONE
+            x-matchResponseSchema: true
+          request:
+            body: "{\r
+
+              \  \"low_shelf\": {\r
+
+              \    \"gain_db\": 0\r
+
+              \  },\r
+
+              \  \"high_shelf\": {\r
+
+              \    \"gain_db\": 0\r
+
+              \  }\r
+
+              }"
+            headers:
+              Content-Type: application/json
+            method: POST
+            uri: /user_eq/set_equalizer
+          x-testDescription: |-
+            This can only set new equalizer values. To get already set values, use /setup/eureka_info.
+
+            The body is mandatory. It can either contain `low_shelf` or `high_shelf` or both.
+
+            `low_shelf.gain_db` and `high_shelf.gain_db` refer to **bass** and **treble** respectively.
+
+            Default values are 0 for both.  
+            While the slider in the Home app only ranges from -6 to +6, they can be set to any integer like 50 or -100. These changes persist.
+          x-testEnabled: true
+          x-testName: Set Equalizer Values
+          x-testShouldPass: true
+components:
+  schemas:
+    AccessibilityRequest:
+      example:
+        endpoint_enabled: false
+        hotword_enabled: false
+      properties:
+        endpoint_enabled:
+          type: boolean
+        hotword_enabled:
+          type: boolean
+      required:
+        - hotword_enabled
+        - endpoint_enabled
+      title: AccessibilityRequest
+      type: object
+    Alarm:
+      example:
+        date_pattern:
+          day: 15
+          month: 1
+          year: 2018
+        fire_time: 1515995400000
+        id: alarm/xxx
+        status: 1
+        time_pattern:
+          hour: 6
+          minute: 50
+          second: 0
+      properties:
+        date_pattern:
+          $ref: "#/components/schemas/DatePattern"
+        fire_time:
+          type: number
+        id:
+          type: string
+        status:
+          format: int32
+          type: integer
+        time_pattern:
+          $ref: "#/components/schemas/TimePattern"
+      required:
+        - date_pattern
+        - time_pattern
+        - fire_time
+        - id
+        - status
+      title: Alarm
+      type: object
+    AlarmVolumeRequest:
+      example:
+        volume: 1
+      properties:
+        volume:
+          format: int32
+          type: integer
+      required:
+        - volume
+      title: AlarmVolumeRequest
+      type: object
+    Aogh:
+      example:
+        aogh_api_version: "2"
+      properties:
+        aogh_api_version:
+          type: string
+      required:
+        - aogh_api_version
+      title: Aogh
+      type: object
+    AppDeviceIDRequest:
+      example:
+        app_id: E8C28D3C
+      properties:
+        app_id:
+          type: string
+      required:
+        - app_id
+      title: AppDeviceIDRequest
+      type: object
+    Audio:
+      example:
+        digital: false
+      properties:
+        digital:
+          type: boolean
+      required:
+        - digital
+      title: Audio
+      type: object
+    BuildInfo:
+      example:
+        build_type: 2
+        cast_build_revision: 1.46.195690
+        cast_control_version: 1
+        preview_channel_state: 4
+        release_track: preview-joining-stable-channel
+        system_build_number: "195690"
+      properties:
+        build_type:
+          format: int32
+          type: integer
+        cast_build_revision:
+          type: string
+        cast_control_version:
+          format: int32
+          type: integer
+        preview_channel_state:
+          format: int32
+          type: integer
+        release_track:
+          type: string
+        system_build_number:
+          type: string
+      required:
+        - build_type
+        - cast_build_revision
+        - cast_control_version
+        - preview_channel_state
+        - release_track
+        - system_build_number
+      title: BuildInfo
+      type: object
+    Capabilities:
+      example:
+        aogh_supported: true
+        assistant_supported: true
+        audio_hdr_supported: false
+        audio_surround_mode_supported: false
+        ble_supported: true
+        bluetooth_audio_sink_supported: true
+        bluetooth_audio_source_supported: true
+        bluetooth_supported: true
+        cloudcast_supported: true
+        content_filters_supported: true
+        display_supported: false
+        fdr_supported: false
+        hdmi_prefer_50hz_supported: false
+        hdmi_prefer_high_fps_supported: false
+        hotspot_supported: true
+        https_setup_supported: true
+        input_management_supported: true
+        keep_hotspot_until_connected_supported: true
+        multi_user_supported: true
+        multichannel_group_supported: true
+        multizone_supported: true
+        night_mode_supported: true
+        night_mode_supported_v2: true
+        opencast_supported: false
+        preview_channel_supported: true
+        reboot_supported: true
+        remote_ducking_supported: true
+        separate_tts_volume_supported: true
+        setup_supported: true
+        sleep_mode_supported: true
+        stats_supported: true
+        system_sound_effects_supported: false
+        user_eq_supported: true
+        wifi_auto_save_supported: true
+        wifi_regulatory_domain_locked: true
+        wifi_supported: true
+      properties:
+        aogh_supported:
+          type: boolean
+        assistant_supported:
+          type: boolean
+        audio_hdr_supported:
+          type: boolean
+        audio_surround_mode_supported:
+          type: boolean
+        ble_supported:
+          type: boolean
+        bluetooth_audio_sink_supported:
+          type: boolean
+        bluetooth_audio_source_supported:
+          type: boolean
+        bluetooth_supported:
+          type: boolean
+        cloudcast_supported:
+          type: boolean
+        content_filters_supported:
+          type: boolean
+        display_supported:
+          type: boolean
+        fdr_supported:
+          type: boolean
+        hdmi_prefer_50hz_supported:
+          type: boolean
+        hdmi_prefer_high_fps_supported:
+          type: boolean
+        hotspot_supported:
+          type: boolean
+        https_setup_supported:
+          type: boolean
+        input_management_supported:
+          type: boolean
+        keep_hotspot_until_connected_supported:
+          type: boolean
+        multi_user_supported:
+          type: boolean
+        multichannel_group_supported:
+          type: boolean
+        multizone_supported:
+          type: boolean
+        night_mode_supported:
+          type: boolean
+        night_mode_supported_v2:
+          type: boolean
+        opencast_supported:
+          type: boolean
+        preview_channel_supported:
+          type: boolean
+        reboot_supported:
+          type: boolean
+        remote_ducking_supported:
+          type: boolean
+        separate_tts_volume_supported:
+          type: boolean
+        setup_supported:
+          type: boolean
+        sleep_mode_supported:
+          type: boolean
+        stats_supported:
+          type: boolean
+        system_sound_effects_supported:
+          type: boolean
+        user_eq_supported:
+          type: boolean
+        wifi_auto_save_supported:
+          type: boolean
+        wifi_regulatory_domain_locked:
+          type: boolean
+        wifi_supported:
+          type: boolean
+      required:
+        - aogh_supported
+        - assistant_supported
+        - audio_hdr_supported
+        - audio_surround_mode_supported
+        - ble_supported
+        - bluetooth_audio_sink_supported
+        - bluetooth_audio_source_supported
+        - bluetooth_supported
+        - cloudcast_supported
+        - content_filters_supported
+        - display_supported
+        - fdr_supported
+        - hdmi_prefer_50hz_supported
+        - hdmi_prefer_high_fps_supported
+        - hotspot_supported
+        - https_setup_supported
+        - input_management_supported
+        - keep_hotspot_until_connected_supported
+        - multi_user_supported
+        - multichannel_group_supported
+        - multizone_supported
+        - night_mode_supported
+        - night_mode_supported_v2
+        - opencast_supported
+        - preview_channel_supported
+        - reboot_supported
+        - remote_ducking_supported
+        - separate_tts_volume_supported
+        - setup_supported
+        - sleep_mode_supported
+        - stats_supported
+        - system_sound_effects_supported
+        - user_eq_supported
+        - wifi_auto_save_supported
+        - wifi_regulatory_domain_locked
+        - wifi_supported
+      title: Capabilities
+      type: object
+    ChangeDiscoverabilityRequest:
+      example:
+        enable_discovery: true
+      properties:
+        enable_discovery:
+          type: boolean
+      required:
+        - enable_discovery
+      title: ChangeDiscoverabilityRequest
+      type: object
+    CheckReadyStatusRequest:
+      example:
+        play_ready_message: true
+        user_id: xxxxx
+      properties:
+        play_ready_message:
+          type: boolean
+        user_id:
+          type: string
+      required:
+        - play_ready_message
+        - user_id
+      title: CheckReadyStatusRequest
+      type: object
+    ConnectedDevice:
+      example:
+        device:
+          bond_date: 1529248165656.613
+          device_class: 2491396
+          device_type: 1
+          last_connect_date: 0
+          mac_address: xx:xx:xx:xx:xx:xx
+          name: PHILIPS BT64
+          rssi: -255
+          service_uuids:
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        enabled_profiles: 2
+      properties:
+        device:
+          $ref: "#/components/schemas/Device"
+        enabled_profiles:
+          format: int32
+          type: integer
+      required:
+        - device
+        - enabled_profiles
+      title: ConnectedDevice
+      type: object
+    ConnecttoWi-FiNetworkRequest:
+      example:
+        bssid: 5c:0a:xx:xx:xx:xx
+        enc_passwd: xxxxxfPY=
+        signal_level: -42
+        ssid: myotherssid
+        wpa_auth: 7
+        wpa_cipher: 4
+      properties:
+        bssid:
+          type: string
+        enc_passwd:
+          type: string
+        signal_level:
+          format: int32
+          type: integer
+        ssid:
+          type: string
+        wpa_auth:
+          format: int32
+          type: integer
+        wpa_cipher:
+          format: int32
+          type: integer
+      required:
+        - bssid
+        - signal_level
+        - ssid
+        - wpa_auth
+        - wpa_cipher
+        - enc_passwd
+      title: ConnecttoWi-FiNetworkRequest
+      type: object
+    DatePattern:
+      example:
+        day: 15
+        month: 1
+        year: 2018
+      properties:
+        day:
+          format: int32
+          type: integer
+        month:
+          format: int32
+          type: integer
+        year:
+          format: int32
+          type: integer
+      required:
+        - day
+        - month
+        - year
+      title: DatePattern
+      type: object
+    DeleteAlarmsandTimersRequest:
+      example:
+        ids:
+          - timer/xxx
+          - alarm/xxx
+      properties:
+        ids:
+          items:
+            type: string
+          type: array
+      required:
+        - ids
+      title: DeleteAlarmsandTimersRequest
+      type: object
+    Detail:
+      example:
+        icon_list:
+          - depth: 32
+            height: 55
+            mimetype: image/png
+            url: /setup/icon.png
+            width: 98
+        locale:
+          display_string: English (United States)
+        timezone:
+          display_string: India Standard Time (Kolkata)
+          offset: 330
+      properties:
+        icon_list:
+          items:
+            $ref: "#/components/schemas/IconList"
+          type: array
+        locale:
+          $ref: "#/components/schemas/Locale"
+        timezone:
+          $ref: "#/components/schemas/Timezone"
+      required:
+        - icon_list
+        - locale
+        - timezone
+      title: Detail
+      type: object
+    Device:
+      example:
+        bond_date: 1529248165656.613
+        device_class: 2491396
+        device_type: 1
+        last_connect_date: 0
+        mac_address: xx:xx:xx:xx:xx:xx
+        name: PHILIPS BT64
+        rssi: -255
+        service_uuids:
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      properties:
+        bond_date:
+          type: number
+        device_class:
+          format: int32
+          type: integer
+        device_type:
+          format: int32
+          type: integer
+        last_connect_date:
+          format: int32
+          type: integer
+        mac_address:
+          type: string
+        name:
+          type: string
+        rssi:
+          format: int32
+          type: integer
+        service_uuids:
+          items:
+            type: string
+          type: array
+      required:
+        - bond_date
+        - device_class
+        - device_type
+        - last_connect_date
+        - mac_address
+        - name
+        - rssi
+        - service_uuids
+      title: Device
+      type: object
+    DeviceInfo:
+      example:
+        4k_blocked: 0
+        capabilities:
+          aogh_supported: true
+          assistant_supported: true
+          audio_hdr_supported: false
+          audio_surround_mode_supported: false
+          ble_supported: true
+          bluetooth_audio_sink_supported: true
+          bluetooth_audio_source_supported: true
+          bluetooth_supported: true
+          cloudcast_supported: true
+          content_filters_supported: true
+          display_supported: false
+          fdr_supported: false
+          hdmi_prefer_50hz_supported: false
+          hdmi_prefer_high_fps_supported: false
+          hotspot_supported: true
+          https_setup_supported: true
+          input_management_supported: true
+          keep_hotspot_until_connected_supported: true
+          multi_user_supported: true
+          multichannel_group_supported: true
+          multizone_supported: true
+          night_mode_supported: true
+          night_mode_supported_v2: true
+          opencast_supported: false
+          preview_channel_supported: true
+          reboot_supported: true
+          remote_ducking_supported: true
+          separate_tts_volume_supported: true
+          setup_supported: true
+          sleep_mode_supported: true
+          stats_supported: true
+          system_sound_effects_supported: false
+          user_eq_supported: true
+          wifi_auto_save_supported: true
+          wifi_regulatory_domain_locked: true
+          wifi_supported: true
+        cloud_device_id: 003D...
+        factory_country_code: US
+        hotspot_bssid: FA:8F:CA:30:41:71
+        local_authorization_token_hash: hBt2...
+        mac_address: F4:F5:...
+        manufacturer: Google Inc.
+        model_name: Google Home
+        product_name: pineapple
+        public_key: MIIB...
+        ssdp_udn: baab...
+        uma_client_id: 8ce0...
+        uptime: 48509.169282
+        weave_device_id: ""
+      properties:
+        4k_blocked:
+          format: int32
+          type: integer
+        capabilities:
+          $ref: "#/components/schemas/Capabilities"
+        cloud_device_id:
+          type: string
+        factory_country_code:
+          type: string
+        hotspot_bssid:
+          type: string
+        local_authorization_token_hash:
+          type: string
+        mac_address:
+          type: string
+        manufacturer:
+          type: string
+        model_name:
+          type: string
+        product_name:
+          type: string
+        public_key:
+          type: string
+        ssdp_udn:
+          type: string
+        uma_client_id:
+          type: string
+        uptime:
+          type: number
+        weave_device_id:
+          type: string
+      required:
+        - 4k_blocked
+        - capabilities
+        - cloud_device_id
+        - factory_country_code
+        - hotspot_bssid
+        - local_authorization_token_hash
+        - mac_address
+        - manufacturer
+        - model_name
+        - product_name
+        - public_key
+        - ssdp_udn
+        - uma_client_id
+        - uptime
+        - weave_device_id
+      title: DeviceInfo
+      type: object
+    Example1:
+      example:
+        aogh:
+          aogh_api_version: "2"
+        audio:
+          digital: false
+        build_info:
+          build_type: 2
+          cast_build_revision: 1.46.195690
+          cast_control_version: 1
+          preview_channel_state: 4
+          release_track: preview-joining-stable-channel
+          system_build_number: "195690"
+        detail:
+          icon_list:
+            - depth: 32
+              height: 55
+              mimetype: image/png
+              url: /setup/icon.png
+              width: 98
+          locale:
+            display_string: English (United States)
+          timezone:
+            display_string: India Standard Time (Kolkata)
+            offset: 330
+        device_info:
+          4k_blocked: 0
+          capabilities:
+            aogh_supported: true
+            assistant_supported: true
+            audio_hdr_supported: false
+            audio_surround_mode_supported: false
+            ble_supported: true
+            bluetooth_audio_sink_supported: true
+            bluetooth_audio_source_supported: true
+            bluetooth_supported: true
+            cloudcast_supported: true
+            content_filters_supported: true
+            display_supported: false
+            fdr_supported: false
+            hdmi_prefer_50hz_supported: false
+            hdmi_prefer_high_fps_supported: false
+            hotspot_supported: true
+            https_setup_supported: true
+            input_management_supported: true
+            keep_hotspot_until_connected_supported: true
+            multi_user_supported: true
+            multichannel_group_supported: true
+            multizone_supported: true
+            night_mode_supported: true
+            night_mode_supported_v2: true
+            opencast_supported: false
+            preview_channel_supported: true
+            reboot_supported: true
+            remote_ducking_supported: true
+            separate_tts_volume_supported: true
+            setup_supported: true
+            sleep_mode_supported: true
+            stats_supported: true
+            system_sound_effects_supported: false
+            user_eq_supported: true
+            wifi_auto_save_supported: true
+            wifi_regulatory_domain_locked: true
+            wifi_supported: true
+          cloud_device_id: 003D...
+          factory_country_code: US
+          hotspot_bssid: FA:8F:CA:30:41:71
+          local_authorization_token_hash: hBt2...
+          mac_address: F4:F5:...
+          manufacturer: Google Inc.
+          model_name: Google Home
+          product_name: pineapple
+          public_key: MIIB...
+          ssdp_udn: baab...
+          uma_client_id: 8ce0...
+          uptime: 48509.169282
+          weave_device_id: ""
+        multizone:
+          audio_output_delay: 0
+          audio_output_delay_hdmi: 0
+          audio_output_delay_oem: 0
+          aux_in_group: ""
+          dynamic_groups: []
+          groups: []
+          multichannel_status: 0
+        name: Bedroom Speaker
+        net:
+          ethernet_connected: false
+          ip_address: 192.168.0.18
+          online: true
+        night_mode_params:
+          device_override_do_not_disturb: 0
+          do_not_disturb: true
+          enabled: true
+          led_brightness: 0.5799999833106995
+          volume: 0.5899999737739563
+          windows:
+            - days:
+                - 0
+                - 1
+                - 2
+                - 3
+                - 4
+                - 5
+                - 6
+              length_hours: 6
+              start_hour: 23
+        opencast:
+          pin_code: ""
+        opt_in:
+          audio_hdr: false
+          audio_surround_mode: 0
+          autoplay_on_signal: true
+          cloud_ipc: true
+          hdmi_prefer_50hz: false
+          hdmi_prefer_high_fps: true
+          managed_mode: false
+          opencast: true
+          preview_channel: true
+          remote_ducking: true
+          stats: true
+          ui_flipped: false
+          wpa3_support_enabled: false
+        proxy:
+          mode: system
+        settings:
+          closed_caption: {}
+          control_notifications: 1
+          country_code: IN
+          locale: en-US
+          network_standby: 0
+          system_sound_effects: true
+          time_format: 1
+          timezone: Asia/Kolkata
+          wake_on_cast: 1
+        setup:
+          qr_ssid_suffix: ""
+          setup_state: 60
+          ssid_suffix: k
+          stats:
+            num_check_connectivity: 0
+            num_connect_wifi: 0
+            num_connected_wifi_not_saved: 0
+            num_initial_eureka_info: 0
+            num_obtain_ip: 0
+          tos_accepted: true
+        sign:
+          certificate: |
+            -----BEGIN CERTIFICATE-----
+            MIID...Oeb0
+            -----END CERTIFICATE-----
+          intermediate_certs:
+            - |
+              -----BEGIN CERTIFICATE-----
+              MIID...O/bYS
+              -----END CERTIFICATE-----
+          nonce: "1234512345"
+          signed_data: Rr5Q...
+        user_eq:
+          high_shelf:
+            frequency: 4500
+            gain_db: 0
+            quality: 0.707
+          low_shelf:
+            frequency: 150
+            gain_db: 0
+            quality: 0.707
+          max_peaking_eqs: 0
+          peaking_eqs: []
+        version: 10
+        wifi:
+          bssid: a0:ab:...
+          has_changes: false
+          noise_level: -90
+          signal_level: -50
+          ssid: Nucl...
+          wpa_configured: true
+          wpa_id: 1
+          wpa_state: 10
+      properties:
+        aogh:
+          $ref: "#/components/schemas/Aogh"
+        audio:
+          $ref: "#/components/schemas/Audio"
+        build_info:
+          $ref: "#/components/schemas/BuildInfo"
+        detail:
+          $ref: "#/components/schemas/Detail"
+        device_info:
+          $ref: "#/components/schemas/DeviceInfo"
+        multizone:
+          $ref: "#/components/schemas/Multizone"
+        name:
+          type: string
+        net:
+          $ref: "#/components/schemas/Net"
+        night_mode_params:
+          $ref: "#/components/schemas/NightModeParams"
+        opencast:
+          $ref: "#/components/schemas/Opencast"
+        opt_in:
+          $ref: "#/components/schemas/OptIn"
+        proxy:
+          $ref: "#/components/schemas/Proxy"
+        settings:
+          $ref: "#/components/schemas/Settings"
+        setup:
+          $ref: "#/components/schemas/Setup"
+        sign:
+          $ref: "#/components/schemas/Sign"
+        user_eq:
+          $ref: "#/components/schemas/UserEq"
+        version:
+          format: int32
+          type: integer
+        wifi:
+          $ref: "#/components/schemas/Wifi"
+      required:
+        - aogh
+        - audio
+        - build_info
+        - detail
+        - device_info
+        - multizone
+        - name
+        - net
+        - night_mode_params
+        - opencast
+        - opt_in
+        - proxy
+        - settings
+        - setup
+        - sign
+        - user_eq
+        - version
+        - wifi
+      title: Example1
+      type: object
+    Example11:
+      example:
+        app_device_id: ...
+        certificate: |
+          -----BEGIN CERTIFICATE-----
+          MIID...Oeb0
+          -----END CERTIFICATE-----
+        signed_data: HAjp...
+      properties:
+        app_device_id:
+          type: string
+        certificate:
+          type: string
+        signed_data:
+          type: string
+      required:
+        - app_device_id
+        - certificate
+        - signed_data
+      title: Example11
+      type: object
+    Example110:
+      example:
+        audio_mode: 0
+        connected_devices:
+          - device:
+              bond_date: 1529248165656.613
+              device_class: 2491396
+              device_type: 1
+              last_connect_date: 0
+              mac_address: xx:xx:xx:xx:xx:xx
+              name: PHILIPS BT64
+              rssi: -255
+              service_uuids:
+                - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+                - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            enabled_profiles: 2
+        connecting_devices: []
+        discovery_enabled: false
+        remote_sink:
+          bond_date: 1529248165656.613
+          device_class: 2491396
+          device_type: 1
+          last_connect_date: 0
+          mac_address: xx:xx:xx:xx:xx:xx
+          name: PHILIPS BT64
+          rssi: -255
+          service_uuids:
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+            - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+        scanning_enabled: false
+      properties:
+        audio_mode:
+          format: int32
+          type: integer
+        connected_devices:
+          items:
+            $ref: "#/components/schemas/ConnectedDevice"
+          type: array
+        connecting_devices:
+          items:
+            type: string
+          type: array
+        discovery_enabled:
+          type: boolean
+        remote_sink:
+          $ref: "#/components/schemas/RemoteSink"
+        scanning_enabled:
+          type: boolean
+      required:
+        - audio_mode
+        - connecting_devices
+        - connected_devices
+        - remote_sink
+        - discovery_enabled
+        - scanning_enabled
+      title: Example110
+      type: object
+    Example111:
+      example:
+        bond_date: 1503212407260.55
+        device_class: 5898764
+        device_type: 1
+        last_connect_date: 1514807829482.111
+        mac_address: xx:xx:xx:xx:xx:xx
+        name: Device Name
+        rssi: -255
+        service_uuids:
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      properties:
+        bond_date:
+          type: number
+        device_class:
+          format: int32
+          type: integer
+        device_type:
+          format: int32
+          type: integer
+        last_connect_date:
+          type: number
+        mac_address:
+          type: string
+        name:
+          type: string
+        rssi:
+          format: int32
+          type: integer
+        service_uuids:
+          items:
+            type: string
+          type: array
+      required:
+        - bond_date
+        - device_class
+        - device_type
+        - last_connect_date
+        - mac_address
+        - name
+        - rssi
+        - service_uuids
+      title: Example111
+      type: object
+    Example112:
+      example:
+        device_class: 525372
+        device_type: 3
+        expected_profiles: 0
+        mac_address: xx:xx:xx:xx:xx:xx
+        name: KD-49X8200E
+        rssi: -90
+      properties:
+        device_class:
+          format: int32
+          type: integer
+        device_type:
+          format: int32
+          type: integer
+        expected_profiles:
+          format: int32
+          type: integer
+        mac_address:
+          type: string
+        name:
+          type: string
+        rssi:
+          format: int32
+          type: integer
+      required:
+        - device_class
+        - device_type
+        - expected_profiles
+        - mac_address
+        - name
+        - rssi
+      title: Example112
+      type: object
+    Example113:
+      example:
+        ssid: Wifi name
+        wpa_auth: 7
+        wpa_cipher: 4
+        wpa_id: 0
+      properties:
+        ssid:
+          type: string
+        wpa_auth:
+          format: int32
+          type: integer
+        wpa_cipher:
+          format: int32
+          type: integer
+        wpa_id:
+          format: int32
+          type: integer
+      required:
+        - ssid
+        - wpa_auth
+        - wpa_cipher
+        - wpa_id
+      title: Example113
+      type: object
+    Example114:
+      example:
+        bssid: APBSSID1
+        signal_level: -20
+        ssid: APSSID1
+        wpa_auth: 7
+        wpa_cipher: 4
+        wpa_id: 0
+      properties:
+        bssid:
+          type: string
+        signal_level:
+          format: int32
+          type: integer
+        ssid:
+          type: string
+        wpa_auth:
+          format: int32
+          type: integer
+        wpa_cipher:
+          format: int32
+          type: integer
+        wpa_id:
+          format: int32
+          type: integer
+      required:
+        - bssid
+        - signal_level
+        - ssid
+        - wpa_auth
+        - wpa_cipher
+        - wpa_id
+      title: Example114
+      type: object
+    Example12:
+      example:
+        token: ADtq...
+      properties:
+        token:
+          type: string
+      required:
+        - token
+      title: Example12
+      type: object
+    Example13:
+      example:
+        can_enroll: true
+        enrollment_state: 0
+        error_code: 0
+        ready: false
+        retryable: true
+      properties:
+        can_enroll:
+          type: boolean
+        enrollment_state:
+          format: int32
+          type: integer
+        error_code:
+          format: int32
+          type: integer
+        ready:
+          type: boolean
+        retryable:
+          type: boolean
+      required:
+        - can_enroll
+        - enrollment_state
+        - error_code
+        - ready
+        - retryable
+      title: Example13
+      type: object
+    Example14:
+      example:
+        display_string: Samoa Standard Time (Midway)
+        offset: -660
+        timezone: Pacific/Midway
+      properties:
+        display_string:
+          type: string
+        offset:
+          format: int32
+          type: integer
+        timezone:
+          type: string
+      required:
+        - display_string
+        - offset
+        - timezone
+      title: Example14
+      type: object
+    Example15:
+      example:
+        display_string: Amharic - አማርኛ
+        locale: am
+      properties:
+        display_string:
+          type: string
+        locale:
+          type: string
+      required:
+        - display_string
+        - locale
+      title: Example15
+      type: object
+    Example16:
+      example:
+        bytes_received: 31457280
+        response_code: 200
+        time_for_data_fetch: 4722
+        time_for_http_response: 316
+      properties:
+        bytes_received:
+          format: int32
+          type: integer
+        response_code:
+          format: int32
+          type: integer
+        time_for_data_fetch:
+          format: int32
+          type: integer
+        time_for_http_response:
+          format: int32
+          type: integer
+      required:
+        - bytes_received
+        - response_code
+        - time_for_data_fetch
+        - time_for_http_response
+      title: Example16
+      type: object
+    Example17:
+      example:
+        do_not_disturb: true
+        enabled: false
+        led_brightness: 0.44999998807907104
+        volume: 0.46000000834465027
+        windows:
+          - days:
+              - 0
+              - 1
+              - 2
+              - 3
+              - 4
+              - 5
+              - 6
+            length_hours: 8
+            start_hour: 22
+      properties:
+        do_not_disturb:
+          type: boolean
+        enabled:
+          type: boolean
+        led_brightness:
+          type: number
+        volume:
+          type: number
+        windows:
+          items:
+            $ref: "#/components/schemas/Window2"
+          type: array
+      required:
+        - do_not_disturb
+        - enabled
+        - led_brightness
+        - volume
+        - windows
+      title: Example17
+      type: object
+    Example18:
+      example:
+        alarm:
+          - date_pattern:
+              day: 15
+              month: 1
+              year: 2018
+            fire_time: 1515995400000
+            id: alarm/xxx
+            status: 1
+            time_pattern:
+              hour: 6
+              minute: 50
+              second: 0
+        timer:
+          - fire_time: 1516176765589
+            id: timer/xxx
+            original_duration: 20000
+            status: 1
+      properties:
+        alarm:
+          items:
+            $ref: "#/components/schemas/Alarm"
+          type: array
+        timer:
+          items:
+            $ref: "#/components/schemas/Timer"
+          type: array
+      required:
+        - alarm
+        - timer
+      title: Example18
+      type: object
+    Example19:
+      example:
+        success: true
+      properties:
+        success:
+          type: boolean
+      required:
+        - success
+      title: Example19
+      type: object
+    ForgetWi-FiNetworkRequest:
+      example:
+        wpa_id: 0
+      properties:
+        wpa_id:
+          format: int32
+          type: integer
+      required:
+        - wpa_id
+      title: ForgetWi-FiNetworkRequest
+      type: object
+    ForgetpaireddeviceRequest:
+      example:
+        bond: false
+        mac_address: xx:xx:xx:xx:xx:xx
+      properties:
+        bond:
+          type: boolean
+        mac_address:
+          type: string
+      required:
+        - mac_address
+        - bond
+      title: ForgetpaireddeviceRequest
+      type: object
+    Getcurrentstate:
+      example:
+        notifications_enabled: true
+      properties:
+        notifications_enabled:
+          type: boolean
+      required:
+        - notifications_enabled
+      title: Getcurrentstate
+      type: object
+    Getcurrentvalues:
+      example:
+        endpoint_enabled: false
+        hotword_enabled: false
+      properties:
+        endpoint_enabled:
+          type: boolean
+        hotword_enabled:
+          type: boolean
+      required:
+        - endpoint_enabled
+        - hotword_enabled
+      title: Getcurrentvalues
+      type: object
+    Getvolume:
+      example:
+        volume: 1
+      properties:
+        volume:
+          type: number
+      required:
+        - volume
+      title: Getvolume
+      type: object
+    HighShelf:
+      example:
+        frequency: 4500
+        gain_db: 0
+        quality: 0.707
+      properties:
+        frequency:
+          format: int32
+          type: integer
+        gain_db:
+          format: int32
+          type: integer
+        quality:
+          type: number
+      required:
+        - frequency
+        - gain_db
+        - quality
+      title: HighShelf
+      type: object
+    HighShelf1:
+      example:
+        gain_db: 0
+      properties:
+        gain_db:
+          format: int32
+          type: integer
+      required:
+        - gain_db
+      title: HighShelf1
+      type: object
+    IconList:
+      example:
+        depth: 32
+        height: 55
+        mimetype: image/png
+        url: /setup/icon.png
+        width: 98
+      properties:
+        depth:
+          format: int32
+          type: integer
+        height:
+          format: int32
+          type: integer
+        mimetype:
+          type: string
+        url:
+          type: string
+        width:
+          format: int32
+          type: integer
+      required:
+        - depth
+        - height
+        - mimetype
+        - url
+        - width
+      title: IconList
+      type: object
+    Locale:
+      example:
+        display_string: English (United States)
+      properties:
+        display_string:
+          type: string
+      required:
+        - display_string
+      title: Locale
+      type: object
+    LowShelf:
+      example:
+        frequency: 150
+        gain_db: 0
+        quality: 0.707
+      properties:
+        frequency:
+          format: int32
+          type: integer
+        gain_db:
+          format: int32
+          type: integer
+        quality:
+          type: number
+      required:
+        - frequency
+        - gain_db
+        - quality
+      title: LowShelf
+      type: object
+    LowShelf1:
+      example:
+        gain_db: 0
+      properties:
+        gain_db:
+          format: int32
+          type: integer
+      required:
+        - gain_db
+      title: LowShelf1
+      type: object
+    Multizone:
+      example:
+        audio_output_delay: 0
+        audio_output_delay_hdmi: 0
+        audio_output_delay_oem: 0
+        aux_in_group: ""
+        dynamic_groups: []
+        groups: []
+        multichannel_status: 0
+      properties:
+        audio_output_delay:
+          format: int32
+          type: integer
+        audio_output_delay_hdmi:
+          format: int32
+          type: integer
+        audio_output_delay_oem:
+          format: int32
+          type: integer
+        aux_in_group:
+          type: string
+        dynamic_groups:
+          items:
+            type: string
+          type: array
+        groups:
+          items:
+            type: string
+          type: array
+        multichannel_status:
+          format: int32
+          type: integer
+      required:
+        - audio_output_delay
+        - audio_output_delay_hdmi
+        - audio_output_delay_oem
+        - aux_in_group
+        - dynamic_groups
+        - groups
+        - multichannel_status
+      title: Multizone
+      type: object
+    Net:
+      example:
+        ethernet_connected: false
+        ip_address: 192.168.0.18
+        online: true
+      properties:
+        ethernet_connected:
+          type: boolean
+        ip_address:
+          type: string
+        online:
+          type: boolean
+      required:
+        - ethernet_connected
+        - ip_address
+        - online
+      title: Net
+      type: object
+    NightModeParams:
+      example:
+        device_override_do_not_disturb: 0
+        do_not_disturb: true
+        enabled: true
+        led_brightness: 0.5799999833106995
+        volume: 0.5899999737739563
+        windows:
+          - days:
+              - 0
+              - 1
+              - 2
+              - 3
+              - 4
+              - 5
+              - 6
+            length_hours: 6
+            start_hour: 23
+      properties:
+        device_override_do_not_disturb:
+          format: int32
+          type: integer
+        do_not_disturb:
+          type: boolean
+        enabled:
+          type: boolean
+        led_brightness:
+          type: number
+        volume:
+          type: number
+        windows:
+          items:
+            $ref: "#/components/schemas/Window"
+          type: array
+      required:
+        - device_override_do_not_disturb
+        - do_not_disturb
+        - enabled
+        - led_brightness
+        - volume
+        - windows
+      title: NightModeParams
+      type: object
+    NightModesettingsRequest:
+      example:
+        demo_to_user: true
+        do_not_disturb: true
+        enabled: false
+        led_brightness: 0.44999998807907104
+        volume: 0.46000000834465027
+        windows:
+          - days:
+              - 0
+              - 1
+              - 2
+              - 3
+              - 4
+              - 5
+              - 6
+            length_hours: 8
+            start_hour: 22
+      properties:
+        demo_to_user:
+          type: boolean
+        do_not_disturb:
+          type: boolean
+        enabled:
+          type: boolean
+        led_brightness:
+          type: number
+        volume:
+          type: number
+        windows:
+          items:
+            $ref: "#/components/schemas/Window"
+          type: array
+      required:
+        - enabled
+        - do_not_disturb
+        - led_brightness
+        - volume
+        - demo_to_user
+        - windows
+      title: NightModesettingsRequest
+      type: object
+    Opencast:
+      example:
+        pin_code: ""
+      properties:
+        pin_code:
+          type: string
+      required:
+        - pin_code
+      title: Opencast
+      type: object
+    OptIn:
+      example:
+        audio_hdr: false
+        audio_surround_mode: 0
+        autoplay_on_signal: true
+        cloud_ipc: true
+        hdmi_prefer_50hz: false
+        hdmi_prefer_high_fps: true
+        managed_mode: false
+        opencast: true
+        preview_channel: true
+        remote_ducking: true
+        stats: true
+        ui_flipped: false
+        wpa3_support_enabled: false
+      properties:
+        audio_hdr:
+          type: boolean
+        audio_surround_mode:
+          format: int32
+          type: integer
+        autoplay_on_signal:
+          type: boolean
+        cloud_ipc:
+          type: boolean
+        hdmi_prefer_50hz:
+          type: boolean
+        hdmi_prefer_high_fps:
+          type: boolean
+        managed_mode:
+          type: boolean
+        opencast:
+          type: boolean
+        preview_channel:
+          type: boolean
+        remote_ducking:
+          type: boolean
+        stats:
+          type: boolean
+        ui_flipped:
+          type: boolean
+        wpa3_support_enabled:
+          type: boolean
+      required:
+        - audio_hdr
+        - audio_surround_mode
+        - autoplay_on_signal
+        - cloud_ipc
+        - hdmi_prefer_50hz
+        - hdmi_prefer_high_fps
+        - managed_mode
+        - opencast
+        - preview_channel
+        - remote_ducking
+        - stats
+        - ui_flipped
+        - wpa3_support_enabled
+      title: OptIn
+      type: object
+    OptIn1:
+      example:
+        opencast: true
+        preview_channel: true
+        remote_ducking: true
+        stats: true
+      properties:
+        opencast:
+          type: boolean
+        preview_channel:
+          type: boolean
+        remote_ducking:
+          type: boolean
+        stats:
+          type: boolean
+      required:
+        - opencast
+        - preview_channel
+        - remote_ducking
+        - stats
+      title: OptIn1
+      type: object
+    PairwithSpeakerRequest:
+      example:
+        connect: true
+        mac_address: 54:13:79:49:19:22
+        profile: 2
+      properties:
+        connect:
+          type: boolean
+        mac_address:
+          type: string
+        profile:
+          format: int32
+          type: integer
+      required:
+        - mac_address
+        - connect
+        - profile
+      title: PairwithSpeakerRequest
+      type: object
+    Proxy:
+      example:
+        mode: system
+      properties:
+        mode:
+          type: string
+      required:
+        - mode
+      title: Proxy
+      type: object
+    RebootandFactoryResetRequest:
+      example:
+        params: now
+      properties:
+        params:
+          type: string
+      required:
+        - params
+      title: RebootandFactoryResetRequest
+      type: object
+    RemoteSink:
+      example:
+        bond_date: 1529248165656.613
+        device_class: 2491396
+        device_type: 1
+        last_connect_date: 0
+        mac_address: xx:xx:xx:xx:xx:xx
+        name: PHILIPS BT64
+        rssi: -255
+        service_uuids:
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+          - xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx
+      properties:
+        bond_date:
+          type: number
+        device_class:
+          format: int32
+          type: integer
+        device_type:
+          format: int32
+          type: integer
+        last_connect_date:
+          format: int32
+          type: integer
+        mac_address:
+          type: string
+        name:
+          type: string
+        rssi:
+          format: int32
+          type: integer
+        service_uuids:
+          items:
+            type: string
+          type: array
+      required:
+        - bond_date
+        - device_class
+        - device_type
+        - last_connect_date
+        - mac_address
+        - name
+        - rssi
+        - service_uuids
+      title: RemoteSink
+      type: object
+    ScanfordevicesRequest:
+      example:
+        clear_results: true
+        enable: true
+        timeout: 60
+      properties:
+        clear_results:
+          type: boolean
+        enable:
+          type: boolean
+        timeout:
+          format: int32
+          type: integer
+      required:
+        - enable
+        - clear_results
+        - timeout
+      title: ScanfordevicesRequest
+      type: object
+    SetEqualizerValuesRequest:
+      example:
+        high_shelf:
+          gain_db: 0
+        low_shelf:
+          gain_db: 0
+      properties:
+        high_shelf:
+          $ref: "#/components/schemas/HighShelf1"
+        low_shelf:
+          $ref: "#/components/schemas/LowShelf1"
+      required:
+        - low_shelf
+        - high_shelf
+      title: SetEqualizerValuesRequest
+      type: object
+    SetEurekaInfoRequest:
+      example:
+        name: Living Room
+        opt_in:
+          opencast: true
+          preview_channel: true
+          remote_ducking: true
+          stats: true
+        settings:
+          control_notifications: 2
+      properties:
+        name:
+          type: string
+        opt_in:
+          $ref: "#/components/schemas/OptIn1"
+        settings:
+          $ref: "#/components/schemas/Settings1"
+      required:
+        - name
+        - settings
+        - opt_in
+      title: SetEurekaInfoRequest
+      type: object
+    Settings:
+      example:
+        closed_caption: {}
+        control_notifications: 1
+        country_code: IN
+        locale: en-US
+        network_standby: 0
+        system_sound_effects: true
+        time_format: 1
+        timezone: Asia/Kolkata
+        wake_on_cast: 1
+      properties:
+        closed_caption:
+          type: object
+        control_notifications:
+          format: int32
+          type: integer
+        country_code:
+          type: string
+        locale:
+          type: string
+        network_standby:
+          format: int32
+          type: integer
+        system_sound_effects:
+          type: boolean
+        time_format:
+          format: int32
+          type: integer
+        timezone:
+          type: string
+        wake_on_cast:
+          format: int32
+          type: integer
+      required:
+        - closed_caption
+        - control_notifications
+        - country_code
+        - locale
+        - network_standby
+        - system_sound_effects
+        - time_format
+        - timezone
+        - wake_on_cast
+      title: Settings
+      type: object
+    Settings1:
+      example:
+        control_notifications: 2
+      properties:
+        control_notifications:
+          format: int32
+          type: integer
+      required:
+        - control_notifications
+      title: Settings1
+      type: object
+    Setup:
+      example:
+        qr_ssid_suffix: ""
+        setup_state: 60
+        ssid_suffix: k
+        stats:
+          num_check_connectivity: 0
+          num_connect_wifi: 0
+          num_connected_wifi_not_saved: 0
+          num_initial_eureka_info: 0
+          num_obtain_ip: 0
+        tos_accepted: true
+      properties:
+        qr_ssid_suffix:
+          type: string
+        setup_state:
+          format: int32
+          type: integer
+        ssid_suffix:
+          type: string
+        stats:
+          $ref: "#/components/schemas/Stats"
+        tos_accepted:
+          type: boolean
+      required:
+        - qr_ssid_suffix
+        - setup_state
+        - ssid_suffix
+        - stats
+        - tos_accepted
+      title: Setup
+      type: object
+    Sign:
+      example:
+        certificate: |
+          -----BEGIN CERTIFICATE-----
+          MIID...Oeb0
+          -----END CERTIFICATE-----
+        intermediate_certs:
+          - |
+            -----BEGIN CERTIFICATE-----
+            MIID...O/bYS
+            -----END CERTIFICATE-----
+        nonce: "1234512345"
+        signed_data: Rr5Q...
+      properties:
+        certificate:
+          type: string
+        intermediate_certs:
+          items:
+            type: string
+          type: array
+        nonce:
+          type: string
+        signed_data:
+          type: string
+      required:
+        - certificate
+        - intermediate_certs
+        - nonce
+        - signed_data
+      title: Sign
+      type: object
+    Stats:
+      example:
+        num_check_connectivity: 0
+        num_connect_wifi: 0
+        num_connected_wifi_not_saved: 0
+        num_initial_eureka_info: 0
+        num_obtain_ip: 0
+      properties:
+        num_check_connectivity:
+          format: int32
+          type: integer
+        num_connect_wifi:
+          format: int32
+          type: integer
+        num_connected_wifi_not_saved:
+          format: int32
+          type: integer
+        num_initial_eureka_info:
+          format: int32
+          type: integer
+        num_obtain_ip:
+          format: int32
+          type: integer
+      required:
+        - num_check_connectivity
+        - num_connect_wifi
+        - num_connected_wifi_not_saved
+        - num_initial_eureka_info
+        - num_obtain_ip
+      title: Stats
+      type: object
+    TestInternetDownloadSpeedRequest:
+      example:
+        url: https://storage.googleapis.com/reliability-speedtest/random.txt
+      properties:
+        url:
+          type: string
+      required:
+        - url
+      title: TestInternetDownloadSpeedRequest
+      type: object
+    TimePattern:
+      example:
+        hour: 6
+        minute: 50
+        second: 0
+      properties:
+        hour:
+          format: int32
+          type: integer
+        minute:
+          format: int32
+          type: integer
+        second:
+          format: int32
+          type: integer
+      required:
+        - hour
+        - minute
+        - second
+      title: TimePattern
+      type: object
+    Timer:
+      example:
+        fire_time: 1516176765589
+        id: timer/xxx
+        original_duration: 20000
+        status: 1
+      properties:
+        fire_time:
+          format: int64
+          type: integer
+        id:
+          type: string
+        original_duration:
+          format: int32
+          type: integer
+        status:
+          format: int32
+          type: integer
+      required:
+        - fire_time
+        - id
+        - original_duration
+        - status
+      title: Timer
+      type: object
+    Timezone:
+      example:
+        display_string: India Standard Time (Kolkata)
+        offset: 330
+      properties:
+        display_string:
+          type: string
+        offset:
+          format: int32
+          type: integer
+      required:
+        - display_string
+        - offset
+      title: Timezone
+      type: object
+    UserEq:
+      example:
+        high_shelf:
+          frequency: 4500
+          gain_db: 0
+          quality: 0.707
+        low_shelf:
+          frequency: 150
+          gain_db: 0
+          quality: 0.707
+        max_peaking_eqs: 0
+        peaking_eqs: []
+      properties:
+        high_shelf:
+          $ref: "#/components/schemas/HighShelf"
+        low_shelf:
+          $ref: "#/components/schemas/LowShelf"
+        max_peaking_eqs:
+          format: int32
+          type: integer
+        peaking_eqs:
+          items:
+            type: string
+          type: array
+      required:
+        - high_shelf
+        - low_shelf
+        - max_peaking_eqs
+        - peaking_eqs
+      title: UserEq
+      type: object
+    Wifi:
+      example:
+        bssid: a0:ab:...
+        has_changes: false
+        noise_level: -90
+        signal_level: -50
+        ssid: Nucl...
+        wpa_configured: true
+        wpa_id: 1
+        wpa_state: 10
+      properties:
+        bssid:
+          type: string
+        has_changes:
+          type: boolean
+        noise_level:
+          format: int32
+          type: integer
+        signal_level:
+          format: int32
+          type: integer
+        ssid:
+          type: string
+        wpa_configured:
+          type: boolean
+        wpa_id:
+          format: int32
+          type: integer
+        wpa_state:
+          format: int32
+          type: integer
+      required:
+        - bssid
+        - has_changes
+        - noise_level
+        - signal_level
+        - ssid
+        - wpa_configured
+        - wpa_id
+        - wpa_state
+      title: Wifi
+      type: object
+    Window:
+      example:
+        days:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+        length_hours: 6
+        start_hour: 23
+      properties:
+        days:
+          items:
+            format: int32
+            type: integer
+          type: array
+        length_hours:
+          format: int32
+          type: integer
+        start_hour:
+          format: int32
+          type: integer
+      required:
+        - days
+        - length_hours
+        - start_hour
+      title: Window
+      type: object
+    Window2:
+      example:
+        days:
+          - 0
+          - 1
+          - 2
+          - 3
+          - 4
+          - 5
+          - 6
+        length_hours: 8
+        start_hour: 22
+      properties:
+        days:
+          items:
+            format: int32
+            type: integer
+          type: array
+        length_hours:
+          type: number
+        start_hour:
+          type: number
+      required:
+        - days
+        - length_hours
+        - start_hour
+      title: Window2
+      type: object
+  securitySchemes:
+    cast-local-authorization-token:
+      description: Local authorization token. For more details, check the [Authentication section](#section/Google-Home-Local-API/Authentication).
+      in: header
+      name: cast-local-authorization-token
+      type: apiKey
+      x-testValue: ""

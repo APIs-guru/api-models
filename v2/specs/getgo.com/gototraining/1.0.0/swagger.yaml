@@ -1,0 +1,983 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.getgo.com
+basePath: /G2T/rest
+info:
+  contact:
+    email: developer-support@logmein.com
+    name: Developer Support
+    url: https://goto-developer.logmein.com
+  description: The GoToTraining API enables developers to use the stable and robust GoToTraining functionality as the basis for online trainings in a proprietary learning management system. The GoToTraining APIs provide the ability to access the scheduling, registration, management, and reporting functions of GoToTraining from external applications. With the ability to tightly integrate GoToTraining into your learning infrastructure, you can offer your learners a seamless user experience and provide them with a market leading virtual classroom environment.
+  termsOfService: https://goto-developer.logmein.com/terms-use
+  title: GoToTraining
+  version: 1.0.0
+  x-origin:
+    - format: swagger
+      url: https://developer.citrixonline.com/sites/default/files/citrix/citrix-apis/gototraining.json
+      version: "2.0"
+  x-providerName: getgo.com
+  x-serviceName: gototraining
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+consumes:
+  - application/json
+produces:
+  - application/json
+parameters:
+  Authorization:
+    description: Access token
+    in: header
+    name: Authorization
+    required: true
+    type: string
+  organizerKey:
+    description: The key of the training organizer
+    format: int64
+    in: path
+    name: organizerKey
+    required: true
+    type: integer
+  registrantKey:
+    description: The key of the registrant
+    format: int64
+    in: path
+    name: registrantKey
+    required: true
+    type: integer
+  trainingKey:
+    description: The key of the training
+    format: int64
+    in: path
+    name: trainingKey
+    required: true
+    type: integer
+tags:
+  - description: Operations available for training organizers.
+    name: Organizers
+  - description: Operations available for trainings.
+    name: Trainings
+  - description: Operations available for registrants of a given training.
+    name: Registrations
+  - description: Operations available for training reports.
+    name: Reports
+  - description: Operations available for online recordings.
+    name: Recordings
+paths:
+  "/accounts/{accountKey}/organizers":
+    get:
+      deprecated: true
+      description: "DEPRECATED: Please use the Admin API call 'Get all users' instead. For details see https://goto-developer.logmein.com/get-all-users."
+      operationId: getAllOrganisers
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - description: The key of the multi-user account
+          format: int64
+          in: path
+          name: accountKey
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Organizer"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+      summary: "DEPRECATED: Get Organizers"
+      tags:
+        - Organizers
+  "/organizers/{organizerKey}/trainings":
+    get:
+      description: This call retrieves information on all scheduled trainings for a given organizer. The trainings are returned in the order in which they were created. Completed trainings are not included; ongoing trainings with past sessions are included along with the past sessions. If the organizer does not have any scheduled trainings, the response will be empty.
+      operationId: getAllTrainings
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Training"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+      summary: Get Trainings
+      tags:
+        - Trainings
+    post:
+      description: Schedules a training of one or more sessions. The call requires a training's name, at least one start and end time, and optionally may include additional sessions, a description, additional organizers (presenters), and registration settings. You can only add organizers to a training if you have a multi-user account. Once a training has been created with this method, you can accept registrations to the training. Registration is for the entire training - all sessions. (The GoToTraining admin site enables you to create trainings that allow participants to register for individual sessions as well as automatically create weekly or monthly events.) Registration settings controls whether you allow web registration for this training, and whether a confirmation email is sent to the registrant following registration. Disabling the confirmation email is an API-only setting. If the user registers through the GoToTraining website, a confirmation email is sent. If the user is manually approved by the training administrator through the GoToTraining web site, the confirmation email is sent. It is recommended that you disable web registration if you disable confirmation emails. The response contains a trainingKey for the scheduled training.
+      operationId: scheduleTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - description: The details of the training to create
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/TrainingReqCreate"
+      responses:
+        "201":
+          description: Created
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+      summary: Create Training
+      tags:
+        - Trainings
+  "/organizers/{organizerKey}/trainings/{trainingKey}":
+    delete:
+      description: "Deletes a scheduled or completed training. For scheduled trainings, it deletes all scheduled sessions of the training. For completed trainings, the sessions remain in the database. No email is sent to organizers or registrants, but when participants attempt to start or join the training, they are directed to a page that states: Training Not Found: The training you are trying to join is no longer available."
+      operationId: cancelTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Delete Training
+      tags:
+        - Trainings
+    get:
+      description: Uses the organizer key and training key to retrieve information on a scheduled training.
+      operationId: getTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Training"
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Training
+      tags:
+        - Trainings
+  "/organizers/{organizerKey}/trainings/{trainingKey}/manageUrl":
+    get:
+      description: A request for a direct URL to the admin portal for a specific training. The request identifies the organizer and the training; the response provides a link the organizer can use to manage or launch the training in the admin portal. The training organizer will be required to log in. You can schedule and manage the training (e.g., add tests, polls and training materials) from the URL provided in the response.
+      operationId: getManageTrainingURL
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Management URL for Training
+      tags:
+        - Trainings
+  "/organizers/{organizerKey}/trainings/{trainingKey}/nameDescription":
+    put:
+      description: Request to update a scheduled training name and description.
+      operationId: updateTrainingNameDescription
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+        - description: The new name and description for the training
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/TrainingNameDescription"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Update Training Name and Description
+      tags:
+        - Trainings
+  "/organizers/{organizerKey}/trainings/{trainingKey}/organizers":
+    get:
+      description: Retrieves organizer details for a specific training. This is only applicable to multi-user accounts with sharing enabled (co-organizers).
+      operationId: getOrganisersForTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Organizer"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Training Organizers
+      tags:
+        - Trainings
+    put:
+      description: Replaces the co-organizers for a specific training. The scheduling organizer cannot be unassigned. Organizers will be notified via email if the notifyOrganizers parameter is set to true. Replaced organizers are not notified. This method is only applicable to multi-user accounts with sharing enabled (co-organizers).
+      operationId: updateOrganisersForTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+        - description: The details of the training to create
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/TrainingOrganizers"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Update Training Organizers
+      tags:
+        - Trainings
+  "/organizers/{organizerKey}/trainings/{trainingKey}/registrants":
+    get:
+      description: "Retrieves details on all registrants for a specific training. Registrants can be:<br>WAITING - registrant registered and is awaiting approval (where organizer has required approval)<br>APPROVED - registrant registered and is approved<br>DENIED - registrant registered and was not approved.<br><br>IMPORTANT: The registrant data caches are typically updated immediately and the data will be returned in the response. However, the update can take as long as two hours."
+      operationId: getRegistrants
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Registrant"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Training Registrants
+      tags:
+        - Registrations
+    post:
+      description: "Registers one person, identified by a unique email address, for a training. Approval is automatic unless payment or approval is required. The response contains the Confirmation page URL and Join URL for the registrant. NOTE: If some registrants do not receive a confirmation email, the emails could be getting blocked by their email server due to spam filtering or a grey-listing setting."
+      operationId: registerForTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+        - description: The details of the registrant to create
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/RegistrantReqCreate"
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: "#/definitions/RegistrantCreated"
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+        "409":
+          description: Conflict
+      summary: Register for Training
+      tags:
+        - Registrations
+  "/organizers/{organizerKey}/trainings/{trainingKey}/registrants/{registrantKey}":
+    delete:
+      description: This call cancels a registration in a scheduled training for a specific registrant. If the registrant has paid for the training, a cancellation cannot be completed with this method; it must be completed on the external admin site. No notification is sent to the registrant or the organizer by default. The registrant can re-register if needed.
+      operationId: cancelRegistration
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+        - $ref: "#/parameters/registrantKey"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Cancel Registration
+      tags:
+        - Registrations
+    get:
+      description: "Retrieves details for specific registrant in a specific training. Registrants can be:<br>WAITING - registrant registered and is awaiting approval (where organizer has required approval)<br>APPROVED - registrant registered and is approved<br>DENIED - registrant registered and was not approved.<br><br>IMPORTANT: The registrant data caches are typically updated immediately and the data will be returned in the response. However, the update can take as long as two hours."
+      operationId: getRegistrant
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+        - $ref: "#/parameters/registrantKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/Registrant"
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Registrant
+      tags:
+        - Registrations
+  "/organizers/{organizerKey}/trainings/{trainingKey}/registrationSettings":
+    put:
+      description: An API request to automatically enable or disable web registrations and confirmation emails to registrants.
+      operationId: updateRegistrationSettingsForTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+        - description: The new registration settings for the training
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/RegistrationSettings"
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Update Training Registration Settings
+      tags:
+        - Trainings
+  "/organizers/{organizerKey}/trainings/{trainingKey}/startUrl":
+    get:
+      description: Returns a URL that can be used to start a training. When this URL is opened in a web browser, the GoToTraining client will be downloaded and launched and the training will start after the organizer logs in with its credentials.
+      operationId: getStartUrl
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            type: string
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Start Url
+      tags:
+        - Trainings
+  "/organizers/{organizerKey}/trainings/{trainingKey}/times":
+    put:
+      description: " A request to update a scheduled training's start and end times. If the request contains 'notifyTrainers = true' and 'notifyRegistrants = true', both organizers and registrants are notified. The response provides the number of notified trainers and registrants."
+      operationId: updateTrainingTimes
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+        - description: The new start and end times for the scheduled training
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/TrainingTimes"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/NotifiedParties"
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Update Training Times
+      tags:
+        - Trainings
+  "/reports/organizers/{organizerKey}/sessions":
+    post:
+      description: This call returns all session details over a given date range for a given organizer. A session is a completed training event.
+      operationId: getSessionDetailsForDateRange
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - description: The start and end times for the time range over which to retrieve training sessions
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/DateTimeRange"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Session"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+      summary: Get Sessions by Date Range
+      tags:
+        - Reports
+  "/reports/organizers/{organizerKey}/sessions/{sessionKey}/attendees":
+    get:
+      description: This call retrieves a list of registrants from a specific completed training session. The response includes the registrants' email addresses, and if they attended, it includes the duration of each period of their attendance in minutes, and the times at which they joined and left. If a registrant does not attend, they appear at the bottom of the listing with timeInSession = 0.
+      operationId: getAttendanceDetails
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - description: The key of the training session
+          format: int64
+          in: path
+          name: sessionKey
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Attendee"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Attendance Details
+      tags:
+        - Reports
+  "/reports/organizers/{organizerKey}/trainings/{trainingKey}":
+    get:
+      description: This call returns session details for a given training. A session is a completed training event. Each training may contain one or more sessions.
+      operationId: getSessionDetailsForTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/organizerKey"
+        - $ref: "#/parameters/trainingKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/Session"
+            type: array
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Sessions By Training
+      tags:
+        - Reports
+  "/trainings/{trainingKey}/recordings":
+    get:
+      description: This call retrieves information on all online recordings for a given training. If there are none, it returns an empty list.
+      operationId: getRecordingsForTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/trainingKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/RecordingsListForTraining"
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Online Recordings for Training
+      tags:
+        - Recordings
+  "/trainings/{trainingKey}/recordings/{recordingId}":
+    get:
+      description: This call provides the download for the given recording by returning a 302 redirect to the original file.
+      operationId: getRecordingDownloadById
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/trainingKey"
+        - description: the unique id of the recording
+          format: int64
+          in: path
+          name: recordingId
+          required: true
+          type: integer
+      responses:
+        "302":
+          description: Redirected to download
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get Download for Online Recordings
+      tags:
+        - Recordings
+  "/trainings/{trainingKey}/start":
+    get:
+      description: Returns a URL that can be used to start a training. When this URL is opened in a web browser, the GoToTraining client will be downloaded and launched and the training will start. A login of the organizer is not required.
+      operationId: startTraining
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/trainingKey"
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/HostUrl"
+        "400":
+          description: Bad Request
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Start Training
+      tags:
+        - Trainings
+definitions:
+  Attendance:
+    description: Describes the times the attendee joined and left a part of a training session.
+    properties:
+      joinTime:
+        description: The time the attendee joined a part of a training session
+        format: date-time
+        type: string
+      leaveTime:
+        description: The time the attendee left a part of a training session
+        format: date-time
+        type: string
+      timeInPartOfSession:
+        description: The time in minutes the attendee spent at a part of a training session
+        format: int32
+        type: integer
+    required:
+      - joinTime
+      - leaveTime
+      - timeInPartOfSession
+  Attendee:
+    description: Describes the attendee of a training session.
+    properties:
+      email:
+        description: The attendee's email address
+        type: string
+      givenName:
+        description: The attendee's first name
+        type: string
+      inSessionTimes:
+        description: List of the parts of the training session the attendee joined
+        items:
+          $ref: "#/definitions/Attendance"
+        type: array
+      surname:
+        description: The attendee's surname
+        type: string
+      timeInSession:
+        description: The total time in minutes spent at all the parts of the training session the attendee joined
+        format: int32
+        type: integer
+    required:
+      - givenName
+      - surname
+      - email
+      - timeInSession
+      - inSessionTimes
+  DateTimeRange:
+    description: A pair of DateTime values, the first of which serves as a start time and the second as an end time of an interval
+    properties:
+      endDate:
+        description: The ending time of an interval
+        format: date-time
+        type: string
+      startDate:
+        description: The starting time of an interval
+        format: date-time
+        type: string
+    required:
+      - startDate
+      - endDate
+  HostUrl:
+    description: Host URL that can be used to start a training
+    properties:
+      hostURL:
+        description: The host URL that can be used to start a training
+        type: string
+    required:
+      - hostURL
+  NotifiedParties:
+    description: Number of parties notified of a change to a training session times
+    properties:
+      notifiedRegistrants:
+        description: Number of registrants notified of changes to a training
+        format: int32
+        type: integer
+      notifiedTrainers:
+        description: Number of trainers notified of changes to a training
+        format: int32
+        type: integer
+    required:
+      - notifiedRegistrants
+      - notifiedTrainers
+  Organizer:
+    description: Describes a training organizer.
+    properties:
+      email:
+        description: The email address of the training (co-)organizer
+        type: string
+      givenName:
+        description: The (co-)organizer's first name
+        type: string
+      organizerKey:
+        description: The key of the training (co-)organizer
+        type: string
+      surname:
+        description: The (co-)organizer's surname
+        type: string
+    required:
+      - organizerKey
+      - email
+      - givenName
+      - surname
+  Recording:
+    description: Describes an online recording of a training
+    properties:
+      description:
+        description: The description of the recording
+        type: string
+      downloadUrl:
+        description: The url used to download the recording to the local device
+        type: string
+      endDate:
+        description: The time the recording was ended
+        format: date-time
+        type: string
+      name:
+        description: The title of the recording
+        type: string
+      recordingId:
+        description: The unique id of the recording
+        format: int64
+        type: integer
+      registrationUrl:
+        description: The url where attendees can register to view the recording
+        type: string
+      startDate:
+        description: The time the recording was started
+        format: date-time
+        type: string
+    required:
+      - recordingId
+      - name
+      - startDate
+      - endDate
+  RecordingsListForTraining:
+    description: Contains a list of recordings for the training.
+    properties:
+      recordingList:
+        description: The list of online recordings for the training
+        items:
+          $ref: "#/definitions/Recording"
+        type: array
+      trainingKey:
+        description: The training's unique key
+        format: int64
+        type: integer
+    required:
+      - trainingKey
+      - recordingList
+  Registrant:
+    description: Describes a training registrant.
+    properties:
+      confirmationUrl:
+        description: The URL where the confirmation for the registration can be found
+        type: string
+      email:
+        description: The registrant's email address
+        type: string
+      givenName:
+        description: The registrant's first name
+        type: string
+      joinUrl:
+        description: The URL the registrant will use to join the training
+        type: string
+      registrantKey:
+        description: The registrant's key
+        type: string
+      registrationDate:
+        description: The date and time the registration took place
+        format: date-time
+        type: string
+      status:
+        description: The registrant's status
+        enum:
+          - WAITING
+          - APPROVED
+          - DENIED
+        type: string
+      surname:
+        description: The registrant's surname
+        type: string
+    required:
+      - email
+      - givenName
+      - surname
+      - status
+      - registrationDate
+      - joinUrl
+      - confirmationUrl
+      - registrantKey
+  RegistrantCreated:
+    description: Describes a newly created training registrant
+    properties:
+      confirmationUrl:
+        description: The URL where confirmation for the registration can be found
+        type: string
+      joinUrl:
+        description: The URL the registrant will use to join the training
+        type: string
+      registrantKey:
+        description: The registrant's key
+        type: string
+    required:
+      - joinUrl
+      - confirmationUrl
+      - registrantKey
+  RegistrantReqCreate:
+    description: Details required to make a new training registration.
+    properties:
+      email:
+        description: The registrant's email address
+        type: string
+      givenName:
+        description: The registrant's first name
+        type: string
+      surname:
+        description: The registrant's surname
+        type: string
+    required:
+      - email
+      - givenName
+      - surname
+  RegistrationSettings:
+    description: Training settings, namely availability of web registration and confirmation emails to the training registrants
+    properties:
+      disableConfirmationEmail:
+        description: Indicates whether confirmation emails to the training registrants are disabled
+        type: boolean
+      disableWebRegistration:
+        description: Indicates whether the web registration for the training is disabled
+        type: boolean
+    required:
+      - disableConfirmationEmail
+      - disableWebRegistration
+  Session:
+    description: Describes a completed training session.
+    properties:
+      attendanceCount:
+        description: The number of attendees at the training session
+        format: int32
+        type: integer
+      duration:
+        description: The duration of the training session in minutes
+        format: int32
+        type: integer
+      organizers:
+        description: The organizers of the training session.
+        items:
+          $ref: "#/definitions/Organizer"
+        type: array
+      sessionEndTime:
+        description: The time the training session finished
+        format: date-time
+        type: string
+      sessionKey:
+        description: The key of the training session
+        type: string
+      sessionStartTime:
+        description: The time the training session started
+        format: date-time
+        type: string
+      trainingName:
+        description: The subject of the training
+        type: string
+    required:
+      - sessionKey
+      - trainingName
+      - sessionStartTime
+      - sessionEndTime
+      - attendanceCount
+      - duration
+      - organizers
+  Training:
+    description: Describes a scheduled training.
+    properties:
+      description:
+        description: The training's description
+        type: string
+      name:
+        description: The training's subject
+        type: string
+      organizers:
+        description: The list of (co-)organizers for the training
+        items:
+          $ref: "#/definitions/Organizer"
+        type: array
+      registrationSettings:
+        $ref: "#/definitions/RegistrationSettings"
+        description: Training settings, namely web registration and confirmation emails to the training registrants
+      timeZone:
+        description: The time zone where the training takes place
+        type: string
+      times:
+        description: Array with startDate and endDate for the training sessions
+        items:
+          $ref: "#/definitions/DateTimeRange"
+        type: array
+      trainingId:
+        description: The 9-digit training's ID
+        type: string
+      trainingKey:
+        description: The training's unique key
+        type: string
+    required:
+      - trainingId
+      - name
+      - description
+      - timeZone
+      - times
+      - organizers
+      - registrationSettings
+      - trainingKey
+  TrainingNameDescription:
+    description: Details required to update a training's name and description.
+    properties:
+      description:
+        description: The training's description
+        type: string
+      name:
+        description: The training's name
+        type: string
+    required:
+      - name
+  TrainingOrganizers:
+    description: Details required to update the list of organizers for a training.
+    properties:
+      notifyOrganizers:
+        description: Specifies whether an email should be sent notifying of the change to the training's organizers.
+        type: boolean
+      organizers:
+        description: List of keys of the organizers for the training.
+        items:
+          format: int64
+          type: integer
+        type: array
+    required:
+      - organizers
+  TrainingReqCreate:
+    description: Describes the details used to create a new training.
+    properties:
+      description:
+        description: Description of the training
+        type: string
+      name:
+        description: Name of the training
+        type: string
+      organizers:
+        description: List of keys of the co-organizers for this training
+        items:
+          format: int64
+          type: integer
+        type: array
+      registrationSettings:
+        $ref: "#/definitions/RegistrationSettings"
+        description: Training settings, namely web registration and confirmation emails to the training registrants
+      timeZone:
+        description: Time zone of the training. (Must be a valid time zone ID, see https://goto-developer.logmein.com/time-zones)
+        type: string
+      times:
+        description: Array with startDate and endDate for the training sessions
+        items:
+          $ref: "#/definitions/DateTimeRange"
+        type: array
+    required:
+      - name
+      - timeZone
+      - times
+  TrainingTimes:
+    description: Details required to update the session times of a training.
+    properties:
+      notifyRegistrants:
+        description: Notify registrants via email of change to training. Default is true
+        type: boolean
+      notifyTrainers:
+        description: Notify trainers via email of change to training. Default is true
+        type: boolean
+      timeZone:
+        description: Time zone of the training. Must be a valid time zone ID, see https://goto-developer.logmein.com/time-zones
+        type: string
+      times:
+        description: Start and end times for the training sessions
+        items:
+          $ref: "#/definitions/DateTimeRange"
+        type: array
+    required:
+      - timeZone
+      - times

@@ -1,0 +1,1543 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.handwrytten.com
+basePath: /v1
+info:
+  contact:
+    email: contact@handwrytten.com
+    x-twitter: Handwrytten
+  description: |
+    This is the Handwrytten API for sending cards written in the handwriting of your choice.
+    Using this api, you can send cards to users.  You can also customize cards with logos, which
+    can be saved and then used like any other card in the system.
+    For a "sandbox" account, please contact contact@handwrytten.com
+    To move from credit card per-transaction to monthly invoicing, also contact us.
+    [https://www.handwrytten.com](https://www.handwrytten.com)
+  termsOfService: https://www.handwrytten.com/terms/
+  title: Handwrytten API
+  version: 1.0.0
+  x-apisguru-categories:
+    - text
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_Handwrytten_profile_image.png
+  x-origin:
+    - format: swagger
+      url: https://api.swaggerhub.com/apis/Handwrytten/handwrytten/1.0.0
+      version: "2.0"
+  x-providerName: handwrytten.com
+tags:
+  - description: Commands for creating and registering accounts and logging in/out
+    externalDocs:
+      description: Find out more
+      url: https://www.handwrytten.com
+    name: auth
+  - description: access information on cards and card categories
+    name: cards
+  - description: access information on gift cards
+    name: giftCards
+  - description: access information on saved message templates
+    name: templates
+  - description: Operations about user
+    externalDocs:
+      description: Find out more about our service
+      url: https://www.handwrytten.com
+    name: user
+paths:
+  /auth/authorization:
+    post:
+      consumes:
+        - application/json
+      operationId: login
+      parameters:
+        - description: Login to account
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Login"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful login
+          schema:
+            properties:
+              anet_customer_id:
+                description: used internally by Handwrytten
+                example: hfekjh
+                type: string
+              free_cards:
+                description: number of free cards in account
+                example: 1
+                type: integer
+              status:
+                example: OK
+                type: string
+              uid:
+                description: token for future authorized calls
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+              user_id:
+                example: 979877
+                type: integer
+            type: object
+        "400":
+          description: auth error
+      summary: Logs in to an existing account
+      tags:
+        - auth
+  /auth/changePassword:
+    post:
+      consumes:
+        - application/json
+      operationId: changePassword
+      parameters:
+        - description: Change password
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              new_password:
+                description: the new password
+                example: myn3wp455w0rd!
+                type: string
+              old_password:
+                description: the existing password
+                example: myoldpassword1234!
+                type: string
+              uid:
+                description: the authorized UID of the session
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful password change
+          schema:
+            properties:
+              status:
+                example: OK
+                type: string
+            type: object
+        "405":
+          description: Invalid input
+      summary: changes a user's password
+      tags:
+        - auth
+  /auth/logout:
+    post:
+      consumes:
+        - application/json
+      operationId: logout
+      parameters:
+        - description: logout session
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              uid:
+                description: the authorized UID of the session
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful logout
+          schema:
+            properties:
+              status:
+                example: OK
+                type: string
+            type: object
+        "405":
+          description: Invalid input
+      summary: logs out a session uid
+      tags:
+        - auth
+  /auth/register:
+    post:
+      consumes:
+        - application/json
+      operationId: register
+      parameters:
+        - description: New user account information
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/Registration"
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful registration
+          schema:
+            properties:
+              status:
+                example: OK
+                type: string
+              user_id:
+                example: 979877
+                type: integer
+            type: object
+        "405":
+          description: Invalid input
+      summary: Registers a new account
+      tags:
+        - auth
+  /auth/resetPasswordRequest:
+    post:
+      consumes:
+        - application/json
+      operationId: resetPasswordRequest
+      parameters:
+        - description: Reset password
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              login:
+                description: the email address of the user
+                example: joe@bloggs.com
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful reset request
+          schema:
+            properties:
+              status:
+                example: OK
+                type: string
+            type: object
+        "405":
+          description: Invalid input
+      summary: resets a user's password
+      tags:
+        - auth
+  /cards/createCustomCard:
+    post:
+      consumes:
+        - application/json
+      operationId: CreateCustomCard
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              card_id:
+                description: the card id of the card template you're starting with.  You can find this by logging into Handwrytten, clicking "customize" next to any customizable card, and pulling the card ID from the end of the URL
+                example: 243
+                type: integer
+              cover_id:
+                description: the id of the image you want to use for the "cover".  The cover is the large image on the front of the flat card.
+                example: 42
+                type: integer
+              cover_size_percent:
+                description: the size of the image to use as the cover.
+                example: 100
+                type: integer
+              footer_align:
+                description: set to "left", "center", or "right" to align the footer appropriately
+                example: center
+                type: string
+              footer_font_id:
+                description: font ID of the text in the footer, found by using ListFontForCustomizer
+                example: 1
+                type: integer
+              footer_font_size:
+                description: Font size of the text in the footer
+                example: 16
+                type: integer
+              footer_text:
+                description: optional text for the footer of the customizable card
+                example: Sample text for the footer
+                type: string
+              header_align:
+                description: set to "left", "center", or "right" to align the header appropriately
+                example: center
+                type: string
+              header_auto_size:
+                description: if set to true, the header will be maximized to fill the header area
+                type: boolean
+              header_font_id:
+                description: font ID of the text in the header, found by using ListFontForCustomizer
+                example: 8
+                type: integer
+              header_font_size:
+                description: font size of the text in the header of the card
+                example: 20
+                type: integer
+              header_text:
+                description: text in the header, if type is set to "text"
+                example: Sample text for the header
+                type: string
+              logo_id:
+                description: Optional.  If setting "type" to "logo", set the id of the logo here.
+                example: 20
+                type: integer
+              logo_size_percent:
+                description: set to the desired scaling of the logo on the header
+                example: 100
+                type: integer
+              name:
+                description: the name of the new card
+                example: my custom card design
+                type: string
+              type:
+                description: Defines the top of the back of the card. Set to either "logo" or "text".
+                example: logo
+                type: string
+              uid:
+                description: authorized UID of the session.
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Card"
+            type: object
+      summary: Create a new custom card
+      tags:
+        - customizer
+  /cards/list:
+    get:
+      description: Filterable card list.  If called with UID will also provide user-specific cards.
+      operationId: simpleListCards
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Card"
+            type: object
+        "400":
+          description: Invalid status value
+      summary: Lists information on cards
+      tags:
+        - cards
+    post:
+      consumes:
+        - application/json
+      description: Simple listing of cards.  No filters can be applied.
+      operationId: listCards
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: false
+          schema:
+            properties:
+              category_id:
+                description: optional category id filter
+                example: 14
+                type: integer
+              uid:
+                description: optional authorized UID of the session.  By providing this, the card list will include user-specific cards.
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Card"
+            type: array
+        "400":
+          description: Invalid status value
+      summary: Lists information on cards
+      tags:
+        - cards
+  /cards/uploadCustomLogo:
+    post:
+      consumes:
+        - multipart/form-data
+      operationId: uploadCustomLogo
+      parameters:
+        - description: upload images for customc cards
+          in: formData
+          name: file
+          required: true
+          type: file
+        - description: set to cover or header
+          in: formData
+          name: type
+          required: true
+          type: string
+        - description: uid of the user
+          in: formData
+          name: uid
+          required: true
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            properties:
+              id:
+                description: image id
+                example: 23124
+                type: integer
+              status:
+                example: OK
+                type: string
+      summary: upload logo or cover image for card
+      tags:
+        - customizer
+  /cards/view:
+    post:
+      consumes:
+        - application/json
+      description: Full card details
+      operationId: filterableCardDetails
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          schema:
+            properties:
+              card_id:
+                description: the card id to view
+                example: 14
+                type: integer
+              uid:
+                description: optional authorized UID of the session.  By providing this, the card details can provide user-specific cards
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            $ref: "#/definitions/CardDetails"
+      summary: Provides full information on a specific card
+      tags:
+        - cards
+  /countries/list:
+    get:
+      description: Lists the countries to which Handwritten can mail, their associated country ID and any costs
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Country"
+            type: array
+      tags:
+        - countries
+  /fonts/list:
+    get:
+      operationId: fontsList
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Font"
+            type: array
+      summary: Lists Handwryting styles available for use
+      tags:
+        - fonts
+  /fonts/listForCustomizer:
+    get:
+      operationId: fontsListForCustomizer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/FontForCustomizer"
+            type: array
+      summary: Lists fonts available for use with the card customizer
+      tags:
+        - customizer
+  /giftCards/view:
+    get:
+      description: Returns images and details (and associated denominations) of all gift cards
+      operationId: getGiftCardDetails
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/GiftCard"
+            type: array
+      summary: Lists information on gift cards
+      tags:
+        - giftCards
+    post:
+      description: Returns images and details (and associated denominations) of all gift cards
+      operationId: giftCardDetails
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/GiftCard"
+            type: array
+      summary: Lists information on gift cards
+      tags:
+        - giftCards
+  /orders/singleStepOrder:
+    post:
+      consumes:
+        - application/json
+      description: Sends an order in one step.  No need to create then process order.  Optionally include a gift card.
+      operationId: singleStepOrder
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              card_id:
+                description: the id of the card you want to send
+                example: 3404
+                type: integer
+              credit_card_id:
+                description: the credit card id to charge for the order.  Currently this is required, even for invoiced accounts, it just won't be charged.
+                example: 34124
+                type: integer
+              denomination_id:
+                description: Optional.  Use if sending a gift card
+                example: 12
+                type: integer
+              font_label:
+                description: the colloquial name of the font, such as 'Fancy Jenna' or 'Casual David'
+                example: Chill Charity
+                type: string
+              message:
+                description: the full message body.  Use '\n' for new lines
+                example: |-
+                  Dear Frank,
+                  Thank you so much for your interest in our services.
+                  Yours,
+                  Joe
+                type: string
+              recipient_address1:
+                description: the first address line of the return address
+                example: 123 E Main Street
+                type: string
+              recipient_address2:
+                description: the second line of the address, such as suite, apartment, building, etc. Optional
+                example: Second Floor
+                type: string
+              recipient_business_name:
+                description: the second line of the recipient address.  Optional.
+                example: Spacely Space Sprockets
+                type: string
+              recipient_city:
+                description: the city of the recipient, to appear in the address
+                example: Burlington
+                type: string
+              recipient_country:
+                description: the country of the recipient.  Optional and defaults to usa
+                example: Canada
+                type: string
+              recipient_country_id:
+                description: alternate way to specify country.  Optional and defaults to 1
+                example: 2
+                type: integer
+              recipient_name:
+                description: the name on the recipient address
+                example: Cosmo Spacely
+                type: string
+              recipient_state:
+                description: the ABBREVIATED state or province of the recipient.  This is required for US and Canada addresses and optional for all other countries
+                example: ON
+                type: string
+              recipient_zip:
+                description: the zip code or postal code of the recipient
+                example: L7L 0E9
+                type: string
+              sender_address1:
+                description: the first address line of the return address
+                example: 1430 E Indian School Road
+                type: string
+              sender_address2:
+                description: the second line of the address, such as suite, apartment, building, etc. Optional
+                example: Suite 100
+                type: string
+              sender_business_name:
+                description: the second line of the return address.  Optional.
+                example: Handwrytten
+                type: string
+              sender_city:
+                description: the city of the sender, to appear in the return address
+                example: Phoenix
+                type: string
+              sender_country:
+                description: the country of the recipient.  Optional and defaults to usa
+                example: United States
+                type: string
+              sender_country_id:
+                description: alternate way to specify country.  Optional and defaults to 1
+                example: 1
+                type: integer
+              sender_name:
+                description: the name on the return address
+                example: Joe Sender
+                type: string
+              sender_state:
+                description: the ABBREVIATED state or province of the sender.  This is required for US and Canada addresses and optional for all other countries
+                example: AZ
+                type: string
+              sender_zip:
+                description: The postal code or zip code of the sender.
+                example: "12345"
+                type: string
+              uid:
+                description: The UID of the logged-in user
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            required:
+              - uid
+              - card_id
+              - message
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful order placement
+          schema:
+            properties:
+              response:
+                $ref: "#/definitions/Order"
+              status:
+                example: OK
+                type: string
+            type: object
+      summary: sends an order in a single step.  This is much easier than using other order commands
+      tags:
+        - orders
+  /profile/address:
+    post:
+      consumes:
+        - application/json
+      operationId: userAddress
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: false
+          schema:
+            properties:
+              uid:
+                description: authorized UID of the session.  By providing this, the card list will include user-specific cards.
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            properties:
+              response:
+                $ref: "#/definitions/Address"
+              status:
+                example: ok
+                type: string
+            type: object
+      summary: gets the user's return address information
+      tags:
+        - profile
+  /profile/deleteRecipient:
+    post:
+      consumes:
+        - application/json
+      operationId: deleteRecipient
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              address_id:
+                description: the id of the address to delete
+                example: 549494
+                type: integer
+              uid:
+                description: authorized UID of the session.
+                example: 33ce76fede1a31d5ee823179f78d9882
+                type: string
+            required:
+              - uid
+              - address_id
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            properties:
+              status:
+                example: ok
+                type: string
+            type: object
+      summary: deletes an existing recipient address
+      tags:
+        - address
+  /profile/profileAddRecipient:
+    post:
+      consumes:
+        - application/json
+      operationId: addRecipientAddress
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          schema:
+            properties:
+              address1:
+                description: the first line of the address
+                example: 1430 E Indian School Rd
+                type: string
+              address2:
+                description: the second (optional) line of the address
+                example: Suite 100
+                type: string
+              business_name:
+                description: the optional business name on the address
+                example: Handwrytten LLC
+                type: string
+              city:
+                description: the city of the address
+                example: Phoenix
+                type: string
+              country:
+                description: the name of the country of the address, or use country_id
+                example: United States
+                type: string
+              country_id:
+                description: the country id code of the recipient
+                type: integer
+              name:
+                description: the name on the address
+                example: Joe Smith
+                type: string
+              state:
+                description: the abbreviated state or province of the address
+                example: AZ
+                type: string
+              uid:
+                description: authorized UID of the session.
+                example: 33ce76fede1a31d5ee823179f78d9882
+                type: string
+              zip:
+                description: the zip or postal code of the address
+                example: 85014
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            properties:
+              response:
+                $ref: "#/definitions/recipientAddress"
+              status:
+                example: ok
+                type: string
+            type: object
+      summary: add a new recipient address
+      tags:
+        - address
+  /profile/recipientsList:
+    post:
+      consumes:
+        - application/json
+      operationId: recipientsList
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              uid:
+                description: authorized UID of the session.
+                example: 33ce76fede1a31d5ee823179f78d9882
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/recipientAddress"
+            type: array
+      summary: list the addresses in the user's account
+      tags:
+        - address
+  /profile/updateAddress:
+    post:
+      consumes:
+        - application/json
+      operationId: updateUserAddress
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              address1:
+                description: the first line of the address
+                example: 1430 E Indian School Rd
+                type: string
+              address2:
+                description: the second (optional) line of the address
+                example: Suite 100
+                type: string
+              address_id:
+                description: the address you are updating
+                example: 42
+                type: integer
+              business_name:
+                description: the optional business name on the address
+                example: Handwrytten LLC
+                type: string
+              city:
+                description: the city of the address
+                example: Phoenix
+                type: string
+              country:
+                description: the name of the country of the address
+                example: United States
+                type: string
+              country_id:
+                description: the id of the country of the address. do not use with "country" parameter
+                example: 2
+                type: integer
+              name:
+                description: the name on the address
+                example: Joe Smith
+                type: string
+              state:
+                description: the abbreviated state or province of the address
+                example: AZ
+                type: string
+              uid:
+                description: authorized UID of the session.
+                example: 33ce76fede1a31d5ee823179f78d9882
+                type: string
+              zip:
+                description: the zip or postal code of the address
+                example: 85014
+                type: string
+            required:
+              - uid
+              - address_id
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            properties:
+              response:
+                $ref: "#/definitions/Address"
+              status:
+                example: ok
+                type: string
+            type: object
+      summary: update the user's return address information
+      tags:
+        - profile
+  /profile/updateRecipient:
+    post:
+      consumes:
+        - application/json
+      operationId: updateRecipient
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              address1:
+                description: the updated first line of the address
+                example: 1430 E Indian School Rd
+                type: string
+              address2:
+                description: the updated second (optional) line of the address
+                example: Suite 100
+                type: string
+              business_name:
+                description: the updated optional business name on the address
+                example: Handwrytten LLC
+                type: string
+              city:
+                description: the updated city of the address
+                example: Phoenix
+                type: string
+              country:
+                description: the updated name of the country of the address, or use country_id
+                example: United States
+                type: string
+              country_id:
+                description: the country id of the address
+                type: integer
+              id:
+                description: the id of the address to update
+                example: 549494
+                type: integer
+              name:
+                description: the updated name on the address
+                example: Joe Smith
+                type: string
+              state:
+                description: the updated abbreviated state or province of the address
+                example: AZ
+                type: string
+              uid:
+                description: authorized UID of the session.
+                example: 33ce76fede1a31d5ee823179f78d9882
+                type: string
+              zip:
+                description: the updated zip or postal code of the address
+                example: 85014
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            properties:
+              response:
+                $ref: "#/definitions/recipientAddress"
+              status:
+                example: ok
+                type: string
+            type: object
+      summary: updates an existing new recipient address
+      tags:
+        - address
+  /templateCategories/list:
+    get:
+      description: Lists the common template categories of all users. As you are not logged in, this is what you are limited to.
+      operationId: getTemplateCategories
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/TemplateCategory"
+            type: array
+      summary: List template categories
+      tags:
+        - templates
+    post:
+      consumes:
+        - application/json
+      description: Lists the template categories of all users. By passing the optional UID, any custom template categories are also available.
+      operationId: getTemplateCategoriesAuthorized
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: false
+          schema:
+            properties:
+              uid:
+                description: optional authorized UID of the session.  By providing this, the template list will include user-specific template categories
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/TemplateCategory"
+            type: array
+      summary: List template categories
+      tags:
+        - templates
+  /templates/create:
+    post:
+      consumes:
+        - application/json
+      description: Creates a new Template in the User’s Account
+      operationId: createTemplate
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              message:
+                example: How do I love thee?  Let me count the ways
+                type: string
+              name:
+                description: the new name of the template
+                example: My custom template
+                type: string
+              uid:
+                description: The UID of the logged-in user
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Template"
+            type: array
+      summary: Creates a New Template in the User’s Account
+      tags:
+        - templates
+  /templates/delete:
+    post:
+      consumes:
+        - application/json
+      description: Deletes a template in the User’s Account
+      operationId: deleteTemplate
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              template_id:
+                description: the ID of the template to delete
+                example: 12
+                type: integer
+              uid:
+                description: The UID of the logged-in user
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful deletion
+          schema:
+            properties:
+              status:
+                example: OK
+                type: string
+            type: object
+      summary: Deletes a users template
+      tags:
+        - templates
+  /templates/list:
+    get:
+      description: Lists the common template categories of all users. As you are not logged in, this is what you are limited to.
+      operationId: getTemplates
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Template"
+            type: array
+      summary: List template categories
+      tags:
+        - templates
+    post:
+      consumes:
+        - application/json
+      description: Lists the template categories of all users. By passing the optional UID, any custom template categories are also available.
+      operationId: getTemplatessAuthorized
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: false
+          schema:
+            properties:
+              category_id:
+                description: optional category to filter the templates
+                example: 12
+                type: integer
+              uid:
+                description: optional authorized UID of the session.  By providing this, the template list will include user-specific template categories
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Template"
+            type: array
+      summary: List template categories
+      tags:
+        - templates
+  /templates/update:
+    post:
+      consumes:
+        - application/json
+      description: Updates an Existing Template in the User’s Account
+      operationId: updateTemplate
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              message:
+                example: How do I love thee?  Let me count the ways
+                type: string
+              name:
+                description: the new name of the template
+                example: My custom template
+                type: string
+              template_id:
+                description: the ID of the template to update
+                example: 12
+                type: integer
+              uid:
+                description: The UID of the logged-in user
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Template"
+            type: array
+      summary: Updates an Existing Template in the User’s Account
+      tags:
+        - templates
+  /templates/view:
+    post:
+      consumes:
+        - application/json
+      description: Provides all details on a template
+      operationId: getTemplateDetail
+      parameters:
+        - description: additional parameters
+          in: body
+          name: body
+          required: true
+          schema:
+            properties:
+              template_id:
+                description: the ID of the template to view
+                example: 12
+                type: integer
+              uid:
+                description: optional authorized UID of the session.  By providing this, the user can specify user-sepecific templates
+                example: fhqwfuihuifqwhiuwqfhiqwfh124
+                type: string
+            type: object
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            $ref: "#/definitions/Template"
+      summary: Get all info on a template
+      tags:
+        - templates
+definitions:
+  Address:
+    properties:
+      address1:
+        description: the first line of the address
+        example: 1430 E Indian School Rd
+        type: string
+      address2:
+        description: the second (optional) line of the address
+        example: Suite 100
+        type: string
+      business_name:
+        description: the optional business name on the address
+        example: Handwrytten LLC
+        type: string
+      city:
+        description: the city of the address
+        example: Phoenix
+        type: string
+      country:
+        description: the name of the country of the address
+        example: United States
+        type: string
+      id:
+        description: the internal id of the address at Handwrytten
+        example: 978214798
+        type: integer
+      name:
+        description: the name on the address
+        example: Joe Smith
+        type: string
+      state:
+        description: the abbreviated state or province of the address
+        example: AZ
+        type: string
+      zip:
+        description: the zip or postal code of the address
+        example: 85014
+        type: string
+    type: object
+  Card:
+    properties:
+      available_free:
+        description: 1 for cards that are available free
+        example: 1
+        maximum: 1
+        minimum: 0
+        type: integer
+      category_id:
+        description: the associated category id
+        example: 33
+        type: integer
+      cover:
+        description: cover image of card
+        type: string
+      cover_height:
+        description: the height in px of the cover image
+        type: string
+      cover_width:
+        description: the width in px of the cover image
+        type: string
+      id:
+        example: 42
+        type: integer
+      name:
+        type: string
+      price:
+        description: the base price of a card (in USD)
+        example: 3.5
+        type: number
+    type: object
+    xml:
+      name: Tag
+  CardDetails:
+    properties:
+      available_free:
+        description: 1 for cards that are available free
+        example: 1
+        maximum: 1
+        minimum: 0
+        type: integer
+      category_id:
+        description: the associated category id
+        example: 33
+        type: integer
+      cover:
+        description: cover image of card
+        type: string
+      cover_height:
+        description: the height in px of the cover image
+        type: string
+      cover_width:
+        description: the width in px of the cover image
+        type: string
+      id:
+        example: 42
+        type: integer
+      images:
+        description: common return value includes items for front, back, inside and envelope
+        items:
+          $ref: "#/definitions/ImageArray"
+        type: array
+      name:
+        type: string
+      orientation:
+        description: landscape or portrait
+        type: string
+      price:
+        description: the base price of a card (in USD)
+        example: 3.5
+        type: number
+    type: object
+  Country:
+    properties:
+      aliases:
+        description: Other names for the country, separated by new lines
+        example: USA\nU.S.A.\nUnited States of America
+        type: string
+      delivery_cost:
+        description: the postage fee of delivering to a specific country
+        example: 1
+        type: number
+      id:
+        description: the internal id of the country
+        example: 3
+        type: integer
+      states:
+        description: Optional states or provinces in country
+        items:
+          $ref: "#/definitions/State"
+        type: array
+    type: object
+  Denomination:
+    properties:
+      id:
+        type: integer
+      nominal:
+        type: number
+      price:
+        type: number
+    type: object
+  Font:
+    properties:
+      id:
+        description: name used internally at Handwrytten
+        example: astBecca
+        type: string
+      image:
+        description: url to sample of font
+        type: string
+      label:
+        description: Common name
+        example: Chill Charity
+        type: string
+    type: object
+    xml:
+      name: Tag
+  FontForCustomizer:
+    properties:
+      id:
+        description: font id for customizer
+        example: 1
+        type: integer
+      label:
+        description: Common name
+        example: Open Sans
+        type: string
+    type: object
+    xml:
+      name: Tag
+  GiftCard:
+    properties:
+      denominations:
+        items:
+          $ref: "#/definitions/Denomination"
+        type: array
+      id:
+        type: integer
+      image:
+        type: string
+      name:
+        type: string
+    type: object
+  ImageArray:
+    properties:
+      array:
+        items:
+          description: filename
+          type: string
+        type: array
+      name:
+        type: string
+    type: object
+  Login:
+    properties:
+      login:
+        description: email address
+        example: john@jjf.com
+        type: string
+      password:
+        example: 8yfqwiuy@!$
+        type: string
+    required:
+      - login
+      - password
+    type: object
+    xml:
+      name: login
+  Order:
+    properties:
+      address_from:
+        $ref: "#/definitions/Address"
+      card:
+        $ref: "#/definitions/Card"
+      date_created:
+        description: the date the order was created
+        type: string
+      for_free:
+        description: if the order was free
+        example: true
+        type: boolean
+      id:
+        description: the unique ID of the order
+        example: 42
+        type: integer
+      message:
+        description: The actual message of the template
+        example: How do I love thee?  Let me count the ways
+        type: string
+    type: object
+  Registration:
+    properties:
+      discount_code:
+        description: optional discount code
+        type: string
+      fname:
+        description: first name
+        example: John
+        type: string
+      lname:
+        description: last name
+        example: Smith
+        type: string
+      login:
+        description: email address
+        example: john@jjf.com
+        type: string
+      password:
+        example: 8yfqwiuy@!$
+        type: string
+    required:
+      - login
+      - password
+      - fname
+      - lname
+    type: object
+    xml:
+      name: registration
+  State:
+    properties:
+      name:
+        description: the name of the state or province
+        example: Arizona
+        type: string
+      short_name:
+        description: the two or three character abbreviation for a state or provinnee
+        example: AZ
+        type: string
+    type: object
+  Template:
+    properties:
+      category_id:
+        description: the ID of the category to which this template belongs
+        example: 33
+        type: integer
+      id:
+        description: the unique ID of the Template
+        example: 42
+        type: integer
+      message:
+        description: The actual message of the template
+        example: How do I love thee?  Let me count the ways
+        type: string
+      name:
+        description: The name of the Template
+        example: Love Letter to Sandy
+        type: string
+    type: object
+  TemplateCategory:
+    properties:
+      id:
+        description: the id of the Template Category
+        example: 42
+        type: integer
+      name:
+        description: The name of the Template Category
+        example: Love Letters
+        type: string
+      price:
+        type: number
+    type: object
+  recipientAddress:
+    properties:
+      address1:
+        description: the first line of the address
+        example: 1430 E Indian School Rd
+        type: string
+      address2:
+        description: the second (optional) line of the address
+        example: Suite 100
+        type: string
+      business_name:
+        description: the optional business name on the address
+        example: Handwrytten LLC
+        type: string
+      city:
+        description: the city of the address
+        example: Phoenix
+        type: string
+      country:
+        description: the name of the country of the address
+        example: United States
+        type: string
+      id:
+        description: the internal id of the address at Handwrytten
+        example: 978214798
+        type: integer
+      name:
+        description: the name on the address
+        example: Joe Smith
+        type: string
+      state:
+        description: the abbreviated state or province of the address
+        example: AZ
+        type: string
+      zip:
+        description: the zip or postal code of the address
+        example: 85014
+        type: string
+    type: object

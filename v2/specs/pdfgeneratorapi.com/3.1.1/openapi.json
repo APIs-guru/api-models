@@ -1,0 +1,1819 @@
+{
+  "openapi": "3.0.3",
+  "servers": [
+    {
+      "url": "https://us1.pdfgeneratorapi.com/api/v3"
+    }
+  ],
+  "info": {
+    "contact": {
+      "email": "support@pdfgeneratorapi.com",
+      "name": "Support",
+      "url": "https://support.pdfgeneratorapi.com"
+    },
+    "description": "# Introduction\nPDF Generator API allows you easily generate transactional PDF documents and reduce the development and support costs by enabling your users to create and manage their document templates using a browser-based drag-and-drop document editor.\n\nThe PDF Generator API features a web API architecture, allowing you to code in the language of your choice. This API supports the JSON media type, and uses UTF-8 character encoding.\n\nYou can find our previous API documentation page with references to Simple and Signature authentication [here](https://docs.pdfgeneratorapi.com/legacy).\n\n## Base URL\nThe base URL for all the API endpoints is `https://us1.pdfgeneratorapi.com/api/v3`\n\nFor example\n* `https://us1.pdfgeneratorapi.com/api/v3/templates`\n* `https://us1.pdfgeneratorapi.com/api/v3/workspaces`\n* `https://us1.pdfgeneratorapi.com/api/v3/templates/123123`\n\n## Editor\nPDF Generator API comes with a powerful drag & drop editor that allows to create any kind of document templates, from barcode labels to invoices, quotes and reports. You can find tutorials and videos from our [Support Portal](https://support.pdfgeneratorapi.com).\n* [Component specification](https://support.pdfgeneratorapi.com/en/category/components-1ffseaj/)\n* [Expression Language documentation](https://support.pdfgeneratorapi.com/en/category/expression-language-q203pa/)\n* [Frequently asked questions and answers](https://support.pdfgeneratorapi.com/en/category/qanda-1ov519d/)\n\n## Definitions\n\n### Organization\nOrganization is a group of workspaces owned by your account.\n\n### Workspace\nWorkspace contains templates. Each workspace has access to their own templates and organization default templates.\n\n### Master Workspace\nMaster Workspace is the main/default workspace of your Organization. The Master Workspace identifier is the email you signed up with.\n\n### Default Template\nDefault template is a template that is available for all workspaces by default. You can set the template access type under Page Setup. If template has \"Organization\" access then your users can use them from the \"New\" menu in the Editor.\n\n### Data Field\nData Field is a placeholder for the specific data in your JSON data set. In this example JSON you can access the buyer name using Data Field `{paymentDetails::buyerName}`. The separator between depth levels is :: (two colons). When designing the template you don’t have to know every Data Field, our editor automatically extracts all the available fields from your data set and provides an easy way to insert them into the template.\n```\n{\n    \"documentNumber\": 1,\n    \"paymentDetails\": {\n        \"method\": \"Credit Card\",\n        \"buyerName\": \"John Smith\"\n    },\n    \"items\": [\n        {\n            \"id\": 1,\n            \"name\": \"Item one\"\n        }\n    ]\n}\n```\n\n*  *  *  *  *\n# Authentication\nThe PDF Generator API uses __JSON Web Tokens (JWT)__ to authenticate all API requests. These tokens offer a method to establish secure server-to-server authentication by transferring a compact JSON object with a signed payload of your account’s API Key and Secret.\nWhen authenticating to the PDF Generator API, a JWT should be generated uniquely by a __server-side application__ and included as a __Bearer Token__ in the header of each request.\n\n## Legacy Simple and Signature authentication\nYou can find our legacy documentation for Simple and Signature authentication [here](https://docs.pdfgeneratorapi.com/legacy).\n\n<SecurityDefinitions />\n\n## Accessing your API Key and Secret\nYou can find your __API Key__ and __API Secret__ from the __Account Settings__ page after you login to PDF Generator API [here](https://pdfgeneratorapi.com/login).\n\n## Creating a JWT\nJSON Web Tokens are composed of three sections: a header, a payload (containing a claim set), and a signature. The header and payload are JSON objects, which are serialized to UTF-8 bytes, then encoded using base64url encoding.\n\nThe JWT's header, payload, and signature are concatenated with periods (.). As a result, a JWT typically takes the following form:\n```\n{Base64url encoded header}.{Base64url encoded payload}.{Base64url encoded signature}\n```\n\nWe recommend and support libraries provided on [jwt.io](https://jwt.io/). While other libraries can create JWT, these recommended libraries are the most robust.\n\n### Header\nProperty `alg` defines which signing algorithm is being used. PDF Generator API users HS256.\nProperty `typ` defines the type of token and it is always JWT.\n```\n{\n  \"alg\": \"HS256\",\n  \"typ\": \"JWT\"\n}\n```\n\n### Payload\nThe second part of the token is the payload, which contains the claims  or the pieces of information being passed about the user and any metadata required.\nIt is mandatory to specify the following claims:\n* issuer (`iss`): Your API key\n* subject (`sub`): Workspace identifier\n* expiration time (`exp`): Timestamp (unix epoch time) until the token is valid. It is highly recommended to set the exp timestamp for a short period, i.e. a matter of seconds. This way, if a token is intercepted or shared, the token will only be valid for a short period of time.\n\n```\n{\n  \"iss\": \"ad54aaff89ffdfeff178bb8a8f359b29fcb20edb56250b9f584aa2cb0162ed4a\",\n  \"sub\": \"demo.example@actualreports.com\",\n  \"exp\": 1586112639\n}\n```\n\n### Signature\nTo create the signature part you have to take the encoded header, the encoded payload, a secret, the algorithm specified in the header, and sign that. The signature is used to verify the message wasn't changed along the way, and, in the case of tokens signed with a private key, it can also verify that the sender of the JWT is who it says it is.\n```\nHMACSHA256(\n    base64UrlEncode(header) + \".\" +\n    base64UrlEncode(payload),\n    API_SECRET)\n```\n\n### Putting all together\nThe output is three Base64-URL strings separated by dots. The following shows a JWT that has the previous header and payload encoded, and it is signed with a secret.\n```\neyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJhZDU0YWFmZjg5ZmZkZmVmZjE3OGJiOGE4ZjM1OWIyOWZjYjIwZWRiNTYyNTBiOWY1ODRhYTJjYjAxNjJlZDRhIiwic3ViIjoiZGVtby5leGFtcGxlQGFjdHVhbHJlcG9ydHMuY29tIn0.SxO-H7UYYYsclS8RGWO1qf0z1cB1m73wF9FLl9RCc1Q\n\n// Base64 encoded header: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9\n// Base64 encoded payload: eyJpc3MiOiJhZDU0YWFmZjg5ZmZkZmVmZjE3OGJiOGE4ZjM1OWIyOWZjYjIwZWRiNTYyNTBiOWY1ODRhYTJjYjAxNjJlZDRhIiwic3ViIjoiZGVtby5leGFtcGxlQGFjdHVhbHJlcG9ydHMuY29tIn0\n// Signature: SxO-H7UYYYsclS8RGWO1qf0z1cB1m73wF9FLl9RCc1Q\n```\n\n## Testing with JWTs\nYou can create a temporary token in [Account Settings](https://pdfgeneratorapi.com/account/organization) page after you login to PDF Generator API. The generated token uses your email address as the subject (`sub`) value and is valid for __5 minutes__.\nYou can also use [jwt.io](https://jwt.io/) to generate test tokens for your API calls. These test tokens should never be used in production applications.\n*  *  *  *  *\n\n# Libraries and SDKs\n## Postman Collection\nWe have created a [Postman](https://www.postman.com) Collection so you can easily test all the API endpoints wihtout developing and code. You can download the collection [here](https://app.getpostman.com/run-collection/329f09618ec8a957dbc4) or just click the button below.\n\n[![Run in Postman](https://run.pstmn.io/button.svg)](https://app.getpostman.com/run-collection/329f09618ec8a957dbc4)\n\n## Client Libraries\nAll our Client Libraries are auto-generated using [OpenAPI Generator](https://openapi-generator.tech/) which uses the OpenAPI v3 specification to automatically generate a client library in specific programming language.\n\n* [PHP Client](https://github.com/pdfgeneratorapi/php-client)\n* [Java Client](https://github.com/pdfgeneratorapi/java-client)\n* [Ruby Client](https://github.com/pdfgeneratorapi/ruby-client)\n* [Python Client](https://github.com/pdfgeneratorapi/python-client)\n* [Javascript Client](https://github.com/pdfgeneratorapi/javascript-client)\n\nWe have validated the generated libraries, but let us know if you find any anomalies in the client code.\n*  *  *  *  *\n",
+    "title": "PDF Generator API",
+    "version": "3.1.1",
+    "x-apisguru-categories": [
+      "text"
+    ],
+    "x-logo": {
+      "altText": "PDF Generator API",
+      "backgroundColor": "#3F46AD",
+      "href": "https://docs.pdfgeneratorapi.com",
+      "url": "https://api.apis.guru/v2/cache/logo/https_pdfgeneratorapi.com_assets_web_images_logo_and_text_white.png"
+    },
+    "x-origin": [
+      {
+        "format": "openapi",
+        "url": "https://docs.pdfgeneratorapi.com/api-docs.json?_c=1590697087",
+        "version": "3.0"
+      }
+    ],
+    "x-providerName": "pdfgeneratorapi.com"
+  },
+  "security": [
+    {
+      "JSONWebTokenAuth": []
+    }
+  ],
+  "tags": [
+    {
+      "description": "<SchemaDefinition schemaRef=\"#/components/schemas/Template\" />\n",
+      "name": "template_model",
+      "x-displayName": "Template"
+    },
+    {
+      "description": "<SchemaDefinition schemaRef=\"#/components/schemas/TemplateDefinition\" />\n",
+      "name": "template_definition",
+      "x-displayName": "Template Definition"
+    },
+    {
+      "description": "<SchemaDefinition schemaRef=\"#/components/schemas/Component\" />\n",
+      "name": "component_model",
+      "x-displayName": "Component"
+    },
+    {
+      "description": "<SchemaDefinition schemaRef=\"#/components/schemas/Workspace\" />\n",
+      "name": "workspace_model",
+      "x-displayName": "Workspace"
+    }
+  ],
+  "paths": {
+    "/templates": {
+      "get": {
+        "description": "Returns a list of templates available for the authenticated workspace",
+        "operationId": "getTemplates",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/listOfTemplates"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Get templates",
+        "tags": [
+          "Templates"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request GET \\\n  --url https://us1.pdfgeneratorapi.com/api/v3/templates \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/templates\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"GET\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/templates\");\nvar request = new RestRequest(Method.GET);\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.get(\"https://us1.pdfgeneratorapi.com/api/v3/templates\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"GET\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/templates\",\n  \"headers\": {\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\nheaders = { 'authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/api/v3/templates\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/templates\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Get.new(url)\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      },
+      "post": {
+        "description": "Creates a new template. If template configuration is not specified in the request body then an empty template is created. Template is placed to the workspace specified in authentication params. Template configuration must be sent in the request body.",
+        "operationId": "createTemplate",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateDefinitionNew"
+              }
+            }
+          },
+          "description": "Template configuration as JSON string",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/templateConfig"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Create template",
+        "tags": [
+          "Templates"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request POST \\\n  --url https://us1.pdfgeneratorapi.com/api/v3/templates \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"Invoice template\",\"tags\":[\"invoice\",\"orders\"],\"isDraft\":true,\"layout\":{\"format\":\"A4\",\"width\":21,\"height\":29.7,\"unit\":\"cm\",\"orientation\":\"portrait\",\"rotaion\":0,\"margins\":{\"top\":0.5,\"right\":0.5,\"bottom\":0.5,\"left\":0.5},\"repeatLayout\":{\"format\":\"A4\",\"width\":21,\"height\":29.7},\"emptyLabels\":0},\"pages\":[{\"width\":21,\"height\":29.7,\"margins\":{\"right\":0.5,\"bottom\":0.5},\"components\":[{\"cls\":\"labelComponent\",\"id\":\"component-12313\",\"width\":3.5,\"height\":1,\"top\":4.2,\"left\":2.5,\"zindex\":102,\"value\":\"${price}\",\"dataIndex\":\"line_items\"}]}]}'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/templates\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"POST\",\n  CURLOPT_POSTFIELDS => \"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\",\n    \"content-type: application/json\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/templates\");\nvar request = new RestRequest(Method.POST);\nrequest.AddHeader(\"content-type\", \"application/json\");\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nrequest.AddParameter(\"application/json\", \"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\", ParameterType.RequestBody);\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.post(\"https://us1.pdfgeneratorapi.com/api/v3/templates\")\n  .header(\"content-type\", \"application/json\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .body(\"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"POST\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/templates\",\n  \"headers\": {\n    \"content-type\": \"application/json\",\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.write(JSON.stringify({\n  name: 'Invoice template',\n  tags: ['invoice', 'orders'],\n  isDraft: true,\n  layout: {\n    format: 'A4',\n    width: 21,\n    height: 29.7,\n    unit: 'cm',\n    orientation: 'portrait',\n    rotaion: 0,\n    margins: {top: 0.5, right: 0.5, bottom: 0.5, left: 0.5},\n    repeatLayout: {format: 'A4', width: 21, height: 29.7},\n    emptyLabels: 0\n  },\n  pages: [\n    {\n      width: 21,\n      height: 29.7,\n      margins: {right: 0.5, bottom: 0.5},\n      components: [\n        {\n          cls: 'labelComponent',\n          id: 'component-12313',\n          width: 3.5,\n          height: 1,\n          top: 4.2,\n          left: 2.5,\n          zindex: 102,\n          value: '${price}',\n          dataIndex: 'line_items'\n        }\n      ]\n    }\n  ]\n}));\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\npayload = \"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\"\n\nheaders = {\n    'content-type': \"application/json\",\n    'authorization': \"Bearer REPLACE_BEARER_TOKEN\"\n    }\n\nconn.request(\"POST\", \"/api/v3/templates\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/templates\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Post.new(url)\nrequest[\"content-type\"] = 'application/json'\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\nrequest.body = \"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\"\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      }
+    },
+    "/templates/output": {
+      "post": {
+        "description": "Allows to merge multiples template with data and returns base64 encoded document or public URL to a document. NB! When the public URL option is used, the document is stored for 30 days and automatically deleted.",
+        "operationId": "mergeTemplates",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/doc_name"
+          },
+          {
+            "$ref": "#/components/parameters/format"
+          },
+          {
+            "$ref": "#/components/parameters/output"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/BatchData"
+              }
+            }
+          },
+          "description": "Data used to specify templates and data objects which are used to merge the template",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/document"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Generate document (multiple templates)",
+        "tags": [
+          "Documents"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request POST \\\n  --url 'https://us1.pdfgeneratorapi.com/api/v3/templates/output?name=My%20document&format=pdf&output=base64' \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '[{\"template\":52272,\"data\":{\"key\":\"value\"}},{\"template\":52273,\"data\":{\"key2\":\"value2\"}}]'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/templates/output?name=My%20document&format=pdf&output=base64\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"POST\",\n  CURLOPT_POSTFIELDS => \"[{\\\"template\\\":52272,\\\"data\\\":{\\\"key\\\":\\\"value\\\"}},{\\\"template\\\":52273,\\\"data\\\":{\\\"key2\\\":\\\"value2\\\"}}]\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\",\n    \"content-type: application/json\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/templates/output?name=My%20document&format=pdf&output=base64\");\nvar request = new RestRequest(Method.POST);\nrequest.AddHeader(\"content-type\", \"application/json\");\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nrequest.AddParameter(\"application/json\", \"[{\\\"template\\\":52272,\\\"data\\\":{\\\"key\\\":\\\"value\\\"}},{\\\"template\\\":52273,\\\"data\\\":{\\\"key2\\\":\\\"value2\\\"}}]\", ParameterType.RequestBody);\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.post(\"https://us1.pdfgeneratorapi.com/api/v3/templates/output?name=My%20document&format=pdf&output=base64\")\n  .header(\"content-type\", \"application/json\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .body(\"[{\\\"template\\\":52272,\\\"data\\\":{\\\"key\\\":\\\"value\\\"}},{\\\"template\\\":52273,\\\"data\\\":{\\\"key2\\\":\\\"value2\\\"}}]\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"POST\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/templates/output?name=My%20document&format=pdf&output=base64\",\n  \"headers\": {\n    \"content-type\": \"application/json\",\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.write(JSON.stringify([\n  {template: 52272, data: {key: 'value'}},\n  {template: 52273, data: {key2: 'value2'}}\n]));\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\npayload = \"[{\\\"template\\\":52272,\\\"data\\\":{\\\"key\\\":\\\"value\\\"}},{\\\"template\\\":52273,\\\"data\\\":{\\\"key2\\\":\\\"value2\\\"}}]\"\n\nheaders = {\n    'content-type': \"application/json\",\n    'authorization': \"Bearer REPLACE_BEARER_TOKEN\"\n    }\n\nconn.request(\"POST\", \"/api/v3/templates/output?name=My%20document&format=pdf&output=base64\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/templates/output?name=My%20document&format=pdf&output=base64\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Post.new(url)\nrequest[\"content-type\"] = 'application/json'\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\nrequest.body = \"[{\\\"template\\\":52272,\\\"data\\\":{\\\"key\\\":\\\"value\\\"}},{\\\"template\\\":52273,\\\"data\\\":{\\\"key2\\\":\\\"value2\\\"}}]\"\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      }
+    },
+    "/templates/templateId": {
+      "delete": {
+        "description": "Deletes the template from workspace",
+        "operationId": "deleteTemplate",
+        "parameters": [
+          {
+            "description": "Template unique identifier",
+            "in": "query",
+            "name": "templateId",
+            "required": true,
+            "schema": {
+              "example": 19375,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/success"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Delete template",
+        "tags": [
+          "Templates"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request DELETE \\\n  --url https://us1.pdfgeneratorapi.com/api/v3/templates/templateId \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"DELETE\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\");\nvar request = new RestRequest(Method.DELETE);\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.delete(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"DELETE\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/templates/templateId\",\n  \"headers\": {\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\nheaders = { 'authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/api/v3/templates/templateId\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Delete.new(url)\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      },
+      "get": {
+        "description": "Returns template configuration",
+        "operationId": "getTemplate",
+        "parameters": [
+          {
+            "description": "Template unique identifier",
+            "in": "query",
+            "name": "templateId",
+            "required": true,
+            "schema": {
+              "example": 19375,
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/templateConfig"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Get template",
+        "tags": [
+          "Templates"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request GET \\\n  --url https://us1.pdfgeneratorapi.com/api/v3/templates/templateId \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"GET\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\");\nvar request = new RestRequest(Method.GET);\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.get(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"GET\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/templates/templateId\",\n  \"headers\": {\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\nheaders = { 'authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/api/v3/templates/templateId\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Get.new(url)\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      },
+      "put": {
+        "description": "Updates template configuration. The template configuration for pages and layout must be complete as the entire configuration is replaced and not merged.",
+        "operationId": "updateTemplate",
+        "parameters": [
+          {
+            "description": "Template unique identifier",
+            "in": "query",
+            "name": "templateId",
+            "required": true,
+            "schema": {
+              "example": 19375,
+              "type": "integer"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/TemplateDefinitionNew"
+              }
+            }
+          },
+          "description": "Template configuration as JSON string",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/templateConfig"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Update template",
+        "tags": [
+          "Templates"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request PUT \\\n  --url https://us1.pdfgeneratorapi.com/api/v3/templates/templateId \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"name\":\"Invoice template\",\"tags\":[\"invoice\",\"orders\"],\"isDraft\":true,\"layout\":{\"format\":\"A4\",\"width\":21,\"height\":29.7,\"unit\":\"cm\",\"orientation\":\"portrait\",\"rotaion\":0,\"margins\":{\"top\":0.5,\"right\":0.5,\"bottom\":0.5,\"left\":0.5},\"repeatLayout\":{\"format\":\"A4\",\"width\":21,\"height\":29.7},\"emptyLabels\":0},\"pages\":[{\"width\":21,\"height\":29.7,\"margins\":{\"right\":0.5,\"bottom\":0.5},\"components\":[{\"cls\":\"labelComponent\",\"id\":\"component-12313\",\"width\":3.5,\"height\":1,\"top\":4.2,\"left\":2.5,\"zindex\":102,\"value\":\"${price}\",\"dataIndex\":\"line_items\"}]}]}'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"PUT\",\n  CURLOPT_POSTFIELDS => \"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\",\n    \"content-type: application/json\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\");\nvar request = new RestRequest(Method.PUT);\nrequest.AddHeader(\"content-type\", \"application/json\");\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nrequest.AddParameter(\"application/json\", \"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\", ParameterType.RequestBody);\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.put(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\")\n  .header(\"content-type\", \"application/json\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .body(\"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"PUT\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/templates/templateId\",\n  \"headers\": {\n    \"content-type\": \"application/json\",\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.write(JSON.stringify({\n  name: 'Invoice template',\n  tags: ['invoice', 'orders'],\n  isDraft: true,\n  layout: {\n    format: 'A4',\n    width: 21,\n    height: 29.7,\n    unit: 'cm',\n    orientation: 'portrait',\n    rotaion: 0,\n    margins: {top: 0.5, right: 0.5, bottom: 0.5, left: 0.5},\n    repeatLayout: {format: 'A4', width: 21, height: 29.7},\n    emptyLabels: 0\n  },\n  pages: [\n    {\n      width: 21,\n      height: 29.7,\n      margins: {right: 0.5, bottom: 0.5},\n      components: [\n        {\n          cls: 'labelComponent',\n          id: 'component-12313',\n          width: 3.5,\n          height: 1,\n          top: 4.2,\n          left: 2.5,\n          zindex: 102,\n          value: '${price}',\n          dataIndex: 'line_items'\n        }\n      ]\n    }\n  ]\n}));\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\npayload = \"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\"\n\nheaders = {\n    'content-type': \"application/json\",\n    'authorization': \"Bearer REPLACE_BEARER_TOKEN\"\n    }\n\nconn.request(\"PUT\", \"/api/v3/templates/templateId\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Put.new(url)\nrequest[\"content-type\"] = 'application/json'\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\nrequest.body = \"{\\\"name\\\":\\\"Invoice template\\\",\\\"tags\\\":[\\\"invoice\\\",\\\"orders\\\"],\\\"isDraft\\\":true,\\\"layout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7,\\\"unit\\\":\\\"cm\\\",\\\"orientation\\\":\\\"portrait\\\",\\\"rotaion\\\":0,\\\"margins\\\":{\\\"top\\\":0.5,\\\"right\\\":0.5,\\\"bottom\\\":0.5,\\\"left\\\":0.5},\\\"repeatLayout\\\":{\\\"format\\\":\\\"A4\\\",\\\"width\\\":21,\\\"height\\\":29.7},\\\"emptyLabels\\\":0},\\\"pages\\\":[{\\\"width\\\":21,\\\"height\\\":29.7,\\\"margins\\\":{\\\"right\\\":0.5,\\\"bottom\\\":0.5},\\\"components\\\":[{\\\"cls\\\":\\\"labelComponent\\\",\\\"id\\\":\\\"component-12313\\\",\\\"width\\\":3.5,\\\"height\\\":1,\\\"top\\\":4.2,\\\"left\\\":2.5,\\\"zindex\\\":102,\\\"value\\\":\\\"${price}\\\",\\\"dataIndex\\\":\\\"line_items\\\"}]}]}\"\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      }
+    },
+    "/templates/templateId/copy": {
+      "post": {
+        "description": "Creates a copy of a template to the workspace specified in authentication parameters.",
+        "operationId": "copyTemplate",
+        "parameters": [
+          {
+            "description": "Template unique identifier",
+            "in": "query",
+            "name": "templateId",
+            "required": true,
+            "schema": {
+              "example": 19375,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Name for the copied template. If name is not specified then the original name is used.",
+            "example": "My copied template",
+            "in": "query",
+            "name": "name",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/templateConfig"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Copy template",
+        "tags": [
+          "Templates"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request POST \\\n  --url 'https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/copy?name=SOME_STRING_VALUE' \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/copy?name=SOME_STRING_VALUE\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"POST\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/copy?name=SOME_STRING_VALUE\");\nvar request = new RestRequest(Method.POST);\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.post(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/copy?name=SOME_STRING_VALUE\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"POST\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/templates/templateId/copy?name=SOME_STRING_VALUE\",\n  \"headers\": {\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\nheaders = { 'authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"POST\", \"/api/v3/templates/templateId/copy?name=SOME_STRING_VALUE\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/copy?name=SOME_STRING_VALUE\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Post.new(url)\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      }
+    },
+    "/templates/templateId/editor": {
+      "post": {
+        "description": "Returns an unique URL which you can use to redirect your user to the editor form your application or use the generated URL as iframe source to show the editor within your application.\n",
+        "operationId": "getEditorUrl",
+        "parameters": [
+          {
+            "description": "Template unique identifier",
+            "in": "query",
+            "name": "templateId",
+            "required": true,
+            "schema": {
+              "example": 19375,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Specify the editor UI language. Defaults to organization editor language.",
+            "example": "en",
+            "in": "query",
+            "name": "language",
+            "required": false,
+            "schema": {
+              "enum": [
+                "en",
+                "et",
+                "cs",
+                "sk",
+                "ru"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "example": {
+                  "id": 12312,
+                  "name": "Sample Data"
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Data used to generate the PDF. This can be JSON encoded string or a public URL to your JSON file.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/editorUrl"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Open editor",
+        "tags": [
+          "Templates"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request POST \\\n  --url 'https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/editor?language=SOME_STRING_VALUE' \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"id\":12312,\"name\":\"Sample Data\"}'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/editor?language=SOME_STRING_VALUE\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"POST\",\n  CURLOPT_POSTFIELDS => \"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\",\n    \"content-type: application/json\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/editor?language=SOME_STRING_VALUE\");\nvar request = new RestRequest(Method.POST);\nrequest.AddHeader(\"content-type\", \"application/json\");\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nrequest.AddParameter(\"application/json\", \"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\", ParameterType.RequestBody);\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.post(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/editor?language=SOME_STRING_VALUE\")\n  .header(\"content-type\", \"application/json\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .body(\"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"POST\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/templates/templateId/editor?language=SOME_STRING_VALUE\",\n  \"headers\": {\n    \"content-type\": \"application/json\",\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.write(JSON.stringify({id: 12312, name: 'Sample Data'}));\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\npayload = \"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\"\n\nheaders = {\n    'content-type': \"application/json\",\n    'authorization': \"Bearer REPLACE_BEARER_TOKEN\"\n    }\n\nconn.request(\"POST\", \"/api/v3/templates/templateId/editor?language=SOME_STRING_VALUE\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/editor?language=SOME_STRING_VALUE\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Post.new(url)\nrequest[\"content-type\"] = 'application/json'\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\nrequest.body = \"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\"\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      }
+    },
+    "/templates/templateId/output": {
+      "post": {
+        "description": "Merges template with data and returns base64 encoded document or a public URL to a document. You can send json encoded data in request body or a public URL to your json file as the data parameter. NB! When the public URL option is used, the document is stored for 30 days and automatically deleted.",
+        "operationId": "mergeTemplate",
+        "parameters": [
+          {
+            "description": "Template unique identifier",
+            "in": "query",
+            "name": "templateId",
+            "required": true,
+            "schema": {
+              "example": 19375,
+              "type": "integer"
+            }
+          },
+          {
+            "$ref": "#/components/parameters/doc_name"
+          },
+          {
+            "$ref": "#/components/parameters/format"
+          },
+          {
+            "$ref": "#/components/parameters/output"
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Data"
+              }
+            }
+          },
+          "description": "Data used to generate the PDF. This can be JSON encoded string or a public URL to your JSON file.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/document"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Generate document",
+        "tags": [
+          "Documents"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request POST \\\n  --url 'https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/output?name=My%20document&format=pdf&output=base64' \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN' \\\n  --header 'content-type: application/json' \\\n  --data '{\"id\":12312,\"name\":\"Sample Data\"}'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/output?name=My%20document&format=pdf&output=base64\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"POST\",\n  CURLOPT_POSTFIELDS => \"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\",\n    \"content-type: application/json\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/output?name=My%20document&format=pdf&output=base64\");\nvar request = new RestRequest(Method.POST);\nrequest.AddHeader(\"content-type\", \"application/json\");\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nrequest.AddParameter(\"application/json\", \"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\", ParameterType.RequestBody);\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.post(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/output?name=My%20document&format=pdf&output=base64\")\n  .header(\"content-type\", \"application/json\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .body(\"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"POST\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/templates/templateId/output?name=My%20document&format=pdf&output=base64\",\n  \"headers\": {\n    \"content-type\": \"application/json\",\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.write(JSON.stringify({id: 12312, name: 'Sample Data'}));\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\npayload = \"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\"\n\nheaders = {\n    'content-type': \"application/json\",\n    'authorization': \"Bearer REPLACE_BEARER_TOKEN\"\n    }\n\nconn.request(\"POST\", \"/api/v3/templates/templateId/output?name=My%20document&format=pdf&output=base64\", payload, headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/templates/templateId/output?name=My%20document&format=pdf&output=base64\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Post.new(url)\nrequest[\"content-type\"] = 'application/json'\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\nrequest.body = \"{\\\"id\\\":12312,\\\"name\\\":\\\"Sample Data\\\"}\"\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      }
+    },
+    "/workspaces/workspaceId": {
+      "delete": {
+        "description": "Deletes the workspace",
+        "operationId": "deleteWorkspace",
+        "parameters": [
+          {
+            "description": "Workspace identifier",
+            "example": "demo.example@actualreports.com",
+            "in": "query",
+            "name": "workspaceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/success"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Delete workspace",
+        "tags": [
+          "Workspaces"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request DELETE \\\n  --url https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"DELETE\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId\");\nvar request = new RestRequest(Method.DELETE);\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.delete(\"https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"DELETE\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/workspaces/workspaceId\",\n  \"headers\": {\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\nheaders = { 'authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"DELETE\", \"/api/v3/workspaces/workspaceId\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Delete.new(url)\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      },
+      "get": {
+        "description": "Returns workspace information",
+        "operationId": "getWorkspace",
+        "parameters": [
+          {
+            "description": "Workspace identifier",
+            "example": "demo.example@actualreports.com",
+            "in": "query",
+            "name": "workspaceId",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/workspace"
+          },
+          "401": {
+            "$ref": "#/components/responses/error401"
+          },
+          "403": {
+            "$ref": "#/components/responses/error403"
+          },
+          "404": {
+            "$ref": "#/components/responses/error404"
+          },
+          "422": {
+            "$ref": "#/components/responses/error422"
+          },
+          "500": {
+            "$ref": "#/components/responses/error500"
+          }
+        },
+        "summary": "Get workspace",
+        "tags": [
+          "Workspaces"
+        ],
+        "x-code-samples": [
+          {
+            "lang": "Shell + Curl",
+            "source": "curl --request GET \\\n  --url https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId \\\n  --header 'authorization: Bearer REPLACE_BEARER_TOKEN'"
+          },
+          {
+            "lang": "Php + Curl",
+            "source": "<?php\n\n$curl = curl_init();\n\ncurl_setopt_array($curl, array(\n  CURLOPT_URL => \"https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId\",\n  CURLOPT_RETURNTRANSFER => true,\n  CURLOPT_ENCODING => \"\",\n  CURLOPT_MAXREDIRS => 10,\n  CURLOPT_TIMEOUT => 30,\n  CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,\n  CURLOPT_CUSTOMREQUEST => \"GET\",\n  CURLOPT_HTTPHEADER => array(\n    \"authorization: Bearer REPLACE_BEARER_TOKEN\"\n  ),\n));\n\n$response = curl_exec($curl);\n$err = curl_error($curl);\n\ncurl_close($curl);\n\nif ($err) {\n  echo \"cURL Error #:\" . $err;\n} else {\n  echo $response;\n}"
+          },
+          {
+            "lang": "Csharp + Restsharp",
+            "source": "var client = new RestClient(\"https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId\");\nvar request = new RestRequest(Method.GET);\nrequest.AddHeader(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\");\nIRestResponse response = client.Execute(request);"
+          },
+          {
+            "lang": "Java + Unirest",
+            "source": "HttpResponse<String> response = Unirest.get(\"https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId\")\n  .header(\"authorization\", \"Bearer REPLACE_BEARER_TOKEN\")\n  .asString();"
+          },
+          {
+            "lang": "Node + Native",
+            "source": "var http = require(\"https\");\n\nvar options = {\n  \"method\": \"GET\",\n  \"hostname\": \"us1.pdfgeneratorapi.com\",\n  \"port\": null,\n  \"path\": \"/api/v3/workspaces/workspaceId\",\n  \"headers\": {\n    \"authorization\": \"Bearer REPLACE_BEARER_TOKEN\"\n  }\n};\n\nvar req = http.request(options, function (res) {\n  var chunks = [];\n\n  res.on(\"data\", function (chunk) {\n    chunks.push(chunk);\n  });\n\n  res.on(\"end\", function () {\n    var body = Buffer.concat(chunks);\n    console.log(body.toString());\n  });\n});\n\nreq.end();"
+          },
+          {
+            "lang": "Python + Python3",
+            "source": "import http.client\n\nconn = http.client.HTTPSConnection(\"us1.pdfgeneratorapi.com\")\n\nheaders = { 'authorization': \"Bearer REPLACE_BEARER_TOKEN\" }\n\nconn.request(\"GET\", \"/api/v3/workspaces/workspaceId\", headers=headers)\n\nres = conn.getresponse()\ndata = res.read()\n\nprint(data.decode(\"utf-8\"))"
+          },
+          {
+            "lang": "Ruby + Native",
+            "source": "require 'uri'\nrequire 'net/http'\nrequire 'openssl'\n\nurl = URI(\"https://us1.pdfgeneratorapi.com/api/v3/workspaces/workspaceId\")\n\nhttp = Net::HTTP.new(url.host, url.port)\nhttp.use_ssl = true\nhttp.verify_mode = OpenSSL::SSL::VERIFY_NONE\n\nrequest = Net::HTTP::Get.new(url)\nrequest[\"authorization\"] = 'Bearer REPLACE_BEARER_TOKEN'\n\nresponse = http.request(request)\nputs response.read_body"
+          }
+        ]
+      }
+    }
+  },
+  "components": {
+    "parameters": {
+      "doc_name": {
+        "description": "Document name, returned in the meta data.",
+        "in": "query",
+        "name": "name",
+        "schema": {
+          "example": "My document",
+          "type": "string"
+        }
+      },
+      "format": {
+        "description": "Document format. The zip option will return a ZIP file with PDF files.",
+        "in": "query",
+        "name": "format",
+        "schema": {
+          "default": "pdf",
+          "enum": [
+            "pdf",
+            "html",
+            "zip",
+            "xlsx"
+          ],
+          "example": "pdf",
+          "type": "string"
+        }
+      },
+      "output": {
+        "description": "Response format. With the url option, the document is stored for 30 days and automatically deleted.",
+        "in": "query",
+        "name": "output",
+        "schema": {
+          "default": "base64",
+          "enum": [
+            "base64",
+            "url",
+            "I"
+          ],
+          "example": "base64",
+          "type": "string"
+        }
+      },
+      "templateId": {
+        "description": "Template unique identifier",
+        "in": "path",
+        "name": "templateId",
+        "required": true,
+        "schema": {
+          "example": 19375,
+          "type": "integer"
+        }
+      },
+      "workspaceId": {
+        "description": "Workspace identifier",
+        "example": "demo.example@actualreports.com",
+        "in": "path",
+        "name": "workspaceId",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "document": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "meta": {
+                  "properties": {
+                    "content-type": {
+                      "description": "Document content type.",
+                      "example": "application/pdf",
+                      "type": "string"
+                    },
+                    "display_name": {
+                      "description": "Document name without the file extension.",
+                      "example": "a2bd25b8921f3dc7a440fd7f427f90a4",
+                      "type": "string"
+                    },
+                    "encoding": {
+                      "description": "Document encoding",
+                      "example": "base64",
+                      "type": "string"
+                    },
+                    "name": {
+                      "description": "Document name. This value is automatically generated if name attribute is not defined in request.",
+                      "example": "a2bd25b8921f3dc7a440fd7f427f90a4.pdf",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                "response": {
+                  "description": "Base64 encoded document if the output=base64 is used or URL to the document when the output=url is used.",
+                  "example": "JVBERi0xLjcKJeLjz9MKNyAwIG9iago8PCAvVHlwZSA...",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Document data"
+      },
+      "editorUrl": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "response": {
+                  "example": "https://us1.pdfgeneratorapi.com/editor/open/2ff98760d39456c4b2cf974fef005ecf",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Returns an URL which you can use to redirect your user to the editor or use as iframe source"
+      },
+      "error401": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "error": {
+                  "description": "Error description",
+                  "enum": [
+                    "Authentication failed",
+                    "Required parameter missing"
+                  ],
+                  "example": "Authentication failed",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "HTTP Error code",
+                  "example": 401,
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Unauthorized"
+      },
+      "error403": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "error": {
+                  "description": "Error description",
+                  "example": "Access not granted",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "HTTP Error code",
+                  "example": 403,
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Forbidden"
+      },
+      "error404": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "error": {
+                  "description": "Error description",
+                  "enum": [
+                    "Entity not found",
+                    "Resource not found"
+                  ],
+                  "example": "Entity not found",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "HTTP Error code",
+                  "example": 404,
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Not Found"
+      },
+      "error422": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "error": {
+                  "description": "Error description",
+                  "example": "Incorrect parameter value",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "HTTP Error code",
+                  "example": 422,
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Unprocessable Entity"
+      },
+      "error500": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "error": {
+                  "description": "Error description",
+                  "example": "Internal error",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "HTTP Error code",
+                  "example": 500,
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Internal Server Error"
+      },
+      "listOfTemplates": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "response": {
+                  "items": {
+                    "$ref": "#/components/schemas/Template"
+                  },
+                  "type": "array"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "An array of template objects"
+      },
+      "success": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "response": {
+                  "properties": {
+                    "success": {
+                      "example": true,
+                      "type": "boolean"
+                    }
+                  },
+                  "type": "object"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "The request was successfully executed."
+      },
+      "templateConfig": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "response": {
+                  "$ref": "#/components/schemas/TemplateDefinition"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Template configuration as JSON object"
+      },
+      "workspace": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "properties": {
+                "response": {
+                  "$ref": "#/components/schemas/Workspace"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Workspace information"
+      }
+    },
+    "schemas": {
+      "BatchData": {
+        "example": [
+          {
+            "data": {
+              "key": "value"
+            },
+            "template": 52272
+          },
+          {
+            "data": {
+              "key2": "value2"
+            },
+            "template": 52273
+          }
+        ],
+        "items": {
+          "properties": {
+            "data": {
+              "$ref": "#/components/schemas/Data"
+            },
+            "template": {
+              "description": "Template id",
+              "example": 52272,
+              "type": "integer"
+            }
+          },
+          "type": "object"
+        },
+        "type": "array"
+      },
+      "Component": {
+        "description": "Template component definition",
+        "properties": {
+          "cls": {
+            "description": "Defines component class/type",
+            "enum": [
+              "labelComponent",
+              "numberComponent",
+              "textComponent",
+              "imageComponent",
+              "dateComponent",
+              "hlineComponent",
+              "vlineComponent",
+              "tableComponent",
+              "compositeComponent",
+              "barcodeComponent",
+              "qrcodeComponent",
+              "chartComponent",
+              "rectangleComponent",
+              "headerComponent",
+              "footerComponent",
+              "checkboxComponent",
+              "radioComponent"
+            ],
+            "example": "labelComponent",
+            "type": "string"
+          },
+          "dataIndex": {
+            "description": "Defines data field for Table and Container components which are used to iterate over list of items",
+            "example": "line_items",
+            "type": "string"
+          },
+          "height": {
+            "description": "Height in units",
+            "example": 1,
+            "type": "number"
+          },
+          "id": {
+            "description": "Component id",
+            "example": "component-12313",
+            "type": "string"
+          },
+          "left": {
+            "description": "Position from the page left in units",
+            "example": 2.5,
+            "type": "number"
+          },
+          "top": {
+            "description": "Position from the page top in units",
+            "example": 4.2,
+            "type": "number"
+          },
+          "value": {
+            "description": "Component value",
+            "example": "${price}",
+            "type": "string"
+          },
+          "width": {
+            "description": "Width in units",
+            "example": 3.5,
+            "type": "number"
+          },
+          "zindex": {
+            "description": "Defines the rendering order on page. Components with smaller zindex are rendered before",
+            "example": 102,
+            "type": "integer"
+          }
+        },
+        "type": "object"
+      },
+      "Data": {
+        "properties": {
+          "id": {
+            "example": 12312,
+            "type": "integer"
+          },
+          "name": {
+            "example": "Sample Data",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Template": {
+        "description": "Template object",
+        "properties": {
+          "id": {
+            "description": "Unique identifier",
+            "example": 24382,
+            "type": "integer"
+          },
+          "modified": {
+            "description": "Timestamp when the template was modified",
+            "example": "2017-10-21 11:49:28",
+            "type": "string"
+          },
+          "name": {
+            "description": "Template name",
+            "example": "Invoice template",
+            "type": "string"
+          },
+          "owner": {
+            "description": "Indicates if the workspace is the owner of the template",
+            "example": true,
+            "type": "boolean"
+          },
+          "tags": {
+            "description": "A list of tags assigned to a template",
+            "example": [
+              "invoice",
+              "orders"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "TemplateDefinition": {
+        "properties": {
+          "dataSettings": {
+            "description": "Defines filter and sort option for root data set.",
+            "properties": {
+              "filterBy": {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              },
+              "sortBy": {
+                "items": {
+                  "type": "object"
+                },
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          "editor": {
+            "description": "Configuration preferences for the editor",
+            "properties": {
+              "heightMultiplier": {
+                "example": 2,
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "id": {
+            "description": "Unique identifier",
+            "example": 24382,
+            "type": "integer"
+          },
+          "isDraft": {
+            "description": "Indicates if the template is a draft or published.",
+            "example": true,
+            "type": "boolean"
+          },
+          "layout": {
+            "description": "Defines template layout (e.g page format, margins).",
+            "properties": {
+              "emptyLabels": {
+                "description": "Defines how many pages or labels should be empty",
+                "example": 0,
+                "type": "integer"
+              },
+              "format": {
+                "description": "Defines template page size",
+                "enum": [
+                  "A4",
+                  "letter",
+                  "custom"
+                ],
+                "example": "A4",
+                "type": "string"
+              },
+              "height": {
+                "description": "Page height in units",
+                "example": 29.7,
+                "type": "number"
+              },
+              "margins": {
+                "description": "Page margins in units",
+                "properties": {
+                  "bottom": {
+                    "example": 0.5,
+                    "type": "number"
+                  },
+                  "left": {
+                    "example": 0.5,
+                    "type": "number"
+                  },
+                  "right": {
+                    "example": 0.5,
+                    "type": "number"
+                  },
+                  "top": {
+                    "example": 0.5,
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "orientation": {
+                "description": "Page orientation",
+                "enum": [
+                  "portrait",
+                  "landscape"
+                ],
+                "example": "portrait",
+                "type": "string"
+              },
+              "repeatLayout": {
+                "description": "Defines page size if layout is repeated on the page e.g sheet labels",
+                "nullable": true,
+                "properties": {
+                  "format": {
+                    "description": "Defines template page size",
+                    "enum": [
+                      "A4",
+                      "letter",
+                      "custom"
+                    ],
+                    "example": "A4",
+                    "type": "string"
+                  },
+                  "height": {
+                    "description": "Page height in units",
+                    "example": 29.7,
+                    "type": "number"
+                  },
+                  "width": {
+                    "description": "Page width in units",
+                    "example": 21,
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "rotation": {
+                "description": "Page rotation in degrees",
+                "enum": [
+                  0,
+                  90,
+                  180,
+                  270
+                ],
+                "example": 0,
+                "type": "integer"
+              },
+              "unit": {
+                "description": "Measure unit",
+                "enum": [
+                  "cm",
+                  "in"
+                ],
+                "example": "cm",
+                "type": "string"
+              },
+              "width": {
+                "description": "Page width in units",
+                "example": 21,
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "name": {
+            "description": "Template name",
+            "example": "Invoice template",
+            "type": "string"
+          },
+          "pages": {
+            "description": "Defines page or label size, margins and components on page or label",
+            "items": {
+              "properties": {
+                "components": {
+                  "items": {
+                    "$ref": "#/components/schemas/Component"
+                  },
+                  "type": "array"
+                },
+                "height": {
+                  "description": "Page height in units",
+                  "example": 29.7,
+                  "type": "number"
+                },
+                "margins": {
+                  "properties": {
+                    "bottom": {
+                      "description": "Page or label margin from bottom",
+                      "example": 0.5,
+                      "type": "number"
+                    },
+                    "right": {
+                      "description": "Page or label margin from right",
+                      "example": 0.5,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "width": {
+                  "description": "Page width in units",
+                  "example": 21,
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "tags": {
+            "description": "A list of tags assigned to a template",
+            "example": [
+              "invoice",
+              "orders"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "TemplateDefinitionNew": {
+        "description": "Template configuration",
+        "properties": {
+          "isDraft": {
+            "description": "Indicates if the template is a draft or published.",
+            "example": true,
+            "type": "boolean"
+          },
+          "layout": {
+            "description": "Defines template layout (e.g page format, margins).",
+            "properties": {
+              "emptyLabels": {
+                "description": "Defines how many pages or labels should be empty",
+                "example": 0,
+                "type": "integer"
+              },
+              "format": {
+                "description": "Defines template page size",
+                "enum": [
+                  "A4",
+                  "letter",
+                  "custom"
+                ],
+                "example": "A4",
+                "type": "string"
+              },
+              "height": {
+                "description": "Page height in units",
+                "example": 29.7,
+                "type": "number"
+              },
+              "margins": {
+                "description": "Page margins in units",
+                "properties": {
+                  "bottom": {
+                    "example": 0.5,
+                    "type": "number"
+                  },
+                  "left": {
+                    "example": 0.5,
+                    "type": "number"
+                  },
+                  "right": {
+                    "example": 0.5,
+                    "type": "number"
+                  },
+                  "top": {
+                    "example": 0.5,
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "orientation": {
+                "description": "Page orientation",
+                "enum": [
+                  "portrait",
+                  "landscape"
+                ],
+                "example": "portrait",
+                "type": "string"
+              },
+              "repeatLayout": {
+                "description": "Defines page size if layout is repeated on the page e.g sheet labels",
+                "nullable": true,
+                "properties": {
+                  "format": {
+                    "description": "Defines template page size",
+                    "enum": [
+                      "A4",
+                      "letter",
+                      "custom"
+                    ],
+                    "example": "A4",
+                    "type": "string"
+                  },
+                  "height": {
+                    "description": "Page height in units",
+                    "example": 29.7,
+                    "type": "number"
+                  },
+                  "width": {
+                    "description": "Page width in units",
+                    "example": 21,
+                    "type": "number"
+                  }
+                },
+                "type": "object"
+              },
+              "rotaion": {
+                "description": "Page rotation in degrees",
+                "enum": [
+                  0,
+                  90,
+                  180,
+                  270
+                ],
+                "example": 0,
+                "type": "integer"
+              },
+              "unit": {
+                "description": "Measure unit",
+                "enum": [
+                  "cm",
+                  "in"
+                ],
+                "example": "cm",
+                "type": "string"
+              },
+              "width": {
+                "description": "Page width in units",
+                "example": 21,
+                "type": "number"
+              }
+            },
+            "type": "object"
+          },
+          "name": {
+            "description": "Template name",
+            "example": "Invoice template",
+            "type": "string"
+          },
+          "pages": {
+            "description": "Defines page or label size, margins and components on page or label",
+            "items": {
+              "properties": {
+                "components": {
+                  "items": {
+                    "$ref": "#/components/schemas/Component"
+                  },
+                  "type": "array"
+                },
+                "height": {
+                  "description": "Page height in units",
+                  "example": 29.7,
+                  "type": "number"
+                },
+                "margins": {
+                  "properties": {
+                    "bottom": {
+                      "description": "Page or label margin from bottom",
+                      "example": 0.5,
+                      "type": "number"
+                    },
+                    "right": {
+                      "description": "Page or label margin from right",
+                      "example": 0.5,
+                      "type": "number"
+                    }
+                  },
+                  "type": "object"
+                },
+                "width": {
+                  "description": "Page width in units",
+                  "example": 21,
+                  "type": "number"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "tags": {
+            "description": "A list of tags assigned to a template",
+            "example": [
+              "invoice",
+              "orders"
+            ],
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "name"
+        ],
+        "type": "object"
+      },
+      "Workspace": {
+        "properties": {
+          "created_at": {
+            "example": "2020-04-01 12:03:12",
+            "type": "string"
+          },
+          "id": {
+            "description": "Internal workspace id",
+            "example": 1,
+            "type": "integer"
+          },
+          "identifier": {
+            "description": "The unique workspace idenfitifer specified by your application",
+            "example": "demo.example@actualreports.com",
+            "type": "string"
+          },
+          "is_master_workspace": {
+            "description": "True if a master workspace",
+            "example": false,
+            "type": "boolean"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "JSONWebTokenAuth": {
+        "bearerFormat": "JWT",
+        "description": "JSON Web Token (JWT) is an open standard (RFC 7519) that defines a compact and self-contained way for securely transmitting information between parties as a JSON object. This information can be verified and trusted because it is digitally signed. JWTs can be signed using a secret (with the HMAC algorithm) or a public/private key pair using RSA or ECDSA. For more information about JSON Web Tokens check [jwt.io](https://jwt.io).\n",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "x-tagGroups": [
+    {
+      "name": "API References",
+      "tags": [
+        "Templates",
+        "Documents",
+        "Workspaces"
+      ]
+    },
+    {
+      "name": "Models",
+      "tags": [
+        "template_model",
+        "template_definition",
+        "component_model",
+        "workspace_model"
+      ]
+    }
+  ]
+}

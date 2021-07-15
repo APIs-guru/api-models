@@ -1,0 +1,885 @@
+openapi: 3.0.0
+servers:
+  - description: Production
+    url: https://apiz.ebay.com{basePath}
+    variables:
+      basePath:
+        default: /sell/finances/v1
+info:
+  contact:
+    name: eBay Inc,
+    x-twitter: ebay
+  description: This API is used to retrieve seller payouts and monetary transaction details related to those payouts.
+  license:
+    name: eBay API License Agreement
+    url: https://go.developer.ebay.com/api-license-agreement
+  title: eBay Finances API
+  version: 1.9.0
+  x-apisguru-categories:
+    - ecommerce
+  x-logo:
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_ebay_profile_image.jpeg
+  x-origin:
+    - format: openapi
+      url: https://developer.ebay.com/api-docs/master/sell/finances/openapi/3/sell_finances_v1_oas3.json
+      version: "3.0"
+  x-providerName: apiz.ebay.com
+  x-serviceName: sell-finances
+paths:
+  /payout:
+    get:
+      description: This method is used to retrieve the details of one or more seller payouts. By using the filter query parameter, users can retrieve payouts processed within a specific date range, and/or they can retrieve payouts in a specific state. There are also pagination and sort query parameters that allow users to control the payouts that are returned in the response. If no payouts match the input criteria, an empty payload is returned.
+      operationId: getPayouts
+      parameters:
+        - description: "The three filter types that can be used here are discussed below. If none of these filters are used, all recent payouts in all states are returned: payoutDate: search for payouts within a specific range of dates. The date format to use is YYYY-MM-DDTHH:MM:SS.SSSZ. Below is the proper syntax to use if filtering by a date range: https://apiz.ebay.com/sell/finances/v1/payout?filter=payoutDate:[2018-12-17T00:00:01.000Z..2018-12-24T00:00:01.000Z] Alternatively, the user could omit the ending date, and the date range would include the starting date and up to 90 days past that date, or the current date if the starting date is less than 90 days in the past. lastAttemptedPayoutDate: search for attempted payouts that failed within a specific range of dates. In order to use this filter, the payoutStatus filter must also be used and its value must be set to RETRYABLE_FAILED. The date format to use is YYYY-MM-DDTHH:MM:SS.SSSZ. The same syntax used for the payoutDate filter is also used for the lastAttemptedPayoutDate filter. This filter is only applicable (and will return results) if one or more seller payouts have failed, but are retryable. payoutStatus: search for payouts in a particular state. Only one payout state can be specified with this filter. The supported payoutStatus values are as follows: INITIATED: search for payouts that have been initiated but not processed. SUCCEEDED: search for successful payouts. RETRYABLE_FAILED: search for payouts that failed, but ones which will be tried again. This value must be used if filtering by lastAttemptedPayoutDate. TERMINAL_FAILED: search for payouts that failed, and ones that will not be tried again. REVERSED: search for payouts that were reversed. Below is the proper syntax to use if filtering by payout status: https://apiz.ebay.com/sell/finances/v1/payout?filter=payoutStatus:{SUCCEEDED} If both the payoutDate and payoutStatus filters are used, payouts must satisfy both criteria to be returned. For implementation help, refer to eBay API documentation at https://developer.ebay.com/api-docs/sell/finances/types/cos:FilterField"
+          in: query
+          name: filter
+          required: false
+          schema:
+            type: string
+        - description: "By default, payouts or failed payouts that match the input criteria are sorted in ascending order according to the payout date/last attempted payout date (oldest payouts returned first). To view payouts in descending order instead (most recent payouts/attempted payouts first), you would include the sort query parameter, and then set the value of its field parameter to payoutDate or lastAttemptedPayoutDate (if searching for failed, retrybable payouts). Below is the proper syntax to use if filtering by a payout date range in descending order: https://apiz.ebay.com/sell/finances/v1/payout?filter=payoutDate:[2018-12-17T00:00:01.000Z..2018-12-24T00:00:01.000Z]&amp;sort=payoutDate Payouts can only be sorted according to payout date, and can not be sorted by payout status. For implementation help, refer to eBay API documentation at https://developer.ebay.com/api-docs/sell/finances/types/cos:SortField"
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: "The number of payouts to return per page of the result set. Use this parameter in conjunction with the offset parameter to control the pagination of the output. For example, if offset is set to 10 and limit is set to 10, the method retrieves payouts 11 thru 20 from the result set. Note: This feature employs a zero-based list, where the first payout in the results set has an offset value of 0. Maximum: 200 Default: 20"
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: string
+        - description: "This integer value indicates the actual position that the first payout returned on the current page has in the results set. So, if you wanted to view the 11th payout of the result set, you would set the offset value in the request to 10. In the request, you can use the offset parameter in conjunction with the limit parameter to control the pagination of the output. For example, if offset is set to 30 and limit is set to 10, the method retrieves payouts 31 thru 40 from the resulting collection of payouts. Note: This feature employs a zero-based list, where the first payout in the results set has an offset value of 0. Default: 0 (zero)"
+          in: query
+          name: offset
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payouts"
+          description: Success
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          x-response-codes:
+            errors:
+              "135002":
+                category: REQUEST
+                description: The value of payout status filter is invalid.
+                domain: API_FINANCES
+              "135003":
+                category: REQUEST
+                description: The value of pagination is invalid.
+                domain: API_FINANCES
+              "135004":
+                category: REQUEST
+                description: The value of payout date filter is invalid.
+                domain: API_FINANCES
+              "135005":
+                category: REQUEST
+                description: The value of sorting is invalid.
+                domain: API_FINANCES
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "135000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_FINANCES
+      security:
+        - api_auth:
+            - https://api.ebay.com/oauth/api_scope/sell.finances
+      tags:
+        - payout
+  "/payout/{payout_Id}":
+    get:
+      description: This method retrieves details on a specific seller payout. The unique identfier of the payout is passed in as a path parameter at the end of the call URI. The getPayouts method can be used to retrieve the unique identifier of a payout, or the user can check Seller Hub.
+      operationId: getPayout
+      parameters:
+        - description: The unique identfier of the payout is passed in as a path parameter at the end of the call URI. The getPayouts method can be used to retrieve the unique identifier of a payout, or the user can check Seller Hub to get the payout ID.
+          in: path
+          name: payout_Id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Payout"
+          description: Success
+        "400":
+          description: Bad Request
+        "404":
+          description: Not found
+          x-response-codes:
+            errors:
+              "135001":
+                category: REQUEST
+                description: The payout id was not found.
+                domain: API_FINANCES
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "135000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_FINANCES
+      security:
+        - api_auth:
+            - https://api.ebay.com/oauth/api_scope/sell.finances
+      tags:
+        - payout
+  /payout_summary:
+    get:
+      description: This method is used to retrieve cumulative values for payouts in a particular state, or all states. The metadata in the response includes total payouts, the total number of monetary transactions (sales, refunds, credits) associated with those payouts, and the total dollar value of all payouts. If the filter query parameter is used to filter by payout status, only one payout status value may be used. If the filter query parameter is not used to filter by a specific payout status, cumulative values for payouts in all states are returned. The user can also use the filter query parameter to specify a date range, and then only payouts that were processed within that date range are considered.
+      operationId: getPayoutSummary
+      parameters:
+        - description: "The two filter types that can be used here are discussed below. One or both of these filter types can be used. If none of these filters are used, the data returned in the response will reflect payouts, in all states, processed within the last 90 days. payoutDate: consider payouts processed within a specific range of dates. The date format to use is YYYY-MM-DDTHH:MM:SS.SSSZ. Below is the proper syntax to use if filtering by a date range: https://apiz.ebay.com/sell/finances/v1/payout_summary?filter=payoutDate:[2018-12-17T00:00:01.000Z..2018-12-24T00:00:01.000Z] Alternatively, the user could omit the ending date, and the date range would include the starting date and up to 90 days past that date, or the current date if the starting date is less than 90 days in the past. payoutStatus: consider only the payouts in a particular state. Only one payout state can be specified with this filter. The supported payoutStatus values are as follows: INITIATED: search for payouts that have been initiated but not processed. SUCCEEDED: consider only successful payouts. RETRYABLE_FAILED: consider only payouts that failed, but ones which will be tried again. TERMINAL_FAILED: consider only payouts that failed, and ones that will not be tried again. REVERSED: consider only payouts that were reversed. Below is the proper syntax to use if filtering by payout status: https://apiz.ebay.com/sell/finances/v1/payout_summary?filter=payoutStatus:{SUCCEEDED} If both the payoutDate and payoutStatus filters are used, only the payouts that satisfy both criteria are considered in the results. For implementation help, refer to eBay API documentation at https://developer.ebay.com/api-docs/sell/finances/types/cos:FilterField"
+          in: query
+          name: filter
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PayoutSummaryResponse"
+          description: Success
+        "400":
+          description: Bad Request
+          x-response-codes:
+            errors:
+              "135002":
+                category: REQUEST
+                description: The value of payout status filter is invalid
+                domain: API_FINANCES
+              "135004":
+                category: REQUEST
+                description: The value of payout date filter is invalid
+                domain: API_FINANCES
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "135000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_FINANCES
+      security:
+        - api_auth:
+            - https://api.ebay.com/oauth/api_scope/sell.finances
+      tags:
+        - payout
+  /seller_funds_summary:
+    get:
+      description: This method retrieves all pending funds that have not yet been distibuted through a seller payout. There are no input parameters for this method. The response payload includes available funds, funds being processed, funds on hold, and also an aggregate count of all three of these categories. If there are no funds that are pending, on hold, or being processed for the seller's account, no response payload is returned, and an http status code of 204 - No Content is returned instead.
+      operationId: getSellerFundsSummary
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SellerFundsSummaryResponse"
+          description: Success
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "135000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_FINANCES
+      security:
+        - api_auth:
+            - https://api.ebay.com/oauth/api_scope/sell.finances
+      tags:
+        - seller_funds_summary
+  /transaction:
+    get:
+      description: This method allows a seller to retrieve one or monetary transactions. In this case, 'monetary transactions' include sales orders, buyer refunds, seller credits, buyer-initiated payment disputes, eBay shipping label purchases, and transfers. There are numerous input filters available for use, including filters to retrieve specific types of monetary transactions, to retrieve monetary transactions processed within a specific date range, or to retrieve monetary transactions in a specific state. See the filter field for more information on each filter, and how each one is used. There are also pagination and sort query parameters that allow users to further control the monetary transactions that are returned in the response. If no monetary transactions match the input criteria, an http status code of 204 No Content is returned with no response payload.
+      operationId: getTransactions
+      parameters:
+        - description: "Numerous filters are available for the getTransactions method, and these filters are discussed below. One or more of these filter types can be used. If none of these filters are used, all monetary transactions from the last 90 days are returned: transactionDate: search for monetary transactions that occurred within a specific range of dates. Note: All dates must be input using UTC format (YYYY-MM-DDTHH:MM:SS.SSSZ) and should be adjusted accordingly for the local timezone of the user. Below is the proper syntax to use if filtering by a date range: https://apiz.ebay.com/sell/finances/v1/transaction?filter=transactionDate:[2018-10-23T00:00:01.000Z..2018-11-09T00:00:01.000Z] Alternatively, the user could omit the ending date, and the date range would include the starting date and up to 90 days past that date, or the current date if the starting date is less than 90 days in the past. transactionType: search for a specific type of monetary transaction. The supported transactionType values are as follows: SALE: a sales order. REFUND: a refund to the buyer after an order cancellation or return. CREDIT: a credit issued by eBay to the seller's account. DISPUTE: a monetary transaction associated with a payment dispute between buyer and seller. NON_SALE_CHARGE: a monetary transaction involving a seller transferring money to eBay for the balance of a charge for NON_SALE_CHARGE transactions (transactions that contain non-transactional seller fees). These can include a one-time payment, monthly/yearly subscription fees charged monthly, NRC charges, and fee credits. SHIPPING_LABEL: a monetary transaction where eBay is billing the seller for an eBay shipping label. Note that the shipping label functionality will initially only be available to a select number of sellers. TRANSFER: A transfer is a monetary transaction where eBay is billing the seller for reimbursement of a charge. An example of a transfer is a seller reimbursing eBay for a buyer refund.Below is the proper syntax to use if filtering by a monetary transaction type: https://apiz.ebay.com/sell/finances/v1/transaction?filter=transactionType:{SALE} transactionStatus: this filter type is only applicable for sales orders, and allows the user to filter seller payouts in a particular state. The supported transactionStatus values are as follows: PAYOUT: this indicates that the proceeds from the corresponding sales order has been paid out to the seller's account. FUNDS_PROCESSING: this indicates that the funds for the corresponding monetary transaction are currently being processed. FUNDS_AVAILABLE_FOR_PAYOUT: this indicates that the proceeds from the corresponding sales order are available for a seller payout, but processing has not yet begun. FUNDS_ON_HOLD: this indicates that the proceeds from the corresponding sales order are currently being held by eBay, and are not yet available for a seller payout. COMPLETED: this indicates that the funds for the corresponding TRANSFER monetary transaction have transferred and the transaction has completed. FAILED: this indicates the process has failed for the corresponding TRANSFER monetary transaction. Below is the proper syntax to use if filtering by transaction status: https://apiz.ebay.com/sell/finances/v1/transaction?filter=transactionStatus:{PAYOUT} buyerUsername: the eBay user ID of the buyer involved in the monetary transaction. Only monetary transactions involving this buyer are returned. Below is the proper syntax to use if filtering by a specific eBay buyer: https://apiz.ebay.com/sell/finances/v1/transaction?filter=buyerUsername:{buyer1234} salesRecordReference: the unique Selling Manager identifier of the order involved in the monetary transaction. Only monetary transactions involving this Selling Manager Sales Record ID are returned. Below is the proper syntax to use if filtering by a specific Selling Manager Sales Record ID: https://apiz.ebay.com/sell/finances/v1/transaction?filter=salesRecordReference:{123} Note: For all orders originating after February 1, 2020, a value of 0 will be returned in the salesRecordReference field. So, this filter will only be useful to retrieve orders than occurred before this date. payoutId: the unique identifier of a seller payout. This value is auto-generated by eBay once the seller payout is set to be processed. Only monetary transactions involving this Payout ID are returned. Below is the proper syntax to use if filtering by a specific Payout ID: https://apiz.ebay.com/sell/finances/v1/transaction?filter=payoutId:{5000106638} transactionId: the unique identifier of a monetary transaction. For a sales order, the orderId filter should be used instead. Only the monetary transaction defined by the identifier is returned. Note: This filter cannot be used alone; the transactionType must also be specified when filtering by transaction ID. Below is the proper syntax to use if filtering by a specific transaction ID: https://apiz.ebay.com/sell/finances/v1/transaction?filter=transactionId:{03-03620-33763}&amp;filter=transactionType:{SALE} orderId: the unique identifier of a sales order. For any other monetary transaction, the transactionId filter should be used instead. Only the sales order defined by the identifier is returned. Below is the proper syntax to use if filtering by a specific order ID: https://apiz.ebay.com/sell/finances/v1/transaction?filter=orderId:{03-03620-33763} For implementation help, refer to eBay API documentation at https://developer.ebay.com/api-docs/sell/finances/types/cos:FilterField"
+          in: query
+          name: filter
+          required: false
+          schema:
+            type: string
+        - description: Sorting is not yet available for the getTransactions method. By default, monetary transactions that match the input criteria are sorted in descending order according to the transaction date. For implementation help, refer to eBay API documentation at https://developer.ebay.com/api-docs/sell/finances/types/cos:SortField
+          in: query
+          name: sort
+          required: false
+          schema:
+            type: string
+        - description: "The number of monetary transactions to return per page of the result set. Use this parameter in conjunction with the offset parameter to control the pagination of the output. For example, if offset is set to 10 and limit is set to 10, the method retrieves monetary transactions 11 thru 20 from the result set. Note: This feature employs a zero-based list, where the first item in the list has an offset of 0. If an orderId, transactionId, or payoutId filter is included in the request, any limit value will be ignored. Maximum: 1000 Default: 20"
+          in: query
+          name: limit
+          required: false
+          schema:
+            type: string
+        - description: "This integer value indicates the actual position that the first monetary transaction returned on the current page has in the results set. So, if you wanted to view the 11th monetary transaction of the result set, you would set the offset value in the request to 10. In the request, you can use the offset parameter in conjunction with the limit parameter to control the pagination of the output. For example, if offset is set to 30 and limit is set to 10, the method retrieves transactions 31 thru 40 from the resulting collection of transactions. Note: This feature employs a zero-based list, where the first item in the list has an offset of 0. Default: 0 (zero)"
+          in: query
+          name: offset
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transactions"
+          description: Success
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          x-response-codes:
+            errors:
+              "135003":
+                category: REQUEST
+                description: The value of pagination is invalid.
+                domain: API_FINANCES
+              "135005":
+                category: REQUEST
+                description: The value of sorting is invalid.
+                domain: API_FINANCES
+              "135006":
+                category: REQUEST
+                description: The value of transaction type filter is invalid.
+                domain: API_FINANCES
+              "135007":
+                category: REQUEST
+                description: The value of transaction status filter is invalid.
+                domain: API_FINANCES
+              "135008":
+                category: REQUEST
+                description: The value of transaction date filter is invalid.
+                domain: API_FINANCES
+              "135009":
+                category: REQUEST
+                description: Transaction type filter is missing.
+                domain: API_FINANCES
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "135000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_FINANCES
+      security:
+        - api_auth:
+            - https://api.ebay.com/oauth/api_scope/sell.finances
+      tags:
+        - transaction
+  /transaction_summary:
+    get:
+      description: "This method is used to retrieve cumulative values for five types of monetary transactions (order sales, seller credits, buyer refunds, buyer-initiated payment disputes, eBay shipping label purchases, and transfers). If applicable, the number of payment holds and the amount of the holds are also returned. See the description for the filter query parameter for more information on the available filters. Note: Unless the transactionType filter is used to retrieve a specific type of monetary transaction (sale, buyer refund, seller credit, payment dispute, shipping label, transfer), the creditCount and creditAmount response fields account for both order sales and seller credits (the count and value is not distinguished between the two monetary transaction types)."
+      operationId: getTransactionSummary
+      parameters:
+        - description: "Numerous filters are available for the getTransactionSummary method, and these filters are discussed below. One or more of these filter types can be used. The transactionStatus filter must be used. All other filters are optional. transactionStatus: the data returned in the response pertains to the sales, payouts, and transfer status set. The supported transactionStatus values are as follows: PAYOUT: only consider monetary transactions where the proceeds from the sales order(s) have been paid out to the seller's bank account. FUNDS_PROCESSING: only consider monetary transactions where the proceeds from the sales order(s) are currently being processed. FUNDS_AVAILABLE_FOR_PAYOUT: only consider monetary transactions where the proceeds from the sales order(s) are available for a seller payout, but processing has not yet begun. FUNDS_ON_HOLD: only consider monetary transactions where the proceeds from the sales order(s) are currently being held by eBay, and are not yet available for a seller payout. COMPLETED: this indicates that the funds for the corresponding TRANSFER monetary transaction have transferred and the transaction has completed. FAILED: this indicates the process has failed for the corresponding TRANSFER monetary transaction. Below is the proper syntax to use when setting up the transactionStatus filter: https://apiz.ebay.com/sell/finances/v1/transaction_summary?filter=transactionStatus:{PAYOUT} transactionDate: only consider monetary transactions that occurred within a specific range of dates. Note: All dates must be input using UTC format (YYYY-MM-DDTHH:MM:SS.SSSZ) and should be adjusted accordingly for the local timezone of the user. Below is the proper syntax to use if filtering by a date range: https://apiz.ebay.com/sell/finances/v1/transaction_summary?filter=transactionDate:[2018-10-23T00:00:01.000Z..2018-11-09T00:00:01.000Z] Alternatively, the user could omit the ending date, and the date range would include the starting date and up to 90 days past that date, or the current date if the starting date is less than 90 days in the past. transactionType: only consider a specific type of monetary transaction. The supported transactionType values are as follows: SALE: a sales order. REFUND: a refund to the buyer after an order cancellation or return. CREDIT: a credit issued by eBay to the seller's account. DISPUTE: a monetary transaction associated with a payment dispute between buyer and seller. NON_SALE_CHARGE: a monetary transaction involving a seller transferring money to eBay for the balance of a charge for NON_SALE_CHARGE transactions (transactions that contain non-transactional seller fees). These can include a one-time payment, monthly/yearly subscription fees charged monthly, NRC charges, and fee credits. SHIPPING_LABEL: a monetary transaction where eBay is billing the seller for an eBay shipping label. Note that the shipping label functionality will initially only be available to a select number of sellers. TRANSFER: A transfer is a monetary transaction where eBay is billing the seller for reimbursement of a charge. An example of a transfer is a seller reimbursing eBay for a buyer refund.Below is the proper syntax to use if filtering by a monetary transaction type: https://apiz.ebay.com/sell/finances/v1/transaction_summary?filter=transactionType:{SALE} buyerUsername: only consider monetary transactions involving a specific buyer (specified with the buyer's eBay user ID). Below is the proper syntax to use if filtering by a specific eBay buyer: https://apiz.ebay.com/sell/finances/v1/transaction_summary?filter=buyerUsername:{buyer1234} salesRecordReference: only consider monetary transactions corresponding to a specific order (identified with a Selling Manager order identifier). Below is the proper syntax to use if filtering by a specific Selling Manager Sales Record ID: https://apiz.ebay.com/sell/finances/v1/transaction_summary?filter=salesRecordReference:{123} Note: For all orders originating after February 1, 2020, a value of 0 will be returned in the salesRecordReference field. So, this filter will only be useful to retrieve orders than occurred before this date. payoutId: only consider monetary transactions related to a specific seller payout (identified with a Payout ID). This value is auto-generated by eBay once the seller payout is set to be processed. Below is the proper syntax to use if filtering by a specific Payout ID: https://apiz.ebay.com/sell/finances/v1/transaction_summary?filter=payoutId:{5000106638} transactionId: the unique identifier of a monetary transaction. For a sales order, the orderId filter should be used instead. Only the monetary transaction(s) associated with this transactionId value are returned. Note: This filter cannot be used alone; the transactionType must also be specified when filtering by transaction ID. Below is the proper syntax to use if filtering by a specific transaction ID: https://apiz.ebay.com/sell/finances/v1/transaction_summary?filter=transactionId:{03-03620-33763}&amp;filter=transactionType:{SALE} orderId: the unique identifier of a sales order. For any other monetary transaction, the transactionId filter should be used instead. Only the monetary transaction(s) associated with this orderId value are returned. Below is the proper syntax to use if filtering by a specific order ID: https://apiz.ebay.com/sell/finances/v1/transaction_summary?filter=orderId:{03-03620-33763} For implementation help, refer to eBay API documentation at https://developer.ebay.com/api-docs/sell/finances/types/cos:FilterField"
+          in: query
+          name: filter
+          required: false
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TransactionSummaryResponse"
+          description: Success
+        "400":
+          description: Bad Request
+          x-response-codes:
+            errors:
+              "135006":
+                category: REQUEST
+                description: The value of transaction type filter is invalid.
+                domain: API_FINANCES
+              "135007":
+                category: REQUEST
+                description: The value of transaction status filter is invalid.
+                domain: API_FINANCES
+              "135008":
+                category: REQUEST
+                description: The value of transaction date filter is invalid.
+                domain: API_FINANCES
+              "135009":
+                category: REQUEST
+                description: Transaction type filter is missing.
+                domain: API_FINANCES
+              "135011":
+                category: REQUEST
+                description: Transaction status filter is mandatory.
+                domain: API_FINANCES
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "135000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_FINANCES
+      security:
+        - api_auth:
+            - https://api.ebay.com/oauth/api_scope/sell.finances
+      tags:
+        - transaction
+  "/transfer/{transfer_Id}":
+    get:
+      description: This method retrieves detailed information regarding a TRANSFER transaction type. A TRANSFER is a monetary transaction type that involves a seller transferring money to eBay for reimbursement of one or more charges. For example, when a seller reimburses eBay for a buyer refund. If an ID is passed into the URI that is an identifier for another transaction type, this call will return an http status code of 404 Not found.
+      operationId: getTransfer
+      parameters:
+        - description: The unique identifier of the TRANSFER transaction type you wish to retrieve.
+          in: path
+          name: transfer_Id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Transfer"
+          description: Success.
+        "400":
+          description: Bad Request
+        "404":
+          description: Not found.
+          x-response-codes:
+            errors:
+              "135012":
+                category: REQUEST
+                description: The transfer id was not found.
+                domain: API_FINANCES
+        "500":
+          description: Internal Server Error
+          x-response-codes:
+            errors:
+              "135000":
+                category: APPLICATION
+                description: There was a problem with an eBay internal system or process. Contact eBay developer support for assistance.
+                domain: API_FINANCES
+      security:
+        - api_auth:
+            - https://api.ebay.com/oauth/api_scope/sell.finances
+      tags:
+        - transfer
+components:
+  schemas:
+    Amount:
+      description: This type is used to express the dollar value and currency used for any transaction retrieved with the Finances API, including an order total, a seller payout, a buyer refund, or a seller credit.
+      properties:
+        convertedFromCurrency:
+          description: The three-letter ISO 4217 code representing the currency of the amount in the convertedFromValue field. This value is the pre-conversion currency. This field is only returned if/when currency conversion was applied by eBay. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/ba:CurrencyCodeEnum'>eBay API documentation</a>
+          type: string
+        convertedFromValue:
+          description: The monetary amount before any conversion is performed, in the currency specified by the convertedFromCurrency field. This value is the pre-conversion amount. The value field contains the converted amount of this value, in the currency specified by the currency field. This field is only returned if/when currency conversion was applied by eBay.
+          type: string
+        currency:
+          description: "A three-letter ISO 4217 code that indicates the currency of the amount in the value field. This field is always returned with any container using Amount type. Default: The currency of the authenticated user's country. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/ba:CurrencyCodeEnum'>eBay API documentation</a>"
+          type: string
+        exchangeRate:
+          description: The exchange rate used for the monetary conversion. This field shows the exchange rate used to convert the dollar value in the value field from the dollar value in the convertedFromValue field. This field is only returned when eBay does a currency version, and a currency conversion is generally needed if the buyer is viewing, or has purchased an item on an international site. This field is only returned if/when currency conversion was applied by eBay.
+          type: string
+        value:
+          description: The monetary amount, in the currency specified by the currency field. This field is always returned with any container using Amount type.
+          type: string
+      type: object
+    BalanceAdjustment:
+      description: This type is used by the balanceAdjustment container, which shows the seller payout balance that will be applied toward the charges outlined in the charges array.
+      properties:
+        adjustmentAmount:
+          $ref: "#/components/schemas/Amount"
+          description: The seller payout balance amount that will be applied toward the charges outlined in the charges array.
+        adjustmentType:
+          description: The enumeration value returned here indicates if the charge is a DEBIT or a CREDIT to the seller. Generally, all transfer transaction types are going to be DEBIT, since the money is being tranferred from the seller to eBay. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+      type: object
+    Buyer:
+      description: This type is used to express details about the buyer associated with an order. At this time, the only field in this type is the eBay user ID of the buyer, but more fields may get added at a later date.
+      properties:
+        username:
+          description: The eBay user ID of the order's buyer.
+          type: string
+      type: object
+    Charge:
+      description: This type is used by the charge container, which is an array of one or more charges related to the transfer.
+      properties:
+        cancellationId:
+          description: The unique identifier of an order cancellation. This field is only applicable and returned if the charge is related to an order cancellation.
+          type: string
+        caseId:
+          description: The unique identifier of a case filed against an order. This field is only applicable and returned if the charge is related to a case filed against an order.
+          type: string
+        chargeNetAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This container shows the net amount of the charge, which is the total amount of the charge minus the total amount of fees credited towards this refund as per eBay policy. It is possible for there to be multiple charges from multiple orders with one transfer. The net aggregate amount for all charges found in the charges array can be found in the transferDetail.totalChargeNetAmount container.
+        inquiryId:
+          description: The unique identifier of an Item Not Received (INR) inquiry filed against an order. This field is only applicable and returned if the charge is related to has an INR inquiry filed against the order.
+          type: string
+        orderId:
+          description: The unique identifier of the order that is associated with the charge.
+          type: string
+        paymentDisputeId:
+          description: The unique identifier of a third-party payment dispute filed against an order. This occurs when the buyer files a dispute against the order with their payment provider, and then the dispute comes into eBay's system. This field is only applicable and returned if the charge is related to a third-party payment dispute filed against an order.
+          type: string
+        refundId:
+          description: The unique identifier of a buyer refund associated with the charge.
+          type: string
+        returnId:
+          description: The unique identifier of an order return. This field is only applicable and returned if the charge is related to an order that was returned by the buyer.
+          type: string
+      type: object
+    Error:
+      description: This type defines the fields that can be returned in an error.
+      properties:
+        category:
+          description: Identifies the type of erro.
+          type: string
+        domain:
+          description: Name for the primary system where the error occurred. This is relevant for application errors.
+          type: string
+        errorId:
+          description: A unique number to identify the error.
+          format: int32
+          type: integer
+        inputRefIds:
+          description: An array of request elements most closely associated to the error.
+          items:
+            type: string
+          type: array
+        longMessage:
+          description: A more detailed explanation of the error.
+          type: string
+        message:
+          description: Information on how to correct the problem, in the end user's terms and language where applicable.
+          type: string
+        outputRefIds:
+          description: An array of request elements most closely associated to the error.
+          items:
+            type: string
+          type: array
+        parameters:
+          description: An array of name/value pairs that describe details the error condition. These are useful when multiple errors are returned.
+          items:
+            $ref: "#/components/schemas/ErrorParameter"
+          type: array
+        subdomain:
+          description: "Further helps indicate which subsystem the error is coming from. System subcategories include: Initialization, Serialization, Security, Monitoring, Rate Limiting, etc."
+          type: string
+      type: object
+    ErrorParameter:
+      properties:
+        name:
+          description: The object of the error.
+          type: string
+        value:
+          description: The value of the object.
+          type: string
+      type: object
+    Fee:
+      description: This type is used to display fees that are automatically deducted from seller payouts.
+      properties:
+        amount:
+          $ref: "#/components/schemas/Amount"
+          description: The amount of the fee.
+        feeMemo:
+          description: A description of the fee that was deducted from the seller payout.
+          type: string
+        feeType:
+          description: The enumeration value returned here indicates the type of fee that was deducted from the seller payout. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/api:FeeTypeEnum'>eBay API documentation</a>
+          type: string
+      type: object
+    FundingSource:
+      description: This type provided details on the funding source for the transfer.
+      properties:
+        brand:
+          description: The brand name of the credit card or the name of the financial institution that is the source of payment. This field may not be populated for other funding sources.
+          type: string
+        memo:
+          description: This field provides a note about the funding source. If the seller's credit card or bank account is the funding source, this field might contain the last four digits of the credit card or bank account. This field may also be returned as null.
+          type: string
+        type:
+          description: "The string value returned here indicates the funding source. Possible values include the following: AVAILABLE_FUNDS: transfer is funded with seller payout funds CREDIT_CARD: transfer is funded with seller's credit card BANK: transfer is funded with a direct debit to seller's bank account on file with eBay PAY_UPON_INVOICE: eBay will bill the seller for the transfer on the monthly invoice"
+          type: string
+      type: object
+    OrderLineItem:
+      description: This type is used to show the fees that are deducted from a seller payout for each line item in an order.
+      properties:
+        feeBasisAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This is the total amount of fees accrued for the order line item and deducted from a seller payout. All of the fees under the marketplaceFees container should equal this amount.
+        lineItemId:
+          description: The unique identifier of an order line item.
+          type: string
+        marketplaceFees:
+          description: An array of all fees accrued for the order line item and deducted from a seller payout.
+          items:
+            $ref: "#/components/schemas/Fee"
+          type: array
+      type: object
+    Payout:
+      description: This type is used to express the details of one seller payout that is returned with the getPayout or getPayouts methods.
+      properties:
+        amount:
+          $ref: "#/components/schemas/Amount"
+          description: This the total amount of the seller payout. The container shows the dollar amount of the payout and the currency used. The value of the payout is always shown, even if the payout has failed.
+        bankReference:
+          description: This field contains additional information provided by the bank and passed on by the payment processor; e.g., the manner in which the transaction will appear on the seller's bank statement. The field is returned only when provided by the bank and processor.
+          type: string
+        lastAttemptedPayoutDate:
+          description: This timestamp indicates the date/time when eBay last attempted to process a seller payout but it failed. This field is only returned if a seller payout fails, and the payoutStatus value shows RETRYABLE_FAILED or TERMINAL_FAILED. A seller can filter on the lastAttemptedPayoutDate in a getPayouts request.
+          type: string
+        payoutDate:
+          description: "This timestamp indicates when the seller payout began processing. The following format is used: YYYY-MM-DDTHH:MM:SS.SSSZ. For example, 2015-08-04T19:09:02.768Z. This field is still returned even if the payout was pending but failed (payoutStatus value shows RETRYABLE_FAILED or TERMINAL_FAILED)."
+          type: string
+        payoutId:
+          description: The unique identifier of the seller payout. This identifier is generated once eBay begins processing the payout to the seller's bank account.
+          type: string
+        payoutInstrument:
+          $ref: "#/components/schemas/PayoutInstrument"
+          description: This container provides details about the seller's account that received (or is scheduled to receive) the payout. This container is still returned even if the payout failed.
+        payoutMemo:
+          description: This field contains information provided by upstream components, based on internal and external commitments. A typical message would contain the expected arrival time of the payout.
+          type: string
+        payoutStatus:
+          description: This enumeration value indicates the current status of the seller payout. For a successful payout, the value returned will be SUCCEEDED. See the PayoutStatusEnum type for more details on each payout status value. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:PayoutStatusEnum'>eBay API documentation</a>
+          type: string
+        payoutStatusDescription:
+          description: "This field provides more details about the current status of payout. The description returned here will correspond with enumeration value returned in the payoutStatus field. The following shows what description text might appear based on the different payoutStatus values: INITIATED: Preparing to send SUCCEEDED: Funds sent REVERSED: Waiting to retry : Money rejected by seller's bank RETRYABLE_FAILED: Waiting to retry TERMINAL_FAILED: Payout failed"
+          type: string
+        transactionCount:
+          description: This integer value indicates the number of monetary transactions (all orders, refunds, and credits, etc.) that have occurred with the corresponding payout. Its value should always be at least 1, since there is at least one order per seller payout.
+          format: int32
+          type: integer
+      type: object
+    PayoutInstrument:
+      description: This type provides details about the seller's account that received (or is scheduled to receive) a payout.
+      properties:
+        accountLastFourDigits:
+          description: This string value is the last four digits of the seller's account number.
+          type: string
+        instrumentType:
+          description: This string value indicates the type of account that received the payout. At this time, seller payouts can only be distributed to bank acounts, so the string value returned in this field will always be BankAccount.
+          type: string
+        nickname:
+          description: This string value is a seller-provided nickname that the seller uses to represent the bank account.
+          type: string
+      type: object
+    PayoutSummaryResponse:
+      description: This type is the base response type of the getPayoutSummary method, and contains the total count of seller payouts (that match the input criteria), the total count of monetary transactions (order payment, buyer refunds, or seller credits) associated with those payouts, and the total value of those seller payouts.
+      properties:
+        amount:
+          $ref: "#/components/schemas/Amount"
+          description: This container shows the total value (and currency type used) of the seller payouts that match the input criteria. This field is not returned if there are no payouts that match the input criteria.
+        payoutCount:
+          description: This integer value indicates the total count of payouts to the seller that match the input criteria. This field is always returned, even if there are no payouts that match the input criteria (its value will show 0).
+          format: int32
+          type: integer
+        transactionCount:
+          description: This integer value indicates the total count of monetary transactions (order payments, buyer refunds, and seller credits) associated with the payouts that match the input criteria. This field is always returned, even if there are no payouts that match the input criteria (its value will show 0). If there is at least one payout that matches the input criteria, the value in this field will be at least 1.
+          format: int32
+          type: integer
+      type: object
+    Payouts:
+      description: This type is the base response type of the getPayouts method, and contains an array of one or more payouts (that match the input criteria), the total count of payouts in the response, and various pagination data for the results set.
+      properties:
+        href:
+          description: The URI of the getPayouts call request that produced the current page of the result set.
+          type: string
+        limit:
+          description: "The maximum number of payouts that may be returned per page of the result set. The limit value can be passed in as a query parameter, or if omitted, its value defaults to 20. Note: If this is the last or only page of the result set, the page may contain fewer payouts than the limit value. To determine the number of pages in a result set, divide the total value (total number of payouts matching input criteria) by this limit value, and then round up to the next integer. For example, if the total value was 120 (120 total payouts) and the limit value was 50 (show 50 payouts per page), the total number of pages in the result set is three, so the seller would have to make three separate getPayouts calls to view all payouts matching the input criteria. Maximum: 200 Default: 20"
+          format: int32
+          type: integer
+        next:
+          description: The getPayouts call URI to use if you wish to view the next page of the result set. This field is only returned if there is a next page of results to view based on the current input criteria.
+          type: string
+        offset:
+          description: "This integer value indicates the actual position that the first payout returned on the current page has in the results set. So, if you wanted to view the 11th payout of the result set, you would set the offset value in the request to 10. In the request, you can use the offset parameter in conjunction with the limit parameter to control the pagination of the output. For example, if offset is set to 30 and limit is set to 10, the call retrieves payouts 31 thru 40 from the resulting collection of payouts. Note: This feature employs a zero-based list, where the first item in the list has an offset of 0. Default: 0 (zero)"
+          format: int32
+          type: integer
+        payouts:
+          description: An array of one or more payouts that match the input criteria. Details for each payout include the unique identifier of the payout, the status of the payout, the amount of the payout, and the number of monetary transactions associated with the payout.
+          items:
+            $ref: "#/components/schemas/Payout"
+          type: array
+        prev:
+          description: The getPayouts call URI to use if you wish to view the previous page of the result set. This field is only returned if there is a previous page of results to view based on the current input criteria.
+          type: string
+        total:
+          description: This integer value is the total number of payouts in the results set based on the current input criteria. Based on the total number of payouts that match the criteria, and on the limit and offset values, there may be additional pages in the results set.
+          format: int32
+          type: integer
+      type: object
+    Reference:
+      description: This field is returned for NON_SALE_CHARGE transactions that contain non-transactional seller fees.
+      properties:
+        referenceId:
+          description: The identifier of the transaction as specified by the referenceType. For example, with a referenceType of item_id, the referenceId refers to a unique item. This item may have several NON_SALE_CHARGE transactions.
+          type: string
+        referenceType:
+          description: An enumeration value that identifies the reference type associated with the referenceId. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:ReferenceTypeEnum'>eBay API documentation</a>
+          type: string
+      type: object
+    SellerFundsSummaryResponse:
+      description: This type is used by the response payload of the getSellerFundsSummary method. All of the funds returned in getSellerFundsSummary are funds that have not yet been paid to the seller through a seller payout. If there are no funds that are pending, on hold, or being processed for the seller's account, no response payload is returned, and an http status code of 204 - No Content is returned instead.
+      properties:
+        availableFunds:
+          $ref: "#/components/schemas/Amount"
+          description: The dollar value in this field represents the total amount of order funds that are available for a payout, but processing for a seller payout has not yet begun. If a seller wants to get more details on sales transactions that have yet to be processed, the seller can use the getTransactions method, and use the transactionStatus filter with its value set to FUNDS_AVAILABLE_FOR_PAYOUT. This container is not returned if there are no funds available to be processed for a payout.
+        fundsOnHold:
+          $ref: "#/components/schemas/Amount"
+          description: The dollar value in this field represents the total amount of order funds on hold. Seller payment holds can occur for different reasons. If a seller wants to get more details on sales transactions where funds are currently on hold, the seller can use the getTransactions method, and use the transactionStatus filter with its value set to FUNDS_ON_HOLD. This container is not returned if there are no seller payment holds that will eventually be processed for a payout.
+        processingFunds:
+          $ref: "#/components/schemas/Amount"
+          description: The dollar value in this field represents the total amount of order funds being prepared and processed for a seller payout. If a seller wants to get more details on sales transactions that are being processed, the seller can use the getTransactions method, and use the transactionStatus filter with its value set to FUNDS_PROCESSING. This container is not returned if there are no funds being processed for a payout.
+        totalFunds:
+          $ref: "#/components/schemas/Amount"
+          description: The dollar value in this field represents the total amount of order funds still due to be distributed to the seller through a seller payout. The dollar value in this field should equal the amounts found in the three other containers. If there are no pending funds due to the seller through a payout, this container is not returned, and there will not be any response payload at all. Instead, an http status code of 204 - No Content is returned
+      type: object
+    Transaction:
+      description: "This type is used to express the details of one of the following monetary transactions: a buyer's payment for an order, a refund to the buyer for a returned item or cancelled order, or a credit issued by eBay to the seller's account."
+      properties:
+        amount:
+          $ref: "#/components/schemas/Amount"
+          description: This container shows the dollar value and currency type of the monetary transaction. This field is always returned even when eBay has yet to initiate a payout for the order.
+        bookingEntry:
+          description: The enumeration value returned in this field indicates if the monetary transaction amount is a (CREDIT) or a (DEBIT) to the seller's account. Typically, the SALE and CREDIT transaction types are credits to the seller's account, and the REFUND, DISPUTE, SHIPPING_LABEL, and TRANSFER transaction types are debits to the seller's account. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        buyer:
+          $ref: "#/components/schemas/Buyer"
+          description: This is the unique eBay user ID for the buyer who purchased the order. This field is not returned for TRANSFER monetary transaction types.
+        feeType:
+          description: The type of fee. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/api:FeeTypeEnum'>eBay API documentation</a>
+          type: string
+        orderId:
+          description: The unique identifier of the eBay order associated with the monetary transaction.
+          type: string
+        orderLineItems:
+          description: This array shows the fees that are deducted from a seller payout for each line item in an order.
+          items:
+            $ref: "#/components/schemas/OrderLineItem"
+          type: array
+        paymentsEntity:
+          description: This string value indicates the entity that is processing the payment.
+          type: string
+        payoutId:
+          description: The unique identifier of the seller payout associated with the monetary transaction. This identifier is generated once eBay begins processing the payout for the corresponding order. This field will not be returned if eBay has not yet begun processing the payout for an order.
+          type: string
+        references:
+          description: This field contains reference information for the transaction fee. This includes an ID and the type of ID provided (such as item ID).
+          items:
+            $ref: "#/components/schemas/Reference"
+          type: array
+        salesRecordReference:
+          description: "The Sales Record Number associated with a sales order. Sales Record Numbers are Selling Manager/Selling Manager Pro identifiers that are created at order checkout. Note: For all orders originating after February 1, 2020, a value of 0 will be returned in this field. The Sales Record Number field has also been removed from Seller Hub. Instead of salesRecordReference, depend on orderId instead as the identifier of the order. The salesRecordReference field has been scheduled for deprecation, and a date for when this field will no longer be returned at all will be announced soon."
+          type: string
+        totalFeeAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This amount is the total amount of selling fees paid for order. A breakdown of fees for each order line item can be found in the orderLineItems array. This field is even returned if it is 0.0 (no fees deducted from seller payout).
+        totalFeeBasisAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This amount is the total amount of the order before selling fees are deducted from the seller payout associated with the order. To determine the actual amount of the order that will be paid out through a seller payout, deduct the totalFeeAmount from the basePayoutAmount.
+        transactionDate:
+          description: "This timestamp indicates when the monetary transaction (order purchase, buyer refund, seller credit) occurred. The following (UTC) format is used: YYYY-MM-DDTHH:MM:SS.SSSZ. For example, 2015-08-04T19:09:02.768Z."
+          type: string
+        transactionId:
+          description: The unique identifier of the monetary transaction. A monetary transaction can be a sales order, an order refund to the buyer, a credit to the seller's account, a debit to the seller for the purchase of a shipping label, or a transaction where eBay recouped money from the seller if the seller lost a buyer-initiated payment dispute.
+          type: string
+        transactionMemo:
+          description: This field provides more details on shipping label transactions and transactions where the funds are being held by eBay. For shipping label transactions, the transactionMemo gives details about a purchase, a refund, or a price adjustment to the cost of the shipping label. For on-hold transactions, the transactionMemo provides information on the reason for the hold or when the hold will be released (e.g., &quot;Funds on hold. Estimated release on Jun 1&quot;). This field is only returned if applicable/available.
+          type: string
+        transactionStatus:
+          description: This enumeration value indicates the current status of the seller payout associated with the monetary transaction. See the TransactionStatusEnum type for more information on the different states. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:TransactionStatusEnum'>eBay API documentation</a>
+          type: string
+        transactionType:
+          description: This enumeration value indicates whether the monetary transaction is a buyer's payment for an order, a refund to the buyer for a returned item or cancelled order, a credit issued by eBay to the seller's account, a payment dispute between the buyer and seller, or where eBay is billing the seller for an eBay shipping label or another charge (such as a refund to a buyer). Note that the shipping label functionality will initially only be available to a select number of sellers. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:TransactionTypeEnum'>eBay API documentation</a>
+          type: string
+      type: object
+    TransactionSummaryResponse:
+      description: This type is the base response type of the getTransactionSummary method, and based on the filters that are used in the getTransactionSummary call URI, the response may include total count and amount of the seller's sales and credits, total count and amount of buyer refunds, and total count and amount of seller payment holds.
+      properties:
+        adjustmentAmount:
+          $ref: "#/components/schemas/Amount"
+          description: Total adjustment amount for given payee within a specified period.
+        adjustmentBookingEntry:
+          description: The credit debit sign indicator for adjustment. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        adjustmentCount:
+          description: Total adjustment count for given payee within a specified period.
+          format: int32
+          type: integer
+        balanceTransferAmount:
+          $ref: "#/components/schemas/Amount"
+          description: The total balance transfer amount for given payee within the specified period.
+        balanceTransferBookingEntry:
+          description: The credit debit sign indicator for the balance transfer. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        balanceTransferCount:
+          description: The total balance transfer count for given payee within the specified period.
+          format: int32
+          type: integer
+        creditAmount:
+          $ref: "#/components/schemas/Amount"
+          description: "This amount is the total dollar value of all the seller's sales and/or credits that match the input criteria. Note: Unless the transactionType filter is used in the request to retrieve a specific type of monetary transaction, the creditCount and creditAmount fields account for both order sales and seller credits (the count and value is not distinguished between the two monetary transaction types). If there are no sales/credits (creditCount=0), this container is not returned."
+        creditBookingEntry:
+          description: The enumeration value indicates whether the dollar amount in the creditAmount field is a charge (debit) to the seller or a credit. Typically, the enumeration value returned here will be CREDIT. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        creditCount:
+          description: "This integer value indicates the total number of the seller's sales and/or credits that match the input criteria. Note: Unless the transactionType filter is used in the request to retrieve a specific type of monetary transaction (sale, buyer refund, or seller credit), the creditCount and creditAmount fields account for both order sales and seller credits (the count and value is not distinguished between the two monetary transaction types). This field is generally returned, even if 0, but it will not be returned if a transactionType filter is used, and its value is set to either REFUND, DISPUTE, or SHIPPING_LABEL."
+          format: int32
+          type: integer
+        disputeAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This amount is the total dollar value associated with any existing payment disputes that have been initiated by one or more buyers. Only the orders that match the input criteria are considered. The Payment Disputes methods in the Fulfillment API can be used by the seller to retrieve more information about any payment disputes. If there are no payment disputes (disputeCount=0), this container is not returned.
+        disputeBookingEntry:
+          description: The enumeration value indicates whether the dollar amount in the disputeAmount field is a charge (debit) to the seller or a credit. Typically, the enumeration value returned here will be DEBIT, but its possible that CREDIT could be returned if the seller contested one or more payment disputes and won the dispute. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        disputeCount:
+          description: This integer value indicates the total number of payment disputes that have been initiated by one or more buyers. Only the orders that match the input criteria are considered. The Payment Disputes methods in the Fulfillment API can be used by the seller to retrieve more information about any payment disputes. This field is generally returned, even if 0, but it will not be returned if a transactionType filter is used, and its value is set to any value other than DISPUTE.
+          format: int32
+          type: integer
+        nonSaleChargeAmount:
+          $ref: "#/components/schemas/Amount"
+          description: The total non-sale charge amount for given payee within a specified period.
+        nonSaleChargeBookingEntry:
+          description: The credit/debit sign indicator for the non-sale charge. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        nonSaleChargeCount:
+          description: The total non-sale charge count for given payee within a specified period.
+          format: int32
+          type: integer
+        onHoldAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This amount is the total dollar value of order sales where the associated funds are on hold. Only the orders that match the input criteria are considered. If there are no seller payment holds (onHoldCount=0), this container is not returned.
+        onHoldBookingEntry:
+          description: The enumeration value indicates whether the dollar amount in the onHoldAmount field is a charge (debit) to the seller or a credit. Typically, the enumeration value returned here will be CREDIT, since on-hold funds should eventually be released as part of a payout to the seller once the hold is cleared. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        onHoldCount:
+          description: This integer value indicates the total number of order sales where the associated funds are on hold. Only the orders that match the input criteria are considered. This field is generally returned, even if 0, but it will not be returned if a transactionStatus filter is used, and its value is set to any value other than FUNDS_ON_HOLD.
+          format: int32
+          type: integer
+        refundAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This amount is the total dollar value of buyer refunds that match the input criteria. If there are no refunds (refundCount=0), this container is not returned.
+        refundBookingEntry:
+          description: The enumeration value indicates whether the dollar amount in the refundAmount field is a charge (debit) to the seller or a credit. Typically, the enumeration value returned here will be DEBIT since this a refund from the seller to the buyer. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        refundCount:
+          description: This integer value indicates the total number of buyer refunds that match the input criteria. This field is generally returned, even if 0, but it will not be returned if a transactionType filter is used, and its value is set to any value other than REFUND.
+          format: int32
+          type: integer
+        shippingLabelAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This is the total dollar value of the eBay shipping labels purchased by the seller.
+        shippingLabelBookingEntry:
+          description: The enumeration value indicates whether the dollar amount in the shippingLabelAmount field is a charge (debit) to the seller or a credit. Typically, the enumeration value returned here will be DEBIT, as eBay will charge the seller when eBay shipping labels are purchased, but it can be CREDIT if the seller was refunded for a shipping label or was possibly overcharged for a shipping label. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        shippingLabelCount:
+          description: This is the total number of eBay shipping labels purchased by the seller. The count returned here may depend on the specified input criteria.
+          format: int32
+          type: integer
+        transferAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This amount is the total dollar value of buyer refund transfers that match the input criteria. If there are no transfers (refundCount=0), this container is not returned.
+        transferBookingEntry:
+          description: The enumeration value indicates whether the dollar amount in the transferAmount field is a charge (debit) to the seller or a credit. Typically, the enumeration value returned here will be DEBIT since this a seller reimbursement to eBay for buyer refunds. For implementation help, refer to <a href='https://developer.ebay.com/api-docs/sell/finances/types/pay:BookingEntryEnum'>eBay API documentation</a>
+          type: string
+        transferCount:
+          description: This integer value indicates the total number of buyer refund transfers that match the input criteria. This field is generally returned, even if 0, but it will not be returned if a transactionType filter is used, and its value is set to any value other than TRANSFER.
+          format: int32
+          type: integer
+      type: object
+    Transactions:
+      description: This is the base response type of the getTransactions method. The getTransactions response includes details on one or more monetary transactions that match the input criteria, as well as pagination data.
+      properties:
+        href:
+          description: The URI of the getTransactions method request that produced the current page of the result set.
+          type: string
+        limit:
+          description: "The maximum number of monetary transactions that may be returned per page of the result set. The limit value can be passed in as a query parameter, or if omitted, its value defaults to 20. Note: If this is the last or only page of the result set, the page may contain fewer monetary transactions than the limit value. To determine the number of pages in a result set, divide the total value (total number of monetary transactions matching input criteria) by this limit value, and then round up to the next integer. For example, if the total value was 120 (120 total monetary transactions) and the limit value was 50 (show 50 monetary transactions per page), the total number of pages in the result set is three, so the seller would have to make three separate getTransactions calls to view all monetary transactions matching the input criteria. Maximum: 200 Default: 20"
+          format: int32
+          type: integer
+        next:
+          description: The getTransactions method URI to use if you wish to view the next page of the result set. This field is only returned if there is a next page of results to view based on the current input criteria.
+          type: string
+        offset:
+          description: "This integer value indicates the actual position that the first monetary transaction returned on the current page has in the results set. So, if you wanted to view the 11th monetary transaction of the result set, you would set the offset value in the request to 10. In the request, you can use the offset parameter in conjunction with the limit parameter to control the pagination of the output. For example, if offset is set to 30 and limit is set to 10, the method retrieves monetary transactions 31 thru 40 from the resulting collection of monetary transactions. Note: This feature employs a zero-based list, where the first item in the list has an offset of 0. Default: 0 (zero)"
+          format: int32
+          type: integer
+        prev:
+          description: The getTransactions method URI to use if you wish to view the previous page of the result set. This field is only returned if there is a previous page of results to view based on the current input criteria.
+          type: string
+        total:
+          description: This integer value is the total amount of monetary transactions in the result set based on the current input criteria. Based on the total number of monetary transactions that match the criteria, and on the limit and offset values, there may be additional pages in the results set.
+          format: int32
+          type: integer
+        transactions:
+          description: An array of one or more monetary transactions that match the input criteria. Details for each monetary transaction may include the unique identifier of the order associated with the monetary transaction, the status of the transaction, the amount of the order, the order's buyer, and the unique identifier of the payout (if a payout has been initiated/issued for the order).
+          items:
+            $ref: "#/components/schemas/Transaction"
+          type: array
+      type: object
+    Transfer:
+      description: This type is the base response type used by TRANSFER transaction type that is returned in the response.
+      properties:
+        fundingSource:
+          $ref: "#/components/schemas/FundingSource"
+          description: This container provides details about the seller's funding source to reimburse eBay for the transfer, such as a bank account, a credit card, or available seller payout funds.
+        transactionDate:
+          description: "This timestamp indicates the date/time of the transfer. The following (UTC) format is used: YYYY-MM-DDTHH:MM:SS.SSSZ. For example, 2020-08-04T19:09:02.768Z"
+          type: string
+        transferAmount:
+          $ref: "#/components/schemas/Amount"
+          description: The amount of the transfer being deducted from the funding source.
+        transferDetail:
+          $ref: "#/components/schemas/TransferDetail"
+          description: This container provides more details about the transfer, including details on the charge(s) associated with the transfer. Multiple charges can be addressed with one transfer.
+        transferId:
+          description: The unique identifier of the TRANSFER transaction type. This is the same value that was passed into the end of the call URI.
+          type: string
+      type: object
+    TransferDetail:
+      description: This type is used by the transferDetail container, which provides more details about the transfer and the charge(s) associated with the transfer.
+      properties:
+        balanceAdjustment:
+          $ref: "#/components/schemas/BalanceAdjustment"
+          description: This container shows the seller payout balance that will be applied toward the charges outlined in the charges array.
+        charges:
+          description: This container is an array of one or more charges related to the transfer. Charges can be related to an order cancellation, order return, case, payment dispute, etc.
+          items:
+            $ref: "#/components/schemas/Charge"
+          type: array
+        totalChargeNetAmount:
+          $ref: "#/components/schemas/Amount"
+          description: This container shows the total amount that the seller owes for all of the charges outlined in the charges array.
+      type: object
+  securitySchemes:
+    api_auth:
+      description: The security definitions for this API. Please check individual operations for applicable scopes.
+      flows:
+        authorizationCode:
+          authorizationUrl: https://auth.ebay.com/oauth2/authorize
+          scopes:
+            https://api.ebay.com/oauth/api_scope/sell.finances: View and manage your payment and order information to display this information to you and allow you to initiate refunds using the third party application
+          tokenUrl: https://api.ebay.com/identity/v1/oauth2/token
+      type: oauth2

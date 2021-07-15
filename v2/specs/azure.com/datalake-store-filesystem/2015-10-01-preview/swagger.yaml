@@ -1,0 +1,1114 @@
+swagger: "2.0"
+schemes:
+  - https
+host: azure.local
+info:
+  description: Creates an Azure Data Lake Store filesystem client.
+  title: DataLakeStoreFileSystemManagementClient
+  version: 2015-10-01-preview
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/datalake-store/data-plane/Microsoft.DataLakeStore/preview/2015-10-01-preview/filesystem.json
+      version: "2.0"
+  x-preferred: false
+  x-providerName: azure.com
+  x-serviceName: datalake-store-filesystem
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+  - text/json
+  - application/octet-stream
+produces:
+  - application/json
+  - text/json
+  - application/octet-stream
+parameters:
+  ApiVersionParameter:
+    description: Client Api Version.
+    in: query
+    name: api-version
+    required: true
+    type: string
+  adlsFilesystemDnsSuffixInPath:
+    default: azuredatalakestore.net
+    description: Gets the URI used as the base for all cloud service requests.
+    in: path
+    name: adlsFileSystemDnsSuffix
+    required: true
+    type: string
+    x-ms-parameter-location: client
+    x-ms-skip-url-encoding: true
+paths:
+  "/WebHdfsExt/{filePath}":
+    post:
+      consumes:
+        - application/octet-stream
+      description: "Appends to the specified file. This method supports multiple concurrent appends to the file. NOTE: ConcurrentAppend and normal (serial) Append CANNOT be used interchangeably; once a file has been appended to using either of these append options, it can only be appended to using that append option. ConcurrentAppend DOES NOT guarantee order and can result in duplicated data landing in the target file. In order to close a file after using ConcurrentAppend, call the Flush method."
+      operationId: FileSystem_ConcurrentAppend
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file to which to append using concurrent append.
+          in: path
+          name: filePath
+          required: true
+          type: string
+        - description: The file contents to include when appending to the file.  The maximum content size is 4MB.  For content larger than 4MB you must append the content in 4MB chunks.
+          in: body
+          name: streamContents
+          required: true
+          schema:
+            format: file
+            type: object
+        - description: Indicates the concurrent append call should create the file if it doesn't exist or just open the existing file for append
+          enum:
+            - autocreate
+          in: query
+          name: appendMode
+          required: false
+          type: string
+          x-ms-enum:
+            modelAsString: false
+            name: AppendModeType
+        - description: The constant value for the operation.
+          enum:
+            - CONCURRENTAPPEND
+          in: query
+          name: op
+          required: true
+          type: string
+        - description: Indicates the data being sent to the server is being streamed in chunks.
+          enum:
+            - chunked
+          in: header
+          name: Transfer-Encoding
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+    put:
+      description: Sets or removes the expiration time on the specified file. This operation can only be executed against files. Folders are not supported.
+      operationId: FileSystem_SetFileExpiry
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file on which to set or remove the expiration time.
+          in: path
+          name: filePath
+          required: true
+          type: string
+        - description: "Indicates the type of expiration to use for the file: 1. NeverExpire: ExpireTime is ignored. 2. RelativeToNow: ExpireTime is an integer in milliseconds representing the expiration date relative to when file expiration is updated. 3. RelativeToCreationDate: ExpireTime is an integer in milliseconds representing the expiration date relative to file creation. 4. Absolute: ExpireTime is an integer in milliseconds, as a Unix timestamp relative to 1/1/1970 00:00:00."
+          enum:
+            - NeverExpire
+            - RelativeToNow
+            - RelativeToCreationDate
+            - Absolute
+          in: query
+          name: expiryOption
+          required: true
+          type: string
+          x-ms-enum:
+            modelAsString: false
+            name: ExpiryOptionType
+        - description: The time that the file will expire, corresponding to the ExpiryOption that was set.
+          format: int64
+          in: query
+          name: expireTime
+          required: false
+          type: integer
+        - description: The constant value for the operation.
+          enum:
+            - SETEXPIRY
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: Successfully set the expiration time on the specified file.
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{path}":
+    get:
+      description: Checks if the specified access is available at the given path.
+      operationId: FileSystem_CheckAccess
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory for which to check access.
+          in: path
+          name: path
+          required: true
+          type: string
+        - description: File system operation read/write/execute in string form, matching regex pattern '[rwx-]{3}'
+          in: query
+          name: fsaction
+          required: false
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - CHECKACCESS
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+    put:
+      description: Creates a directory.
+      operationId: FileSystem_Mkdirs
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the directory to create.
+          in: path
+          name: path
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - MKDIRS
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: "#/definitions/FileOperationResult"
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+definitions:
+  AclStatus:
+    description: Data Lake Store file or directory Access Control List information.
+    properties:
+      entries:
+        description: the list of ACLSpec entries on a file or directory.
+        items:
+          type: string
+        type: array
+      group:
+        description: the group owner, an AAD Object ID.
+        type: string
+      owner:
+        description: the user owner, an AAD Object ID.
+        type: string
+      permission:
+        description: The octal representation of the unnamed user, mask and other permissions.
+        format: int32
+        type: integer
+      stickyBit:
+        description: the indicator of whether the sticky bit is on or off.
+        readOnly: true
+        type: boolean
+  AclStatusResult:
+    description: Data Lake Store file or directory Access Control List information.
+    properties:
+      AclStatus:
+        $ref: "#/definitions/AclStatus"
+        description: the AclStatus object for a given file or directory.
+  AdlsAccessControlException:
+    allOf:
+      - $ref: "#/definitions/AdlsRemoteException"
+    description: A WebHDFS exception thrown indicating that access is denied due to insufficient permissions. Thrown when a 403 error response code is returned (forbidden).
+    x-ms-discriminator-value: AccessControlException
+  AdlsBadOffsetException:
+    allOf:
+      - $ref: "#/definitions/AdlsRemoteException"
+    description: A WebHDFS exception thrown indicating the append or read is from a bad offset. Thrown when a 400 error response code is returned for append and open operations (Bad request).
+    x-ms-discriminator-value: BadOffsetException
+  AdlsError:
+    description: Data Lake Store filesystem error containing a specific WebHDFS exception.
+    properties:
+      RemoteException:
+        $ref: "#/definitions/AdlsRemoteException"
+        description: the object representing the actual WebHDFS exception being returned.
+        readOnly: true
+  AdlsFileAlreadyExistsException:
+    allOf:
+      - $ref: "#/definitions/AdlsRemoteException"
+    description: A WebHDFS exception thrown indicating the file or folder already exists. Thrown when a 403 error response code is returned (forbidden).
+    x-ms-discriminator-value: FileAlreadyExistsException
+  AdlsFileNotFoundException:
+    allOf:
+      - $ref: "#/definitions/AdlsRemoteException"
+    description: A WebHDFS exception thrown indicating the file or folder could not be found. Thrown when a 404 error response code is returned (not found).
+    x-ms-discriminator-value: FileNotFoundException
+  AdlsIOException:
+    allOf:
+      - $ref: "#/definitions/AdlsRemoteException"
+    description: A WebHDFS exception thrown indicating there was an IO (read or write) error. Thrown when a 403 error response code is returned (forbidden).
+    x-ms-discriminator-value: IOException
+  AdlsIllegalArgumentException:
+    allOf:
+      - $ref: "#/definitions/AdlsRemoteException"
+    description: A WebHDFS exception thrown indicating that one more arguments is incorrect. Thrown when a 400 error response code is returned (bad request).
+    x-ms-discriminator-value: IllegalArgumentException
+  AdlsRemoteException:
+    description: Data Lake Store filesystem exception based on the WebHDFS definition for RemoteExceptions.
+    discriminator: exception
+    properties:
+      exception:
+        description: the class name of the exception thrown, such as 'IllegalArgumentException'.
+        readOnly: true
+        type: string
+      javaClassName:
+        description: the full class package name for the exception thrown, such as 'java.lang.IllegalArgumentException'.
+        readOnly: true
+        type: string
+      message:
+        description: the message associated with the exception that was thrown, such as 'Invalid value for webhdfs parameter "permission":...'.
+        readOnly: true
+        type: string
+    required:
+      - exception
+  AdlsRuntimeException:
+    allOf:
+      - $ref: "#/definitions/AdlsRemoteException"
+    description: A WebHDFS exception thrown when an unexpected error occurs during an operation. Thrown when a 500 error response code is returned (Internal server error).
+    x-ms-discriminator-value: RuntimeException
+  AdlsSecurityException:
+    allOf:
+      - $ref: "#/definitions/AdlsRemoteException"
+    description: A WebHDFS exception thrown indicating that access is denied. Thrown when a 401 error response code is returned (Unauthorized).
+    x-ms-discriminator-value: SecurityException
+  AdlsUnsupportedOperationException:
+    allOf:
+      - $ref: "#/definitions/AdlsRemoteException"
+    description: A WebHDFS exception thrown indicating that the requested operation is not supported. Thrown when a 400 error response code is returned (bad request).
+    x-ms-discriminator-value: UnsupportedOperationException
+  ContentSummary:
+    description: Data Lake Store content summary information
+    properties:
+      directoryCount:
+        description: the number of directories.
+        format: int64
+        readOnly: true
+        type: integer
+      fileCount:
+        description: the number of files.
+        format: int64
+        readOnly: true
+        type: integer
+      length:
+        description: the number of bytes used by the content.
+        format: int64
+        readOnly: true
+        type: integer
+      spaceConsumed:
+        description: the disk space consumed by the content.
+        format: int64
+        readOnly: true
+        type: integer
+  ContentSummaryResult:
+    description: Data Lake Store filesystem content summary information response.
+    properties:
+      ContentSummary:
+        $ref: "#/definitions/ContentSummary"
+        description: the content summary for the specified path
+        readOnly: true
+  FileOperationResult:
+    description: The result of the request or operation.
+    properties:
+      boolean:
+        description: the result of the operation or request.
+        readOnly: true
+        type: boolean
+        x-ms-client-name: operationResult
+  FileStatusProperties:
+    description: Data Lake Store file or directory information.
+    properties:
+      accessTime:
+        description: the last access time as ticks since the epoch.
+        format: int64
+        readOnly: true
+        type: integer
+      blockSize:
+        description: the block size for the file.
+        format: int64
+        readOnly: true
+        type: integer
+      childrenNum:
+        description: the number of children in the directory.
+        format: int64
+        readOnly: true
+        type: integer
+      expirationTime:
+        description: Gets the expiration time, if any, as ticks since the epoch. If this is set to 0 or DateTime.MaxValue there is no expiration.
+        format: int64
+        readOnly: true
+        type: integer
+      group:
+        description: the group owner.
+        readOnly: true
+        type: string
+      length:
+        description: the number of bytes in a file.
+        format: int64
+        readOnly: true
+        type: integer
+      modificationTime:
+        description: the modification time as ticks since the epoch.
+        format: int64
+        readOnly: true
+        type: integer
+      owner:
+        description: the user who is the owner.
+        readOnly: true
+        type: string
+      pathSuffix:
+        description: the path suffix.
+        readOnly: true
+        type: string
+      permission:
+        description: the permission represented as an string.
+        readOnly: true
+        type: string
+      type:
+        description: the type of the path object.
+        enum:
+          - FILE
+          - DIRECTORY
+        readOnly: true
+        type: string
+        x-ms-enum:
+          modelAsString: false
+          name: FileType
+  FileStatusResult:
+    description: Data Lake Store filesystem file status information response.
+    properties:
+      FileStatus:
+        $ref: "#/definitions/FileStatusProperties"
+        description: the file status object associated with the specified path.
+        readOnly: true
+  FileStatuses:
+    description: Data Lake Store file status list information.
+    properties:
+      FileStatus:
+        description: the object containing the list of properties of the files.
+        items:
+          $ref: "#/definitions/FileStatusProperties"
+        readOnly: true
+        type: array
+  FileStatusesResult:
+    description: Data Lake Store filesystem file status list information response.
+    properties:
+      FileStatuses:
+        $ref: "#/definitions/FileStatuses"
+        description: the object representing the list of file statuses.
+        readOnly: true
+x-ms-parameterized-host:
+  hostTemplate: "{accountName}.{adlsFileSystemDnsSuffix}"
+  parameters:
+    - description: The Azure Data Lake Store account to execute filesystem operations on.
+      in: path
+      name: accountName
+      required: true
+      type: string
+      x-ms-skip-url-encoding: true
+    - $ref: "#/parameters/adlsFilesystemDnsSuffixInPath"
+x-ms-paths:
+  "/webhdfs/v1/{aclFilePath}?op=REMOVEACL":
+    get:
+      description: Gets Access Control List (ACL) entries for the specified file or directory.
+      operationId: FileSystem_GetAclStatus
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory for which to get the ACL.
+          in: path
+          name: aclFilePath
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - MSGETACLSTATUS
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: "#/definitions/AclStatusResult"
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+    put:
+      description: Removes the existing Access Control List (ACL) of the specified file or directory.
+      operationId: FileSystem_RemoveAcl
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory with the ACL being removed.
+          in: path
+          name: aclFilePath
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - REMOVEACL
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: Successfully removed the Access Control List on the specified file or directory.
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{defaultAclFilePath}?op=REMOVEDEFAULTACL":
+    put:
+      description: Removes the existing Default Access Control List (ACL) of the specified directory.
+      operationId: FileSystem_RemoveDefaultAcl
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the directory with the default ACL being removed.
+          in: path
+          name: defaultAclFilePath
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - REMOVEDEFAULTACL
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: Successfully Removed the Default Access Control List on the specified directory.
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{destinationPath}?op=CONCAT":
+    post:
+      deprecated: true
+      description: Concatenates the list of source files into the destination file, removing all source files upon success.  This operation has been deprecated, please use operation FileSystem_MsConcat instead.
+      operationId: FileSystem_Concat
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the destination file resulting from the concatenation.
+          in: path
+          name: destinationPath
+          required: true
+          type: string
+        - collectionFormat: csv
+          description: A list of comma separated Data Lake Store paths (starting with '/') of the files to concatenate, in the order in which they should be concatenated.
+          in: query
+          items:
+            type: string
+          name: sources
+          required: true
+          type: array
+        - description: The constant value for the operation.
+          enum:
+            - CONCAT
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{directFilePath}?op=APPEND":
+    get:
+      description: Opens and reads from the specified file.
+      operationId: FileSystem_Open
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file to open.
+          in: path
+          name: directFilePath
+          required: true
+          type: string
+        - format: int64
+          in: query
+          name: length
+          required: false
+          type: integer
+        - format: int64
+          in: query
+          name: offset
+          required: false
+          type: integer
+        - description: The constant value for the operation.
+          enum:
+            - OPEN
+          in: query
+          name: op
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - "true"
+          in: query
+          name: read
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+          schema:
+            type: file
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+    post:
+      consumes:
+        - application/octet-stream
+      description: "Appends to the specified file. This method does not support multiple concurrent appends to the file. NOTE: Concurrent append and normal (serial) append CANNOT be used interchangeably. Once a file has been appended to using either append option, it can only be appended to using that append option. Use the ConcurrentAppend option if you would like support for concurrent appends."
+      operationId: FileSystem_Append
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file to which to append.
+          in: path
+          name: directFilePath
+          required: true
+          type: string
+        - description: The file contents to include when appending to the file.  The maximum content size is 4MB.  For content larger than 4MB you must append the content in 4MB chunks.
+          in: body
+          name: streamContents
+          required: true
+          schema:
+            format: file
+            type: object
+        - description: The optional offset in the stream to begin the append operation. Default is to append at the end of the stream.
+          format: int64
+          in: query
+          name: offset
+          required: false
+          type: integer
+        - description: The constant value for the operation.
+          enum:
+            - APPEND
+          in: query
+          name: op
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - "true"
+          in: query
+          name: append
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+    put:
+      consumes:
+        - application/octet-stream
+      description: Creates a file with optionally specified content.
+      operationId: FileSystem_Create
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file to create.
+          in: path
+          name: directFilePath
+          required: true
+          type: string
+        - description: The file contents to include when creating the file. This parameter is optional, resulting in an empty file if not specified.  The maximum content size is 4MB.  For content larger than 4MB you must append the content in 4MB chunks.
+          in: body
+          name: streamContents
+          required: false
+          schema:
+            format: file
+            type: object
+        - description: The indication of if the file should be overwritten.
+          in: query
+          name: overwrite
+          required: false
+          type: boolean
+        - description: The constant value for the operation.
+          enum:
+            - CREATE
+          in: query
+          name: op
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - "true"
+          in: query
+          name: write
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "201":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{filePath}?op=DELETE":
+    delete:
+      description: Deletes the requested file or directory, optionally recursively.
+      operationId: FileSystem_Delete
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory to delete.
+          in: path
+          name: filePath
+          required: true
+          type: string
+        - description: The optional switch indicating if the delete should be recursive
+          in: query
+          name: recursive
+          required: false
+          type: boolean
+        - description: The constant value for the operation.
+          enum:
+            - DELETE
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: "#/definitions/FileOperationResult"
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{flushFilePath}?op=APPEND;append=true;flush=true":
+    post:
+      consumes:
+        - application/octet-stream
+      description: Flushes the specified file to the store. This forces an update to the metadata of the file (returned from GetFileStatus), and is required by ConcurrentAppend once the file is done to populate finalized metadata.
+      operationId: FileSystem_Flush
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file to which to flush.
+          in: path
+          name: flushFilePath
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - APPEND
+          in: query
+          name: op
+          required: true
+          type: string
+        - description: The constant value that avoids redirects.
+          enum:
+            - "true"
+          in: query
+          name: append
+          required: true
+          type: string
+        - description: The constant value initiating the flush.
+          enum:
+            - "true"
+          in: query
+          name: flush
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: Successfully flushed the specified file.
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{getFilePath}?op=MSGETFILESTATUS":
+    get:
+      description: Get the file status object specified by the file path.
+      operationId: FileSystem_GetFileStatus
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory for which to retrieve the status.
+          in: path
+          name: getFilePath
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - MSGETFILESTATUS
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: "#/definitions/FileStatusResult"
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{listFilePath}?op=MSLISTSTATUS":
+    get:
+      description: Get the list of file status objects specified by the file path, with optional pagination parameters
+      operationId: FileSystem_ListFileStatus
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the directory to list.
+          in: path
+          name: listFilePath
+          required: true
+          type: string
+        - description: Gets or sets the number of items to return. Optional.
+          format: int32
+          in: query
+          name: listSize
+          required: false
+          type: integer
+        - description: Gets or sets the item or lexicographical index after which to begin returning results. For example, a file list of 'a','b','d' and listAfter='b' will return 'd', and a listAfter='c' will also return 'd'. Optional.
+          in: query
+          name: listAfter
+          required: false
+          type: string
+        - description: Gets or sets the item or lexicographical index before which to begin returning results. For example, a file list of 'a','b','d' and listBefore='d' will return 'a','b', and a listBefore='c' will also return 'a','b'. Optional.
+          in: query
+          name: listBefore
+          required: false
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - MSLISTSTATUS
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: "#/definitions/FileStatusesResult"
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{modifyAclFilePath}?op=MODIFYACLENTRIES":
+    put:
+      description: Modifies existing Access Control List (ACL) entries on a file or folder.
+      operationId: FileSystem_ModifyAclEntries
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory with the ACL being modified.
+          in: path
+          name: modifyAclFilePath
+          required: true
+          type: string
+        - description: The ACL specification included in ACL modification operations in the format '[default:]user|group|other::r|-w|-x|-'
+          in: query
+          name: aclspec
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - MODIFYACLENTRIES
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{msConcatDestinationPath}?op=MSCONCAT":
+    post:
+      consumes:
+        - application/octet-stream
+      description: Concatenates the list of source files into the destination file, deleting all source files upon success. This method accepts more source file paths than the Concat method. This method and the parameters it accepts are subject to change for usability in an upcoming version.
+      operationId: FileSystem_MsConcat
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the destination file resulting from the concatenation.
+          in: path
+          name: msConcatDestinationPath
+          required: true
+          type: string
+        - description: "Indicates that as an optimization instead of deleting each individual source stream, delete the source stream folder if all streams are in the same folder instead. This results in a substantial performance improvement when the only streams in the folder are part of the concatenation operation. WARNING: This includes the deletion of any other files that are not source files. Only set this to true when source files are the only files in the source directory."
+          in: query
+          name: deleteSourceDirectory
+          required: false
+          type: boolean
+        - description: "A list of Data Lake Store paths (starting with '/') of the source files. Must be in the format: sources=<comma separated list>"
+          in: body
+          name: streamContents
+          required: true
+          schema:
+            format: file
+            type: object
+        - description: The constant value for the operation.
+          enum:
+            - MSCONCAT
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{removeAclFilePath}?op=REMOVEACLENTRIES":
+    put:
+      description: Removes existing Access Control List (ACL) entries for a file or folder.
+      operationId: FileSystem_RemoveAclEntries
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory with the ACL being removed.
+          in: path
+          name: removeAclFilePath
+          required: true
+          type: string
+        - description: The ACL spec included in ACL removal operations in the format '[default:]user|group|other'
+          in: query
+          name: aclspec
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - REMOVEACLENTRIES
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{renameFilePath}?op=RENAME":
+    put:
+      description: Rename a file or directory.
+      operationId: FileSystem_Rename
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory to move/rename.
+          in: path
+          name: renameFilePath
+          required: true
+          type: string
+        - description: The path to move/rename the file or folder to
+          in: query
+          name: destination
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - RENAME
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: "#/definitions/FileOperationResult"
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{setAclFilePath}?op=SETACL":
+    put:
+      description: Sets the Access Control List (ACL) for a file or folder.
+      operationId: FileSystem_SetAcl
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory on which to set the ACL.
+          in: path
+          name: setAclFilePath
+          required: true
+          type: string
+        - description: The ACL spec included in ACL creation operations in the format '[default:]user|group|other::r|-w|-x|-'
+          in: query
+          name: aclspec
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - SETACL
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{setOwnerFilePath}?op=SETOWNER":
+    put:
+      description: Sets the owner of a file or directory.
+      operationId: FileSystem_SetOwner
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory for which to set the owner.
+          in: path
+          name: setOwnerFilePath
+          required: true
+          type: string
+        - description: The AAD Object ID of the user owner of the file or directory. If empty, the property will remain unchanged.
+          in: query
+          name: owner
+          required: false
+          type: string
+        - description: The AAD Object ID of the group owner of the file or directory. If empty, the property will remain unchanged.
+          in: query
+          name: group
+          required: false
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - SETOWNER
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/v1/{setPermissionFilePath}?op=SETPERMISSION":
+    put:
+      description: Sets the permission of the file or folder.
+      operationId: FileSystem_SetPermission
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file or directory for which to set the permission.
+          in: path
+          name: setPermissionFilePath
+          required: true
+          type: string
+        - description: A string representation of the permission (i.e 'rwx'). If empty, this property remains unchanged.
+          in: query
+          name: permission
+          required: false
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - SETPERMISSION
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem
+  "/webhdfs/va/{getContentSummaryFilePath}?op=GETCONTENTSUMMARY":
+    get:
+      description: Gets the file content summary object specified by the file path.
+      operationId: FileSystem_GetContentSummary
+      parameters:
+        - description: The Data Lake Store path (starting with '/') of the file for which to retrieve the summary.
+          in: path
+          name: getContentSummaryFilePath
+          required: true
+          type: string
+        - description: The constant value for the operation.
+          enum:
+            - GETCONTENTSUMMARY
+          in: query
+          name: op
+          required: true
+          type: string
+        - $ref: "#/parameters/ApiVersionParameter"
+      responses:
+        "200":
+          description: ""
+          schema:
+            $ref: "#/definitions/ContentSummaryResult"
+        default:
+          description: An unexpected error from the server.
+          schema:
+            $ref: "#/definitions/AdlsError"
+      tags:
+        - FileSystem

@@ -1,0 +1,222 @@
+swagger: "2.0"
+schemes:
+  - https
+host: monitoring.azure.com
+info:
+  description: A client for issuing REST requests to the Azure metrics service.
+  title: Azure Metrics
+  version: 2018-09-01-preview
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-ms-code-generation-settings:
+    name: AzureMetricsClient
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/monitor/data-plane/preview/2018-09-01-preview/metricsCreate_API.json
+      version: "2.0"
+  x-providerName: azure.com
+  x-serviceName: monitor-metricsCreate_API
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json; odata=minimalmetadata
+produces:
+  - application/json
+paths:
+  "/subscriptions/{subscriptionId}/resourcegroups/{resourceGroupName}/providers/{resourceProvider}/{resourceTypeName}/{resourceName}/metrics":
+    post:
+      consumes:
+        - application/json
+      description: "**Post the metric values for a resource**."
+      operationId: Metrics_Create
+      parameters:
+        - description: Supports application/json and application/x-ndjson
+          in: header
+          name: Content-Type
+          required: true
+          type: string
+        - description: Content length of the payload
+          format: int32
+          in: header
+          name: Content-Length
+          required: true
+          type: integer
+        - description: Authorization token issue for issued for audience "https:\\monitoring.azure.com\"
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The azure subscription id
+          in: path
+          name: subscriptionId
+          required: true
+          type: string
+        - description: The ARM resource group name
+          in: path
+          name: resourceGroupName
+          required: true
+          type: string
+        - description: The ARM resource provider name
+          in: path
+          name: resourceProvider
+          required: true
+          type: string
+        - description: The ARM resource type name
+          in: path
+          name: resourceTypeName
+          required: true
+          type: string
+        - description: The ARM resource name
+          in: path
+          name: resourceName
+          required: true
+          type: string
+        - description: The Azure metrics document json payload
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/AzureMetricsDocument"
+      responses:
+        "200":
+          description: The azure metrics publish succeeded
+          schema:
+            $ref: "#/definitions/AzureMetricsResult"
+        default:
+          description: An unexpected error from the server. See response object for the reason
+          schema:
+            $ref: "#/definitions/AzureMetricsResult"
+      tags:
+        - Metrics
+      x-ms-examples:
+        Post azure metrics for cows sold with related metadata as dimensions:
+          parameters:
+            Authorization: Bearer {AAD JWT token issued for "https:\\monitoring.azure.com\}"
+            Content-Length: 783
+            Content-Type: application/json
+            api-version: 2018-09-01-preview
+            body:
+              data:
+                baseData:
+                  dimNames:
+                    - Breed
+                    - Color
+                    - Age
+                  metric: CowsSold
+                  namespace: Cows
+                  series:
+                    - count: 3
+                      dimValues:
+                        - Angus
+                        - Blue
+                        - "5"
+                      max: 20
+                      min: 5
+                      sum: 30
+              time: 2018-08-24T 11:02:00-7:00
+            resourceGroupName: CowsSeller
+            resourceName: cowssellerstore
+            resourceProvider: Microsoft.Storage
+            resourceTypeName: storageAccounts
+            subscriptionId: b7ac8a0c-fbae-4e29-a0f7-09999b8857a1
+          responses:
+            "200":
+              body:
+                statusCode: 200
+definitions:
+  ApiError:
+    properties:
+      code:
+        description: Gets or sets the azure metrics error code
+        type: string
+      message:
+        description: Gets or sets the azure metrics error message
+        type: string
+    type: object
+  ApiFailureResponse:
+    properties:
+      error:
+        $ref: "#/definitions/ApiError"
+    type: object
+  AzureMetricsBaseData:
+    properties:
+      dimNames:
+        description: Gets or sets the list of dimension names (optional)
+        items:
+          type: string
+        type: array
+      metric:
+        description: Gets or sets the Metric name
+        type: string
+      namespace:
+        description: Gets or sets the Metric namespace
+        type: string
+      series:
+        description: Gets or sets the list of time series data for the metric (one per unique dimension combination)
+        items:
+          $ref: "#/definitions/AzureTimeSeriesData"
+        type: array
+    required:
+      - metric
+      - namespace
+      - series
+    type: object
+  AzureMetricsData:
+    properties:
+      baseData:
+        $ref: "#/definitions/AzureMetricsBaseData"
+    required:
+      - baseData
+    type: object
+  AzureMetricsDocument:
+    properties:
+      data:
+        $ref: "#/definitions/AzureMetricsData"
+      time:
+        description: Gets or sets Time property (in ISO 8601 format)
+        type: string
+    required:
+      - time
+      - data
+    type: object
+  AzureMetricsResult:
+    properties:
+      apiFailureResponse:
+        $ref: "#/definitions/ApiFailureResponse"
+      statusCode:
+        description: "Http status code response "
+        format: int32
+        type: integer
+    type: object
+  AzureTimeSeriesData:
+    properties:
+      count:
+        description: Gets or sets Count value
+        format: int32
+        type: integer
+      dimValues:
+        description: Gets or sets dimension values
+        items:
+          type: string
+        type: array
+      max:
+        description: Gets or sets Max value
+        format: double
+        type: number
+      min:
+        description: Gets or sets Min value
+        format: double
+        type: number
+      sum:
+        description: Gets or sets Sum value
+        format: double
+        type: number
+    required:
+      - min
+      - max
+      - sum
+      - count
+    type: object

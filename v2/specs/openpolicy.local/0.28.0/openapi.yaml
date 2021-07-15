@@ -1,0 +1,1173 @@
+openapi: 3.0.3
+servers:
+  - url: http://openpolicy.local
+info:
+  contact:
+    name: The OPA team
+    url: https://github.com/open-policy-agent/opa
+  description: |-
+    OPA provides policy-based control for cloud native environments. The following *endpoints* (such as `PUT /v1/policies`) provide reference documentation for the OPA REST API.
+
+    ### API specification viewing options
+
+    - **[View the specification in *Redoc* (default)](index.html)**
+    - **[View the specification in *Swagger UI*](swagger-ui.html)**
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0
+  title: Open Policy Agent (OPA) REST API
+  version: 0.28.0
+  x-apisguru-categories:
+    - open_data
+  x-logo:
+    altText: OPA logo
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_github.com_open-policy-agent_opa_blob_master_docs_website_static_img_logos_opa-horizontal-color.png
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/open-policy-agent/contrib/master/open_api/openapi.yaml
+      version: "3.0"
+  x-providerName: openpolicy.local
+externalDocs:
+  description: OPA documentation
+  url: https://www.openpolicyagent.org/docs/latest/
+security: []
+tags:
+  - description: Allows you to add, remove and modify policy modules. *Policy module identifiers are only used for management purposes. They are not used outside the Policy API.*
+    name: Policy API
+  - description: Exposes endpoints for reading and writing documents in OPA. For an explanation of the different types of documents, see [the OPA document model](https://www.openpolicyagent.org/docs/latest/philosophy/#the-opa-document-model)
+    name: Data API
+  - description: Posting queries to OPA
+    name: Query API
+  - description: Posting partial queries to OPA
+    name: Compile API
+  - description: Executes a simple built-in policy query to verify that the server is operational
+    name: Health API
+paths:
+  /:
+    post:
+      description: |-
+        This API queries the document at */data/system/main* by default (however, you can [configure OPA](https://www.openpolicyagent.org/docs/latest/configuration/) to use a different path to serve these queries). That document defines the response.
+        For example, use the following in `PUT /v1/policies/{path}`) to define a rule that will produce a value for the */data/system/main* document:
+
+          ```yaml
+          package system
+          main = msg {
+            msg := sprintf("hello, %v", input.user)
+          }
+          ```
+
+        The server will return a *not found* (404) response if */data/system/main* is undefined.
+      operationId: postSimpleQuery
+      parameters:
+        - $ref: "#/components/parameters/prettyParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/queryInputSchema"
+        description: The text of the input document (in JSON format)
+        required: true
+      responses:
+        "200":
+          description: Success
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "404":
+          $ref: "#/components/responses/notFoundResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Execute a simple query
+      tags:
+        - Query API
+  /health:
+    get:
+      description: |-
+        This API endpoint verifies that the server is operational.
+
+        The response from the server is either 200 or 500:
+        - **200** - OPA service is healthy. If `bundles` is true, then all configured bundles have been activated. If `plugins` is true, then all plugins are in an 'OK' state.
+        - **500** - OPA service is *not* healthy. If `bundles` is true, at least one of configured bundles has not yet been activated. If `plugins` is true, at least one plugins is in a 'not OK' state.
+
+        ---
+        **Note**
+        This check is only for initial bundle activation. Subsequent downloads will not affect the health check.
+
+        Use the **status** endpoint (in the (management API)[management.html]) for more fine-grained bundle status monitoring.
+
+        ---
+      externalDocs:
+        description: Bundles
+        url: https://www.openpolicyagent.org/docs/latest/management/#bundles
+      operationId: getHealth
+      parameters:
+        - $ref: "#/components/parameters/bundlesParameter"
+        - $ref: "#/components/parameters/pluginsParameter"
+      responses:
+        "200":
+          description: OPA service is healthy
+        "500":
+          description: OPA service is not healthy
+      summary: Health
+      tags:
+        - Health API
+  "/v0/data/{path}":
+    parameters:
+      - $ref: "#/components/parameters/webhookPathParameter"
+    post:
+      description: |
+        The example given here assumes you have created a policy (with `PUT /v1/policies/{path}`), such as:
+
+          ```yaml
+          package opa.examples
+          import input.example.flag
+          allow_request { flag == true }
+          ```
+
+        The server will return a *not found* (404) response if the requested document is missing or undefined.
+      operationId: getDocumentWithWebHook
+      parameters:
+        - $ref: "#/components/parameters/prettyParameter"
+      requestBody:
+        content:
+          application/x-yaml:
+            schema:
+              $ref: "#/components/schemas/webhookInputSchema"
+        description: The input document (in JSON format)
+        required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/successResponse"
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "404":
+          $ref: "#/components/responses/notFoundResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Get a document (with webhook)
+      tags:
+        - Data API
+  /v1/compile:
+    post:
+      description: |-
+        This API endpoint allows you to partially evaluate Rego queries and obtain a simplified version of the policy. The example below assumes that OPA has been given the following policy (use `PUT /v1/policies/{path}`):
+
+        ```yaml
+        package example
+        allow {
+          input.subject.clearance_level >= data.reports[_].clearance_level
+        }
+        ```
+        Compile API **request body** so that it contain the following fields:
+
+        | Field | Type | Required | Description |
+        | --- | --- | --- | --- |
+        | `query` | `string` | Yes | The query to partially evaluate and compile. |
+        | `input` | `any` | No | The input document to use during partial evaluation (default: undefined). |
+        | `unknowns` | `array[string]` | No | The terms to treat as unknown during partial evaluation (default: `["input"]`]). |
+
+        For example:
+
+        ```json
+        {
+          "query": "data.example.allow == true",
+          "input": {
+            "subject": {
+              "clearance_level": 4
+            }
+          },
+          "unknowns": [
+            "data.reports"
+            ]
+        }
+        ```
+        ### Partial evaluation
+        In some cases, the result of partial valuation is a conclusive, unconditional answer. See [the guidance](https://www.openpolicyagent.org/docs/latest/rest-api/#unconditional-results-from-partial-evaluation) for details.
+      externalDocs:
+        description: Partial evaluation article
+        url: https://blog.openpolicyagent.org/partial-evaluation-162750eaf422
+      operationId: postCompile
+      parameters:
+        - $ref: "#/components/parameters/prettyParameter"
+        - $ref: "#/components/parameters/explainParameter"
+        - $ref: "#/components/parameters/metricsParameter"
+        - $ref: "#/components/parameters/instrumentParameter"
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/partialQuerySchema"
+        description: The query (in JSON format)
+        required: false
+      responses:
+        "200":
+          $ref: "#/components/responses/successQuery"
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Compile
+      tags:
+        - Compile API
+  "/v1/data/{path}":
+    delete:
+      description: This API endpoint deletes an existing document from the server
+      operationId: deleteDocument
+      responses:
+        "204":
+          description: Success
+        "404":
+          $ref: "#/components/responses/notFoundResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Delete a document
+      tags:
+        - Data API
+    get:
+      description: |-
+        This API endpoint returns the document specified by `path`.
+
+        The server will return a *bad request* (400) response if either:
+        - The query requires an input document and you do not provide it
+        - You provide the input document but the query has already defined it.
+      operationId: getDocument
+      parameters:
+        - $ref: "#/components/parameters/inputParameter"
+        - $ref: "#/components/parameters/prettyParameter"
+        - $ref: "#/components/parameters/provenanceParameter"
+        - $ref: "#/components/parameters/explainParameter"
+        - $ref: "#/components/parameters/metricsParameter"
+        - $ref: "#/components/parameters/instrumentParameter"
+      responses:
+        "200":
+          $ref: "#/components/responses/successResponse"
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Get a document
+      tags:
+        - Data API
+    parameters:
+      - $ref: "#/components/parameters/pathParameter"
+    patch:
+      description: This API endpoint updates an existing document on the server by describing the changes required (using [JSON patch operations](http://jsonpatch.com/))
+      operationId: patchDocument
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/patchesSchema"
+        description: The list of JSON patch operations.
+        required: true
+      responses:
+        "204":
+          description: Success
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "404":
+          $ref: "#/components/responses/notFoundResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Update a document
+      tags:
+        - Data API
+    post:
+      description: |-
+        The server will return a *bad request* (400) response if either:
+        - The query requires an input document and you do not provide it
+        - You provided an input document but the query has already defined it.
+
+        If `path` indexes into an array, the server will attempt to convert the array index to an integer. If the path element cannot be converted to an integer, a *not found* response (404) will be returned.
+      operationId: getDocumentWithPath
+      parameters:
+        - $ref: "#/components/parameters/prettyParameter"
+        - $ref: "#/components/parameters/provenanceParameter"
+        - $ref: "#/components/parameters/explainParameter"
+        - $ref: "#/components/parameters/metricsParameter"
+        - $ref: "#/components/parameters/instrumentParameter"
+      requestBody:
+        content:
+          application/x-yaml:
+            schema:
+              $ref: "#/components/schemas/inputSchema"
+        description: The input document (in JSON format)
+        required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/successResponse"
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Get a document (with input)
+      tags:
+        - Data API
+    put:
+      description: |-
+        If the path does not refer to an existing document (for example *us-west/servers*), the server will attempt to create all the necessary containing documents.
+
+        This behavior is similar to the Unix command [mkdir -p](https://en.wikipedia.org/wiki/Mkdir#Options).
+      operationId: putDocument
+      parameters:
+        - $ref: "#/components/parameters/ifNoneMatchParameter"
+      responses:
+        "204":
+          description: Success
+        "304":
+          description: Document was not modified
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "404":
+          $ref: "#/components/responses/notFoundResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Create or overwrite a document
+      tags:
+        - Data API
+  /v1/policies:
+    get:
+      description: This API endpoint responds with a list of all policy modules on the server (result response)
+      operationId: getPolicies
+      parameters:
+        - $ref: "#/components/parameters/prettyParameter"
+      responses:
+        "200":
+          $ref: "#/components/responses/successResult"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: List policies
+      tags:
+        - Policy API
+      x-code-samples:
+        - lang: JavaScript
+          source: |
+            fetch("http://localhost:8181/v1/policies", {
+              "method": "GET",
+              "headers": {}
+              })
+              .then(response => {
+                 console.log(response);
+                })
+              .catch(err => {
+                console.error(err);
+                });
+        - lang: Python
+          source: |
+            import http.client
+            conn = http.client.HTTPConnection("localhost:8181")
+            conn.request("GET", "/v1/policies")
+            res = conn.getresponse()
+            data = res.read()
+            print(data.decode("utf-8"))
+        - lang: Java
+          source: |
+            AsyncHttpClient client = new DefaultAsyncHttpClient();
+            client.prepare("GET", "http://localhost:8181/v1/policies")
+              .execute()
+              .toCompletableFuture()
+              .thenAccept(System.out::println)
+              .join();
+            client.close();
+        - lang: Go
+          source: |
+            package main
+            import (
+              "fmt"
+              "net/http"
+              "io/ioutil"
+              )
+            func main() {
+              url := "http://localhost:8181/v1/policies"
+              req, _ := http.NewRequest("GET", url, nil)
+              res, _ := http.DefaultClient.Do(req)
+              defer res.Body.Close()
+              body, _ := ioutil.ReadAll(res.Body)
+              fmt.Println(res)
+              fmt.Println(string(body))
+            }
+  "/v1/policies/{id}":
+    delete:
+      description: This API endpoint removes an existing policy module from the server
+      operationId: deletePolicyModule
+      parameters:
+        - $ref: "#/components/parameters/prettyParameter"
+      responses:
+        "200":
+          $ref: "#/components/responses/successResponse"
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "404":
+          $ref: "#/components/responses/notFoundResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Delete a policy module
+      tags:
+        - Policy API
+    get:
+      description: This API endpoint returns the details of the specified policy module (`{id}`)
+      operationId: getPolicyModule
+      parameters:
+        - $ref: "#/components/parameters/prettyParameter"
+      responses:
+        "200":
+          $ref: "#/components/responses/successResult"
+        "404":
+          $ref: "#/components/responses/notFoundResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Get a policy module
+      tags:
+        - Policy API
+    parameters:
+      - $ref: "#/components/parameters/idParameter"
+    put:
+      description: |-
+        - If the policy module does not exist, it is created.
+        - If the policy module already exists, it is replaced.
+
+        If the policy module isn't correctly defined, a *bad request* (400) response is returned.
+
+        ### Example policy module
+        ```yaml
+        package opa.examples
+
+        import data.servers
+        import data.networks
+        import data.ports
+
+        public_servers[server] {
+          some k, m
+          	server := servers[_]
+          	server.ports[_] == ports[k].id
+          	ports[k].networks[_] == networks[m].id
+          	networks[m].public == true
+        }
+        ```
+      operationId: putPolicyModule
+      parameters:
+        - $ref: "#/components/parameters/prettyParameter"
+        - $ref: "#/components/parameters/metricsParameter"
+      requestBody:
+        content:
+          text/plain:
+            schema:
+              example: |-
+                package opa.examples
+
+                import data.servers
+                import data.networks
+                import data.ports
+
+                public_servers[server] {
+                  some k, m
+                  	server := servers[_]
+                  	server.ports[_] == ports[k].id
+                  	ports[k].networks[_] == networks[m].id
+                  	networks[m].public == true
+                }
+              type: string
+        required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/successResult"
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Create or update a policy module
+      tags:
+        - Policy API
+  /v1/query:
+    get:
+      description: |-
+        This API endpoint returns bindings for the variables in the query.
+
+        For more complex JSON queries, use `POST /v1/query` instead.
+      operationId: getQuery
+      parameters:
+        - $ref: "#/components/parameters/qParameter"
+        - $ref: "#/components/parameters/prettyParameter"
+        - $ref: "#/components/parameters/explainParameter"
+        - $ref: "#/components/parameters/metricsParameter"
+      responses:
+        "200":
+          $ref: "#/components/responses/successQuery"
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+      summary: Execute an ad-hoc query (simple)
+      tags:
+        - Query API
+    post:
+      description: |-
+        This API endpoint returns bindings for the variables in the query.
+
+        For simpler JSON queries, you may use `GET /v1/query` instead.
+      operationId: postQuery
+      parameters:
+        - $ref: "#/components/parameters/prettyParameter"
+        - $ref: "#/components/parameters/explainParameter"
+        - $ref: "#/components/parameters/metricsParameter"
+      requestBody:
+        content:
+          application/x-yaml:
+            schema:
+              $ref: "#/components/schemas/qSchema"
+        description: The test of the query (in JSON format)
+        required: true
+      responses:
+        "200":
+          $ref: "#/components/responses/successQuery"
+        "400":
+          $ref: "#/components/responses/badRequestResponse"
+        "500":
+          $ref: "#/components/responses/serverErrorResponse"
+        "501":
+          description: Streaming not implemented
+      summary: Execute an ad-hoc query (complex)
+      tags:
+        - Query API
+components:
+  parameters:
+    bundlesParameter:
+      description: |-
+        Reports on bundle activation status (useful for 'ready' checks at startup).
+
+        This includes any discovery bundles or bundles defined in the loaded discovery configuration.
+      example: true
+      in: query
+      name: bundles
+      required: false
+      schema:
+        type: boolean
+    explainParameter:
+      description: If set to *full*, response will include query explanations in addition to the result.
+      example: full
+      in: query
+      name: explain
+      required: false
+      schema:
+        type: string
+    idParameter:
+      description: The name of a policy module
+      example: example1
+      in: path
+      name: id
+      required: true
+      schema:
+        type: string
+    ifNoneMatchParameter:
+      description: The server will respect the If-None-Match header if it is set to * (in other words, it will not overwrite an existing document located at the specified `path`).
+      example: "*"
+      in: header
+      name: If-None-Match
+      required: false
+      schema:
+        type: string
+    inputParameter:
+      description: Provide the text for an [input document](https://www.openpolicyagent.org/docs/latest/kubernetes-primer/#input-document) in JSON format
+      in: query
+      name: input
+      required: false
+      schema:
+        additionalProperties: {}
+        example:
+          input:
+            example:
+              flag: true
+        type: object
+    instrumentParameter:
+      description: |-
+        If true, response will return additional performance metrics in addition to the result and the standard metrics.
+
+        **Caution:** This can add significant overhead to query evaluation. The recommendation is to only use this parameter if you are debugging a performance problem.
+      example: false
+      in: query
+      name: instrument
+      required: false
+      schema:
+        type: boolean
+    metricsParameter:
+      description: If true, compiler performance metrics will be returned in the response.
+      example: false
+      in: query
+      name: metrics
+      required: false
+      schema:
+        type: boolean
+    pathParameter:
+      allowReserved: true
+      description: A backslash (/) delimited path to access values inside object and array documents. If the path points to an array, the server will attempt to convert the array index to an integer. If the path element cannot be converted to an integer, the server will respond with 404.
+      example: opa/examples/public_servers
+      in: path
+      name: path
+      required: true
+      schema:
+        type: string
+    pluginsParameter:
+      description: Reports on plugin status
+      example: false
+      in: query
+      name: plugins
+      required: false
+      schema:
+        type: boolean
+    prettyParameter:
+      description: If true, response will be in a human-readable format.
+      example: true
+      in: query
+      name: pretty
+      required: false
+      schema:
+        type: boolean
+    provenanceParameter:
+      description: If true, response will include build and version information in addition to the result.
+      example: false
+      in: query
+      name: provenance
+      required: false
+      schema:
+        type: boolean
+    qParameter:
+      description: The [URL-encoded](https://www.w3schools.com/tags/ref_urlencode.ASP) ad-hoc query to execute.
+      example: '{"query": "data.servers[i].ports[_] = \"p2\"; data.servers[i].name = name"}'
+      in: query
+      name: q
+      required: true
+      schema:
+        type: string
+    webhookPathParameter:
+      description: A backslash (/) delimited path to access values inside object and array documents. If the path points to an array, the server will attempt to convert the array index to an integer. If the path element cannot be converted to an integer, the server will respond with 404.
+      example: opa/examples/allow_request
+      in: path
+      name: path
+      required: true
+      schema:
+        type: string
+  responses:
+    badRequestResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/400"
+      description: Bad request
+    notFoundResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/404"
+      description: Not found (for example, a requested policy module or document does not exist)
+    serverErrorResponse:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/400"
+      description: Server error
+    successQuery:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/200Result"
+              - $ref: "#/components/schemas/200Metrics"
+              - $ref: "#/components/schemas/200Explanations"
+      description: Success
+    successResponse:
+      content:
+        application/json:
+          schema:
+            allOf:
+              - $ref: "#/components/schemas/200Result"
+              - $ref: "#/components/schemas/200Provenance"
+              - $ref: "#/components/schemas/200Metrics"
+              - $ref: "#/components/schemas/200Explanations"
+      description: Success
+    successResult:
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/200Result"
+      description: Success
+    successZipResponse:
+      content:
+        application/gzip:
+          schema:
+            format: binary
+            type: string
+      description: Success. You will find a gzip file is in the response's message body
+  schemas:
+    "400":
+      properties:
+        code:
+          description: The error code name
+          example: invalid_parameter
+          minLength: 1
+          type: string
+        errors:
+          description: Errors that may have been generated during the parse, compile, or installation of a policy module
+          items:
+            properties:
+              code:
+                description: The error code name
+                example: rego_unsafe_var_error
+                minLength: 1
+                type: string
+              location:
+                description: Where the error occurred
+                properties:
+                  col:
+                    description: The column in the policy module where the error occurred
+                    example: 1
+                    type: number
+                  file:
+                    description: The policy module name that generated the error
+                    example: example1
+                    type: string
+                  row:
+                    description: The line number in the policy module where the error occurred
+                    example: 3
+                    type: number
+                type: object
+              message:
+                description: A general description of the error
+                example: var x is unsafe
+                minLength: 1
+                type: string
+          type: array
+          uniqueItems: true
+        message:
+          description: The description of the error
+          example: error(s) occurred while compiling module(s)
+          minLength: 1
+          type: string
+      required:
+        - code
+        - message
+      type: object
+    "404":
+      properties:
+        code:
+          description: The error code name
+          example: resource_not_found
+          minLength: 1
+          type: string
+        message:
+          description: The description of the error (including the name of any undefined policy module)
+          example: 'storage_not_found_error: policy id \"partial\"'
+          minLength: 1
+          type: string
+      required:
+        - code
+        - message
+      type: object
+    200Explanations:
+      properties:
+        explanation:
+          items:
+            properties:
+              locals:
+                description: The query's term bindings at the point when the trace event was emitted.
+                items:
+                  properties:
+                    key:
+                      properties:
+                        type:
+                          type: string
+                        value:
+                          type: string
+                      type: object
+                    value:
+                      properties:
+                        type:
+                          type: string
+                        value:
+                          type: string
+                      type: object
+                  type: object
+                type: array
+              node:
+                description: The AST element associated with the evaluation step.
+                externalDocs:
+                  description: AST
+                  url: https://godoc.org/github.com/open-policy-agent/opa/ast
+                properties:
+                  index:
+                    description: Node number
+                    type: number
+                  terms:
+                    items:
+                      properties:
+                        type:
+                          example: var
+                          type: string
+                        value:
+                          example: $term1
+                          type: string
+                      type: object
+                    type: array
+                type: object
+              op:
+                description: |-
+                  The kind of *trace event*
+
+                  Each trace event represents a step in the query evaluation process. Trace events are emitted at the following points:
+                  - enter - before a body or rule is evaluated
+                  - exit - after a body or rule has evaluated successfully
+                  - eval - before an expression is evaluated
+                  - fail - after an expression has evaluated to false.
+                  - redo - before evaluation restarts from a body, rule, or expression.
+
+                  By default, OPA searches for all sets of term bindings that make all expressions in the query evaluate to true. Because there may be multiple answers, the search can restart when OPA determines the query is true or false. When the search restarts, a *redo trace event* is emitted.
+                enum:
+                  - enter
+                  - exit
+                  - eval
+                  - fail
+                  - redo
+                example: enter
+                type: string
+              parent_id:
+                description: |-
+                  The parent query. Use this field to identify trace events from related queries.
+
+                  For example, if query A references rule R, trace events emitted when evaluating rule R will have the *parent_id* field set to query A’s *query_id*.
+                example: 0
+                minimum: 0
+                type: number
+              query_id:
+                description: The query that the trace event was emitted for. Use this field to distinguish trace events emitted by from different queries.
+                example: 0
+                minimum: 0
+                type: number
+              type:
+                description: The type of the **node** field
+                enum:
+                  - expr
+                  - rule
+                  - body
+                example: expr
+                type: string
+            type: object
+          type: array
+      type: object
+    200Metrics:
+      properties:
+        metrics:
+          properties:
+            counter_server_query_cache_hit:
+              description: "*Description is forthcoming*"
+              example: 0
+              type: number
+            timer_query_compile_stage_build_comprehension_index_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 43000
+              type: number
+            timer_query_compile_stage_check_safety_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 852000
+              type: number
+            timer_query_compile_stage_check_types_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 577000
+              type: number
+            timer_query_compile_stage_check_undefined_funcs_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 426000
+              type: number
+            timer_query_compile_stage_check_unsafe_builtins_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 14000
+              type: number
+            timer_query_compile_stage_resolve_refs_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 3000
+              type: number
+            timer_query_compile_stage_rewrite_comprehension_terms_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 329000
+              type: number
+            timer_query_compile_stage_rewrite_dynamic_terms_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 27000
+              type: number
+            timer_query_compile_stage_rewrite_expr_terms_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 40000
+              type: number
+            timer_query_compile_stage_rewrite_local_vars_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 187000
+              type: number
+            timer_query_compile_stage_rewrite_to_capture_value_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 1178000
+              type: number
+            timer_query_compile_stage_rewrite_with_values_ns:
+              description: (Only returned if `instrument` is true.) *Description is forthcoming*
+              example: 23000
+              type: number
+            timer_rego_input_parse_ns:
+              description: Time taken (in nanonseconds) to parse the input
+              example: 69994
+              type: number
+            timer_rego_module_compile_ns:
+              description: Time taken (in nanonseconds) to compile the loaded policy modules
+              example: 69994
+              type: number
+            timer_rego_module_parse_ns:
+              description: Time taken (in nanoseconds) to parse the input policy module
+              example: 12345
+              type: number
+            timer_rego_query_compile_ns:
+              description: Time taken (in nanoseconds) to compile the query
+              example: 4096
+              type: number
+            timer_rego_query_eval_ns:
+              description: Time taken (in nanonseconds) to evaluate the query
+              example: 69994
+              type: number
+            timer_rego_query_parse_ns:
+              description: Time taken (in nanoseconds) to parse the query
+              example: 4096
+              type: number
+            timer_server_handler_ns:
+              description: Time taken (in nanoseconds) to handle the API request
+              example: 631000
+              type: number
+            timer_server_read_bytes_ns:
+              description: "*Description is forthcoming*"
+              example: 631000
+              type: number
+          type: object
+      type: object
+    200Provenance:
+      properties:
+        provenance:
+          properties:
+            build_commit:
+              description: The Git commit id of this OPA build.
+              example: 4c6e524
+              type: string
+            build_hostname:
+              description: The hostname where this instance was built.
+              example: 3bb58334a5a9
+              type: string
+            build_timestamp:
+              description: When this OPA instance was built (in [ISO8601 format](https://www.w3.org/TR/NOTE-datetime))
+              type: string
+            bundles:
+              additionalProperties: {}
+              description: A set of key-value pairs describing each bundle activated on the server.
+              type: object
+            version:
+              description: The version of this OPA instance
+              type: string
+          type: object
+      type: object
+    200Result:
+      properties:
+        result:
+          items:
+            properties:
+              ast:
+                description: The types for declarations and runtime objects passed to your implementation. This consists of an abstract syntax tree (AST) of policy modules, package and import declarations, rules, expressions, and terms.
+                externalDocs:
+                  description: AST
+                  url: https://godoc.org/github.com/open-policy-agent/opa/ast
+                properties:
+                  package:
+                    properties:
+                      path:
+                        description: The path to the package
+                        items:
+                          properties:
+                            type:
+                              description: The type of the path operation
+                              enum:
+                                - import
+                                - package
+                              example: import
+                              type: string
+                            value:
+                              description: The path variable
+                              example: data.opa.example
+                              type: string
+                        type: array
+                    type: object
+                  rules:
+                    description: When OPA evaluates a rule, it generates the content of a [virtual documents](https://www.openpolicyagent.org/docs/latest/philosophy/#the-opa-document-model)
+                    externalDocs:
+                      description: Rules
+                      url: https://www.openpolicyagent.org/docs/latest/policy-language/#rules
+                    items:
+                      properties:
+                        body:
+                          description: A list of the terms in this rule
+                          items:
+                            properties:
+                              index:
+                                description: The location of this term in the list (starts at 0)
+                                example: 1
+                                type: number
+                              terms:
+                                description: The type/value pairing for this term
+                                items:
+                                  properties:
+                                    type:
+                                      description: The type of the term variable
+                                      example: var
+                                      type: string
+                                    value:
+                                      description: The list of types and values for the term variable
+                                      items:
+                                        properties:
+                                          type:
+                                            type: string
+                                          value:
+                                            type: string
+                                      type: array
+                                type: array
+                          type: array
+                        head:
+                          properties:
+                            key:
+                              description: The type/value pairing for this rule's head
+                              properties:
+                                type:
+                                  description: The type of the head
+                                  example: var
+                                  type: string
+                                value:
+                                  description: The value of the head
+                                  example: $0
+                                  type: string
+                              type: object
+                            name:
+                              description: The head of the rule
+                              example: violations
+                              type: string
+                          type: object
+                    type: array
+                    uniqueItems: true
+                type: object
+              id:
+                description: The name of a policy module
+                example: example2
+                minLength: 1
+                type: string
+              raw:
+                description: A string representation of the full Rego policy
+                example: package opa.examples\n\nimport data.servers\n\nviolations[server] {\n\tserver = servers[_]\n\tserver.protocols[_] = \"http\"\n\tpublic_servers[server]\n}\n
+                minLength: 1
+                type: string
+          type: array
+      type: object
+    inputSchema:
+      additionalProperties: {}
+      example: |-
+        {
+          "input": {
+           "example": {
+             "flag": true
+             }
+           }
+         }
+      type: object
+      x-examples:
+        example: |-
+          {
+            "input": {
+             "example": {
+               "flag": true
+               }
+             }
+           }
+    partialQuerySchema:
+      additionalProperties: {}
+      example: |-
+        {
+          "query": "data.example.allow == true",
+          "input": {
+            "subject": {
+              "clearance_level": 4
+            }
+          },
+          "unknowns": [
+            "data.reports"
+            ]
+        }
+      type: object
+    patchesSchema:
+      description: A list of one or more [JSON patch operations](http://jsonpatch.com/)
+      items:
+        description: A JSON patch operation
+        properties:
+          op:
+            description: JSON patch operation type
+            enum:
+              - add
+              - remove
+              - replace
+              - remove
+              - move
+              - copy
+              - test
+            example: add
+            minLength: 1
+            type: string
+          path:
+            description: |-
+              A [JSON pointer](https://tools.ietf.org/html/rfc6901) to a location within the target document where the operation is performed.
+
+              The *effective path* is this value prefixed with the API call's `path` parameter.
+
+              The server will return a *bad request* (404) response if:
+
+              - The *parent* of the effective path does not refer to an existing document
+              - For **remove** and **replace** operations, the effective path does not refer to an existing document.
+            example: "-"
+            minLength: 1
+            type: string
+          value:
+            additionalProperties: {}
+            description: The value to add, replace or test.
+            example: |-
+              {
+                "id": "s5",
+                "name": "job",
+                "protocols": ["amqp"],
+                "ports": ["p3"]
+              }
+            type: object
+        required:
+          - op
+          - path
+        type: object
+      minItems: 1
+      type: array
+    qSchema:
+      additionalProperties: {}
+      example: |-
+        {
+          "query": "data.servers[i].ports[_] = \"p2\"; data.servers[i].name = name"
+        }
+      type: object
+    queryInputSchema:
+      additionalProperties: {}
+      example: |-
+        {
+          "user": ["alice"]
+        }
+      type: object
+    webhookInputSchema:
+      additionalProperties: {}
+      example: |-
+        {
+          "example": {
+            "flag": true
+            }
+         }
+      type: object
+  securitySchemes: {}

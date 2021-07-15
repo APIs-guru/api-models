@@ -1,0 +1,345 @@
+openapi: 3.0.0
+servers:
+  - description: Production
+    url: https://workbcjobs.api.gov.bc.ca/v1
+info:
+  description: This API allows you to receive a feed of jobs from WorkBC's Job Board. Please see our <a href="https://github.com/bcgov/api-specs/blob/master/COLLECTION_NOTICE.md#collection-notice" target="_blank">data collection notice</a>. Please note that you may experience issues when submitting requests to the delivery or test environment if using this [OpenAPI specification](https://github.com/bcgov/api-specs) in other API console viewers.
+  title: WorkBC Job Posting API
+  version: 1.0.0
+  x-apisguru-categories:
+    - open_data
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_avatars1.githubusercontent.com_u_916280.jpeg
+  x-origin:
+    - converter:
+        url: https://github.com/mermade/oas-kit
+        version: 7.0.4
+      format: openapi
+      url: https://raw.githubusercontent.com/bcgov/api-specs/master/jobposting/jobposting.json
+      version: "3.0"
+  x-providerName: gov.bc.ca
+  x-serviceName: jobposting
+paths:
+  /Industries:
+    get:
+      description: |
+        The Industries endpoint returns all the Industries and related sub industries 
+        defined in WorkBC's Job Board. The response includes the id and caption for 
+        each industry and each sub industry.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Industry"
+                type: array
+          description: An array of industries and sub industries
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Unexpected error
+      summary: Industries
+      tags:
+        - Job Feed
+  /jobTypes:
+    get:
+      description: |
+        The Job Types endpoint returns details of all of the
+        job types defined in WorkBC's Job Board. The response includes the
+        id and caption.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/JobType"
+                type: array
+          description: An array of job types
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Unexpected error
+      summary: Job Types
+      tags:
+        - Job Feed
+  /jobs:
+    post:
+      description: The job feed endpoint returns an array of job records that satisfy the supplied criteria.
+      requestBody:
+        content:
+          application/json:
+            encoding:
+              color:
+                explode: true
+                style: form
+            schema:
+              properties:
+                city:
+                  default: Victoria
+                  description: The name of a city within B.C. Only job postings located within the specified city will be included in the response. If not specified, the data is not filtered by city.
+                  enum:
+                    - Victoria
+                    - Vancouver
+                  type: string
+                jobTypes:
+                  default:
+                    - 1
+                  description: ID values for types of job to filter on. Only job postings matching all specified values will be included in the response. If not specified, the data is not filtered by job type.
+                  enum:
+                    - - 1
+                    - - 2
+                  type: integer
+                lastRequestDate:
+                  default: 2018-08-29
+                  description: The date of the last request. Only job postings changed or deleted after this time will be included in the response. Default is _today_ - 10 days.
+                  enum:
+                    - 2018-08-29T00:00:00.000Z
+                  type: string
+                majorProjects:
+                  default: true
+                  description: When true, only include job postings that have a Major Project associated with them. When false, only include job postings that do not have a Major Project associated with them. If not specified, the data is not filtered by major project, unless the MajorProjectID parameter is used.
+                  type: boolean
+                region:
+                  default: 1
+                  description: The unique id of a region within B.C. Only job postings located within the specified region will be included in the response. If not specified, the data is not filtered by region
+                  enum:
+                    - 1
+                    - 2
+                  type: integer
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/JobFeedResponse"
+          description: A set of job records.
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Unexpected error
+      summary: Job Feed
+      tags:
+        - Job Feed
+  /majorProjects:
+    get:
+      description: |
+        The Major Projects endpoint returns details of all of the
+        major projects defined in WorkBC's Job Board. The response includes the
+        id and caption.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/MajorProject"
+                type: array
+          description: An array of major projects
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Unexpected error
+      summary: Major Projects
+      tags:
+        - Job Feed
+  /regions:
+    get:
+      description: |
+        The Regions endpoint returns details of all of the
+        regions defined in WorkBC's Job Board. The response includes the
+        id and caption.
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Region"
+                type: array
+          description: An array of regions
+        default:
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Unexpected error
+      summary: Regions
+      tags:
+        - Job Feed
+components:
+  schemas:
+    Error:
+      properties:
+        Message:
+          type: string
+      type: object
+    Industry:
+      properties:
+        Caption:
+          description: The name of the Industries.
+          type: string
+        ID:
+          description: Industry ID.
+          type: integer
+        SubIndustries:
+          items:
+            $ref: "#/components/schemas/SubIndustry"
+          type: array
+      type: object
+    Job:
+      properties:
+        EmployerName:
+          description: The name of the employer who is offering the job.
+          type: string
+        ExpiryDate:
+          description: The date that the job will expire. It is the caller's responsibility to remove job postings once they expire. After this date the supplied Url will show a 404 page.
+          format: date-time
+          type: string
+        JobDescription:
+          description: Details of the job posting. This is limited to 250 characters, and HTML tags are stripped out. For a full description, use the Url property to view the job posting on the WorkBC website.
+          type: string
+        JobID:
+          description: The unique id of the job in the WorkBC Job Board database.
+          type: integer
+        JobTitle:
+          description: The name of the job posting.
+          type: string
+        JobTypes:
+          description: The types of work associated with this job.
+          items:
+            $ref: "#/components/schemas/JobType"
+          type: array
+        Locations:
+          description: Details of all of the locations where the job is available.
+          items:
+            $ref: "#/components/schemas/Location"
+          type: array
+        MajorProject:
+          $ref: "#/components/schemas/MajorProject"
+        PostedDate:
+          description: The date that the job was posted.
+          format: date-time
+          type: string
+        RecordType:
+          $ref: "#/components/schemas/RecordType"
+        SalaryMax:
+          format: double
+          type: number
+        SalaryMin:
+          format: double
+          type: number
+        SalaryMultiplier:
+          description: The amount to multiply SalaryMin and SalaryMax by in order to convert to annual values. This is needed if you want to compare salaries for jobs that have been posted using different salary types.
+          type: integer
+        SalaryType:
+          type: string
+        Url:
+          description: The URL for the live job posting on the WorkBC website.
+          type: string
+      type: object
+    JobFeedResponse:
+      properties:
+        Jobs:
+          items:
+            $ref: "#/components/schemas/Job"
+          type: array
+      type: object
+    JobType:
+      properties:
+        Caption:
+          description: The name of the Job Type.
+          type: string
+        ID:
+          $ref: "#/components/schemas/JobTypeID"
+      type: object
+    JobTypeID:
+      description: The type of work.
+      enum:
+        - Undefined0
+        - Full-Time
+        - Part-Time
+        - Contract
+        - Undefined4
+        - Undefined5
+        - Student
+        - Undefined7
+        - Undefined8
+        - Casual
+        - Seasonal
+        - Temporary
+        - Permanent
+        - Co-op
+        - Apprenticeship
+      type: integer
+    Location:
+      description: Details of where a job is located. A job can have up to three associated locations.
+      properties:
+        City:
+          description: The name of the city where the job is located.
+          type: string
+        Province:
+          description: The name of the province where the job is located.
+          type: string
+        RegionID:
+          $ref: "#/components/schemas/Region"
+        RegionName:
+          description: The name of the region in B.C. where the job is located.
+          type: string
+      type: object
+    MajorProject:
+      properties:
+        Caption:
+          description: The name of the Major Project.
+          type: string
+        ID:
+          description: The unique ID of the Major Project in the WorkBC Job Board database. Use this when restricting the Job Feed to only one Major Project.
+          type: integer
+      type: object
+    RecordType:
+      description: The type of change that has happened to this job.
+      enum:
+        - Undefined
+        - Update
+        - Delete
+      type: integer
+    Region:
+      properties:
+        Caption:
+          description: The name of the Region.
+          type: string
+        ID:
+          $ref: "#/components/schemas/RegionID"
+      type: object
+    RegionID:
+      description: A region within B.C.
+      enum:
+        - Undefined
+        - Vancouver Island/Coast
+        - Mainland/Southwest
+        - Thompson-Okanagan
+        - Kootenay
+        - Cariboo
+        - North Coast
+        - Nechako
+        - Northeast
+      type: integer
+    SubIndustry:
+      properties:
+        Caption:
+          description: The name of the SubIndustries.
+          type: string
+        ID:
+          description: Sub Industry ID.
+          type: integer
+      type: object

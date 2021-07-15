@@ -1,0 +1,378 @@
+swagger: "2.0"
+host: api.mastercard.com
+basePath: /mcapi/settlement/currencyrate
+info:
+  description: This API provides a range of functions to get back currency conversion rates and amounts based on current Mastercard currency conversion values.
+  title: API for the Settlement Currency Rate converter
+  version: 1.0.0
+  x-artifactId: currency-conversion
+  x-origin:
+    - format: swagger
+      url: https://developer.mastercard.com/devzone/api/portal/swagger/currency-conversion-calculator
+      version: "2.0"
+  x-providerName: mastercard.com
+  x-serviceName: CurrencyConversionCalculator
+  x-test-on-environment:
+    environment: SANDBOX_MTF
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+produces:
+  - application/json
+tags:
+  - description: Conversion Rate
+    name: Conversion Rate
+  - description: Rate Issued
+    name: Rate Issued
+  - description: Currencies
+    name: Currencies
+paths:
+  /conversion-rate:
+    get:
+      consumes:
+        - application/json
+      description: Get the currency conversion rate details.
+      operationId: getConversionDetailUsingGET
+      parameters:
+        - description: Date of the requested FX rates.
+          in: query
+          name: fxDate
+          required: true
+          type: string
+        - description: Currency of the transaction.
+          in: query
+          name: transCurr
+          required: true
+          type: string
+        - description: Cardholder billing currency.
+          in: query
+          name: crdhldBillCurr
+          required: true
+          type: string
+        - description: Additional fees imposed by the bank.
+          format: double
+          in: query
+          name: bankFee
+          required: false
+          type: number
+        - description: Amount in the transaction currency.
+          format: double
+          in: query
+          name: transAmt
+          required: true
+          type: number
+      produces:
+        - application/json;charset=UTF-8
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/ConversionRateRequest"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Get the currency conversion rate details.
+      tags:
+        - Conversion Rate
+      x-samples:
+        - name: documentation_conversion_rate_request
+          populateDefaults:
+            application/json: |-
+              {
+                "fxDate":"true",
+                "transCurr":"true",
+                "crdhldBillCurr":"true",
+                "bankFee":"true",
+                "transAmt":"true"
+              } 
+          request:
+            application/json: |-
+              {
+                "fxDate":"2019-09-30",
+                "transCurr":"ALL",
+                "crdhldBillCurr":"DZD",
+                "bankFee":"5",
+                "transAmt":"23"
+              }   
+          type: documentation
+        - ignoreAsserts:
+            - date
+            - data.conversionRate
+            - data.crdhldBillAmt
+          name: example_conversion_rate_request
+          request:
+            application/json: |-
+              {
+                "fxDate":"2019-09-30",
+                "transCurr":"ALL",
+                "crdhldBillCurr":"DZD",
+                "bankFee":"5",
+                "transAmt":"23"
+              }   
+          response:
+            application/json: |-
+              {
+                 "name":"settlement-conversion-rate",
+                 "description":"Settlement conversion rate and billing amount",
+                 "date":"2017-11-03 03:59:50",
+                 "data":{
+                    "conversionRate":0.57,
+                    "crdhldBillAmt":13.11,
+                    "fxDate":"2019-09-30",
+                    "transCurr":"ALL",
+                    "crdhldBillCurr":"DZD",
+                    "transAmt":23,
+                    "bankFee":5
+                 }
+              }
+        - name: example_unavailable_rate_request
+          request:
+            application/json: |-
+              {
+                "fxDate":"2019-08-08",
+                "transCurr":"INR",
+                "crdhldBillCurr":"USD",
+                "bankFee":"5",
+                "transAmt":"345"
+              }
+          response:
+            application/json: |-
+              {  
+                "name":"settlement-conversion-rate",
+                "description":"An error occurred during the request",
+                "date":"2019-08-08 16:34:34",
+                "type":"error",
+                "data":{  
+                    "errorCode":"104",
+                    "errorMessage":"Not Found , The calculated cross rates for the selected date is not available."
+                }
+              }
+          type: sample
+  /conversion-rate-issued:
+    get:
+      consumes:
+        - application/json
+      description: Determine if the settlement rate has been issued.
+      operationId: isRateIssuedUsingGET
+      parameters:
+        - description: The date by which the rate would have been issued.
+          in: query
+          name: date
+          required: false
+          type: string
+      produces:
+        - application/json;charset=UTF-8
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/SettlementRateIssuedRequest"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: Determine if the settlement rate has been issued.
+      tags:
+        - Rate Issued
+      x-samples:
+        - name: documentation_rate_issued_request
+          populateDefaults:
+            application/json: |-
+              {
+                "date":"true"
+              }  
+          request:
+            application/json: |-
+              {
+                "date":"2019-08-08"
+              }  
+          type: documentation
+        - ignoreAsserts:
+            - date
+          name: example_rate_issued_request
+          request:
+            application/json: |-
+              {
+                "date":"2019-08-08"
+              }   
+          response:
+            application/json: |-
+              {
+                 "name":"settlement-conversion-rate-issued",
+                 "description":"Is settlement conversion rate issued",
+                 "date":"2017-11-03 04:07:18",
+                 "data":{
+                    "rateIssued":"Yes"
+                 }
+              }
+  /settlement-currencies:
+    get:
+      consumes:
+        - application/json
+      description: List of supported currencies.
+      operationId: getCurrencyRateDataUsingGET
+      produces:
+        - application/json;charset=UTF-8
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/SettlementCurrencyRequest"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: getCurrencyRateData
+      tags:
+        - Currencies
+      x-samples:
+        - ignoreAsserts:
+            - date
+          name: example_settlement_currencies_request
+          request:
+            application/json: |-
+              {
+                
+              }   
+          response:
+            application/json: |-
+              {
+                  "name": "settlement-currency", 
+                  "description": "A list of settlement active currencies", 
+                  "date": "11-2017-03 03:54:47", 
+                  "data": {
+                      "currencies": [
+                          {
+                              "alphaCd": "AFN", 
+                              "currNam": "AFGHANISTAN AFGHANI"
+                          }, 
+                          {
+                              "alphaCd": "ALL", 
+                              "currNam": "ALBANIAN LEK"
+                          }
+                      ]
+                  }
+              }
+definitions:
+  Conversion:
+    properties:
+      bankFee:
+        description: Additional fees imposed by the bank.
+        example: 5
+        format: double
+        type: number
+      conversionRate:
+        description: Rate applied to the transaction to convert from Transaction Currency to Cardholder Billing Currency.
+        example: 0.943078
+        format: double
+        type: number
+      crdhldBillAmt:
+        description: Amount in the cardholder billing currency.
+        example: 21.690798
+        format: double
+        type: number
+      crdhldBillCurr:
+        description: Cardholder billing currency.
+        example: DZD
+        type: string
+      errorCode:
+        description: The error code associated with the error being returned.
+        example: 104
+        type: string
+      errorMessage:
+        description: The reason for the error.
+        example: Not Found , The calculated cross rates for the selected date is not available.
+        type: string
+      fxDate:
+        description: Date of the requested FX rates.
+        example: 2016-09-30
+        type: string
+      transAmt:
+        description: Amount in the transaction currency.
+        example: 23
+        format: double
+        type: number
+      transCurr:
+        description: Currency of the transaction.
+        example: ALL
+        type: string
+  ConversionRateRequest:
+    properties:
+      data:
+        $ref: "#/definitions/Conversion"
+      date:
+        description: The date and time the API is being called in GMT.
+        example: 2019-08-08 16:43:27
+        type: string
+      description:
+        description: The description of the API being called.
+        example: Settlement conversion rate and billing amount
+        type: string
+      name:
+        description: The name of the service being requested.
+        example: settlement-conversion-rate
+        type: string
+      type:
+        description: The type of response being returned by the API.
+        example: error
+        type: string
+  Currency:
+    properties:
+      alphaCd:
+        description: The Alpha code for the currency.
+        example: AOA
+        type: string
+      currNam:
+        description: The full name of the currency.
+        example: ANGOLAN KWANZA
+        type: string
+  SettlementCurrency:
+    properties:
+      currencies:
+        items:
+          $ref: "#/definitions/Currency"
+        type: array
+  SettlementCurrencyRequest:
+    properties:
+      data:
+        $ref: "#/definitions/SettlementCurrency"
+      date:
+        description: The date and time the API is being called in GMT.
+        example: 2019-08-08 16:22:31
+        type: string
+      description:
+        description: The description of the API being called.
+        example: A list of settlement active currencies
+        type: string
+      name:
+        description: The name of the service being requested.
+        example: settlement-currency
+        type: string
+  SettlementRateIssued:
+    properties:
+      rateIssued:
+        description: The requested foreign exchange rate.
+        example: NO
+        type: string
+  SettlementRateIssuedRequest:
+    properties:
+      data:
+        $ref: "#/definitions/SettlementRateIssued"
+      date:
+        description: The date and time the API is being called in GMT.
+        example: 2019-08-08 16:22:31
+        type: string
+      description:
+        description: The description of the API being called.
+        example: Is settlement conversion rate issued
+        type: string
+      name:
+        description: The name of the service being requested.
+        example: settlement-conversion-rate-issued
+        type: string

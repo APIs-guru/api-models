@@ -1,0 +1,706 @@
+{
+  "openapi": "3.0.0",
+  "servers": [
+    {
+      "url": "https://rest.nexmo.com/sms"
+    }
+  ],
+  "info": {
+    "contact": {
+      "email": "devrel@vonage.com",
+      "name": "Vonage DevRel",
+      "url": "https://developer.nexmo.com/"
+    },
+    "description": "With the SMS API you can send SMS from your account and lookup messages both messages that you've sent as well as messages sent to your virtual numbers. Numbers are specified in E.164 format. More SMS API documentation is at <https://developer.nexmo.com/messaging/sms/overview>",
+    "title": "SMS API",
+    "version": "1.0.10",
+    "x-origin": [
+      {
+        "format": "openapi",
+        "url": "https://raw.githubusercontent.com/nexmo/api-specification/master/definitions/sms.yml",
+        "version": "3.0"
+      }
+    ],
+    "x-providerName": "nexmo.com",
+    "x-serviceName": "sms",
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg"
+    }
+  },
+  "paths": {
+    "/{format}": {
+      "post": {
+        "callbacks": {
+          "delivery-receipt": {
+            "{$request.body#/callback}": {
+              "post": {
+                "description": "The following are parameters sent in as a [delivery receipt](/messaging/sms/guides/delivery-receipts) callback. You can subscribe to [webhooks](/concepts/guides/webhooks) to receive notification when the delivery status of an SMS that you have sent with Vonage changes.",
+                "operationId": "delivery-receipt",
+                "requestBody": {
+                  "content": {
+                    "application/json": {
+                      "schema": {
+                        "$ref": "#/components/schemas/DeliveryReceipt"
+                      }
+                    }
+                  },
+                  "required": true
+                },
+                "responses": {
+                  "200": {
+                    "description": "Your server returns this code if it accepts the callback"
+                  }
+                },
+                "summary": "Delivery Receipt"
+              }
+            }
+          }
+        },
+        "description": "Send an outbound SMS from your Vonage account",
+        "operationId": "send-an-sms",
+        "parameters": [
+          {
+            "description": "The format of the response",
+            "in": "path",
+            "name": "format",
+            "required": true,
+            "schema": {
+              "default": "json",
+              "enum": [
+                "json",
+                "xml"
+              ],
+              "example": "json",
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/NewMessage"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SMS"
+                    },
+                    {
+                      "$ref": "#/components/schemas/Error"
+                    }
+                  ]
+                }
+              },
+              "text/xml": {
+                "schema": {
+                  "oneOf": [
+                    {
+                      "$ref": "#/components/schemas/SMSXml"
+                    },
+                    {
+                      "$ref": "#/components/schemas/ErrorXml"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Success"
+          }
+        },
+        "summary": "Send an SMS"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "DeliveryReceipt": {
+        "properties": {
+          "api-key": {
+            "description": "The API key that sent the SMS. This is useful when multiple accounts are sending webhooks to the same endpoint.",
+            "example": "abcd1234",
+            "type": "string"
+          },
+          "client-ref": {
+            "description": "If the `client-ref` is set when the SMS is sent, it will be included in the delivery receipt",
+            "example": "my-personal-reference",
+            "type": "string"
+          },
+          "err-code": {
+            "description": "The status of the request. Will be a non `0` value if there has been an error, or if the status is unknown. See the [Delivery Receipt documentation](/messaging/sms/guides/delivery-receipts#dlr-error-codes) for more details",
+            "example": "0",
+            "type": "string"
+          },
+          "message-timestamp": {
+            "description": "The time when Vonage started to push this Delivery Receipt to your webhook endpoint.",
+            "example": "2020-01-01 12:00:00",
+            "type": "string"
+          },
+          "messageId": {
+            "description": "The Vonage ID for this message.",
+            "example": "0A0000001234567B",
+            "type": "string"
+          },
+          "msisdn": {
+            "description": "The number the message was sent to. Numbers are specified in E.164 format.",
+            "example": "447700900000",
+            "type": "string"
+          },
+          "network-code": {
+            "description": "The Mobile Country Code Mobile Network Code (MCCMNC) of the carrier this phone number is registered with.",
+            "example": "12345",
+            "type": "string"
+          },
+          "nonce": {
+            "description": "A random string to be used when calculating the signature. _Only included if you have signatures enabled_",
+            "example": "ec11dd3e-1e7f-4db5-9467-82b02cd223b9",
+            "type": "string"
+          },
+          "price": {
+            "description": "The cost of the message",
+            "example": "0.03330000",
+            "type": "string"
+          },
+          "scts": {
+            "description": "When the DLR was received from the carrier in the following format `YYMMDDHHMM`. For example, `2001011400` is at `2020-01-01 14:00`",
+            "example": "2001011400",
+            "type": "string"
+          },
+          "sig": {
+            "description": "The signature to enable verification of the source of this webhook. Please see the [developer documentation for validating signatures](/concepts/guides/signing-messages) for more information, or use one of our published SDKs. _Only included if you have signatures enabled_",
+            "example": "1A20E4E2069B609FDA6CECA9DE18D5CAFE99720DDB628BD6BE8B19942A336E1C",
+            "type": "string"
+          },
+          "status": {
+            "description": "A code that explains where the message is in the delivery process.",
+            "example": "delivered",
+            "type": "string",
+            "x-possible-values": [
+              "delivered",
+              "expired",
+              "failed",
+              "rejected",
+              "accepted",
+              "buffered",
+              "unknown"
+            ]
+          },
+          "timestamp": {
+            "description": "A timestamp in Unix (seconds since the epoch) format. _Only included if you have signatures enabled_",
+            "example": "1582650446",
+            "type": "string"
+          },
+          "to": {
+            "description": "The SenderID you set in `from` in your request.",
+            "example": "AcmeInc",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "Error": {
+        "description": "Error",
+        "properties": {
+          "message-count": {
+            "description": "The amount of messages in the request",
+            "example": "1",
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ErrorMessage"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "ErrorMessage": {
+        "properties": {
+          "error-text": {
+            "description": "The description of the error",
+            "example": "Missing to param",
+            "type": "string"
+          },
+          "status": {
+            "description": "The error status of the message",
+            "example": "2",
+            "type": "string"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "message"
+        }
+      },
+      "ErrorXml": {
+        "description": "Error",
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/ErrorMessage"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "mt-submission-response"
+        }
+      },
+      "InboundMessage": {
+        "properties": {
+          "api-key": {
+            "description": "The Vonage API Key of the receiving account.",
+            "example": "abcd1234",
+            "type": "string"
+          },
+          "concat": {
+            "description": "True - if this is a concatenated message. This field does not exist if it is a single message",
+            "example": "true",
+            "type": "string"
+          },
+          "concat-part": {
+            "description": "The number of this part in the message. Counting starts at 1.",
+            "example": "2",
+            "type": "string"
+          },
+          "concat-ref": {
+            "description": "The transaction reference. All parts of this message share this value.",
+            "example": "1",
+            "type": "string"
+          },
+          "concat-total": {
+            "description": "The number of parts in this concatenated message.",
+            "example": "3",
+            "type": "string"
+          },
+          "data": {
+            "description": "The content of this message, if type is binary.",
+            "format": "binary",
+            "type": "string"
+          },
+          "keyword": {
+            "description": "The first word in the message body. Converted to upper case.",
+            "example": "HELLO",
+            "type": "string"
+          },
+          "message-timestamp": {
+            "description": "The time when Vonage started to push this Delivery Receipt to your webhook endpoint.",
+            "example": "2020-01-01 12:00:00",
+            "type": "string"
+          },
+          "messageId": {
+            "description": "The ID of the message",
+            "example": "0A0000000123ABCD1",
+            "type": "string"
+          },
+          "msisdn": {
+            "description": "The phone number that this inbound message was sent from. Numbers are specified in E.164 format.",
+            "example": "447700900001",
+            "type": "string"
+          },
+          "nonce": {
+            "description": "A random string that forms part of the signed set of parameters, it adds an extra element of unpredictability into the signature for the request. You use the nonce and timestamp parameters with your shared secret to calculate and validate the signature for inbound messages.",
+            "example": "aaaaaaaa-bbbb-cccc-dddd-0123456789ab",
+            "type": "string"
+          },
+          "text": {
+            "description": "The message body for this inbound message.",
+            "example": "Hello world",
+            "type": "string"
+          },
+          "timestamp": {
+            "description": "A unix timestamp representation of message-timestamp.",
+            "example": "1578787200",
+            "type": "string"
+          },
+          "to": {
+            "description": "The phone number the message was sent to. **This is your virtual number**. Numbers are specified in E.164 format.",
+            "example": "447700900000",
+            "type": "string"
+          },
+          "type": {
+            "description": "Possible values are:\n\n  - `text` - standard text.\n  - `unicode` - URLencoded   unicode  . This is valid for standard GSM, Arabic, Chinese, double-encoded characters and so on.\n  - `binary` - a binary message.\n",
+            "example": "text",
+            "type": "string"
+          },
+          "udh": {
+            "description": "The hex encoded User Data Header, if type is binary",
+            "type": "string"
+          }
+        },
+        "required": [
+          "msisdn",
+          "to",
+          "messageId",
+          "text",
+          "type",
+          "keyword",
+          "message-timestamp",
+          "api-key"
+        ],
+        "type": "object"
+      },
+      "Message": {
+        "properties": {
+          "account-ref": {
+            "description": "**Advanced**: An optional string used to identify separate accounts using the SMS endpoint for billing purposes. To use this feature, please email [support@nexmo.com](mailto:support@nexmo.com)",
+            "example": "customer1234",
+            "type": "string"
+          },
+          "client-ref": {
+            "description": "If a `client-ref` was included when sending the SMS, this field will be included and hold the value that was sent.",
+            "example": "my-personal-reference",
+            "type": "string"
+          },
+          "message-id": {
+            "description": "The ID of the message",
+            "example": "0A0000000123ABCD1",
+            "type": "string",
+            "xml": {
+              "name": "messageId"
+            }
+          },
+          "message-price": {
+            "description": "The cost of the message",
+            "example": "0.03330000",
+            "type": "string",
+            "xml": {
+              "name": "messagePrice"
+            }
+          },
+          "network": {
+            "description": "The ID of the network of the recipient",
+            "example": "12345",
+            "type": "string"
+          },
+          "remaining-balance": {
+            "description": "Your remaining balance",
+            "example": "3.14159265",
+            "type": "string",
+            "xml": {
+              "name": "remainingBalance"
+            }
+          },
+          "status": {
+            "description": "The status of the message. See [Troubleshooting Failed SMS](/messaging/sms/guides/troubleshooting-sms).",
+            "example": "0",
+            "type": "string"
+          },
+          "to": {
+            "description": "The number the message was sent to. Numbers are specified in E.164 format.",
+            "example": "447700900000",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "NewMessage": {
+        "properties": {
+          "account-ref": {
+            "description": "**Advanced**: An optional string used to identify separate accounts using the SMS endpoint for billing purposes. To use this feature, please email [support@nexmo.com](mailto:support@nexmo.com)",
+            "example": "customer1234",
+            "type": "string"
+          },
+          "api_key": {
+            "description": "Your API key",
+            "example": "abcd1234",
+            "maxLength": 8,
+            "minLength": 8,
+            "type": "string"
+          },
+          "api_secret": {
+            "description": "Your API secret. Required unless `sig` is provided",
+            "example": "abcdef0123456789",
+            "maxLength": 32,
+            "minLength": 6,
+            "type": "string"
+          },
+          "body": {
+            "description": "**Advanced**: Hex encoded binary data. Depends on `type` parameter having the value `binary`.",
+            "example": "0011223344556677",
+            "type": "string"
+          },
+          "callback": {
+            "description": "**Advanced**: The webhook endpoint the delivery receipt for this sms is sent to. This parameter overrides the webhook endpoint you set in Dashboard.",
+            "example": "https://example.com/sms-dlr",
+            "type": "string"
+          },
+          "client-ref": {
+            "description": "**Advanced**: You can optionally include your own reference of up to 40 characters.",
+            "example": "my-personal-reference",
+            "type": "string"
+          },
+          "content-id": {
+            "description": "**Advanced**: A string parameter that satisfies regulatory requirements when sending an SMS to specific countries. For more information please refer to the [Country-Specific Outbound SMS Features](https://help.nexmo.com/hc/en-us/articles/115011781468)",
+            "example": "1107457532145798767",
+            "type": "string"
+          },
+          "entity-id": {
+            "description": "**Advanced**: A string parameter that satisfies regulatory requirements when sending an SMS to specific countries. For more information please refer to the [Country-Specific Outbound SMS Features](https://help.nexmo.com/hc/en-us/articles/115011781468)",
+            "example": "1101456324675322134",
+            "type": "string"
+          },
+          "from": {
+            "description": "The name or number the message should be sent from. Alphanumeric senderID's are not supported in all countries, see [Global Messaging](/messaging/sms/guides/global-messaging#country-specific-features) for more details. If alphanumeric, spaces will be ignored. Numbers are specified in E.164 format.",
+            "example": "AcmeInc",
+            "type": "string"
+          },
+          "message-class": {
+            "description": "**Advanced**: The Data Coding Scheme value of the message",
+            "enum": [
+              0,
+              1,
+              2,
+              3
+            ],
+            "type": "integer"
+          },
+          "protocol-id": {
+            "description": "**Advanced**: The value of the [protocol identifier](https://en.wikipedia.org/wiki/GSM_03.40#Protocol_Identifier) to use. Ensure that the value is aligned with `udh`.",
+            "example": 127,
+            "type": "integer"
+          },
+          "sig": {
+            "description": "The hash of the request parameters in alphabetical order, a timestamp and the signature secret. See [Signing Requests](/concepts/guides/signing-messages) for more details.",
+            "maxLength": 60,
+            "minLength": 16,
+            "type": "string"
+          },
+          "status-report-req": {
+            "default": true,
+            "description": "**Advanced**: Boolean indicating if you like to receive a [Delivery Receipt](/messaging/sms/building-blocks/receive-a-delivery-receipt).",
+            "example": false,
+            "type": "boolean"
+          },
+          "text": {
+            "description": "The body of the message being sent. If your message contains characters that can be encoded according to the GSM Standard and Extended tables then you can set the `type` to `text`. If your message contains characters outside this range, then you will need to set the `type` to `unicode`.",
+            "example": "Hello World!",
+            "type": "string"
+          },
+          "title": {
+            "description": "**Advanced**: The title for a wappush SMS. Depends on `type` parameter having the value `wappush`.",
+            "example": "Welcome",
+            "type": "string"
+          },
+          "to": {
+            "description": "The number that the message should be sent to. Numbers are specified in E.164 format.",
+            "example": "447700900000",
+            "maxLength": 15,
+            "minLength": 7,
+            "pattern": "\\d{7,15}",
+            "type": "string"
+          },
+          "ttl": {
+            "default": 259200000,
+            "description": "**Advanced**: The duration in milliseconds the delivery of an SMS will be attempted.§§ By default Vonage attempts delivery for 72 hours, however the maximum effective value depends on the operator and is typically 24 - 48 hours. We recommend this value should be kept at its default or at least 30 minutes.",
+            "example": 900000,
+            "maximum": 604800000,
+            "minimum": 20000,
+            "type": "integer"
+          },
+          "type": {
+            "default": "text",
+            "description": "**Advanced**: The format of the message body",
+            "enum": [
+              "text",
+              "binary",
+              "wappush",
+              "unicode",
+              "vcal",
+              "vcard"
+            ],
+            "example": "text",
+            "type": "string"
+          },
+          "udh": {
+            "description": "**Advanced**: Your custom Hex encoded [User Data Header](https://en.wikipedia.org/wiki/User_Data_Header). Depends on `type` parameter having the value `binary`.",
+            "example": "06050415811581",
+            "type": "string"
+          },
+          "url": {
+            "description": "**Advanced**: The URL of your website. Depends on `type` parameter having the value `wappush`.",
+            "example": "https://example.com",
+            "type": "string"
+          },
+          "validity": {
+            "description": "**Advanced**: The availability for an SMS in milliseconds. Depends on `type` parameter having the value `wappush`.",
+            "example": "300000",
+            "type": "string"
+          },
+          "vcal": {
+            "description": "**Advanced**: A calendar event in [vCal format](https://en.wikipedia.org/wiki/VCal). Depends on `type` parameter having the value `vcal`.",
+            "format": "vcal",
+            "type": "string"
+          },
+          "vcard": {
+            "description": "**Advanced**: A business card in [vCard format](https://en.wikipedia.org/wiki/VCard). Depends on `type` parameter having the value `vcard`.",
+            "format": "vcard",
+            "type": "string"
+          }
+        },
+        "required": [
+          "api_key",
+          "from",
+          "to"
+        ]
+      },
+      "SMS": {
+        "description": "Message sent",
+        "properties": {
+          "message-count": {
+            "description": "The amount of messages in the request",
+            "example": "1",
+            "type": "string"
+          },
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      },
+      "SMSXml": {
+        "description": "Message sent",
+        "properties": {
+          "messages": {
+            "items": {
+              "$ref": "#/components/schemas/Message"
+            },
+            "properties": {
+              "count": {
+                "example": 1,
+                "type": "integer",
+                "xml": {
+                  "attribute": true
+                }
+              }
+            },
+            "type": "array",
+            "x-skip-response-description": true
+          }
+        },
+        "type": "object",
+        "xml": {
+          "name": "mt-submission-response"
+        }
+      }
+    }
+  },
+  "x-errors": {
+    "1": {
+      "description": "Throttled. You are sending SMS faster than the account limit.",
+      "resolution": "Refer to [What is the Throughput Limit for Outbound SMS?](https://help.nexmo.com/hc/en-us/articles/203993598) for more information."
+    },
+    "2": {
+      "description": "Missing Parameters. Your request is missing one of the required parameters `from`, `to`, `api_key`, `api_secret` or `text`.",
+      "resolution": "Check your parameters and try again."
+    },
+    "3": {
+      "description": "Invalid Parameters. The value of one or more parameters is invalid.",
+      "resolution": "Check your parameters and try again."
+    },
+    "4": {
+      "description": "Invalid Credentials. Your API key and/or secret are incorrect, invalid or disabled.",
+      "resolution": "Visit the [Dashboard](https://dashboard.nexmo.com) and check your credentials."
+    },
+    "5": {
+      "description": "Internal Error. An error has occurred in the platform whilst processing this message.",
+      "resolution": "If the error persists, contact support@nexmo.com."
+    },
+    "6": {
+      "description": "Invalid Message. The platform was unable to process this message, for example, an un-recognized number prefix.",
+      "resolution": "N/A"
+    },
+    "7": {
+      "description": "Number Barred. The number you are trying to send messages to is blacklisted and may not receive them.",
+      "resolution": "N/A"
+    },
+    "8": {
+      "description": "Partner Account Barred. Your Vonage account has been suspended.",
+      "resolution": "Contact <support@nexmo.com>."
+    },
+    "9": {
+      "description": "Partner Quota Violation. You do not have sufficient credit to send the message.",
+      "resolution": "Top-up and retry."
+    },
+    "10": {
+      "description": "Too Many Existing Binds. The number of simultaneous connections to the platform exceeds your account allocation.",
+      "resolution": "Back-off and retry."
+    },
+    "11": {
+      "description": "Account Not Enabled For HTTP. This account is not provisioned for the SMS API.",
+      "resolution": "This error usually indicates that you should use SMPP instead."
+    },
+    "12": {
+      "description": "Message Too Long. The message length exceeds the maximum allowed.",
+      "resolution": "Send shorter messages."
+    },
+    "14": {
+      "description": "Invalid Signature. The signature supplied could not be verified.",
+      "resolution": "Check the [documentation for signing messages](/concepts/guides/signing-messages) or use one of the [SDKs](/tools) to handle the signing."
+    },
+    "15": {
+      "description": "Invalid Sender Address. You are using a non-authorized sender ID in the `from` field.",
+      "resolution": "This is most commonly seen in North America, where a Vonage long virtual number or short code is required."
+    },
+    "22": {
+      "description": "Invalid Network Code. The network code supplied was either not recognized, or does not match the country of the destination address.",
+      "resolution": "Check the network code or remove it from your request."
+    },
+    "23": {
+      "description": "Invalid Callback Url. The callback URL supplied was either too long or contained illegal characters.",
+      "resolution": "Supply a valid URL for the callback."
+    },
+    "29": {
+      "description": "Non-Whitelisted Destination. Your Vonage account is still in demo mode. While in demo mode you must add target numbers to your whitelisted destination list.",
+      "resolution": "Top-up your account to remove this limitation."
+    },
+    "32": {
+      "description": "Signature And API Secret Disallowed. A signed request may not also present an `api_secret`.",
+      "resolution": "Remove the API secret from your request, or don't sign the message."
+    },
+    "33": {
+      "description": "Number De-activated. The number you are trying to send messages to is de-activated and may not receive them.",
+      "resolution": "N/A"
+    }
+  },
+  "x-webhooks": {
+    "inbound-sms": {
+      "{$request.body#/callback}": {
+        "post": {
+          "description": "If you rent one or more virtual numbers from Vonage, inbound messages to that number are sent to your [webhook endpoint](/concepts/guides/webhooks).\n\nWhen you receive an inbound message, you must send a 2xx response. If you do not send a 2xx response Vonage will resend the inbound message for the next 24 hours.\n",
+          "operationId": "inbound-sms",
+          "requestBody": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InboundMessage"
+                }
+              }
+            },
+            "required": true
+          },
+          "responses": {
+            "200": {
+              "description": "Your server returns this code if it accepts the callback"
+            }
+          },
+          "summary": "Inbound SMS",
+          "x-example-path": "/webhooks/inbound-sms"
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,1329 @@
+swagger: "2.0"
+schemes:
+  - https
+host: listening.api.npr.org
+info:
+  contact:
+    email: NPROneEnterprise@npr.org
+    name: NPR One Enterprise Team
+    url: https://dev.npr.org
+    x-twitter: NPR
+  description: Audio recommendations tailored to a user's preferences
+  termsOfService: https://dev.npr.org/guide/prerequisites/terms-of-use
+  title: NPR Listening Service
+  version: "2"
+  x-apisguru-categories:
+    - entertainment
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_NPR_profile_image.jpeg
+  x-origin:
+    - format: swagger
+      url: https://listening.api.npr.org/v2/swagger.json
+      version: "2.0"
+  x-providerName: npr.org
+  x-serviceName: listening
+externalDocs:
+  description: Learn more at the NPR One Developer Center
+  url: https://dev.npr.org/guide/services/listening
+consumes:
+  - application/json
+  - application/vnd.collection.doc+json
+produces:
+  - application/json
+  - application/vnd.collection.doc+json
+securityDefinitions:
+  oauth2:
+    authorizationUrl: https://authorization.api.npr.org/v2/authorize
+    flow: accessCode
+    scopes:
+      identity.readonly: See your personal information, such as your first name, last name, and favorite station.
+      identity.write: Update your personal information, such as your favorite station(s) or program(s) you follow, on your behalf.
+      listening.readonly: See your NPR One listening history and get audio recommendations.
+      listening.write: Record that you have heard, marked as interesting, and/or skipped NPR One stories in order to personalize future audio recommendations.
+      localactivation: Connect you with your local NPR member station for communication purposes.
+    tokenUrl: https://authorization.api.npr.org/v2/token
+    type: oauth2
+parameters:
+  Authorization:
+    description: Your access token from the Authorization Service. Should start with `Bearer`, followed by a space, followed by the token.
+    in: header
+    name: Authorization
+    required: true
+    type: string
+  X-Advertising-ID:
+    description: A device-specific advertising identifier, if possible. Apple's IDFA is an example.
+    in: header
+    name: X-Advertising-ID
+    required: false
+    type: string
+  channel:
+    default: npr
+    description: Determines the focus of the recommendations returned. Channel `npr` is recommended for most use cases.
+    enum:
+      - npr
+      - followed
+      - recommended
+      - emailstories
+      - emailprograms
+      - lapsedusersemail
+      - ongoing email
+      - newscasts
+      - shows
+    in: query
+    name: channel
+    required: false
+    type: string
+responses:
+  400WithDocument:
+    description: A bad request; generally, one or more parameters passed in were incorrect or missing
+    headers:
+      X-RateLimit-Limit:
+        description: The number of allowed requests in the current period
+        type: integer
+      X-RateLimit-Remaining:
+        description: The number of remaining requests in the current period
+        type: integer
+      X-RateLimit-Reset:
+        description: The number of seconds left in the current period
+        type: integer
+    schema:
+      $ref: "#/definitions/ErrorDocument"
+  401WithDocument:
+    description: The client is not authorized to complete this request. Check to ensure a valid access token was passed in the headers.
+    schema:
+      $ref: "#/definitions/ErrorDocument"
+  404WithDocument:
+    description: The resource with the requested ID could not be found, and the server was unable to complete the request.
+    headers:
+      X-RateLimit-Limit:
+        description: The number of allowed requests in the current period
+        type: integer
+      X-RateLimit-Remaining:
+        description: The number of remaining requests in the current period
+        type: integer
+      X-RateLimit-Reset:
+        description: The number of seconds left in the current period
+        type: integer
+    schema:
+      $ref: "#/definitions/ErrorDocument"
+  429WithDocument:
+    description: The client has exceeded the number of daily calls as per their rate limit. For now, this only applies to prototype applications and untrusted clients. Trusted clients will never be rate-limited, nor will any production apps.
+    headers:
+      X-RateLimit-Limit:
+        description: The number of allowed requests in the current period
+        type: integer
+      X-RateLimit-Remaining:
+        description: The number of remaining requests in the current period
+        type: integer
+      X-RateLimit-Reset:
+        description: The number of seconds left in the current period
+        type: integer
+    schema:
+      $ref: "#/definitions/ErrorDocument"
+  500WithDocument:
+    description: A server error
+    headers:
+      X-RateLimit-Limit:
+        description: The number of allowed requests in the current period
+        type: integer
+      X-RateLimit-Remaining:
+        description: The number of remaining requests in the current period
+        type: integer
+      X-RateLimit-Reset:
+        description: The number of seconds left in the current period
+        type: integer
+    schema:
+      $ref: "#/definitions/ErrorDocument"
+  503WithDocument:
+    description: The system is undergoing maintenance and we are unable to fulfill this request. Look for a `Retry-After` header to see the predicted time the system will be back up.
+    headers:
+      Retry-After:
+        description: The predicted time the system will be back up
+        format: date-time
+        type: string
+    schema:
+      $ref: "#/definitions/ErrorDocument"
+  ListeningSuccess:
+    description: A list of audio items (recommendations)
+    headers:
+      X-RateLimit-Limit:
+        description: The number of allowed requests in the current period
+        type: integer
+      X-RateLimit-Remaining:
+        description: The number of remaining requests in the current period
+        type: integer
+      X-RateLimit-Reset:
+        description: The number of seconds left in the current period
+        type: integer
+    schema:
+      $ref: "#/definitions/AudioItemListDocument"
+paths:
+  "/v2/aggregation/{aggId}/recommendations":
+    get:
+      description: This endpoint provides a list of recent audio items associated with the aggregation along with metadata about the aggregation.
+      operationId: getAggRecommendations
+      parameters:
+        - description: ID of an aggregation such as a program or podcast
+          format: int64
+          in: path
+          name: aggId
+          required: true
+          type: integer
+        - $ref: "#/parameters/Authorization"
+        - default: 0
+          description: The result to start with. Allows paging through the episodes of a podcast or program, with the default, `startNum=0`, being the most recent episode
+          format: int32
+          in: query
+          name: startNum
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: A list of audio items from the specified aggregation
+          headers:
+            X-RateLimit-Limit:
+              description: The number of allowed requests in the current period
+              type: integer
+            X-RateLimit-Remaining:
+              description: The number of remaining requests in the current period
+              type: integer
+            X-RateLimit-Reset:
+              description: The number of seconds left in the current period
+              type: integer
+          schema:
+            $ref: "#/definitions/AggregationAudioItemListDocument"
+        "401":
+          $ref: "#/responses/401WithDocument"
+        "404":
+          $ref: "#/responses/404WithDocument"
+        "429":
+          $ref: "#/responses/429WithDocument"
+        "500":
+          $ref: "#/responses/500WithDocument"
+        "503":
+          $ref: "#/responses/503WithDocument"
+      security:
+        - oauth2:
+            - listening.readonly
+      summary: Get a set of recommendations for an aggregation independent of the user's listening history
+  /v2/channels:
+    get:
+      description: These channels allow the user to specify a focus for the content returned in the recommendations endpoint.
+      operationId: getChannels
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - default: false
+          description: If set to `true`, this call will return only channels that should be shown in the client's `Explore` view
+          in: query
+          name: exploreOnly
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: A list of channels
+          headers:
+            X-RateLimit-Limit:
+              description: The number of allowed requests in the current period
+              type: integer
+            X-RateLimit-Remaining:
+              description: The number of remaining requests in the current period
+              type: integer
+            X-RateLimit-Reset:
+              description: The number of seconds left in the current period
+              type: integer
+          schema:
+            $ref: "#/definitions/ChannelsDocument"
+        "401":
+          $ref: "#/responses/401WithDocument"
+        "429":
+          $ref: "#/responses/429WithDocument"
+        "503":
+          $ref: "#/responses/503WithDocument"
+      security:
+        - oauth2:
+            - listening.readonly
+      summary: Get the list of available channels
+  /v2/history:
+    get:
+      description: This endpoint provides the list of recently-rated audio recommendations that the logged-in user has consumed. Some rated recommendations are filtered, such as sponsorship and donation.
+      operationId: getHistory
+      parameters:
+        - $ref: "#/parameters/Authorization"
+      responses:
+        "200":
+          $ref: "#/responses/ListeningSuccess"
+        "401":
+          $ref: "#/responses/401WithDocument"
+        "429":
+          $ref: "#/responses/429WithDocument"
+        "500":
+          $ref: "#/responses/500WithDocument"
+        "503":
+          $ref: "#/responses/503WithDocument"
+      security:
+        - oauth2:
+            - listening.readonly
+      summary: Get recent ratings the logged-in user has submitted
+  "/v2/organizations/{orgId}/categories/{category}/recommendations":
+    get:
+      description: This endpoint provides a list of recommendations from a category of content from  an organization.
+      operationId: getOrganizationCategory
+      parameters:
+        - description: ID of an organization, such as an NPR One station
+          format: int64
+          in: path
+          name: orgId
+          required: true
+          type: integer
+        - default: story
+          description: One of the three categories of content - newscast, story, or podcast
+          enum:
+            - newscast
+            - story
+            - podcast
+          in: path
+          name: category
+          required: true
+          type: string
+        - $ref: "#/parameters/Authorization"
+      responses:
+        "200":
+          description: A list of audio items from a category of content from an organization
+          headers:
+            X-RateLimit-Limit:
+              description: The number of allowed requests in the current period
+              type: integer
+            X-RateLimit-Remaining:
+              description: The number of remaining requests in the current period
+              type: integer
+            X-RateLimit-Reset:
+              description: The number of seconds left in the current period
+              type: integer
+          schema:
+            $ref: "#/definitions/OrganizationCategoryAudioListDocument"
+        "401":
+          $ref: "#/responses/401WithDocument"
+        "404":
+          $ref: "#/responses/404WithDocument"
+        "429":
+          $ref: "#/responses/429WithDocument"
+        "500":
+          $ref: "#/responses/500WithDocument"
+        "503":
+          $ref: "#/responses/503WithDocument"
+      security:
+        - oauth2:
+            - listening.readonly
+      summary: Get a list of recommendations from a category of content from an organization
+  "/v2/organizations/{orgId}/recommendations":
+    get:
+      description: This endpoint provides a variety of details about an organization including various lists of recent audio items.
+      operationId: getOrganizationOverview
+      parameters:
+        - description: ID of an organization, such as an NPR One station
+          format: int64
+          in: path
+          name: orgId
+          required: true
+          type: integer
+        - $ref: "#/parameters/Authorization"
+      responses:
+        "200":
+          description: A list of up to four different categories of audio items from a specific organization
+          headers:
+            X-RateLimit-Limit:
+              description: The number of allowed requests in the current period
+              type: integer
+            X-RateLimit-Remaining:
+              description: The number of remaining requests in the current period
+              type: integer
+            X-RateLimit-Reset:
+              description: The number of seconds left in the current period
+              type: integer
+          schema:
+            $ref: "#/definitions/OrganizationOverviewDocument"
+        "401":
+          $ref: "#/responses/401WithDocument"
+        "404":
+          $ref: "#/responses/404WithDocument"
+        "429":
+          $ref: "#/responses/429WithDocument"
+        "500":
+          $ref: "#/responses/500WithDocument"
+        "503":
+          $ref: "#/responses/503WithDocument"
+      security:
+        - oauth2:
+            - listening.readonly
+      summary: Get a variety of details about an organization including various lists of recent audio items
+  /v2/promo/recommendations:
+    get:
+      description: Gets the most recently played promo for which the user has neither tapped through the promo or listened to the target story.
+      operationId: getPromo
+      parameters:
+        - $ref: "#/parameters/Authorization"
+      responses:
+        "200":
+          $ref: "#/responses/ListeningSuccess"
+        "401":
+          $ref: "#/responses/401WithDocument"
+        "429":
+          $ref: "#/responses/429WithDocument"
+        "500":
+          $ref: "#/responses/500WithDocument"
+        "503":
+          $ref: "#/responses/503WithDocument"
+      security:
+        - oauth2:
+            - listening.readonly
+      summary: Retrieve the most recent promo audio heard by the logged-in user
+  /v2/ratings:
+    post:
+      consumes:
+        - application/json
+      description: |-
+        This endpoint is the main mechanism for providing feedback from the user to NPR about the recommendations that are obtained from `GET /listening/v2/recommendations`.
+
+        A fully-populated link to this endpoint is returned with each individual recommendation and is located in the AudioItemDocument under the `links['recommendations']` object. The query parameters in this link should not be modified.
+        Be sure to copy and send back the entire ratings object (RatingData), as new fields may be added to it in the future.
+
+        This endpoint can return a blank JSON.doc or AudioItemDocument depending on the `recommend=true|false` parameter. The `recommend=true` flag allows this endpoint to both receive ratings and send back recommendations in the same call.
+      operationId: postRating
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/X-Advertising-ID"
+        - $ref: "#/parameters/channel"
+        - default: true
+          description: If set to `false`, this call will return a blank document; otherwise it will return a new recommendation object
+          in: query
+          name: recommend
+          required: false
+          type: boolean
+        - description: A list of RatingData objects which contains data about ratings such as the id of the content, the rating value, elapsed time and more.
+          in: body
+          name: body
+          required: true
+          schema:
+            items:
+              $ref: "#/definitions/RatingData"
+            type: array
+      responses:
+        "200":
+          description: If the `recommend` param was set to `true`, this returns a list of audio items; otherwise, a blank document is returned.
+          headers:
+            X-RateLimit-Limit:
+              description: The number of allowed requests in the current period
+              type: integer
+            X-RateLimit-Remaining:
+              description: The number of remaining requests in the current period
+              type: integer
+            X-RateLimit-Reset:
+              description: The number of seconds left in the current period
+              type: integer
+          schema:
+            $ref: "#/definitions/AudioItemListDocument"
+        "400":
+          $ref: "#/responses/400WithDocument"
+        "401":
+          $ref: "#/responses/401WithDocument"
+        "429":
+          $ref: "#/responses/429WithDocument"
+        "500":
+          $ref: "#/responses/500WithDocument"
+        "503":
+          $ref: "#/responses/503WithDocument"
+      security:
+        - oauth2:
+            - listening.write
+      summary: Collect new ratings for media previously recommended to the logged-in user
+  /v2/recommendations:
+    get:
+      description: |-
+        This endpoint returns a list of audio recommendations. It is designed to be used for an initial list of recommendations, and then `POST /v2/ratings?recommend=true` should be used for subsequent requests for recommendations.
+
+        A fully-populated link to the ratings endpoint is returned with each individual recommendation and is located in the AudioItemDocument under the `links['recommendations']` object. The query parameters in this link should not be modified.
+        Be sure to copy and send back the entire ratings object (RatingData), as new fields may be added to it in the future.
+
+        A 500 will be returned if there are no eligible remaining recommendations.
+      operationId: getRecommendations
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - $ref: "#/parameters/X-Advertising-ID"
+        - $ref: "#/parameters/channel"
+        - description: This media was shared directly with the user; if provided, the service will add this recommendation to the top of the list
+          in: query
+          name: sharedMediaId
+          required: false
+          type: string
+        - description: The user received a push notification about this media; if provided, the service will add this recommendation to the top of the list
+          in: query
+          name: notifiedMediaId
+          required: false
+          type: string
+      responses:
+        "200":
+          $ref: "#/responses/ListeningSuccess"
+        "400":
+          $ref: "#/responses/400WithDocument"
+        "401":
+          $ref: "#/responses/401WithDocument"
+        "429":
+          $ref: "#/responses/429WithDocument"
+        "500":
+          $ref: "#/responses/500WithDocument"
+        "503":
+          $ref: "#/responses/503WithDocument"
+      security:
+        - oauth2:
+            - listening.readonly
+      summary: Get a list of media for the logged-in user from NPR's recommendation engine
+  /v2/search/recommendations:
+    get:
+      description: In the schema shown below, SearchItemDocument is not an actual type of returned object; the object returned by a search will be either an AggregationAudioItemListDocument or an AudioItemDocument.
+      operationId: getSearchRecommendations
+      parameters:
+        - $ref: "#/parameters/Authorization"
+        - description: Search terms to search on; can include URL-encoded punctuation
+          in: query
+          name: searchTerms
+          required: true
+          type: string
+      responses:
+        "200":
+          description: A list of audio and aggregation items matching the search query
+          headers:
+            X-RateLimit-Limit:
+              description: The number of allowed requests in the current period
+              type: integer
+            X-RateLimit-Remaining:
+              description: The number of remaining requests in the current period
+              type: integer
+            X-RateLimit-Reset:
+              description: The number of seconds left in the current period
+              type: integer
+          schema:
+            $ref: "#/definitions/SearchListDocument"
+        "401":
+          $ref: "#/responses/401WithDocument"
+        "429":
+          $ref: "#/responses/429WithDocument"
+        "500":
+          $ref: "#/responses/500WithDocument"
+        "503":
+          $ref: "#/responses/503WithDocument"
+      security:
+        - oauth2:
+            - listening.readonly
+      summary: Get a list of recent audio and aggregation items associated with search terms
+definitions:
+  AbstractCDocLink:
+    allOf:
+      - $ref: "#/definitions/AbstractLink"
+      - properties:
+          content-type:
+            description: The MIME type of the response of this link
+            type: string
+        required:
+          - content-type
+  AbstractLink:
+    properties:
+      href:
+        description: The link to be followed
+        format: uri
+        type: string
+    required:
+      - href
+  Affiliation:
+    description: A program (aggregation) that a given user has shown an affiliation with
+    properties:
+      daysSinceLastListen:
+        description: The number of days since a user last listened to a story from this aggregation. Absent if user never listened to the aggregation.
+        format: int32
+        type: integer
+      following:
+        default: false
+        description: Whether or not the user is following the aggregation. When changing affiliation status, the client is expected to toggle this value and then send the entire object back.
+        type: boolean
+      href:
+        description: A link to more details about the program from the NPR Story API
+        type: string
+      id:
+        description: A unique identifier for the aggregation (program)
+        format: int64
+        type: integer
+      notif_following:
+        description: The topic in Firebase Cloud Messaging to which the device should subscribe if it supports notifications and the user wants notifications about the podcasts they follow.
+        items:
+          type: string
+        type: array
+      notif_rated:
+        description: The topic in Firebase Cloud Messaging to which the device should subscribe if it supports notifications and the user wants notifications about the podcasts they have highly rated.
+        items:
+          type: string
+        type: array
+      rating:
+        description: The user's average rating for this affiliation on a scale of 0-1. Absent if user never listened to the aggregation.
+        format: float
+        type: number
+      title:
+        description: The title for the aggregation (program)
+        type: string
+    required:
+      - id
+      - href
+      - following
+  AggregationAudioItemListDocument:
+    allOf:
+      - $ref: "#/definitions/CollectionDocument"
+      - properties:
+          attributes:
+            $ref: "#/definitions/AggregationData"
+            description: The metadata which describes the aggregation
+          items:
+            description: An array of Audio Items (recommendations)
+            items:
+              $ref: "#/definitions/AudioItemDocument"
+            type: array
+          links:
+            $ref: "#/definitions/AggregationLinks"
+            description: An array of links for the aggregation. Look here for images associated with the aggregation or for a more link to get more episodes.
+    description: An array of audio recommendations with additional metadata about the aggregation they are associated with
+  AggregationData:
+    properties:
+      affiliation:
+        description: A unique identifier for the aggregation
+        type: string
+      affiliationMeta:
+        $ref: "#/definitions/Affiliation"
+        description: Metadata about the logged-in user's relationship to this aggregation
+      description:
+        description: A short description or teaser
+        type: string
+      provider:
+        default: NPR
+        description: The producer of this aggregation
+        type: string
+      station:
+        default: NPR
+        description: Deprecated - clients should switch to use provider.
+        type: string
+      title:
+        description: The title of this aggregation
+        type: string
+      type:
+        default: aggregation
+        description: The type of list returned; will always be `aggregation`; useful for parsing search results
+        enum:
+          - aggregation
+        type: string
+    required:
+      - type
+      - affiliation
+      - title
+  AggregationLinks:
+    properties:
+      binge:
+        description: One or more links to more unrated / unheard recommendations from this aggregation
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      image:
+        description: One or more links to an image, along with metadata for display
+        items:
+          $ref: "#/definitions/ImageLink"
+        type: array
+      more:
+        description: One or more links to more episodes for the aggregation
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      web:
+        description: One or more links to a web page for the item
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+  AudioItemData:
+    properties:
+      album:
+        description: Album information associated with the media
+        type: string
+      artist:
+        description: The artist associated with the media
+        type: string
+      audioTitle:
+        description: For first-party client use only
+        type: string
+      bingeAggId:
+        description: Indicates which aggregration ID this recommendation was binged from
+        type: string
+      button:
+        description: The text contents of an action button displayed on the client
+        type: string
+      date:
+        description: The publication date in ISO-8601 format
+        format: date-time
+        type: string
+      description:
+        description: A short description or teaser
+        type: string
+      duration:
+        description: The length of the audio content in seconds
+        format: int32
+        maximum: 9999
+        minimum: 0
+        type: integer
+      expires:
+        description: The media's expiration date in ISO-8601 format
+        format: date-time
+        type: string
+      geofence:
+        $ref: "#/definitions/Geofence"
+        description: The geographic restrictions that should be applied by the client before playing this media
+      inFlow:
+        description: Indicates the likelihood of being within a flow, useful for stateful playback buttons
+        type: boolean
+      label:
+        description: The record label associated with the media
+        type: string
+      organization:
+        $ref: "#/definitions/RecommendationOrganization"
+        description: Data about the organization with which this media is associated
+      primary:
+        description: Whether the audio is the primary audio of the story to which it is associated
+        type: boolean
+      program:
+        description: The program associated with this media
+        type: string
+      provider:
+        default: NPR
+        description: The name of the organization providing this media
+        type: string
+      rating:
+        $ref: "#/definitions/RatingData"
+        description: An object which contains all data that should be sent back to NPR when sending a rating
+      rationale:
+        description: A short summary of why this content was recommended
+        type: string
+      skippable:
+        default: true
+        description: Whether the client should allow this content to be skipped
+        type: boolean
+      slug:
+        description: A tag or category for this media
+        type: string
+      song:
+        description: The song title associated with the media
+        type: string
+      streamGuid:
+        description: The full GUID of the live stream returned within the recommendation
+        type: string
+      title:
+        description: The title of this media
+        type: string
+      type:
+        default: audio
+        description: Help determine how content is displayed; for more information, see <a href='https://dev.npr.org/design/general-specifications/playing-audio/'>our design guidelines</a>
+        enum:
+          - audio
+          - sponsorship
+          - stationId
+          - intro
+          - donate
+          - featureCardInformational
+          - featureCardNotification
+          - featureCardPromotion
+          - featureCardExternalLink
+          - featureCardAsyncRequest
+        type: string
+      uid:
+        description: The media ID (for use in ratings objects)
+        pattern: ^\d{3,}:[\w-]{5,}$
+        type: string
+      unavailableText:
+        description: The text contents to be displayed on the client if no media URLs are available
+        type: string
+    required:
+      - type
+      - uid
+      - title
+      - skippable
+      - rationale
+      - rating
+  AudioItemDocument:
+    allOf:
+      - $ref: "#/definitions/CollectionDocument"
+      - properties:
+          attributes:
+            $ref: "#/definitions/AudioItemData"
+            description: The metadata which comprises the recommendation
+          items:
+            description: Not used
+            items:
+              type: object
+            type: array
+          links:
+            $ref: "#/definitions/AudioItemLinks"
+            description: A list of links. Look here for audio files.
+  AudioItemLinks:
+    properties:
+      action:
+        description: One or more links to be trigged by user actions, usually when a button is clicked
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      audio:
+        description: One or more links to audio files for the item
+        items:
+          $ref: "#/definitions/AudioLink"
+        type: array
+      binge:
+        description: One or more links that start a flow-based experience focused on the aggregation
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      image:
+        description: One or more links to an image, along with metadata for display
+        items:
+          $ref: "#/definitions/ImageLink"
+        type: array
+      onramps:
+        description: One or more shareable links for the item
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      ratings:
+        description: This is an alternate URL to use to POST the ratings JSON. Difference between this and 'recommendations' is that 'ratings' will NOT return back recommendations of audio to play next.
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      recommendations:
+        description: This is the URL that should be POSTed with the ratings JSON when this audio starts to play
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      stream-metadata:
+        description: Links that can be polled to retreive current program metadata for a given stream
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      up:
+        description: One or more links to more details about the program or podcast with which this item is associated
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      web:
+        description: One or more links to a web page for the item
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+  AudioItemListDocument:
+    allOf:
+      - $ref: "#/definitions/CollectionDocument"
+      - properties:
+          attributes:
+            description: Not used
+            type: object
+          items:
+            description: An array of Audio Items (recommendations)
+            items:
+              $ref: "#/definitions/AudioItemDocument"
+            type: array
+          links:
+            description: Not used
+            type: object
+  AudioLink:
+    allOf:
+      - $ref: "#/definitions/AbstractLink"
+      - properties:
+          content-type:
+            default: audio/aac
+            description: The MIME type of the response of this link; note that the enumerated list of possible values is not exhaustive and other MIME types could occur. The list should be treated as examples, rather than absolutes.
+            enum:
+              - audio/mp3
+              - audio/aac
+              - audio/3gp
+              - application/vnd.apple.mpegurl
+              - audio/x-ms-wax
+            type: string
+        required:
+          - content-type
+    description: A link to audio files for the item
+  AudioPlaylistData:
+    properties:
+      id:
+        description: The globally unique identifier for the playlist.
+        type: string
+      title:
+        description: The user-editable title of the playlist
+        type: string
+      uids:
+        description: Individual content identifiers; see AudioItemDocument
+        items:
+          type: string
+        type: array
+    required:
+      - id
+      - title
+      - uids
+  AudioPlaylistDocument:
+    allOf:
+      - $ref: "#/definitions/AudioItemListDocument"
+      - properties:
+          attributes:
+            $ref: "#/definitions/AudioPlaylistData"
+            description: The metadata which comprises the playlist
+          items:
+            description: An array of Audio Items (recommendations)
+            items:
+              $ref: "#/definitions/AudioItemDocument"
+            type: array
+          links:
+            $ref: "#/definitions/OtherLink"
+            description: A list of links. Look here for pagination 'next' relation.
+  Brand:
+    description: Branding information for the organization
+    properties:
+      band:
+        description: The radio band for the organization if they are a station (AM or FM)
+        type: string
+      call:
+        description: The call letter for the organization if they are a station
+        type: string
+      frequency:
+        description: The radio frequency for the organization if they are a station
+        type: string
+      marketCity:
+        description: The market city for the organization
+        type: string
+      marketState:
+        description: The market state for the organization
+        type: string
+      name:
+        description: The name of the organization
+        type: string
+      tagline:
+        description: The tagline for the organization
+        type: string
+    required:
+      - name
+      - call
+      - marketCity
+  CategoryData:
+    properties:
+      displayType:
+        description: How clients should display this channel in the station profile view
+        enum:
+          - default
+          - show
+          - playable
+          - newscast
+        type: string
+      orgId:
+        description: The unique identifier for the organization
+        type: string
+      title:
+        description: The title of this category
+        type: string
+      type:
+        default: category
+        description: The type of list returned; will always be `category`
+        type: string
+    required:
+      - type
+      - orgId
+      - title
+  CategoryLinks:
+    properties:
+      more:
+        description: One or more links to more episodes for the aggregation
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+  ChannelData:
+    properties:
+      description:
+        description: A longer description of what this channel focuses on
+        type: string
+      displayType:
+        description: How clients should display this channel in the explore view
+        enum:
+          - default
+          - show
+          - playable
+          - newscast
+        type: string
+      emptyText:
+        description: Text for clients to display when the channel contains no recommendations
+        type: string
+      fullName:
+        description: A short description of what this channel focuses on
+        type: string
+      id:
+        description: The actual value that should be sent
+        type: string
+      refreshRule:
+        description: "In the explore view of a client, this field indicates how this channel should be refreshed.  This is an experimental field and subject to change, but for now zero indicates the client should refresh this channel every time a START rating is sent for a type=audio recommendation, while a 1 would indicate it can be refreshed much less often, such as on a 30 minute timer. 2 would indicate even less time to update, say every hour. We are still experimenting on the number of rules necessary and the best implementation for each type of rule. "
+        type: integer
+    required:
+      - id
+      - fullName
+      - description
+  ChannelDocument:
+    allOf:
+      - $ref: "#/definitions/CollectionDocument"
+      - properties:
+          attributes:
+            $ref: "#/definitions/ChannelData"
+            description: The channel data
+          items:
+            description: Not used
+            items:
+              type: object
+            type: array
+          links:
+            description: Not used
+            type: object
+  ChannelsData:
+    properties:
+      defaultChannel:
+        default: npr
+        description: The default channel NPR recommends
+        type: string
+  ChannelsDocument:
+    allOf:
+      - $ref: "#/definitions/CollectionDocument"
+      - properties:
+          attributes:
+            $ref: "#/definitions/ChannelsData"
+            description: The default channel data
+          items:
+            description: The list of individual channels
+            items:
+              $ref: "#/definitions/ChannelDocument"
+            type: array
+          links:
+            description: Not used
+            type: object
+  CollectionDocument:
+    description: Base Collection.Doc+JSON output
+    properties:
+      attributes:
+        description: Basic Swagger definitions used across Carbon services.
+        type: object
+      errors:
+        description: A list of encountered errors, ignored on POST, PUT
+        items:
+          type: object
+        type: array
+      href:
+        description: A URL representation of the resource; should generally be ignored by clients unless noted otherwise
+        type: string
+      items:
+        description: Basic Swagger definitions used across Carbon services.
+        items:
+          type: object
+        type: array
+      links:
+        description: Basic Swagger definitions used across Carbon services.
+        type: object
+      version:
+        default: "1.0"
+        description: The version of the Collection.Doc+JSON spec being used
+        type: string
+    required:
+      - version
+      - href
+      - attributes
+      - items
+      - links
+      - errors
+  Error:
+    description: A serialized version of any error encountered when processing this request
+    properties:
+      code:
+        description: The error code
+        format: int32
+        type: integer
+      debug:
+        description: Additional debug information if debug mode is turned on
+        type: string
+      text:
+        description: The error description
+        type: string
+    required:
+      - code
+  ErrorDocument:
+    allOf:
+      - $ref: "#/definitions/CollectionDocument"
+      - properties:
+          attributes:
+            description: Ignore; will be empty for errors
+            type: object
+          errors:
+            description: A list of encountered errors, ignored on POST, PUT
+            items:
+              $ref: "#/definitions/Error"
+            type: array
+          items:
+            description: Ignore; will be empty for errors
+            items:
+              type: object
+            type: array
+          links:
+            description: Ignore; will be empty for errors
+            type: object
+    description: A Collection.doc+JSON representation of an error result from an API call
+  Geofence:
+    description: The geographic restrictions that should be applied by the client before playing this media
+    properties:
+      countries:
+        description: The list of countries as ISO 3166-1 abbreviations in which this media should be available if restricted is true
+        items:
+          type: string
+        type: array
+      restricted:
+        default: false
+        description: Whether any geographic restrictions should be applied
+        type: boolean
+    required:
+      - restricted
+      - countries
+  ImageLink:
+    allOf:
+      - $ref: "#/definitions/AbstractLink"
+      - properties:
+          caption:
+            description: The caption of the image; can be used as alternate text for accessibility
+            type: string
+          content-type:
+            default: image/jpeg
+            description: The MIME type of the response of this link; note that the enumerated list of possible values is not exhaustive and other MIME types could occur. The list should be treated as examples, rather than absolutes.
+            enum:
+              - image/jpeg
+              - image/png
+              - image/gif
+            type: string
+          image:
+            description: A unique identifier for the image
+            type: string
+          producer:
+            description: The producer of the image; should be used for properly attributing the image when it exists
+            type: string
+          provider:
+            description: The provider of the image; should be used for properly attributing the image when it exists
+            type: string
+          rel:
+            default: logo_square
+            description: The crop type or intended display style/size; note that the enumerated list of possible values is not exhaustive and other values could occur. The list should be treated as examples, rather than absolutes.
+            enum:
+              - logo_square
+              - icon
+              - wide
+              - standard
+              - square
+              - enlargement
+              - custom
+            type: string
+        required:
+          - content-type
+    description: An image, along with metadata for display
+  OrganizationCategoryAudioListDocument:
+    allOf:
+      - $ref: "#/definitions/CollectionDocument"
+      - properties:
+          attributes:
+            $ref: "#/definitions/CategoryData"
+            description: The metadata which describes the category of audio items
+          items:
+            description: An array of Audio Items (recommendations)
+            items:
+              $ref: "#/definitions/AudioItemDocument"
+            type: array
+          links:
+            $ref: "#/definitions/CategoryLinks"
+            description: An array of links for the category.
+    description: An array of a certain category of audio recommendations from a provider
+  OrganizationOverviewData:
+    properties:
+      brand:
+        $ref: "#/definitions/Brand"
+        description: Metadata about the branding for this organization
+      home:
+        description: Flag indicating if the current view is in the user's home network
+        type: boolean
+      orgId:
+        description: The unique identifier for the organization
+        type: string
+      type:
+        default: organization
+        description: The type of list returned; will always be `organization`
+        enum:
+          - organization
+        type: string
+    required:
+      - type
+      - orgId
+      - brand
+  OrganizationOverviewDocument:
+    allOf:
+      - $ref: "#/definitions/CollectionDocument"
+      - properties:
+          attributes:
+            $ref: "#/definitions/OrganizationOverviewData"
+            description: Metadata about the organization
+          items:
+            description: A list of separate documents which each include their own list of audio
+            items:
+              $ref: "#/definitions/OrganizationCategoryAudioListDocument"
+            type: array
+          links:
+            $ref: "#/definitions/OrganizationOverviewLinks"
+            description: An array of links for the organization. Look here for images associated with the organization and related links for the organization (their home page, etc).
+    description: a variety of details about an organization including various lists of recent audio items
+  OrganizationOverviewLinks:
+    properties:
+      image:
+        description: One or more links to an image that can be as for branding (logo and small logo)
+        items:
+          $ref: "#/definitions/ImageLink"
+        type: array
+      related:
+        description: One or more links to related web pages for the organization (their twitter feed or facebook page for example)
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+      web:
+        description: One or more links to main page for the organization (their homepage for example)
+        items:
+          $ref: "#/definitions/OtherLink"
+        type: array
+  OtherLink:
+    allOf:
+      - $ref: "#/definitions/AbstractLink"
+      - properties:
+          content-type:
+            default: application/json
+            description: The MIME type of the response of this link; note that the enumerated list of possible values is not exhaustive and other MIME types could occur. The list should be treated as examples, rather than absolutes.
+            enum:
+              - application/json
+              - application/xml
+              - text/html
+            type: string
+          linkText:
+            description: Text recommended to accompany the link. For example, 'Read Story' with a full story link, or 'Read Transcript' with a transcript link.
+            type: string
+          pollInterval:
+            description: When present, the recommended number of seconds between requests to the given URL
+            format: int32
+            type: integer
+        required:
+          - content-type
+    description: An individual link from a list of links
+  RatingData:
+    properties:
+      affiliations:
+        description: An array of IDs & other data about collections or podcasts the user has ratings for; produced by the server and should be sent back as received; used for tracking program and podcast suggestions
+        items:
+          type: object
+        type: array
+      channel:
+        default: npr
+        description: The channel this media item was pulled from
+        type: string
+      cohort:
+        description: The primary cohort of the current logged-in user
+        type: string
+      duration:
+        description: Number of seconds this audio piece is expected to last
+        format: int32
+        maximum: 9999
+        minimum: 0
+        type: integer
+      elapsed:
+        description: Number of seconds since the start of playback for this media item, as an integer
+        format: int32
+        maximum: 9999
+        minimum: 0
+        type: integer
+      mediaId:
+        description: The media id as given by the media object
+        pattern: ^\d{3,}:[\w-]{5,}$
+        type: string
+      origin:
+        description: How the recommendation was generated
+        pattern: ^[A-Z0-9_]{2,10}$
+        type: string
+      rating:
+        description: String representing the rating
+        pattern: ^[A-Z0-9_]{2,10}$
+        type: string
+      timestamp:
+        description: ISO-8601 formatted date/time; typically replaced by the client with the actual rating time
+        format: date-time
+        type: string
+    required:
+      - mediaId
+      - origin
+      - rating
+      - elapsed
+      - duration
+      - timestamp
+      - channel
+      - cohort
+  RecommendationOrganization:
+    description: Data about the organization with which this media is associated
+    properties:
+      donateUrl:
+        description: The URL of the organization's donate page
+        type: string
+      homepageUrl:
+        description: The URL of the organization's homepage
+        type: string
+      logoUrl:
+        description: A URL for an image of the organization's logo
+        type: string
+      name:
+        description: The name of the organization
+        type: string
+    required:
+      - name
+  SearchItemDocument:
+    description: A search result, which is either an AggregationAudioItemListDocument or an AudioItemDocument
+    properties:
+      ifTypeAggregation:
+        $ref: "#/definitions/AggregationAudioItemListDocument"
+        description: NOT A TRUE PROPERTY. This is the schema of the SearchItemDocument for `type='aggregation'`
+      ifTypeAudio:
+        $ref: "#/definitions/AudioItemDocument"
+        description: NOT A TRUE PROPERTY. This is the schema of the SearchItemDocument for `type='audio'`
+      type:
+        description: The type of search result, which is either an AggregationAudioItemListDocument or an AudioItemDocument
+        enum:
+          - audio
+          - aggregation
+        type: string
+    required:
+      - type
+  SearchListDocument:
+    allOf:
+      - $ref: "#/definitions/CollectionDocument"
+      - properties:
+          attributes:
+            $ref: "#/definitions/SearchMetaData"
+            description: The metadata for the search itself
+          items:
+            description: A list of aggregation or audio items (recommendations)
+            items:
+              $ref: "#/definitions/SearchItemDocument"
+            type: array
+          links:
+            description: Not used
+            type: object
+    description: An array of aggregation or audio recommendations
+  SearchMetaData:
+    properties:
+      query:
+        description: The search terms used in the original request
+        type: string
+    required:
+      - query

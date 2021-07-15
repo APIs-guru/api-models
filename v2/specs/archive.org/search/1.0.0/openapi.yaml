@@ -1,0 +1,216 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.archive.org
+info:
+  contact:
+    x-twitter: internetarchive
+  description: |
+    API for Internet Archive's Search-related services
+  title: Search Services
+  version: 1.0.0
+  x-apisguru-categories:
+    - search
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_internetarchive_profile_image.jpeg
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/ArchiveLabs/api.archive.org/master/swagger/search.yaml
+      version: "3.0"
+  x-providerName: archive.org
+  x-serviceName: search
+paths:
+  /search/v1/fields:
+    get:
+      description: Fields that can be requested
+      parameters:
+        - $ref: "#/components/parameters/callback"
+      responses:
+        "200":
+          content:
+            application/javascript:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Field"
+                type: array
+            application/json:
+              schema:
+                items:
+                  $ref: "#/components/schemas/Field"
+                type: array
+          description: Fields that can be requested
+  /search/v1/organic:
+    get:
+      description: |
+        Return relevance-based results from search queries
+      parameters:
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/field"
+        - $ref: "#/components/parameters/size"
+        - $ref: "#/components/parameters/total_only"
+        - $ref: "#/components/parameters/callback"
+      responses:
+        "200":
+          content:
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/OrganicResult"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganicResult"
+          description: Organic Search API. Returns results in descending relevance order
+        default:
+          content:
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Unexpected error
+  /search/v1/scrape:
+    get:
+      description: |
+        Scrape search results from Internet Archive, allowing a scrolling cursor
+      parameters:
+        - $ref: "#/components/parameters/query"
+        - $ref: "#/components/parameters/field"
+        - $ref: "#/components/parameters/sort"
+        - $ref: "#/components/parameters/size"
+        - $ref: "#/components/parameters/cursor"
+        - $ref: "#/components/parameters/total_only"
+        - $ref: "#/components/parameters/callback"
+      responses:
+        "200":
+          content:
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/ScrapeResult"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ScrapeResult"
+          description: Scaping API
+        default:
+          content:
+            application/javascript:
+              schema:
+                $ref: "#/components/schemas/Error"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/Error"
+          description: Unexpected error
+components:
+  parameters:
+    callback:
+      description: Specifies a JavaScript function func, for a JSON-P response. When provided, results are wrapped as `callback(data)`, and the returned MIME type is application/javascript. This causes the caller to automatically run the func with the JSON results as its argument.
+      in: query
+      name: callback
+      required: false
+      schema:
+        type: string
+    cursor:
+      description: Cursor for scrolling (used for subsequent calls)
+      in: query
+      name: cursor
+      required: false
+      schema:
+        type: string
+    field:
+      description: Metadata field
+      explode: true
+      in: query
+      name: field
+      required: false
+      schema:
+        default: identifier
+        maxLength: 250
+        minLength: 1
+        type: string
+    query:
+      description: Lucene-type search query
+      in: query
+      name: q
+      schema:
+        type: string
+    size:
+      description: Number of query results to return
+      in: query
+      name: size
+      required: false
+      schema:
+        default: 1000
+        maximum: 10000
+        minimum: 10
+        type: integer
+    sort:
+      description: sort collations
+      explode: true
+      in: query
+      name: sort
+      required: false
+      schema:
+        maxLength: 250
+        minLength: 5
+        type: string
+    total_only:
+      description: Request total only; do not return hits
+      in: query
+      name: total_only
+      required: false
+      schema:
+        default: false
+        type: boolean
+  schemas:
+    Cursor:
+      description: A scroll handle
+      type: string
+    Error:
+      properties:
+        code:
+          format: int32
+          type: integer
+        message:
+          type: string
+    Field:
+      description: The name of a field
+      type: string
+    Hit:
+      description: One item returned (object of fields and values)
+      type: object
+    OrganicResult:
+      description: The result of a organic search request
+      properties:
+        count:
+          description: Number of results returned
+          maximum: 10000
+          minimum: 0
+          type: integer
+        items:
+          items:
+            $ref: "#/components/schemas/Hit"
+          type: array
+        total:
+          description: Approximate number of results meeting query
+          minimum: 0
+          type: integer
+      type: object
+    ScrapeResult:
+      description: The result of a scrape request
+      properties:
+        count:
+          description: Number of results returned
+          maximum: 10000
+          minimum: 0
+          type: integer
+        cursor:
+          $ref: "#/components/schemas/Cursor"
+        items:
+          items:
+            $ref: "#/components/schemas/Hit"
+          type: array
+        previous:
+          $ref: "#/components/schemas/Cursor"
+        total:
+          description: Total number of results from this cursor point
+          minimum: 0
+          type: integer
+      type: object

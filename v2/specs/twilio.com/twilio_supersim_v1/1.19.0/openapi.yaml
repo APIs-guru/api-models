@@ -1,0 +1,1879 @@
+openapi: 3.0.1
+servers:
+  - url: https://supersim.twilio.com
+info:
+  contact:
+    email: support@twilio.com
+    name: Twilio Support
+    url: https://support.twilio.com
+  description: This is the public Twilio REST API.
+  license:
+    name: Apache 2.0
+    url: https://www.apache.org/licenses/LICENSE-2.0.html
+  termsOfService: https://www.twilio.com/legal/tos
+  title: Twilio - Supersim
+  version: 1.19.0
+  x-apisguru-categories:
+    - telecom
+    - messaging
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_static1.twilio.com_marketing_bundles_marketing_img_logos_wordmark-red.svg
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/twilio/twilio-oai/main/spec/json/twilio_supersim_v1.json
+      version: "3.0"
+  x-providerName: twilio.com
+  x-serviceName: twilio_supersim_v1
+paths:
+  /v1/Commands:
+    description: Machine-to-machine commands sent to/from sims
+    get:
+      description: Retrieve a list of Commands from your account.
+      operationId: ListCommand
+      parameters:
+        - description: The SID or unique name of the Sim that Command was sent to or from.
+          in: query
+          name: Sim
+          schema:
+            type: string
+        - description: "The status of the Command. Can be: `queued`, `sent`, `delivered`, `received` or `failed`. See the [Command Status Values](https://www.twilio.com/docs/wireless/api/command-resource#status-values) for a description of each."
+          in: query
+          name: Status
+          schema:
+            enum:
+              - queued
+              - sent
+              - delivered
+              - received
+              - failed
+            type: string
+        - description: The direction of the Command. Can be `to_sim` or `from_sim`. The value of `to_sim` is synonymous with the term `mobile terminated`, and `from_sim` is synonymous with the term `mobile originated`.
+          in: query
+          name: Direction
+          schema:
+            enum:
+              - to_sim
+              - from_sim
+            type: string
+        - description: How many resources to return in each list page. The default is 50, and the maximum is 1000.
+          in: query
+          name: PageSize
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  commands:
+                    items:
+                      $ref: "#/components/schemas/supersim.v1.command"
+                    type: array
+                  meta:
+                    properties:
+                      first_page_url:
+                        format: uri
+                        type: string
+                      key:
+                        type: string
+                      next_page_url:
+                        format: uri
+                        type: string
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      previous_page_url:
+                        format: uri
+                        type: string
+                      url:
+                        format: uri
+                        type: string
+                    type: object
+                title: ListCommandResponse
+                type: object
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    post:
+      description: Send a Command to a Sim.
+      operationId: CreateCommand
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                CallbackMethod:
+                  description: "The HTTP method we should use to call `callback_url`. Can be: `GET` or `POST` and the default is POST."
+                  enum:
+                    - HEAD
+                    - GET
+                    - POST
+                    - PATCH
+                    - PUT
+                    - DELETE
+                  type: string
+                CallbackUrl:
+                  description: The URL we should call using the `callback_method` after we have sent the command.
+                  format: uri
+                  type: string
+                Command:
+                  description: The message body of the command.
+                  type: string
+                Sim:
+                  description: The `sid` or `unique_name` of the [SIM](https://www.twilio.com/docs/wireless/api/sim-resource) to send the Command to.
+                  maxLength: 34
+                  minLength: 34
+                  pattern: ^HS[0-9a-fA-F]{32}$
+                  type: string
+              required:
+                - Sim
+                - Command
+              title: CreateCommandRequest
+              type: object
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.command"
+          description: Created
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - status
+        - date_created
+      pathType: list
+  "/v1/Commands/{Sid}":
+    description: Machine-to-machine commands sent to/from sims
+    get:
+      description: Fetch a Command instance from your account.
+      operationId: FetchCommand
+      parameters:
+        - description: The SID of the Command resource to fetch.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            maxLength: 34
+            minLength: 34
+            pattern: ^HC[0-9a-fA-F]{32}$
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.command"
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - status
+        - date_created
+      pathType: instance
+  /v1/Fleets:
+    description: Fleets for grouping Super SIMs
+    get:
+      description: Retrieve a list of Fleets from your account.
+      operationId: ListFleet
+      parameters:
+        - description: The SID or unique name of the Network Access Profile that controls which cellular networks the Fleet's SIMs can connect to.
+          in: query
+          name: NetworkAccessProfile
+          schema:
+            type: string
+        - description: How many resources to return in each list page. The default is 50, and the maximum is 1000.
+          in: query
+          name: PageSize
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  fleets:
+                    items:
+                      $ref: "#/components/schemas/supersim.v1.fleet"
+                    type: array
+                  meta:
+                    properties:
+                      first_page_url:
+                        format: uri
+                        type: string
+                      key:
+                        type: string
+                      next_page_url:
+                        format: uri
+                        type: string
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      previous_page_url:
+                        format: uri
+                        type: string
+                      url:
+                        format: uri
+                        type: string
+                    type: object
+                title: ListFleetResponse
+                type: object
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    post:
+      description: Create a Fleet
+      operationId: CreateFleet
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                CommandsEnabled:
+                  description: Defines whether SIMs in the Fleet are capable of sending and receiving machine-to-machine SMS via Commands. Defaults to `true`.
+                  type: boolean
+                CommandsMethod:
+                  description: A string representing the HTTP method to use when making a request to `commands_url`. Can be one of `POST` or `GET`. Defaults to `POST`.
+                  enum:
+                    - HEAD
+                    - GET
+                    - POST
+                    - PATCH
+                    - PUT
+                    - DELETE
+                  type: string
+                CommandsUrl:
+                  description: The URL that will receive a webhook when a Super SIM in the Fleet is used to send an SMS from your device to the Commands number. Your server should respond with an HTTP status code in the 200 range; any response body will be ignored.
+                  format: uri
+                  type: string
+                DataEnabled:
+                  description: Defines whether SIMs in the Fleet are capable of using 2G/3G/4G/LTE/CAT-M data connectivity. Defaults to `true`.
+                  type: boolean
+                DataLimit:
+                  description: The total data usage (download and upload combined) in Megabytes that each Sim resource assigned to the Fleet resource can consume during a billing period (normally one month). Value must be between 1MB (1) and 2TB (2,000,000). Defaults to 1GB (1,000).
+                  type: integer
+                NetworkAccessProfile:
+                  description: The SID or unique name of the Network Access Profile that will control which cellular networks the Fleet's SIMs can connect to.
+                  type: string
+                SmsCommandsEnabled:
+                  description: Defines whether SIMs in the Fleet are capable of sending and receiving machine-to-machine SMS via Commands. Defaults to `true`.
+                  type: boolean
+                SmsCommandsMethod:
+                  description: A string representing the HTTP method to use when making a request to `sms_commands_url`. Can be one of `POST` or `GET`. Defaults to `POST`.
+                  enum:
+                    - HEAD
+                    - GET
+                    - POST
+                    - PATCH
+                    - PUT
+                    - DELETE
+                  type: string
+                SmsCommandsUrl:
+                  description: The URL that will receive a webhook when a Super SIM in the Fleet is used to send an SMS from your device to the SMS Commands number. Your server should respond with an HTTP status code in the 200 range; any response body will be ignored.
+                  format: uri
+                  type: string
+                UniqueName:
+                  description: An application-defined string that uniquely identifies the resource. It can be used in place of the resource's `sid` in the URL to address the resource.
+                  type: string
+              required:
+                - NetworkAccessProfile
+              title: CreateFleetRequest
+              type: object
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.fleet"
+          description: Created
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - unique_name
+        - data_metering
+      pathType: list
+  "/v1/Fleets/{Sid}":
+    description: Fleets for grouping Super SIMs
+    get:
+      description: Fetch a Fleet instance from your account.
+      operationId: FetchFleet
+      parameters:
+        - description: The SID of the Fleet resource to fetch.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.fleet"
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    post:
+      description: Updates the given properties of a Super SIM Fleet instance from your account.
+      operationId: UpdateFleet
+      parameters:
+        - description: The SID of the Fleet resource to update.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                CommandsMethod:
+                  description: A string representing the HTTP method to use when making a request to `commands_url`. Can be one of `POST` or `GET`. Defaults to `POST`.
+                  enum:
+                    - HEAD
+                    - GET
+                    - POST
+                    - PATCH
+                    - PUT
+                    - DELETE
+                  type: string
+                CommandsUrl:
+                  description: The URL that will receive a webhook when a Super SIM in the Fleet is used to send an SMS from your device to the Commands number. Your server should respond with an HTTP status code in the 200 range; any response body will be ignored.
+                  format: uri
+                  type: string
+                NetworkAccessProfile:
+                  description: The SID or unique name of the Network Access Profile that will control which cellular networks the Fleet's SIMs can connect to.
+                  type: string
+                SmsCommandsMethod:
+                  description: A string representing the HTTP method to use when making a request to `sms_commands_url`. Can be one of `POST` or `GET`. Defaults to `POST`.
+                  enum:
+                    - HEAD
+                    - GET
+                    - POST
+                    - PATCH
+                    - PUT
+                    - DELETE
+                  type: string
+                SmsCommandsUrl:
+                  description: The URL that will receive a webhook when a Super SIM in the Fleet is used to send an SMS from your device to the SMS Commands number. Your server should respond with an HTTP status code in the 200 range; any response body will be ignored.
+                  format: uri
+                  type: string
+                UniqueName:
+                  description: An application-defined string that uniquely identifies the resource. It can be used in place of the resource's `sid` in the URL to address the resource.
+                  type: string
+              title: UpdateFleetRequest
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.fleet"
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - unique_name
+        - data_metering
+      pathType: instance
+  /v1/NetworkAccessProfiles:
+    description: "TODO: Resource-level docs"
+    get:
+      description: Retrieve a list of Network Access Profiles from your account.
+      operationId: ListNetworkAccessProfile
+      parameters:
+        - description: How many resources to return in each list page. The default is 50, and the maximum is 1000.
+          in: query
+          name: PageSize
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  meta:
+                    properties:
+                      first_page_url:
+                        format: uri
+                        type: string
+                      key:
+                        type: string
+                      next_page_url:
+                        format: uri
+                        type: string
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      previous_page_url:
+                        format: uri
+                        type: string
+                      url:
+                        format: uri
+                        type: string
+                    type: object
+                  network_access_profiles:
+                    items:
+                      $ref: "#/components/schemas/supersim.v1.network_access_profile"
+                    type: array
+                title: ListNetworkAccessProfileResponse
+                type: object
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    post:
+      description: Create a new Network Access Profile
+      operationId: CreateNetworkAccessProfile
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                Networks:
+                  description: List of Network SIDs that this Network Access Profile will allow connections to.
+                  items:
+                    type: string
+                  type: array
+                UniqueName:
+                  description: An application-defined string that uniquely identifies the resource. It can be used in place of the resource's `sid` in the URL to address the resource.
+                  type: string
+              title: CreateNetworkAccessProfileRequest
+              type: object
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.network_access_profile"
+          description: Created
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - unique_name
+        - fleets_count
+      pathType: list
+  "/v1/NetworkAccessProfiles/{NetworkAccessProfileSid}/Networks":
+    description: Mobile operator networks which Network Access Profiles allow access to
+    get:
+      description: Retrieve a list of Network Access Profile resource's Network resource.
+      operationId: ListNetworkAccessProfileNetwork
+      parameters:
+        - description: The unique string that identifies the Network Access Profile resource.
+          in: path
+          name: NetworkAccessProfileSid
+          required: true
+          schema:
+            type: string
+        - description: How many resources to return in each list page. The default is 50, and the maximum is 1000.
+          in: query
+          name: PageSize
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  meta:
+                    properties:
+                      first_page_url:
+                        format: uri
+                        type: string
+                      key:
+                        type: string
+                      next_page_url:
+                        format: uri
+                        type: string
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      previous_page_url:
+                        format: uri
+                        type: string
+                      url:
+                        format: uri
+                        type: string
+                    type: object
+                  networks:
+                    items:
+                      $ref: "#/components/schemas/supersim.v1.network_access_profile.network_access_profile_network"
+                    type: array
+                title: ListNetworkAccessProfileNetworkResponse
+                type: object
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    post:
+      description: Add a Network resource to the Network Access Profile resource.
+      operationId: CreateNetworkAccessProfileNetwork
+      parameters:
+        - description: The unique string that identifies the Network Access Profile resource.
+          in: path
+          name: NetworkAccessProfileSid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                Network:
+                  description: The SID of the Network resource to be added to the Network Access Profile resource.
+                  maxLength: 34
+                  minLength: 34
+                  pattern: ^HW[0-9a-fA-F]{32}$
+                  type: string
+              required:
+                - Network
+              title: CreateNetworkAccessProfileNetworkRequest
+              type: object
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.network_access_profile.network_access_profile_network"
+          description: Created
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+      pathType: list
+  "/v1/NetworkAccessProfiles/{NetworkAccessProfileSid}/Networks/{Sid}":
+    delete:
+      description: Remove a Network resource from the Network Access Profile resource's.
+      operationId: DeleteNetworkAccessProfileNetwork
+      parameters:
+        - description: The unique string that identifies the Network Access Profile resource.
+          in: path
+          name: NetworkAccessProfileSid
+          required: true
+          schema:
+            maxLength: 34
+            minLength: 34
+            pattern: ^HA[0-9a-fA-F]{32}$
+            type: string
+        - description: The SID of the Network resource to be removed from the Network Access Profile resource.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            maxLength: 34
+            minLength: 34
+            pattern: ^HW[0-9a-fA-F]{32}$
+            type: string
+      responses:
+        "204":
+          description: The resource was deleted successfully.
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    description: Mobile operator networks which Network Access Profiles allow access to
+    get:
+      description: Fetch a Network Access Profile resource's Network resource.
+      operationId: FetchNetworkAccessProfileNetwork
+      parameters:
+        - description: The unique string that identifies the Network Access Profile resource.
+          in: path
+          name: NetworkAccessProfileSid
+          required: true
+          schema:
+            type: string
+        - description: The SID of the Network resource to fetch.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            maxLength: 34
+            minLength: 34
+            pattern: ^HW[0-9a-fA-F]{32}$
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.network_access_profile.network_access_profile_network"
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+      pathType: instance
+  "/v1/NetworkAccessProfiles/{Sid}":
+    description: "TODO: Resource-level docs"
+    get:
+      description: Fetch a Network Access Profile instance from your account.
+      operationId: FetchNetworkAccessProfile
+      parameters:
+        - description: The SID of the Network Access Profile resource to fetch.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.network_access_profile"
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    post:
+      description: Updates the given properties of a Network Access Profile in your account.
+      operationId: UpdateNetworkAccessProfile
+      parameters:
+        - description: The SID of the Network Access Profile to update.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                UniqueName:
+                  description: The new unique name of the Network Access Profile.
+                  type: string
+              title: UpdateNetworkAccessProfileRequest
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.network_access_profile"
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - unique_name
+        - fleets_count
+      pathType: instance
+  /v1/Networks:
+    description: Mobile operator networks to which Super SIMs can connect
+    get:
+      description: Retrieve a list of Network resources.
+      operationId: ListNetwork
+      parameters:
+        - description: The [ISO country code](https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2) of the Network resources to read.
+          in: query
+          name: IsoCountry
+          schema:
+            type: string
+        - description: The 'mobile country code' of a country. Network resources with this `mcc` in their `identifiers` will be read.
+          in: query
+          name: Mcc
+          schema:
+            type: string
+        - description: The 'mobile network code' of a mobile operator network. Network resources with this `mnc` in their `identifiers` will be read.
+          in: query
+          name: Mnc
+          schema:
+            type: string
+        - description: How many resources to return in each list page. The default is 50, and the maximum is 1000.
+          in: query
+          name: PageSize
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  meta:
+                    properties:
+                      first_page_url:
+                        format: uri
+                        type: string
+                      key:
+                        type: string
+                      next_page_url:
+                        format: uri
+                        type: string
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      previous_page_url:
+                        format: uri
+                        type: string
+                      url:
+                        format: uri
+                        type: string
+                    type: object
+                  networks:
+                    items:
+                      $ref: "#/components/schemas/supersim.v1.network"
+                    type: array
+                title: ListNetworkResponse
+                type: object
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+      pathType: list
+  "/v1/Networks/{Sid}":
+    description: Mobile operator networks to which Super SIMs can connect
+    get:
+      description: Fetch a Network resource.
+      operationId: FetchNetwork
+      parameters:
+        - description: The SID of the Network resource to fetch.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            maxLength: 34
+            minLength: 34
+            pattern: ^HW[0-9a-fA-F]{32}$
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.network"
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+      pathType: instance
+  /v1/Sims:
+    description: Individual IoT Super SIMs
+    get:
+      description: Retrieve a list of Super SIMs from your account.
+      operationId: ListSim
+      parameters:
+        - description: The status of the Sim resources to read. Can be `new`, `ready`, `active`, `inactive`, or `scheduled`.
+          in: query
+          name: Status
+          schema:
+            enum:
+              - new
+              - ready
+              - active
+              - inactive
+              - scheduled
+            type: string
+        - description: The SID or unique name of the Fleet to which a list of Sims are assigned.
+          in: query
+          name: Fleet
+          schema:
+            type: string
+        - description: The [ICCID](https://en.wikipedia.org/wiki/Subscriber_identity_module#ICCID) associated with a Super SIM to filter the list by. Passing this parameter will always return a list containing zero or one SIMs.
+          in: query
+          name: Iccid
+          schema:
+            type: string
+        - description: How many resources to return in each list page. The default is 50, and the maximum is 1000.
+          in: query
+          name: PageSize
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  meta:
+                    properties:
+                      first_page_url:
+                        format: uri
+                        type: string
+                      key:
+                        type: string
+                      next_page_url:
+                        format: uri
+                        type: string
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      previous_page_url:
+                        format: uri
+                        type: string
+                      url:
+                        format: uri
+                        type: string
+                    type: object
+                  sims:
+                    items:
+                      $ref: "#/components/schemas/supersim.v1.sim"
+                    type: array
+                title: ListSimResponse
+                type: object
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    post:
+      description: Register a Super SIM to your Account
+      operationId: CreateSim
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                Iccid:
+                  description: The [ICCID](https://en.wikipedia.org/wiki/Subscriber_identity_module#ICCID) of the Super SIM to be added to your Account.
+                  type: string
+                RegistrationCode:
+                  description: The 10-digit code required to claim the Super SIM for your Account.
+                  type: string
+              required:
+                - Iccid
+                - RegistrationCode
+              title: CreateSimRequest
+              type: object
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.sim"
+          description: Created
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - unique_name
+        - status
+      pathType: list
+  "/v1/Sims/{Sid}":
+    description: Individual IoT Super SIMs
+    get:
+      description: Fetch a Super SIM instance from your account.
+      operationId: FetchSim
+      parameters:
+        - description: The SID of the Sim resource to fetch.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.sim"
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    post:
+      description: Updates the given properties of a Super SIM instance from your account.
+      operationId: UpdateSim
+      parameters:
+        - description: The SID of the Sim resource to update.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                AccountSid:
+                  description: The SID of the Account to which the Sim resource should belong. The Account SID can only be that of the requesting Account or that of a Subaccount of the requesting Account. Only valid when the Sim resource's status is new.
+                  type: string
+                CallbackMethod:
+                  description: "The HTTP method we should use to call `callback_url`. Can be: `GET` or `POST` and the default is POST."
+                  enum:
+                    - HEAD
+                    - GET
+                    - POST
+                    - PATCH
+                    - PUT
+                    - DELETE
+                  type: string
+                CallbackUrl:
+                  description: The URL we should call using the `callback_method` after an asynchronous update has finished.
+                  format: uri
+                  type: string
+                Fleet:
+                  description: The SID or unique name of the Fleet to which the SIM resource should be assigned.
+                  type: string
+                Status:
+                  description: "The new status of the resource. Can be: `ready`, `active`, or `inactive`. See the [Super SIM Status Values](https://www.twilio.com/docs/iot/supersim/api/sim-resource#status-values) for more info."
+                  enum:
+                    - ready
+                    - active
+                    - inactive
+                  type: string
+                UniqueName:
+                  description: An application-defined string that uniquely identifies the resource. It can be used in place of the resource's `sid` in the URL to address the resource.
+                  type: string
+              title: UpdateSimRequest
+              type: object
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.sim"
+          description: OK
+        "202":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.sim"
+          description: Accepted
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - unique_name
+        - status
+      pathType: instance
+  "/v1/Sims/{SimSid}/BillingPeriods":
+    description: Billing Period for an IoT Super SIM
+    get:
+      description: Retrieve a list of Billing Periods for a Super SIM.
+      operationId: ListBillingPeriod
+      parameters:
+        - description: The SID of the Super SIM to list Billing Periods for.
+          in: path
+          name: SimSid
+          required: true
+          schema:
+            type: string
+        - description: How many resources to return in each list page. The default is 50, and the maximum is 1000.
+          in: query
+          name: PageSize
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  billing_periods:
+                    items:
+                      $ref: "#/components/schemas/supersim.v1.sim.billing_period"
+                    type: array
+                  meta:
+                    properties:
+                      first_page_url:
+                        format: uri
+                        type: string
+                      key:
+                        type: string
+                      next_page_url:
+                        format: uri
+                        type: string
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      previous_page_url:
+                        format: uri
+                        type: string
+                      url:
+                        format: uri
+                        type: string
+                    type: object
+                title: ListBillingPeriodResponse
+                type: object
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - GA
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - sim_sid
+        - start_time
+        - end_time
+        - period_type
+      pathType: list
+  /v1/SmsCommands:
+    description: Machine-to-machine SMS Commands sent to/from SIMs
+    get:
+      description: Retrieve a list of SMS Commands from your account.
+      operationId: ListSmsCommand
+      parameters:
+        - description: The SID or unique name of the Sim resource that SMS Command was sent to or from.
+          in: query
+          name: Sim
+          schema:
+            type: string
+        - description: "The status of the SMS Command. Can be: `queued`, `sent`, `delivered`, `received` or `failed`. See the [SMS Command Status Values](https://www.twilio.com/docs/wireless/api/smscommand-resource#status-values) for a description of each."
+          in: query
+          name: Status
+          schema:
+            enum:
+              - queued
+              - sent
+              - delivered
+              - received
+              - failed
+            type: string
+        - description: The direction of the SMS Command. Can be `to_sim` or `from_sim`. The value of `to_sim` is synonymous with the term `mobile terminated`, and `from_sim` is synonymous with the term `mobile originated`.
+          in: query
+          name: Direction
+          schema:
+            enum:
+              - to_sim
+              - from_sim
+            type: string
+        - description: How many resources to return in each list page. The default is 50, and the maximum is 1000.
+          in: query
+          name: PageSize
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  meta:
+                    properties:
+                      first_page_url:
+                        format: uri
+                        type: string
+                      key:
+                        type: string
+                      next_page_url:
+                        format: uri
+                        type: string
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      previous_page_url:
+                        format: uri
+                        type: string
+                      url:
+                        format: uri
+                        type: string
+                    type: object
+                  sms_commands:
+                    items:
+                      $ref: "#/components/schemas/supersim.v1.sms_command"
+                    type: array
+                title: ListSmsCommandResponse
+                type: object
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    post:
+      description: Send SMS Command to a Sim.
+      operationId: CreateSmsCommand
+      requestBody:
+        content:
+          application/x-www-form-urlencoded:
+            schema:
+              properties:
+                CallbackMethod:
+                  description: "The HTTP method we should use to call `callback_url`. Can be: `GET` or `POST` and the default is POST."
+                  enum:
+                    - HEAD
+                    - GET
+                    - POST
+                    - PATCH
+                    - PUT
+                    - DELETE
+                  type: string
+                CallbackUrl:
+                  description: The URL we should call using the `callback_method` after we have sent the command.
+                  format: uri
+                  type: string
+                Payload:
+                  description: The message body of the SMS Command.
+                  type: string
+                Sim:
+                  description: The `sid` or `unique_name` of the [SIM](https://www.twilio.com/docs/wireless/api/sim-resource) to send the SMS Command to.
+                  maxLength: 34
+                  minLength: 34
+                  pattern: ^HS[0-9a-fA-F]{32}$
+                  type: string
+              required:
+                - Sim
+                - Payload
+              title: CreateSmsCommandRequest
+              type: object
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.sms_command"
+          description: Created
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - status
+        - date_created
+      pathType: list
+  "/v1/SmsCommands/{Sid}":
+    description: Machine-to-machine SMS Commands sent to/from SIMs
+    get:
+      description: Fetch SMS Command instance from your account.
+      operationId: FetchSmsCommand
+      parameters:
+        - description: The SID of the SMS Command resource to fetch.
+          in: path
+          name: Sid
+          required: true
+          schema:
+            maxLength: 34
+            minLength: 34
+            pattern: ^HC[0-9a-fA-F]{32}$
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/supersim.v1.sms_command"
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - sid
+        - status
+        - date_created
+      pathType: instance
+  /v1/UsageRecords:
+    description: Usage information for Sim resources
+    get:
+      description: List UsageRecords
+      operationId: ListUsageRecord
+      parameters:
+        - description: SID or unique name of a Sim resource. Only show UsageRecords representing usage incurred by this Super SIM.
+          in: query
+          name: Sim
+          schema:
+            type: string
+        - description: SID or unique name of a Fleet resource. Only show UsageRecords representing usage for Super SIMs belonging to this Fleet resource at the time the usage occurred.
+          in: query
+          name: Fleet
+          schema:
+            type: string
+        - description: SID of a Network resource. Only show UsageRecords representing usage on this network.
+          in: query
+          name: Network
+          schema:
+            maxLength: 34
+            minLength: 34
+            pattern: ^HW[0-9a-fA-F]{32}$
+            type: string
+        - description: Alpha-2 ISO Country Code. Only show UsageRecords representing usage in this country.
+          in: query
+          name: IsoCountry
+          schema:
+            type: string
+        - description: "Dimension over which to aggregate usage records. Can be: `sim`, `fleet`, `network`, `isoCountry`. Default is to not aggregate across any of these dimensions, UsageRecords will be aggregated into the time buckets described by the `Granularity` parameter."
+          in: query
+          name: Group
+          schema:
+            enum:
+              - sim
+              - fleet
+              - network
+              - isoCountry
+            type: string
+        - description: "Time-based grouping that UsageRecords should be aggregated by. Can be: `hour`, `day`, or `all`. Default is `all`. `all` returns one UsageRecord that describes the usage for the entire period."
+          in: query
+          name: Granularity
+          schema:
+            enum:
+              - hour
+              - day
+              - all
+            type: string
+        - description: Only include usage that occurred at or after this time, specified in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format. Default is one month before the `end_time`.
+          in: query
+          name: StartTime
+          schema:
+            format: date-time
+            type: string
+        - description: Only include usage that occurred before this time, specified in [ISO 8601](https://en.wikipedia.org/wiki/ISO_8601) format. Default is the current time.
+          in: query
+          name: EndTime
+          schema:
+            format: date-time
+            type: string
+        - description: How many resources to return in each list page. The default is 50, and the maximum is 1000.
+          in: query
+          name: PageSize
+          schema:
+            maximum: 1000
+            minimum: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  meta:
+                    properties:
+                      first_page_url:
+                        format: uri
+                        type: string
+                      key:
+                        type: string
+                      next_page_url:
+                        format: uri
+                        type: string
+                      page:
+                        type: integer
+                      page_size:
+                        type: integer
+                      previous_page_url:
+                        format: uri
+                        type: string
+                      url:
+                        format: uri
+                        type: string
+                    type: object
+                  usage_records:
+                    items:
+                      $ref: "#/components/schemas/supersim.v1.usage_record"
+                    type: array
+                title: ListUsageRecordResponse
+                type: object
+          description: OK
+      security:
+        - accountSid_authToken: []
+      x-maturity:
+        - Beta
+    servers:
+      - url: https://supersim.twilio.com
+    x-twilio:
+      defaultOutputProperties:
+        - account_sid
+        - period
+      pathType: list
+components:
+  schemas:
+    supersim.v1.command:
+      properties:
+        account_sid:
+          description: The SID of the Account that created the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^AC[0-9a-fA-F]{32}$
+          type: string
+        command:
+          description: The message body of the command sent to or from the SIM
+          nullable: true
+          type: string
+        date_created:
+          description: The ISO 8601 date and time in GMT when the resource was created
+          format: date-time
+          nullable: true
+          type: string
+        date_updated:
+          description: The ISO 8601 date and time in GMT when the resource was last updated
+          format: date-time
+          nullable: true
+          type: string
+        direction:
+          description: The direction of the Command
+          enum:
+            - to_sim
+            - from_sim
+          nullable: true
+          type: string
+        sid:
+          description: The unique string that identifies the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HC[0-9a-fA-F]{32}$
+          type: string
+        sim_sid:
+          description: The SID of the SIM that this Command was sent to or from
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HS[0-9a-fA-F]{32}$
+          type: string
+        status:
+          description: The status of the Command
+          enum:
+            - queued
+            - sent
+            - delivered
+            - received
+            - failed
+          nullable: true
+          type: string
+        url:
+          description: The absolute URL of the Command resource
+          format: uri
+          nullable: true
+          type: string
+      type: object
+    supersim.v1.fleet:
+      properties:
+        account_sid:
+          description: The SID of the Account that created the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^AC[0-9a-fA-F]{32}$
+          type: string
+        commands_enabled:
+          description: Defines whether SIMs in the Fleet are capable of sending and receiving machine-to-machine SMS via Commands
+          nullable: true
+          type: boolean
+        commands_method:
+          description: A string representing the HTTP method to use when making a request to `commands_url`
+          enum:
+            - HEAD
+            - GET
+            - POST
+            - PATCH
+            - PUT
+            - DELETE
+          nullable: true
+          type: string
+        commands_url:
+          description: The URL that will receive a webhook when a Super SIM in the Fleet is used to send an SMS from your device to the Commands number
+          format: uri
+          nullable: true
+          type: string
+        data_enabled:
+          description: Defines whether SIMs in the Fleet are capable of using data connectivity
+          nullable: true
+          type: boolean
+        data_limit:
+          description: The total data usage (download and upload combined) in Megabytes that each Sim resource assigned to the Fleet resource can consume
+          nullable: true
+          type: integer
+        data_metering:
+          description: The model by which a SIM is metered and billed
+          enum:
+            - payg
+          nullable: true
+          type: string
+        date_created:
+          description: The ISO 8601 date and time in GMT when the resource was created
+          format: date-time
+          nullable: true
+          type: string
+        date_updated:
+          description: The ISO 8601 date and time in GMT when the resource was last updated
+          format: date-time
+          nullable: true
+          type: string
+        network_access_profile_sid:
+          description: The SID of the Network Access Profile of the Fleet
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HA[0-9a-fA-F]{32}$
+          type: string
+        sid:
+          description: The unique string that identifies the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HF[0-9a-fA-F]{32}$
+          type: string
+        sms_commands_enabled:
+          description: Defines whether SIMs in the Fleet are capable of sending and receiving machine-to-machine SMS via Commands
+          nullable: true
+          type: boolean
+        sms_commands_method:
+          description: A string representing the HTTP method to use when making a request to `sms_commands_url`
+          enum:
+            - HEAD
+            - GET
+            - POST
+            - PATCH
+            - PUT
+            - DELETE
+          nullable: true
+          type: string
+        sms_commands_url:
+          description: The URL that will receive a webhook when a Super SIM in the Fleet is used to send an SMS from your device to the SMS Commands number
+          format: uri
+          nullable: true
+          type: string
+        unique_name:
+          description: An application-defined string that uniquely identifies the resource
+          nullable: true
+          type: string
+        url:
+          description: The absolute URL of the Fleet resource
+          format: uri
+          nullable: true
+          type: string
+      type: object
+    supersim.v1.network:
+      properties:
+        friendly_name:
+          description: A human readable identifier of this resource
+          nullable: true
+          type: string
+        identifiers:
+          description: The MCC/MNCs included in the Network resource
+          items:
+            type: object
+          nullable: true
+          type: array
+        iso_country:
+          description: The ISO country code of the Network resource
+          nullable: true
+          type: string
+        sid:
+          description: The unique string that identifies the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HW[0-9a-fA-F]{32}$
+          type: string
+        url:
+          description: The absolute URL of the Network resource
+          format: uri
+          nullable: true
+          type: string
+      type: object
+    supersim.v1.network_access_profile:
+      properties:
+        account_sid:
+          description: The SID of the Account that the Network Access Profile belongs to
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^AC[0-9a-fA-F]{32}$
+          type: string
+        date_created:
+          description: The ISO 8601 date and time in GMT when the resource was created
+          format: date-time
+          nullable: true
+          type: string
+        date_updated:
+          description: The ISO 8601 date and time in GMT when the resource was last updated
+          format: date-time
+          nullable: true
+          type: string
+        links:
+          nullable: true
+          type: object
+        sid:
+          description: The unique string that identifies the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HA[0-9a-fA-F]{32}$
+          type: string
+        unique_name:
+          description: An application-defined string that uniquely identifies the resource
+          nullable: true
+          type: string
+        url:
+          description: The absolute URL of the resource
+          format: uri
+          nullable: true
+          type: string
+      type: object
+    supersim.v1.network_access_profile.network_access_profile_network:
+      properties:
+        friendly_name:
+          description: A human readable identifier of this resource
+          nullable: true
+          type: string
+        identifiers:
+          description: The MCC/MNCs included in the resource
+          items:
+            type: object
+          nullable: true
+          type: array
+        iso_country:
+          description: The ISO country code of the Network resource
+          nullable: true
+          type: string
+        network_access_profile_sid:
+          description: The unique string that identifies the Network Access Profile resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HA[0-9a-fA-F]{32}$
+          type: string
+        sid:
+          description: The unique string that identifies the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HW[0-9a-fA-F]{32}$
+          type: string
+        url:
+          description: The absolute URL of the resource
+          format: uri
+          nullable: true
+          type: string
+      type: object
+    supersim.v1.sim:
+      properties:
+        account_sid:
+          description: The SID of the Account that the Super SIM belongs to
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^AC[0-9a-fA-F]{32}$
+          type: string
+        date_created:
+          description: The ISO 8601 date and time in GMT when the resource was created
+          format: date-time
+          nullable: true
+          type: string
+        date_updated:
+          description: The ISO 8601 date and time in GMT when the resource was last updated
+          format: date-time
+          nullable: true
+          type: string
+        fleet_sid:
+          description: The unique ID of the Fleet configured for this SIM
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HF[0-9a-fA-F]{32}$
+          type: string
+        iccid:
+          description: The ICCID associated with the SIM
+          nullable: true
+          type: string
+        links:
+          nullable: true
+          type: object
+        sid:
+          description: The unique string that identifies the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HS[0-9a-fA-F]{32}$
+          type: string
+        status:
+          description: The status of the Super SIM
+          enum:
+            - new
+            - ready
+            - active
+            - inactive
+            - scheduled
+          nullable: true
+          type: string
+        unique_name:
+          description: An application-defined string that uniquely identifies the resource
+          nullable: true
+          type: string
+        url:
+          description: The absolute URL of the Sim Resource
+          format: uri
+          nullable: true
+          type: string
+      type: object
+    supersim.v1.sim.billing_period:
+      properties:
+        account_sid:
+          description: The SID of the Account the Super SIM belongs to
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^AC[0-9a-fA-F]{32}$
+          type: string
+        date_created:
+          description: The ISO 8601 date and time in GMT when the resource was created
+          format: date-time
+          nullable: true
+          type: string
+        date_updated:
+          description: The ISO 8601 date and time in GMT when the resource was last updated
+          format: date-time
+          nullable: true
+          type: string
+        end_time:
+          description: The end time of the Billing Period
+          format: date-time
+          nullable: true
+          type: string
+        period_type:
+          description: The type of the Billing Period
+          enum:
+            - ready
+            - active
+          nullable: true
+          type: string
+        sid:
+          description: The SID of the Billing Period
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HB[0-9a-fA-F]{32}$
+          type: string
+        sim_sid:
+          description: The SID of the Super SIM the Billing Period belongs to
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HS[0-9a-fA-F]{32}$
+          type: string
+        start_time:
+          description: The start time of the Billing Period
+          format: date-time
+          nullable: true
+          type: string
+      type: object
+    supersim.v1.sms_command:
+      properties:
+        account_sid:
+          description: The SID of the Account that created the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^AC[0-9a-fA-F]{32}$
+          type: string
+        date_created:
+          description: The ISO 8601 date and time in GMT when the resource was created
+          format: date-time
+          nullable: true
+          type: string
+        date_updated:
+          description: The ISO 8601 date and time in GMT when the resource was last updated
+          format: date-time
+          nullable: true
+          type: string
+        direction:
+          description: The direction of the SMS Command
+          enum:
+            - to_sim
+            - from_sim
+          nullable: true
+          type: string
+        payload:
+          description: The message body of the SMS Command sent to or from the SIM
+          nullable: true
+          type: string
+        sid:
+          description: The unique string that identifies the resource
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HC[0-9a-fA-F]{32}$
+          type: string
+        sim_sid:
+          description: The SID of the SIM that this SMS Command was sent to or from
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HS[0-9a-fA-F]{32}$
+          type: string
+        status:
+          description: The status of the SMS Command
+          enum:
+            - queued
+            - sent
+            - delivered
+            - received
+            - failed
+          nullable: true
+          type: string
+        url:
+          description: The absolute URL of the SMS Command resource
+          format: uri
+          nullable: true
+          type: string
+      type: object
+    supersim.v1.usage_record:
+      properties:
+        account_sid:
+          description: The SID of the Account that incurred the usage.
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^AC[0-9a-fA-F]{32}$
+          type: string
+        data_download:
+          description: Total data downloaded in bytes, aggregated by the query parameters.
+          nullable: true
+          type: integer
+        data_total:
+          description: Total of data_upload and data_download.
+          nullable: true
+          type: integer
+        data_upload:
+          description: Total data uploaded in bytes, aggregated by the query parameters.
+          nullable: true
+          type: integer
+        fleet_sid:
+          description: SID of the Fleet resource on which the usage occurred.
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HF[0-9a-fA-F]{32}$
+          type: string
+        iso_country:
+          description: Alpha-2 ISO Country Code of the country the usage occurred in.
+          nullable: true
+          type: string
+        network_sid:
+          description: SID of the Network resource on which the usage occurred.
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HW[0-9a-fA-F]{32}$
+          type: string
+        period:
+          description: The time period for which the usage is reported.
+          nullable: true
+          type: object
+        sim_sid:
+          description: SID of a Sim resource to which the UsageRecord belongs.
+          maxLength: 34
+          minLength: 34
+          nullable: true
+          pattern: ^HS[0-9a-fA-F]{32}$
+          type: string
+      type: object
+  securitySchemes:
+    accountSid_authToken:
+      scheme: basic
+      type: http
+x-maturity:
+  - description: This product is Generally Available.
+    name: GA
+  - description: PLEASE NOTE that this is a Beta product that is subject to change. Use it with caution.
+    name: Beta

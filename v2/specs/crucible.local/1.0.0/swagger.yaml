@@ -1,0 +1,1416 @@
+swagger: "2.0"
+schemes:
+  - http
+host: crucible.local
+basePath: /context/
+info:
+  contact:
+    x-twitter: Atlassian
+  title: Crucible
+  version: 1.0.0
+  x-apisguru-categories:
+    - developer_tools
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_Atlassian_profile_image.png
+  x-origin:
+    - converter:
+        url: https://github.com/lucybot/api-spec-converter
+        version: 2.7.18
+      format: wadl
+      url: https://docs.atlassian.com/fisheye-crucible/latest_backup/wadl/crucible.wadl
+      version: "1.0"
+  x-providerName: crucible.local
+paths:
+  /rest-service/auth-v1/login:
+    get:
+      description: |-
+        Get the user authentication token.
+         
+         This is a legacy version of the login request. Using GET is deprecated as your password is likely to appear in logs which record request URLs.
+         Use the POST version instead.
+      operationId: login
+      parameters:
+        - description: the username of the user to get the token for
+          in: query
+          name: userName
+          required: false
+          type: string
+        - description: the password for the user to get the token for
+          in: query
+          name: password
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+    post:
+      description: Get the user authentication token.
+      operationId: loginPost
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  /rest-service/projects-v1:
+    get:
+      description: Get the list of projects that the authenticated user is entitled to access.
+      operationId: getAllProjects
+      parameters:
+        - default: false
+          description: |-
+            if set to true, user data (e.g. allowedReviewers) which is expensive
+             to compute, will not be included in the response data. Defaults to false so allowedReviewers are included in the response.
+          in: query
+          name: excludeAllowedReviewers
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+  "/rest-service/projects-v1/{key}":
+    get:
+      description: Returns a project description.
+      operationId: getProject
+      parameters:
+        - default: false
+          in: query
+          name: excludeAllowedReviewers
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the key of a Crucible project.
+        in: path
+        name: key
+        required: true
+        type: string
+  /rest-service/repositories-v1:
+    get:
+      description: Returns a list of all repositories. This includes plugin provided repositories
+      operationId: getAllRepositories
+      parameters:
+        - description: |-
+            filter repositories by the repository key, only repositories of keys containing this value
+             would be returned if value was provided.  Case insensitive.
+          in: query
+          name: name
+          required: false
+          type: string
+        - description: |-
+            filter repositories by enabled flag.  Only enabled/disabled repositories would be returned
+             accordingly if value was provided.
+          in: query
+          name: enabled
+          required: false
+          type: boolean
+        - description: |-
+            filter repositories by its availability.  Only available/unavailable repositories would be returned
+             accordingly if value was provided.
+          in: query
+          name: available
+          required: false
+          type: boolean
+        - description: |-
+            filter repositories by type.  Allowed values: cvs, svn, p4, git, hg, plugin (for light SCM repositories).
+             Parameter can be specified more than once.
+          in: query
+          name: type
+          required: false
+          type: string
+        - default: 10000
+          description: maximum number of repositories to be returned.
+          format: int32
+          in: query
+          name: limit
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+  "/rest-service/repositories-v1/browse/{repository}/{path}":
+    get:
+      description: Lists the contents of the specified directory.
+      operationId: browse
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: path to a directory. When path represents a file name, the result is unspecified.
+        in: path
+        name: path
+        required: true
+        type: string
+      - description: the key of the Crucible SCM plugin repository.
+        in: path
+        name: repository
+        required: true
+        type: string
+  "/rest-service/repositories-v1/change/{repository}/{revision}":
+    get:
+      description: Represents a particular changeset.
+      operationId: change
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the key of the Crucible SCM plugin repository.
+        in: path
+        name: repository
+        required: true
+        type: string
+      - description: the SCM revision string.
+        in: path
+        name: revision
+        required: true
+        type: string
+  "/rest-service/repositories-v1/changes/{repository}/{path}":
+    get:
+      description: Represents a sorted list of changesets, newest first.
+      operationId: changes
+      parameters:
+        - description: only return change sets after this change set. If omitted there is no restriction.
+          in: query
+          name: oldestCsid
+          required: false
+          type: string
+        - description: include the change set with id "from" in the change sets returned.
+          in: query
+          name: includeOldest
+          required: false
+          type: boolean
+        - description: only return change sets before this change set. If omitted there is no restriction.
+          in: query
+          name: newestCsid
+          required: false
+          type: string
+        - description: include the change set with id "to" in the change sets returned.
+          in: query
+          name: includeNewest
+          required: false
+          type: boolean
+        - description: return only the newest change sets, to a maximum of maxChangesets.
+          format: int32
+          in: query
+          name: max
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: |-
+          only show change sets which contain at least one revision with a path under this path.
+           Changesets with some revisions outside this path still include all revisions.
+           i.e. Revisions outside the path are *not* excluded from the change set.
+        in: path
+        name: path
+        required: true
+        type: string
+      - description: the key of the Crucible SCM plugin repository.
+        in: path
+        name: repository
+        required: true
+        type: string
+  "/rest-service/repositories-v1/content/{repository}/{revision}/{path}":
+    get:
+      description: |-
+        Returns the raw content of the specified file revision as a binary
+         stream. No attempt is made to identify the content type and no mime
+         type is provided.
+      operationId: getContents
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the path of a file.
+        in: path
+        name: path
+        required: true
+        type: string
+      - description: the key of the Crucible SCM plugin repository.
+        in: path
+        name: repository
+        required: true
+        type: string
+      - description: the SCM revision string.
+        in: path
+        name: revision
+        required: true
+        type: string
+  "/rest-service/repositories-v1/history/{repository}/{revision}/{path}":
+    get:
+      description: Represents the history of a versioned entity.
+      operationId: history
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: |-
+          the path of a file or versioned directory (note that
+           versioned directories are not supported by all SCM plugins).
+        in: path
+        name: path
+        required: true
+        type: string
+      - description: the key of the Crucible SCM plugin repository.
+        in: path
+        name: repository
+        required: true
+        type: string
+      - description: the SCM revision string.
+        in: path
+        name: revision
+        required: true
+        type: string
+  "/rest-service/repositories-v1/{repository}":
+    get:
+      operationId: getRepositoryDetails
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the key of the Crucible SCM plugin repository.
+        in: path
+        name: repository
+        required: true
+        type: string
+  "/rest-service/repositories-v1/{repository}/svn":
+    get:
+      description: For backward compatibility we provide this method, but repositories should be referred to just by their key.
+      operationId: getSvnRepositoryDetails
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the key of a FishEye or Crucible SCM plugin repository
+        in: path
+        name: repository
+        required: true
+        type: string
+  "/rest-service/repositories-v1/{repository}/{revision}/{path}":
+    get:
+      operationId: details
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: |-
+          the path of a file or versioned directory (note that
+           versioned directories are not supported by all SCM plugins).
+        in: path
+        name: path
+        required: true
+        type: string
+      - description: the key of the Crucible SCM plugin repository.
+        in: path
+        name: repository
+        required: true
+        type: string
+      - description: the SCM revision string.
+        in: path
+        name: revision
+        required: true
+        type: string
+  /rest-service/reviews-v1:
+    get:
+      operationId: getAllReviews
+      parameters:
+        - description: only return reviews that are in these states.
+          in: query
+          name: state
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+    post:
+      operationId: createReview
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  /rest-service/reviews-v1/details:
+    get:
+      description: |-
+        Retrieves all reviews that are in one of the the specified states. For each review all details are included (review items + comments). The
+         wiki rendered comments will be available via the <messageAsHtml> element
+      operationId: getAllDetailedReviews
+      parameters:
+        - description: the review states to match.
+          in: query
+          name: state
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+  /rest-service/reviews-v1/filter:
+    get:
+      description: To ignore a property, omit it from the query string.
+      operationId: getCustomFilterReviews
+      parameters:
+        - description: a string that will be searched for in review titles.
+          in: query
+          name: title
+          required: false
+          type: string
+        - description: reviews authored by this user.
+          in: query
+          name: author
+          required: false
+          type: string
+        - description: reviews moderated by this user.
+          in: query
+          name: moderator
+          required: false
+          type: string
+        - description: reviews created by this user.
+          in: query
+          name: creator
+          required: false
+          type: string
+        - description: |-
+            comma-separated list of amy of the following strings: (Draft,
+             Approval, Review, Summarize, Closed, Dead, Rejected, Unknown).
+          in: query
+          name: states
+          required: false
+          type: string
+        - description: reviews reviewed by this user.
+          in: query
+          name: reviewer
+          required: false
+          type: string
+        - description: |-
+            whether the value of , ,
+              and  should be OR'd
+             () or AND'd ()
+             together.
+          in: query
+          name: orRoles
+          required: false
+          type: boolean
+        - description: reviews that the specified reviewer has completed.
+          in: query
+          name: complete
+          required: false
+          type: boolean
+        - description: Reviews that all reviewers have completed.
+          in: query
+          name: allReviewersComplete
+          required: false
+          type: boolean
+        - description: reviews for the specified project.
+          in: query
+          name: project
+          required: false
+          type: string
+        - description: reviews with last activity date after the specified timestamp, in milliseconds. Inclusive.
+          format: int64
+          in: query
+          name: fromDate
+          required: false
+          type: integer
+        - description: reviews with last activity date before the specified timestamp, in milliseconds. Inclusive.
+          format: int64
+          in: query
+          name: toDate
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+    post:
+      description: |-
+        This method should no longer be used, as it uses a POST for a read-only
+         retrieval operation and is provided for backward compatibility only.
+      operationId: postCustomFilterReviews
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  /rest-service/reviews-v1/filter/details:
+    get:
+      description: To ignore a property, omit it from the query string.
+      operationId: getDetailedCustomFilterReviews
+      parameters:
+        - description: a string that will be searched for in review titles.
+          in: query
+          name: title
+          required: false
+          type: string
+        - description: reviews authored by this user.
+          in: query
+          name: author
+          required: false
+          type: string
+        - description: reviews moderated by this user.
+          in: query
+          name: moderator
+          required: false
+          type: string
+        - description: reviews created by this user.
+          in: query
+          name: creator
+          required: false
+          type: string
+        - description: |-
+            comma-separated list of amy of the following strings: (Draft,
+             Approval, Review, Summarize, Closed, Dead, Rejected, Unknown).
+          in: query
+          name: states
+          required: false
+          type: string
+        - description: reviews reviewed by this user.
+          in: query
+          name: reviewer
+          required: false
+          type: string
+        - description: |-
+            whether the value of , ,
+              and  should be OR'd
+             () or AND'd ()
+             together.
+          in: query
+          name: orRoles
+          required: false
+          type: boolean
+        - description: reviews that the specified reviewer has completed.
+          in: query
+          name: complete
+          required: false
+          type: boolean
+        - description: Reviews that all reviewers have completed.
+          in: query
+          name: allReviewersComplete
+          required: false
+          type: boolean
+        - description: reviews for the specified project.
+          in: query
+          name: project
+          required: false
+          type: string
+        - description: reviews with last activity date after the specified timestamp, in milliseconds. Inclusive.
+          format: int64
+          in: query
+          name: fromDate
+          required: false
+          type: integer
+        - description: reviews with last activity date before the specified timestamp, in milliseconds. Inclusive.
+          format: int64
+          in: query
+          name: toDate
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+    post:
+      description: |-
+        This method should no longer be used, as it uses a POST for a read-only
+         retrieval operation and is provided for backward compatibility only.
+      operationId: postDetailedCustomFilterReviews
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/filter/{filter}":
+    get:
+      description: Get all the reviews which match the given filter, for the current user.
+      operationId: getFilteredReviewsForUser
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: a predefined filter type.
+        in: path
+        name: filter
+        required: true
+        type: string
+  "/rest-service/reviews-v1/filter/{filter}/details":
+    get:
+      description: Gets a list of all the reviews that match the specified filter criteria.
+      operationId: getDetailedFilteredReviewsForUser
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: a predefined filter type.
+        in: path
+        name: filter
+        required: true
+        type: string
+  "/rest-service/reviews-v1/metrics/{version}":
+    get:
+      description: Get comment metrics metadata for the specified metrics version.
+      operationId: getMetrics
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: a metrics version.
+        in: path
+        name: version
+        required: true
+        type: string
+  "/rest-service/reviews-v1/search/{repository}":
+    get:
+      description: Return a list of Reviews which include a particular file.
+      operationId: getReviewsForPath
+      parameters:
+        - description: path to find in reviews
+          in: query
+          name: path
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the key of the repository to search for file
+        in: path
+        name: repository
+        required: true
+        type: string
+  "/rest-service/reviews-v1/search/{repository}/details":
+    get:
+      description: Return a list of Reviews which include a particular file.
+      operationId: getReviewsDetailsForPath
+      parameters:
+        - description: path to find in reviews.
+          in: query
+          name: path
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the key of the repository to search for file.
+        in: path
+        name: repository
+        required: true
+        type: string
+  /rest-service/reviews-v1/versionInfo:
+    get:
+      description: Returns Crucible version information.
+      operationId: getVersionInfo
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+  "/rest-service/reviews-v1/{id}":
+    delete:
+      description: |-
+        Permanently deletes the specified review.
+         The review must have been abandoned.
+      operationId: deleteReview
+      responses:
+        "200":
+          description: Successful Response
+    get:
+      description: |-
+        Get a single review by its permId (e.g. "CR-45").
+         If the review does not exist, a 404 is returned.
+         
+         The moderator element may not exist if the review does not have a Moderator.
+      operationId: getReview
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the permId of the review to delete (e.g. "CR-45").
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/actions":
+    get:
+      description: |-
+        Get a list of the actions which the current user is allowed to perform
+         on the review.
+      operationId: getAvailableActions
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the permId of the a review (e.g. "CR-45").
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/addChangeset":
+    parameters:
+      - description: the perm id of the review to add the changeset to
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      operationId: addChangesetToReview
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/addFile":
+    parameters:
+      - description: the review perma id to add the file
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      operationId: addFile
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/addPatch":
+    parameters:
+      - in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Old, non-restful name. Kept for backwards compatibility. Exactly the same as POSTing to /{id}/patch
+      operationId: addPatchReview0
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/close":
+    parameters:
+      - description: the review perma id to close. it should be in the open state.
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Closes the given review with the summary given.
+      operationId: closeReviewWithComment
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/comments":
+    get:
+      description: Return all the comments visible to the requesting user for the review.
+      operationId: getAllComments
+      parameters:
+        - default: false
+          description: |-
+            indicate whether to render the wiki text in the returned comments. If set to "true", the comments will contain a
+             <messageAsHtml> element containing the wiki rendered html.
+          in: query
+          name: render
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the review perma-id
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Add a general comment to the review.
+      operationId: addGeneralComment
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/comments/general":
+    get:
+      operationId: getGeneralComments
+      parameters:
+        - default: false
+          description: |-
+            indicate whether to render the wiki text in the returned comments. If set to "true", the comments will contain a
+             <messageAsHtml> element containing the wiki rendered html.
+          in: query
+          name: render
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: review perma-id
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/comments/markAllAsRead":
+    parameters:
+      - description: the review perma-id (e.g. "CR-45").
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: |-
+        For the effective user, mark all comments in a review as read (except
+         those marked as leave unread).
+      operationId: markAllCommentsAsRead
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/comments/versioned":
+    get:
+      operationId: getVersionedComments
+      parameters:
+        - default: false
+          description: |-
+            indicate whether to render the wiki text in the returned comments. If set to "true", the comments will contain a
+             <messageAsHtml> element containing the wiki rendered html.
+          in: query
+          name: render
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: review perma-id
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/comments/{cId}":
+    delete:
+      description: Deletes the given comment.
+      operationId: removeComment
+      responses:
+        "200":
+          description: Successful Response
+    get:
+      description: Gets the given comment.
+      operationId: getComment
+      parameters:
+        - default: false
+          description: true if the wiki text should be rendered into html, into the field <messageAsHtml>.
+          in: query
+          name: render
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the perma id of the review
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: the id of the comment
+        in: path
+        name: cId
+        required: true
+        type: string
+    post:
+      description: Updates the comment given by the perma id to the new comment posted.
+      operationId: updateComment
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/comments/{cId}/markAsLeaveUnread":
+    parameters:
+      - description: the review perma id for the comment
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: the comment perma id
+        in: path
+        name: cId
+        required: true
+        type: string
+    post:
+      description: Marks the comment as leave unread to the current user - it will not automatically be marked as read by crucible.
+      operationId: markCommentAsLeaveUnread
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/comments/{cId}/markAsRead":
+    parameters:
+      - description: the review perma id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: the comment perma id.
+        in: path
+        name: cId
+        required: true
+        type: string
+    post:
+      description: Mark the given comment as read for the user used to make this POST.
+      operationId: markCommentAsRead
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/comments/{cId}/replies":
+    get:
+      description: Gets the replies to the given comment.
+      operationId: getReplies
+      parameters:
+        - default: false
+          description: true if the comments should also be rendered into html, into the element <messageAsHtml>
+          in: query
+          name: render
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the review perma-id (e.g. "CR-45").
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: the comment to reply to
+        in: path
+        name: cId
+        required: true
+        type: string
+    post:
+      description: |-
+        Adds a reply to the given comment. This call includes the  repsonse header that
+         contains the URL of the newly created entity.
+      operationId: addReply
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/comments/{cId}/replies/{rId}":
+    delete:
+      description: Deletes the reply.
+      operationId: removeReply
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: The review perma id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: the perma id of the reply to delete
+        in: path
+        name: rId
+        required: true
+        type: string
+      - description: the reply's parent comment perma id
+        in: path
+        name: cId
+        required: true
+        type: string
+    post:
+      description: Updates a reply with the given newComment.
+      operationId: updateReply
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/complete":
+    parameters:
+      - description: the review perma id
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Completes the review for the current user
+      operationId: completeReview
+      parameters:
+        - default: true
+          description: if {@code ignoreWarnings==true} then condition failure warnings will be ignored
+          in: query
+          name: ignoreWarnings
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/details":
+    get:
+      description: Returns the specified review.
+      operationId: getDetailedReview
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the permId of the review (e.g. "CR-45").
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/patch":
+    get:
+      description: Get a list of patches and their details for the given review
+      operationId: getReviewPatches
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the review id to get the patches for
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Add the revisions in a patch to an existing review.
+      operationId: addPatchToReview
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/patch/{patchId}":
+    delete:
+      description: Removes the patch with the given id from the review. All of the revisions provided by the patch will be removed as well.
+      operationId: removePatch
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the id of the patch (as returned by the '{id}/patch' resource)
+        format: int32
+        in: path
+        name: patchId
+        required: true
+        type: integer
+      - description: the permaId of the review
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/publish":
+    parameters:
+      - description: the review perma id to look for draft comments
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Publishes all the draft comments of the current user.
+      operationId: publishAllComments
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/publish/{cId}":
+    parameters:
+      - description: the review perma id
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: the comment perma id
+        in: path
+        name: cId
+        required: true
+        type: string
+    post:
+      description: publishes the given draft comment.
+      operationId: publishComment
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/remind":
+    parameters:
+      - description: the review perma id to remind about. it should be in the open state.
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Immediately send a reminder to incomplete reviewers about the given review.
+      operationId: remindIncompleteReviewers
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/reviewers":
+    get:
+      description: Get a list of reviewers in the review given by the permaid id.
+      operationId: getReviewers
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the id of the review to add to
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Adds the given list of reviewers to the review.
+      operationId: addReviewers
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/reviewers/completed":
+    get:
+      description: Gets a list of completed reviewers.
+      operationId: getCompletedReviewers
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the review perma id to retrieve reviewers
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/reviewers/uncompleted":
+    get:
+      description: Gets a list of reviewers that have not completed the review.
+      operationId: getUncompletedReviewers
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the review perma id to retrieve reviewers
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/reviewers/{username}":
+    delete:
+      description: Removes the reviewer from the review.
+      operationId: removeReviewer
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the perma id of the review
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: the name of the reviewer.
+        in: path
+        name: username
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/reviewitems":
+    get:
+      description: Returns a list of all the items in a review.
+      operationId: getReviewItemsForReview
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the id of the review (e.g. "CR-362").
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Add the changes between two files in a fisheye repository to the review.
+      operationId: addFisheyeReviewItem
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/reviewitems/details":
+    parameters:
+      - description: the id of the review (e.g. "CR-362").
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: |-
+        Adds the given review item to the review. This will always create a new review item, even if there is an existing
+         one with the same data in the review (in which case the existing item will be replaced).
+      operationId: addReviewItem
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/reviewitems/revisions":
+    parameters:
+      - description: the id of the review (e.g. "CR-362").
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Adds a review item for each of the supplied crucibleRevisionData elements.
+      operationId: addReviewItems
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/reviewitems/{riId}":
+    delete:
+      description: Removes an item from a review.
+      operationId: removeReviewItem
+      responses:
+        "200":
+          description: Successful Response
+    get:
+      description: Returns detailed information for a specific review item.
+      operationId: getReviewItem
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: review item id (e.g. "CFR-6312").
+        in: path
+        name: riId
+        required: true
+        type: string
+      - description: review id (e.g. "CR-345").
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/reviewitems/{riId}/comments":
+    get:
+      operationId: getReviewItemsComments
+      parameters:
+        - default: false
+          description: |-
+            indicate whether to render the wiki text in the returned comments. If set to "true", the comments will contain a
+             <messageAsHtml> element containing the wiki rendered html.
+          in: query
+          name: render
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the review item id.
+        in: path
+        name: riId
+        required: true
+        type: string
+      - description: the review perma id
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: This call includes the  repsonse header that contains the URL of the newly created entity.
+      operationId: addVersionedComment
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/reviewitems/{riId}/details":
+    parameters:
+      - description: a valid review item id (e.g. "CFR-5622").
+        in: path
+        name: riId
+        required: true
+        type: string
+      - description: a valid review id (e.g. "CR-345").
+        in: path
+        name: id
+        required: true
+        type: string
+    put:
+      description: |-
+        Sets the review item specified by itemId with the given reviewItem. The old review item is discarded. Can only
+         perform this operation if the old review item specified by itemId can be deleted. The old review item's permId is
+         not changed.
+      operationId: setReviewItem
+      parameters: []
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/reviewitems/{riId}/revisions":
+    delete:
+      description: |-
+        Removes the revisions given from the review item in the review specified by the id. If the review item has no
+         more revisions left, it is automatically deleted.
+      operationId: removeReviewItemRevisions
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: |-
+          a list of revisions to add to the review item, merging if required. If a revision already exists
+           in the given review item, then the given revision is ignored.
+        in: query
+        name: rev
+        required: false
+        type: string
+      - description: the id of the review item (e.g. "CFR-5622").
+        in: path
+        name: riId
+        required: true
+        type: string
+      - description: the id of the review (e.g. "CR-345").
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: |-
+        Adds the given list of revisions to the supplied review item, merging if required. For example, if the review
+         item for  contains revisions 3 to 6, and if:
+      operationId: addReviewItemRevisions
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/transition":
+    parameters:
+      - description: the review perma-id (e.g. "CR-45").
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Change the state of a review by performing an action on it.
+      operationId: changeState
+      parameters:
+        - description: |-
+            the string representation of the action to perform. Valid actions are:
+             
+             Note:
+          in: query
+          name: action
+          required: false
+          type: string
+        - default: true
+          description: if  then condition failure warnings will be ignored
+          in: query
+          name: ignoreWarnings
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+  "/rest-service/reviews-v1/{id}/transitions":
+    get:
+      description: |-
+        Get a list of the actions which the current user can perform on this
+         review, given its current state and the user's permissions.
+      operationId: getAvailableTransitions
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the permId of the a review (e.g. "CR-45").
+        in: path
+        name: id
+        required: true
+        type: string
+  "/rest-service/reviews-v1/{id}/uncomplete":
+    parameters:
+      - description: the review perma id
+        in: path
+        name: id
+        required: true
+        type: string
+    post:
+      description: Uncompletes the review for the current user.
+      operationId: uncompleteReview
+      parameters:
+        - default: true
+          description: if {@code ignoreWarnings==true} then condition failure warnings will be ignored
+          in: query
+          name: ignoreWarnings
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Successful Response
+  /rest-service/search-v1/reviews:
+    get:
+      description: Search for reviews where the name, description, state or permaId contain the specified term.
+      operationId: getReviewsForTerm
+      parameters:
+        - description: a search term.
+          in: query
+          name: term
+          required: false
+          type: string
+        - description: the maximum number of reviews to return.
+          in: query
+          name: maxReturn
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+  /rest-service/search-v1/reviewsForIssue:
+    get:
+      description: Get a list of all reviews that have been linked to the specified JIRA issue key.
+      operationId: getReviewsForIssueKey
+      parameters:
+        - description: a Jira issue key (e.g. "FOO-3453")
+          in: query
+          name: jiraKey
+          required: false
+          type: string
+        - description: the maximum number of reviews to return.
+          in: query
+          name: maxReturn
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+  /rest-service/users-v1:
+    get:
+      description: Get a list of all the users. You can also ask for a set of users.
+      operationId: getUsers
+      parameters:
+        - description: a username (or a few) to limit the number of returned entries. It will return only existing users.
+          in: query
+          name: username
+          required: false
+          type: string
+      responses:
+        "200":
+          description: Successful Response
+    parameters: []
+  "/rest-service/users-v1/{repository}/{username}":
+    get:
+      description: Returns the user details of the user mapped to a committer in a repository.
+      operationId: getMappedUser
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the key of the repository
+        in: path
+        name: repository
+        required: true
+        type: string
+      - description: the name of the committer
+        in: path
+        name: username
+        required: true
+        type: string
+  "/rest-service/users-v1/{username}":
+    get:
+      description: Returns the user's profile details.
+      operationId: getUserProfile
+      responses:
+        "200":
+          description: Successful Response
+    parameters:
+      - description: the username of the user
+        in: path
+        name: username
+        required: true
+        type: string

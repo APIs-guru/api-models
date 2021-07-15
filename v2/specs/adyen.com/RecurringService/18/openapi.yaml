@@ -1,0 +1,405 @@
+openapi: 3.0.0
+servers:
+  - url: https://pal-test.adyen.com/pal/servlet/Recurring/v18
+info:
+  contact:
+    x-twitter: Adyen
+  description: Additional methods that allow you to manage payment details stored for recurring payments. For more information, refer to [Recurring payments](https://docs.adyen.com/developers/features/recurring-payments).
+  title: Adyen Recurring Service
+  version: "18"
+  x-apisguru-categories:
+    - payment
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_Adyen_profile_image.jpeg
+  x-origin:
+    - converter:
+        url: https://github.com/lucybot/api-spec-converter
+        version: 2.7.31
+      format: openapi
+      url: https://raw.githubusercontent.com/adyen/adyen-openapi/master/specs/3.0/RecurringService-v18.json
+      version: "3.0"
+  x-preferred: false
+  x-providerName: adyen.com
+  x-serviceName: RecurringService
+paths:
+  /disable:
+    post:
+      description: |-
+        Disables stored payment details to stop charging a shopper with this particular recurring detail ID.
+
+        For more information, refer to [Disable stored details](https://docs.adyen.com/developers/features/recurring-payments/disable-stored-details).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/DisableRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DisableResult"
+          description: OK - the request has succeeded.
+        "400":
+          description: Bad Request - a problem reading or understanding the request.
+        "401":
+          description: Unauthorized - authentication required.
+        "403":
+          description: Forbidden - insufficient permissions to process the request.
+        "422":
+          description: Unprocessable Entity - a request validation error.
+        "500":
+          description: Internal Server Error - the server could not process the request.
+      summary: Disables stored payment details.
+      x-groupName: General
+      x-sortIndex: 2
+  /listRecurringDetails:
+    post:
+      description: |-
+        Lists the stored payment details for a shopper, if there are any available. The recurring detail ID can be used with a regular authorisation request to charge the shopper. A summary of the payment detail is returned for presentation to the shopper.
+
+        For more information, refer to [Retrieve stored details](https://docs.adyen.com/developers/features/recurring-payments/retrieve-stored-details).
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RecurringDetailsRequest"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RecurringDetailsResult"
+          description: OK - the request has succeeded.
+        "400":
+          description: Bad Request - a problem reading or understanding the request.
+        "401":
+          description: Unauthorized - authentication required.
+        "403":
+          description: Forbidden - insufficient permissions to process the request.
+        "422":
+          description: Unprocessable Entity - a request validation error.
+        "500":
+          description: Internal Server Error - the server could not process the request.
+      summary: Retrieves stored payment details for a shopper.
+      x-groupName: General
+      x-sortIndex: 1
+components:
+  schemas:
+    Address:
+      properties:
+        city:
+          description: The city name.
+          type: string
+        country:
+          description: A valid value is an ISO two-character country code (e.g. 'NL').
+          type: string
+        houseNumberOrName:
+          description: The house number or name.
+          type: string
+        postalCode:
+          description: The postal code with a maximum of 5 characters for USA and maximum of 10 characters for any other country.
+          type: string
+        stateOrProvince:
+          description: For USA or Canada, a valid 2-character abbreviation for the state or province respectively. For other countries any abbreviation with maximum 3 characters for the state or province.
+          type: string
+        street:
+          description: |
+            The street name.
+            > Don't append the house number to this field. Instead, pass the house number separately as `houseNumberOrName`.
+          type: string
+      required:
+        - street
+        - houseNumberOrName
+        - city
+        - country
+    BankAccount:
+      properties:
+        bankAccountNumber:
+          description: The bank account number (without separators).
+          type: string
+        bankCity:
+          description: The bank city.
+          type: string
+        bankLocationId:
+          description: The location id of the bank. The field value is `nil` in most cases.
+          type: string
+        bankName:
+          description: The name of the bank.
+          type: string
+        bic:
+          description: The [Business Identifier Code](https://en.wikipedia.org/wiki/ISO_9362) (BIC) is the SWIFT address assigned to a bank. The field value is `nil` in most cases.
+          type: string
+        countryCode:
+          description: |-
+            Country code where the bank is located.
+
+            A valid value is an ISO two-character country code (e.g. 'NL').
+          type: string
+        iban:
+          description: The [International Bank Account Number](https://en.wikipedia.org/wiki/International_Bank_Account_Number) (IBAN).
+          type: string
+        ownerName:
+          description: |-
+            The name of the bank account holder.
+            If you submit a name with non-Latin characters, we automatically replace some of them with corresponding Latin characters to meet the FATF recommendations. For example:
+            * χ12 is converted to ch12.
+            * üA is converted to euA.
+            * Peter Møller is converted to Peter Mller, because banks don't accept 'ø'.
+            After replacement, the ownerName must have at least three alphanumeric characters (A-Z, a-z, 0-9), and at least one of them must be a valid Latin character (A-Z, a-z). For example:
+            * John17 - allowed.
+            * J17 - allowed.
+            * 171 - not allowed.
+            * John-7 - allowed.
+            > If provided details don't match the required format, the response returns the error message: 203 'Invalid bank account holder name'.
+          type: string
+        taxId:
+          description: The bank account holder's tax ID.
+          type: string
+    Card:
+      properties:
+        billingAddress:
+          $ref: "#/components/schemas/Address"
+        cvc:
+          description: |-
+            The [card verification code](https://docs.adyen.com/developers/payment-glossary#cardsecuritycodecvccvvcid) (1-20 characters). Depending on the card brand, it is known also as:
+            * CVV2/CVC2 – length: 3 digits
+            * CID – length: 4 digits
+            > If you are using [Client-Side Encryption](https://docs.adyen.com/developers/ecommerce-integration), the CVC code is present in the encrypted data. You must never post the card details to the server.
+            > This field must be always present in a [one-click payment request](https://docs.adyen.com/developers/features/recurring-payments).
+            > When this value is returned in a response, it is always empty because it is not stored.
+          maxLength: 20
+          minLength: 1
+          type: string
+        expiryMonth:
+          description: |-
+            The card expiry month.
+            Format: 2 digits, zero-padded for single digits. For example:
+            * 03 = March
+            * 11 = November
+          maxLength: 2
+          minLength: 1
+          type: string
+        expiryYear:
+          description: |-
+            The card expiry year.
+            Format: 4 digits. For example: 2020
+          maxLength: 4
+          minLength: 4
+          type: string
+        holderName:
+          description: The name of the cardholder, as printed on the card.
+          maxLength: 50
+          minLength: 1
+          type: string
+        issueNumber:
+          description: The issue number of the card (for some UK debit cards only).
+          maxLength: 2
+          minLength: 1
+          type: string
+        number:
+          description: |-
+            The card number (4-19 characters). Do not use any separators.
+            When this value is returned in a response, only the last 4 digits of the card number are returned.
+          maxLength: 19
+          minLength: 4
+          type: string
+        startMonth:
+          description: The month component of the start date (for some UK debit cards only).
+          maxLength: 2
+          minLength: 1
+          type: string
+        startYear:
+          description: The year component of the start date (for some UK debit cards only).
+          maxLength: 4
+          minLength: 4
+          type: string
+      required:
+        - number
+        - expiryMonth
+        - expiryYear
+        - holderName
+    DisableRequest:
+      properties:
+        contract:
+          description: |-
+            Specify the contract if you only want to disable a specific use.
+
+            This field can be set to one of the following values, or to their combination (comma-separated):
+            * ONECLICK
+            * RECURRING
+            * PAYOUT
+          type: string
+        merchantAccount:
+          description: Your merchant account.
+          type: string
+        recurringDetailReference:
+          description: |-
+            The ID that uniquely identifies the recurring detail reference.
+
+            If it is not provided, the whole recurring contract of the `shopperReference` will be disabled, which includes all recurring details.
+          type: string
+        shopperReference:
+          description: |-
+            The ID that uniquely identifies the shopper.
+
+            This `shopperReference` must be the same as the `shopperReference` used in the initial payment.
+          type: string
+      required:
+        - merchantAccount
+        - shopperReference
+    DisableResult:
+      properties:
+        details:
+          description: A list of one or more recurring payment details that were disabled.
+          items:
+            $ref: "#/components/schemas/RecurringDetail"
+          type: array
+        response:
+          description: Depending on whether a specific recurring detail was in the request, result is either [detail-successfully-disabled] or [all-details-successfully-disabled].
+          type: string
+    ELV:
+      properties:
+        accountHolderName:
+          type: string
+        bankAccountNumber:
+          type: string
+        bankLocation:
+          type: string
+        bankLocationId:
+          type: string
+        bankName:
+          type: string
+    Name:
+      properties:
+        firstName:
+          description: A person's first name.
+          type: string
+        gender:
+          description: A person's gender (can be unknown).
+          enum:
+            - MALE
+            - FEMALE
+            - UNKNOWN
+          maxLength: 1
+          minLength: 1
+          type: string
+        infix:
+          description: "A person name's infix, if applicable. Maximum length: 20 characters."
+          type: string
+        lastName:
+          description: A person's last name.
+          type: string
+      required:
+        - firstName
+        - lastName
+        - gender
+    Recurring:
+      properties:
+        contract:
+          description: |-
+            The type of recurring contract to be used.
+            Possible values:
+            * `ONECLICK` – The shopper opts to store their card details for future use. The shopper is present for the subsequent transaction, for cards the security code (CVC/CVV) is required.
+            * `RECURRING` – Payment details are stored for future use. For cards, the security code (CVC/CVV) is not required for subsequent payments. This is used for shopper not present transactions.
+            * `ONECLICK,RECURRING` – Payment details are stored for future use. This allows the use of the stored payment details regardless of whether the shopper is on your site or not.
+          enum:
+            - ONECLICK
+            - RECURRING
+            - PAYOUT
+          type: string
+        recurringDetailName:
+          description: A descriptive name for this detail.
+          type: string
+    RecurringDetail:
+      properties:
+        acquirer:
+          type: string
+        acquirerAccount:
+          type: string
+        additionalData:
+          additionalProperties:
+            type: string
+          type: object
+        alias:
+          type: string
+        aliasType:
+          type: string
+        bank:
+          $ref: "#/components/schemas/BankAccount"
+        billingAddress:
+          $ref: "#/components/schemas/Address"
+        card:
+          $ref: "#/components/schemas/Card"
+        contractTypes:
+          items:
+            type: string
+          type: array
+        creationDate:
+          format: date-time
+          type: string
+        elv:
+          $ref: "#/components/schemas/ELV"
+        firstPspReference:
+          type: string
+        name:
+          description: An optional descriptive name for this recurring detail
+          type: string
+        paymentMethodVariant:
+          type: string
+        recurringDetailReference:
+          description: The reference that uniquely identifies the recurring detail
+          type: string
+        shopperName:
+          $ref: "#/components/schemas/Name"
+        socialSecurityNumber:
+          type: string
+        tokenDetails:
+          $ref: "#/components/schemas/TokenDetails"
+        variant:
+          type: string
+    RecurringDetailsRequest:
+      properties:
+        merchantAccount:
+          description: The merchant account identifier you want to process the (transaction) request with.
+          type: string
+        recurring:
+          $ref: "#/components/schemas/Recurring"
+          description: |-
+            A container for the type of a recurring contract to be retrieved.
+
+            The contract value needs to match the contract value submitted in the payment transaction used to create a recurring contract.
+            However, if `ONECLICK,RECURRING` is the original contract definition in the initial payment, then `contract` should take either `ONECLICK` or `RECURRING`, depending on whether or not you want the shopper to enter their card's security code when they finalize their purchase.
+        shopperReference:
+          description: The reference you use to uniquely identify the shopper (e.g. user ID or account ID).
+          type: string
+      required:
+        - merchantAccount
+        - shopperReference
+    RecurringDetailsResult:
+      properties:
+        creationDate:
+          description: The date when the recurring details were created.
+          format: date-time
+          type: string
+        details:
+          description: A list of one or more recurring payment details.
+          items:
+            $ref: "#/components/schemas/RecurringDetail"
+          type: array
+        lastKnownShopperEmail:
+          description: The most recent email for this shopper (if available).
+          type: string
+        shopperReference:
+          description: The reference you use to uniquely identify the shopper (e.g. user ID or account ID).
+          type: string
+    TokenDetails:
+      properties:
+        tokenData:
+          additionalProperties:
+            type: string
+          type: object
+        tokenDataType:
+          type: string
+x-groups:
+  - General

@@ -1,0 +1,718 @@
+swagger: "2.0"
+schemes:
+  - https
+basePath: /api/2
+info:
+  contact:
+    email: support@voodoomfg.com
+    x-twitter: voodoomfg
+  description: |
+    Welcome to the Voodoo Manufacturing API docs!
+
+    Your Voodoo Manufacturing API key must be included with each request to the API. The API will look for the key in the "api_key" header of the request. <a href="https://voodoomfg.com/3d-print-api#get-access" target="_blank">You can request a key here.</a>
+
+    This API provides a programmatic interface for submitting printing orders to Voodoo Manufacturing. The general process for creating an order is as follows:
+      - Get a list of the available materials with the /materials endpoint
+      - Upload models to the API with the /models endpoint
+      - Get quotes for shipping methods with the /order/shipping endpoint
+      - Get a quote for an order with the /order/create endpoint
+      - Confirm the order with the /order/confirm endpoint
+
+    Uploaded models and orders can be retrieved either in bulk or by id at the /model and /order endpoints, respectively.
+
+    In some cases, you may wish to get a quote for a specific model without the context of an order. In this case, you may use the /model/quote (if you've already uploaded the model to the API) or the /model/quote_attrs (lets you quote based on calculated model attributes) endpoints.
+  title: Voodoo Manufacturing 3D Print API
+  version: 2.0.0
+  x-apisguru-categories:
+    - tools
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_voodoomfg_profile_image.jpeg
+  x-origin:
+    - format: swagger
+      url: https://api.voodoomfg.com/voodoo.yaml
+      version: "2.0"
+  x-providerName: voodoomfg.com
+produces:
+  - application/json
+securityDefinitions:
+  Voodoo Manufacturing API Key:
+    description: Your Voodoo Manufacturing API key must be included with each request to the API. The API will look for the key in the "api_key" header of the request.
+    in: header
+    name: api_key
+    type: apiKey
+security:
+  - Voodoo Manufacturing API Key: []
+paths:
+  /materials:
+    get:
+      description: |
+        The Materials endpoint returns a list of materials that are currently available for production for your account.
+        The responses include display details about each material, along with the unique id required to request a print in a specific material.
+      responses:
+        "200":
+          description: Array of materials
+          examples:
+            application/json:
+              - color: True Red
+                color_sample: "#CF1B1D"
+                id: 1
+                type: PLA
+              - color: True Brown
+                color_sample: "#995D15"
+                id: 2
+                type: PLA
+          schema:
+            items:
+              $ref: "#/definitions/Material"
+            type: array
+      summary: |
+        Voodoo Manufacturing offers printing in a number of different materials, with different color options for each. Your organization can expose as many or as few material options as you want to your end-customer.
+      tags:
+        - materials
+  /model:
+    get:
+      description: |
+        Lists all of the models you've created.
+      responses:
+        "200":
+          description: Array of models
+          examples:
+            application/json:
+              - id: 1
+                surface_area: 6
+                volume: 1
+                x: 1
+                y: 1
+                z: 1
+              - id: 2
+                surface_area: 24
+                volume: 8
+                x: 2
+                y: 2
+                z: 2
+          schema:
+            items:
+              $ref: "#/definitions/Model"
+            type: array
+      summary: |
+        Retrieve the models you've created.
+      tags:
+        - model
+    post:
+      description: |
+        Downloads the model data from the URL specified by file_url and saves it as a model. As a part of the model upload process, the file is run through a program that repairs the mesh (closing holes, flipping inverted normals, etc). In some cases, this may alter the geometry of your model. If you're noticing bad results for your created models, you might consider repairing your files before submitting them.
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateModelBody"
+      responses:
+        "200":
+          description: Model object
+          examples:
+            application/json:
+              id: 1
+              surface_area: 6
+              volume: 1
+              x: 1
+              y: 1
+              z: 1
+          schema:
+            $ref: "#/definitions/Model"
+      summary: |
+        Models represent 3D design files that you'd like to produce. Creating models is generally the first step in creating an order.
+      tags:
+        - model
+  /model/quote:
+    get:
+      description: |
+        Calculates a quote for the given model in the given material and quantity. This endpoint required that you've already uploaded the model to our servers -- to get a quote for a model you haven't yet uploaded, you can try /model/quote_attrs.
+      parameters:
+        - description: The unique id of the model you'd like to quote.
+          in: query
+          name: model_id
+          required: true
+          type: integer
+        - description: The unique id of the desired material.
+          in: query
+          name: material_id
+          required: true
+          type: number
+        - description: The number of units in this quote.
+          in: query
+          name: quantity
+          required: true
+          type: number
+        - description: The units of the model file. Either "mm", "cm", or "in". The correct value to pass here depends on which design program you're using. Defaults to "mm".
+          in: query
+          name: units
+          required: true
+          type: string
+        - description: Indicates whether or not this model needs to be oriented prior to printing. If your model is already oriented for 3D printing, you can omit this flag (or set it to false) and it will not be re-oriented prior to printing. If true, it will be re-oriented prior to printing. If you're not sure if your model is oriented, you should set this flag to true. There is an additional charge for orientation.
+          in: query
+          name: options[orientation]
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Quote for model with attributes
+          schema:
+            $ref: "#/definitions/ModelQuote"
+      summary: |
+        Get a quote a given model id.
+      tags:
+        - model
+  /model/quote_attrs:
+    get:
+      description: |
+        This endpoint will provide a quote for a model matching the submitted parameters. Note that this quote may be different than the quote provided by /model/quote in the case that your attribute calculations differ from the ones used by Voodoo Manufacturing.
+      parameters:
+        - description: The calculated unitless x dimension of this model's bounding box.
+          in: query
+          name: x
+          required: true
+          type: number
+        - description: The calculated unitless y dimension of this model's bounding box.
+          in: query
+          name: y
+          required: true
+          type: number
+        - description: The calculated unitless z dimension of this model's bounding box.
+          in: query
+          name: z
+          required: true
+          type: number
+        - description: The calculated unitless volume of the model.
+          in: query
+          name: volume
+          required: true
+          type: number
+        - description: The calculated unitless surface area of the model.
+          in: query
+          name: surface_area
+          required: true
+          type: number
+        - description: The unique id of the desired material.
+          in: query
+          name: material_id
+          required: true
+          type: number
+        - description: The number of units in this quote.
+          in: query
+          name: quantity
+          required: true
+          type: number
+        - description: The units of the model file. Either "mm", "cm", or "in". The correct value to pass here depends on which design program you're using. Defaults to "mm".
+          in: query
+          name: units
+          required: true
+          type: string
+        - description: Indicates whether or not this model needs to be oriented prior to printing. If your model is already oriented for 3D printing, you can omit this flag (or set it to false) and it will not be re-oriented prior to printing. If true, it will be re-oriented prior to printing. If you're not sure if your model is oriented, you should set this flag to true. There is an additional charge for orientation.
+          in: query
+          name: options[orientation]
+          required: false
+          type: boolean
+      responses:
+        "200":
+          description: Quote for model with attributes
+          schema:
+            $ref: "#/definitions/ModelQuote"
+      summary: |
+        Get a quote for a model with the given attributes.
+      tags:
+        - model
+  "/model/{model_id}":
+    get:
+      description: |
+        In cases where you're ordering models you've created previously, you can fetch a specific model by its id.
+      parameters:
+        - in: path
+          name: model_id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: Model object
+          examples:
+            application/json:
+              id: 1
+              surface_area: 6
+              volume: 1
+              x: 1
+              y: 1
+              z: 1
+          schema:
+            $ref: "#/definitions/Model"
+      summary: |
+        Retrieve a previously created model by its id.
+      tags:
+        - model
+  /order:
+    get:
+      description: |
+        Gets all of orders that you've confirmed.
+      responses:
+        "200":
+          description: Array of orders
+          schema:
+            items:
+              $ref: "#/definitions/Order"
+            type: array
+      summary: |
+        Lists all orders.
+      tags:
+        - order
+  /order/confirm:
+    post:
+      description: |
+        After generating a quote for an order, you can choose to confirm the order for manufacturing by hitting this endpoint with the quote_id returned by the /order/quote endpoint. Returns the order with a unique order_id in place of the quote_id.
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/ConfirmOrderBody"
+      responses:
+        "200":
+          description: Order info with order_id
+          examples:
+            application/json:
+              address:
+                city: Brooklyn
+                country: USA
+                email: oortlieb@gmail.com
+                name: Oliver Ortlieb
+                state: NY
+                street1: 361 Stagg St
+                street2: Suite 408
+                zip: "11206"
+              delivery_date: 2016-11-15T16:30:00Z
+              due_date: 2016-11-14T17:00:00.382Z
+              notes: First run of prototypes
+              order_id: 1061a5eb-d2a8-4a0d-bea9-b027111ac325
+              order_items:
+                - material_id: 3
+                  model_id: 1
+                  options:
+                    orientation: true
+                  quantity: 3
+                  units: mm
+              purchased: true
+              quote:
+                after_credits:
+                  chargeAmt: 48.14
+                  shipping: 16.08
+                  success: true
+                  tax: 0
+                  userCredit: 0
+                errors: []
+                grand_total: 48.14
+                items: 32.06
+                options:
+                  orientation: 15
+                shipping: 16.08
+                tax: 0
+                total: 48.14
+              shipping_service: PRIORITY_OVERNIGHT
+          schema:
+            properties:
+              address:
+                $ref: "#/definitions/ShippingAddress"
+              delivery_date:
+                description: The target delivery date for the shipping method. Formatted as a datetime string.
+                type: string
+              notes:
+                type: string
+              order_id:
+                description: Unique identifier for referencing this order.
+                type: string
+              order_items:
+                items:
+                  $ref: "#/definitions/Print"
+                type: array
+              purchased:
+                description: true if the purchase was completed successfully.
+                type: boolean
+              quote:
+                $ref: "#/definitions/Quote"
+              shipping_service:
+                $ref: "#/definitions/ShippingService"
+            type: object
+      summary: |
+        Confirms an order from a quote_id and submits it to the Voodoo factory.
+      tags:
+        - order
+  /order/create:
+    post:
+      description: |
+        Creates an order for the requested items, shipping address, and shipping method. This method returns the order along with a quote_id, which needs to be confirmed with /order/confirm prior to the order actually being started. quote_ids are only valid for 15 minutes.
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/CreateOrderBody"
+      responses:
+        "200":
+          description: Quote and order information.
+          examples:
+            application/json:
+              address:
+                city: Brooklyn
+                country: USA
+                email: oortlieb@gmail.com
+                name: Oliver Ortlieb
+                state: NY
+                street1: 361 Stagg St
+                street2: Suite 408
+                zip: "11206"
+              delivery_date: 2016-11-15T16:30:00Z
+              due_date: 2016-11-14T17:00:00.382Z
+              notes: First run of prototypes
+              order_items:
+                - material_id: 3
+                  model_id: 1
+                  options:
+                    orientation: true
+                  quantity: 3
+                  units: mm
+              quote:
+                after_credits:
+                  chargeAmt: 48.14
+                  shipping: 16.08
+                  success: true
+                  tax: 0
+                  userCredit: 0
+                errors: []
+                grand_total: 48.14
+                items: 32.06
+                options:
+                  orientation: 15
+                shipping: 16.08
+                tax: 0
+                total: 48.14
+              quote_id: e0c90c1d8e1c89084899fbb94dc2fd30d2f8e42d4a6d408d8e0834d7922e30b9
+              shipping_service: PRIORITY_OVERNIGHT
+          schema:
+            properties:
+              address:
+                $ref: "#/definitions/ShippingAddress"
+              delivery_date:
+                description: The target delivery date for the shipping method. Formatted as a datetime string.
+                type: string
+              notes:
+                type: string
+              order_items:
+                items:
+                  $ref: "#/definitions/Print"
+                type: array
+              quote:
+                $ref: "#/definitions/Quote"
+              quote_id:
+                description: Unique identifier for confirming this order. Use this value with /order/confirm place the order.
+                type: string
+              shipping_service:
+                $ref: "#/definitions/ShippingService"
+            type: object
+      summary: |
+        Quotes an order and returns a quote_id that is used to confirm the order.
+      tags:
+        - order
+  /order/shipping:
+    post:
+      description: |
+        Get quotes for shipping your order to the given shipping address. Because shipping quotes depend on the items being shipped, you should use the same array of print descriptions here that you do to create the order.
+
+        This endpoint should allow you to select the appropriate shipping method using the "service" field of the desired shipping method.
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/ShippingOptionsBody"
+      responses:
+        "200":
+          description: Object containing an array of shipping rates
+          examples:
+            application/json:
+              rates:
+                - additional_item_charge: 0
+                  delivery_date: 2016-11-15T10:30:00Z
+                  display_name: FedEx - Priority Overnight
+                  guaranteed: true
+                  price: 25.69
+                  service: PRIORITY_OVERNIGHT
+                  ship_date: 2016-11-14T17:00:00.874Z
+                  value: rate_0646e5f9f3814c4086864914fbe08535
+          schema:
+            properties:
+              rates:
+                items:
+                  $ref: "#/definitions/Rate"
+                type: array
+            type: object
+      summary: |
+        List shipping options and prices for a given shipment.
+      tags:
+        - order
+  "/order/{order_id}":
+    get:
+      description: |
+        In cases where you're ordering models you've created previously, you can fetch a specific model by its id.
+      parameters:
+        - in: path
+          name: order_id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: Model object
+          schema:
+            $ref: "#/definitions/Order"
+      summary: |
+        Retrieve a previously created model by its id.
+      tags:
+        - order
+definitions:
+  ConfirmOrderBody:
+    properties:
+      quote_id:
+        description: quote_id generated by the /order/create endpoint.
+        type: string
+    type: object
+  CreateModelBody:
+    properties:
+      file_url:
+        description: URL to download the model data from. The URL must end in .STL or .OBJ -- the extension of the final segment of the URL is used to determine how ot parse the file.
+        type: string
+    type: object
+  CreateOrderBody:
+    properties:
+      models:
+        items:
+          $ref: "#/definitions/Print"
+        type: array
+      notes:
+        description: Any notes about this order. This field is always returned when reading the order back.
+        type: string
+      shipping_address:
+        $ref: "#/definitions/ShippingAddress"
+      shipping_service:
+        $ref: "#/definitions/ShippingService"
+    type: object
+  Material:
+    properties:
+      color:
+        description: Name for the color of this material. This field is for display only and is not required for creating an order (use the material's id).
+        type: string
+      color_sample:
+        description: A hex value providing an approximate visual sample of this color.
+        type: string
+      id:
+        description: The unique identifier for this material. Use this value when submitting order items to specify that an ordered model should be printed with a specific material.
+        type: integer
+      type:
+        description: Type of material, excluding color. Will be one of "PLA", "Semi-flex TPU", or "Full-flex TPU". This field is for display only and is not required for creating an order (use the material's id).
+        type: string
+    type: object
+  Model:
+    properties:
+      id:
+        description: The unique identifier for this model. Use this value when submitting an order to specify the model you want to print.
+        type: integer
+      rendering_url:
+        description: (reserved) URL with a rendering of the model. Value is null until the rendering is completed.
+        type: string
+      surface_area:
+        description: The unitless surface area of the submitted model. This is calculated when the model is created.
+        type: number
+      volume:
+        description: The unitless volume of the submitted model. This is calculated when the model is created.
+        type: number
+      x:
+        description: The unitless x-axis length of the model's bounding box. This is calculated when the model is created.
+        type: number
+      y:
+        description: The unitless y-axis length of the model's bounding box. This is calculated when the model is created.
+        type: number
+      z:
+        description: The unitless z-axis length of the model's bounding box. This is calculated when the model is created.
+        type: number
+    type: object
+  ModelQuote:
+    description: Quote for a model in the given material_id, units, and quantity.
+    properties:
+      material_id:
+        description: Requested material id.
+        type: integer
+      model_id:
+        description: Requested model id. Not present on the response from /model/quote_attrs.
+        type: integer
+      options:
+        $ref: "#/definitions/ProductionOptionsCosts"
+      quote:
+        description: The cost for printing the model in the requested quantity, before any additional services.
+        type: number
+      unit_cost:
+        description: The cost of a single print of the specified model.
+        type: number
+      units:
+        description: Units for the requested print. One of "mm", "cm", or "in".
+        type: string
+    type: object
+  Order:
+    description: An order contains all of the relevant information about a confirmed order.
+    properties:
+      customer_contact_email:
+        description: Customer's email address.
+        type: string
+      customer_name:
+        description: Customer's name.
+        type: string
+      id:
+        description: Unique identifier for this order. Reference should be displayed and used for lookups instead of this field.
+        type: integer
+      notes:
+        description: The notes field that was submitted with this order.
+        type: string
+      prints:
+        items:
+          $ref: "#/definitions/OrderPrint"
+        type: array
+      reference:
+        description: Unique identifier for this order. Used to retrieve info for a specific order from /order/{order_id}.
+        type: string
+      ship_by:
+        description: Planned ship date for this order.
+        type: string
+      shipping_address:
+        $ref: "#/definitions/ShippingAddress"
+    type: object
+  OrderPrint:
+    properties:
+      material:
+        $ref: "#/definitions/Material"
+      model:
+        $ref: "#/definitions/Model"
+      quantity:
+        description: The number of prints requested for this model and material pair.
+        type: integer
+      units:
+        description: Units for the requested print. One of "mm", "cm", or "in".
+        type: string
+    type: object
+  Print:
+    properties:
+      material_id:
+        description: The unique identifier of the material you'd like to print in. This value comes from the id field of the material object.
+        type: integer
+      model_id:
+        description: The unique identifier of the model you'd like to print. This value comes from the id field of the model object.
+        type: integer
+      options:
+        $ref: "#/definitions/ProductionOptions"
+      quantity:
+        description: The number of prints to order for this material/model pair.
+        type: integer
+      units:
+        description: The units of the model file. Either "mm", "cm", or "in". The correct value to pass here depends on which design program you're using. Defaults to "mm".
+        type: string
+    type: object
+  ProductionOptions:
+    description: Optional extra parameters for the production of this model. There may be additional charges for each enabled optional service.
+    properties:
+      orientation:
+        description: Indicates whether or not this model needs to be oriented prior to printing. If your model is already oriented for 3D printing, you can omit this flag (or set it to false) and it will not be re-oriented prior to printing. If true, it will be re-oriented prior to printing. If you're not sure if your model is oriented, you should set this flag to true. There is an additional charge for orientation.
+        type: boolean
+    type: object
+  ProductionOptionsCosts:
+    description: Cost of any requested additional model services.
+    properties:
+      orientation:
+        type: number
+    type: object
+  Quote:
+    properties:
+      errors:
+        description: List of any issues quoting your order.
+        items:
+          type: string
+        type: array
+      grand_total:
+        description: Sum of items, shipping costs, and any calculated tax.
+        type: number
+      items:
+        description: Cost to make the specified models in the specified materials and quantities.
+        type: number
+      options:
+        $ref: "#/definitions/ProductionOptionsCosts"
+      shipping:
+        description: Cost of the selected shipping method.
+        type: number
+      tax:
+        description: The tax calculated for the given order. Tax is not applied to all orders.
+        type: number
+      total:
+        description: Sum of items and shipping costs. This is the taxable subtotal.
+        type: number
+    type: object
+  Rate:
+    properties:
+      delivery_date:
+        description: The target delivery date for the shipping method. Formatted as a datetime string.
+        type: string
+      display_name:
+        description: The display name for this shipping service.
+        type: string
+      guaranteed:
+        description: Certain shipping methods have guaranteed delivery dates. This field indicates whether delivery_date is guaranteed or if it is just an estimate.
+        type: boolean
+      price:
+        description: The price of this shipping option for the given set of items.
+        type: number
+      service:
+        description: The identifier string for this shipping service. Use this value when creating an order with this as your requested shipping method.
+        type: string
+      ship_date:
+        description: The target ship date for the shipping method. Formatted as a datetime string.
+        type: string
+      value:
+        description: Reserved field. Do not use.
+        type: string
+    type: object
+  ShippingAddress:
+    properties:
+      city:
+        type: string
+      country:
+        type: string
+      email:
+        description: Contact email address for the recipient.
+        type: string
+      name:
+        description: Name of the recipient.
+        type: string
+      state:
+        type: string
+      street1:
+        description: First line of the street address.
+        type: string
+      street2:
+        description: Second line of the street address (Apartment or Suite number, etc). Optional.
+        type: string
+      zip:
+        type: string
+    type: object
+  ShippingOptionsBody:
+    properties:
+      models:
+        items:
+          $ref: "#/definitions/Print"
+        type: array
+      shipping_address:
+        $ref: "#/definitions/ShippingAddress"
+    type: object
+  ShippingService:
+    description: Service identifier string pulled from a specific rate returned by /order/shipping.
+    type: string

@@ -1,0 +1,3876 @@
+swagger: "2.0"
+schemes:
+  - https
+host: api.cloud-elements.com
+basePath: /elements/api-v2
+info:
+  contact:
+    email: support@cloud-elements.com
+  title: ecwid
+  version: api-v2
+  x-apisguru-categories:
+    - ecommerce
+  x-element-hub: ecommerce
+  x-element-id: 52
+  x-element-key: ecwid
+  x-element-name: Ecwid
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_cloud-elements.com_wp-content_uploads_2019_05_ces_favicon_32x32.png
+  x-origin:
+    - format: swagger
+      url: https://api.cloud-elements.com/elements/api-v2/elements/52/docs?version=-1
+      version: "2.0"
+  x-providerName: cloud-elements.com
+  x-serviceName: ecwid
+tags:
+  - name: ping
+  - name: objects
+  - name: objectName
+  - name: orders
+  - name: customers
+  - name: bulk
+  - name: products
+paths:
+  /bulk/download:
+    post:
+      operationId: createBulkDownload
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The object body
+          in: body
+          name: body
+          required: true
+          schema:
+            $ref: "#/definitions/bulkDownloadRequest"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/BulkQuery"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Create a new bulk download job (asynchronous)
+      tags:
+        - bulk
+  /bulk/jobs:
+    get:
+      operationId: getBulkJobs
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The CEQL search expression, or the where clause, without the WHERE keyword, in a typical SQL query. For example to get all upload jobs the expression would be where=job_direction='UPLOAD'. The following fields are valid search fields 'object_name', 'job_status', 'job_direction', 'record_count'
+          in: query
+          name: where
+          required: false
+          type: string
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The page size for pagination, which defaults to 200 if not supplied
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/BulkJobList"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Fetch all the bulk jobs for an instance
+      tags:
+        - bulk
+  /bulk/query:
+    post:
+      consumes:
+        - multipart/form-data
+      operationId: createBulkQuery
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The Url to send the notification to when the Job is completed
+          in: header
+          name: Elements-Async-Callback-Url
+          required: false
+          type: string
+        - description: The CEQL query. When this parameter is omitted, all objects of the given type are returned via the bulk job. Endpoint limiters may still apply.
+          in: query
+          name: q
+          required: false
+          type: string
+        - description: The last time this query was run. This is optional. You can also have this parameter in the query and leave this blank - optional eg. '2014-10-06T13:22:17-08:00'
+          in: query
+          name: lastRunDate
+          required: false
+          type: string
+        - description: The created/updated date of the object to filter on - optional eg. '2014-10-06T13:22:17-08:00'
+          in: query
+          name: from
+          required: false
+          type: string
+        - description: The created/updated date of the object to filter on - optional eg. '2014-10-06T13:22:17-08:00'
+          in: query
+          name: to
+          required: false
+          type: string
+        - description: "Optional JSON MetaData that contains callback-payload and fileName, ex: {\"callback-payload\" : <Json> , \"fileName\" : \"{Date format}_Name of the file\"}. If the fileName is MyFile then pass metadata as {\"fileName\" : \"{yyyy-MM-dd HH:mm:ss}_MyFile\"}. The valid date formats are \"yyyy-MM-dd'T'HH:mm:ssXXX\", \"yyyy-MM-dd'T'HH:mm:ss'Z'\", \"yyyy-MM-dd'T'HH:mm:ss.SXXX\", \"yyyy-MM-dd'T'HH:mm:ss.SSSXXX\", \"yyyy-MM-dd'T'HH:mm:ss.SSSZ\", \"yyyy-MM-dd'T'HH:mm:ss.SSS'Z'\", \"yyyy-MM-dd HH:mm:ss\", \"yyyy.MM.dd G 'at' HH:mm:ss z\", \"h:mm a\", \"yyyyy.MMMMM.dd GGG hh:mm aaa\" and \"yyMMddHHmmssZ\". callback-payload - is passed back in bulk job notification "
+          in: formData
+          name: metaData
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/BulkQuery"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Create an asynchronous bulk query job.
+      tags:
+        - bulk
+  "/bulk/{id}/cancel":
+    put:
+      operationId: replaceBulkCancel
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the bulk job to cancel.
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/BulkStatus"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Cancel an asynchronous bulk query job.
+      tags:
+        - bulk
+  "/bulk/{id}/errors":
+    get:
+      operationId: getBulkErrors
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the bulk job to retrieve its errors.
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: The page size for pagination, which defaults to 200 if not supplied
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve the errors of a bulk job.
+      tags:
+        - bulk
+  "/bulk/{id}/status":
+    get:
+      operationId: getBulkStatus
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the bulk job to retrieve its status.
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/BulkStatus"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve the status of a bulk job.
+      tags:
+        - bulk
+  "/bulk/{id}/{objectName}":
+    get:
+      operationId: getBulkByObjectName
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the bulk job
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+      produces:
+        - text/csv
+        - application/json
+        - application/jsonl
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            type: file
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve the results of an asynchronous bulk query.
+      tags:
+        - bulk
+  "/bulk/{objectName}":
+    post:
+      consumes:
+        - multipart/form-data
+      operationId: createBulkByObjectName
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The Url to send the notification to when the Job is completed
+          in: header
+          name: Elements-Async-Callback-Url
+          required: false
+          type: string
+        - description: The name of the object for which data needs to be uploaded.
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: 'Optional JSON MetaData that contains callback-payload, path or format, ex: {"path" :&lt;path for the sub resource&gt;, "format": &lt;json/csv&gt;, "callback-payload":&lt;json&gt;}. path - is passed to the endpoint for bulk loading the data into a nested object. Optional JSON Metadata that contains identifierFieldName, action, listId or campaignId. The identifierField name is used for upserts and the optional fields like listId or campaignId. Example: {"listId":"1014","action":"upsert"}. If the Upload format is JSON pass metadata as {"format":"json"}. callback-payload - is passed back in bulk job notification '
+          in: formData
+          name: metaData
+          required: false
+          type: string
+        - description: The file of objects to bulk load. If the JSON file upload, each JSON record should be in a single line
+          in: formData
+          name: file
+          type: file
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/BulkUploadResponse"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Upload a file of objects to be bulk uploaded to the provider.
+      tags:
+        - bulk
+  /customers:
+    get:
+      operationId: getCustomers
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: "The CEQL search expression, or the where clause, without the WHERE keyword, in a typical SQL query (i.e. field='value'). <p>Supported search terms: customer_id and customer_email. All other search criteria are ignored. NOTE: When searching by customer_id, do not quote the value (ex: customer_id=15693430), as the ID is a number rather than a string.  When searching by email, quote the value (ex: customer_email='a@b.c'), as the email parameter is a string"
+          in: query
+          name: where
+          required: false
+          type: string
+        - description: The number of results to fetch in a given page. When this parameter is omitted, a maximum of 200 results are returned
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              $ref: "#/definitions/Customer"
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Find customers in the eCommerce system, using the provided CEQL search expression. If no search expression is provided, all records will be retrieved
+      tags:
+        - customers
+    post:
+      operationId: createCustomer
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The customer object to be created
+          in: body
+          name: customer
+          required: true
+          schema:
+            $ref: "#/definitions/CustomerPost"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Customer"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Create a new customer in eCommerce system.With the exception of the 'id' field, the required fields indicated in the 'Customer' model are those required to create a new customer
+      tags:
+        - customers
+  "/customers/{id}":
+    delete:
+      operationId: deleteCustomerById
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the customer to delete from the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Delete a customer associated with a given ID from your eCommerce system. Specifying a customer associated with a given ID that does not exist will result in an error message
+      tags:
+        - customers
+    get:
+      operationId: getCustomerById
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the customer to retrieve from the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Customer"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve a customer associated with a given ID from the eCommerce system. Specifying a customer with an ID that does not exist will result in an error response
+      tags:
+        - customers
+    patch:
+      operationId: updateCustomerById
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the customer to update in the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: The customer object to be created
+          in: body
+          name: customer
+          required: true
+          schema:
+            $ref: "#/definitions/CustomerPatch"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Customer"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Update an customer associated with a given ID in the eCommerce system.The update API uses the PATCH HTTP verb, so only those fields provided in the customer object will be updated, and those fields not provided will be left alone. Updating a customer with a specified ID that does not exist will result in an error response
+      tags:
+        - customers
+  "/customers/{id}/orders":
+    get:
+      operationId: getCustomersOrders
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the customer to get orders form in the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: The number of results to fetch in a given page. When this parameter is omitted, a maximum of 200 results are returned
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              $ref: "#/definitions/Order"
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Find orders in the customer associated with a given ID. If the customer does not exist, an error response will be returned. If no orders are found in the given customer then an empty array will be returned
+      tags:
+        - customers
+  /objects:
+    get:
+      operationId: getObjects
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: Elements Version to be used for getting metadata, possible options are Hydrogen, Helium. Default value is Hydrogen
+          enum:
+            - Hydrogen
+            - Helium
+          in: header
+          name: Elements-Version
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Get a list of all the available objects.
+      tags:
+        - objects
+  "/objects/{objectName}/docs":
+    get:
+      operationId: getObjectsObjectNameDocs
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: Include discovery metadata in definitions
+          in: query
+          name: discovery
+          required: false
+          type: boolean
+        - description: Optionally resolve swagger references for an inline object definition
+          in: query
+          name: resolveReferences
+          required: false
+          type: boolean
+        - description: Include only OpenAPI / Swagger properties in definitions
+          in: query
+          name: basic
+          required: false
+          type: boolean
+        - default: "-1"
+          description: The element swagger version to get the corresponding element swagger, Passing in "-1" gives latest element swagger
+          in: query
+          name: version
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/swaggerDocs"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Get swagger docs for an object.
+      tags:
+        - objects
+  "/objects/{objectName}/metadata":
+    get:
+      operationId: getObjectsObjectNameMetadata
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: Elements Version to be used for getting metadata, possible options are Hydrogen, Helium. Default value is Hydrogen
+          enum:
+            - Hydrogen
+            - Helium
+          in: header
+          name: Elements-Version
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/objectsMetadata"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Get a list of all the field for an object.
+      tags:
+        - objects
+  /orders:
+    get:
+      operationId: getOrders
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: "The CEQL search expression, or the where clause, without the WHERE keyword, in a typical SQL query (i.e. field='value'). <p>Supported search terms: date, from_date, to_date, from_update_date, to_update_date, order, from_order, to_order, customer_id, customer_email and statuses. All other search criteria are ignored"
+          in: query
+          name: where
+          required: false
+          type: string
+        - description: The number of results to fetch in a given page. When this parameter is omitted, a maximum of 200 results are returned
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              $ref: "#/definitions/Order"
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Find orders in the eCommerce system, using the provided CEQL search expression. If no search expression is provided, all records will be retrieved
+      tags:
+        - orders
+    post:
+      operationId: createOrder
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The order object to be created
+          in: body
+          name: order
+          required: true
+          schema:
+            $ref: "#/definitions/OrderPost"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Order"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Create an order in the eCommerce system.With the exception of the 'id' field, the required fields indicated in the 'Order' model are those required to create a new order.The paymentStatus can only be AWAITING_PAYMENT or INCOMPLETE.The fulfillmentStatus can only be AWAITING_PROCESSING
+      tags:
+        - orders
+  "/orders/{id}":
+    delete:
+      operationId: deleteOrderById
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the order to delete from the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Delete an order associated with a given ID from your eCommerce system. Specifying an order associated with a given ID that does not exist will result in an error message
+      tags:
+        - orders
+    get:
+      operationId: getOrderById
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the order to retrieve from the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Order"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve an order associated with a given ID from the eCommerce system. Specifying an order with an ID that does not exist will result in an error response
+      tags:
+        - orders
+    patch:
+      operationId: updateOrderById
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the order to update in the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: The order object, with those fields that are to be updated
+          in: body
+          name: order
+          required: true
+          schema:
+            $ref: "#/definitions/OrderPatch"
+        - description: "An action to perform on the order: cancel, reopen or close. If left blank then the order is updated but no action is taken"
+          in: query
+          name: action
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Order"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Update an order associated with a given ID in the eCommerce system. The update API uses the PATCH HTTP verb, so only those fields provided in the order object will be updated, and those fields not provided will be left alone. Updating an order with a specified ID that does not exist will result in an error response</strong>
+      tags:
+        - orders
+  "/orders/{orderId}/payments":
+    get:
+      operationId: getOrdersPayments
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the order to retrieve payments from in the eCommerce system
+          in: path
+          name: orderId
+          required: true
+          type: string
+        - description: The number of results to fetch in a given page. When this parameter is omitted, a maximum of 200 results are returned
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              $ref: "#/definitions/Payment"
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve the payments in the eCommerce system for the specified order
+      tags:
+        - orders
+  "/orders/{orderId}/refunds":
+    get:
+      operationId: getOrdersRefunds
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the order to retrieve refunds from in the eCommerce system
+          in: path
+          name: orderId
+          required: true
+          type: string
+        - description: The number of results to fetch in a given page. When this parameter is omitted, a maximum of 200 results are returned
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              $ref: "#/definitions/Payment"
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve the refunds in the eCommerce system for the specified order
+      tags:
+        - orders
+  /ping:
+    get:
+      operationId: getPing
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Pong"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Ping the Element to confirm that the Hub Element has a heartbeat.  If the Element does not have a heartbeat, an error message will be returned.
+      tags:
+        - ping
+  /products:
+    get:
+      operationId: getProducts
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: "The CEQL search expression, or the where clause, without the WHERE keyword, in a typical SQL query (i.e. field='value'). <p>Supported search terms: category, hidden_products. All other search criteria are ignored"
+          in: query
+          name: where
+          required: false
+          type: string
+        - description: The number of results to fetch in a given page. When this parameter is omitted, a maximum of 200 results are returned
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              $ref: "#/definitions/Product"
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Find products in the eCommerce system, using the provided CEQL search expression. The search expression in CEQL is the WHERE clause in a typical SQL query, but without the WHERE keyword.  If no search expression is provided, all records will be retrieved
+      tags:
+        - products
+    post:
+      operationId: createProduct
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The product object to be created
+          in: body
+          name: product
+          required: true
+          schema:
+            $ref: "#/definitions/ProductPost"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Product"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Create a new product in eCommerce system.With the exception of the 'id' field, the required fields indicated in the 'Product' model are those required to create a new product
+      tags:
+        - products
+  "/products/{id}":
+    delete:
+      operationId: deleteProductById
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the product to delete from the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Delete a product associated with a given ID from your eCommerce system. Specifying a product associated with a given ID that does not exist will result in an error message
+      tags:
+        - products
+    get:
+      operationId: getProductById
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the product to retrieve from the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Product"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve a product associated with a given ID from the eCommerce system. Specifying a product with an ID that does not exist will result in an error response
+      tags:
+        - products
+    patch:
+      operationId: updateProductById
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The ID of the product to update in the eCommerce system
+          in: path
+          name: id
+          required: true
+          type: string
+        - description: The product object, with those fields that are to be updated
+          in: body
+          name: product
+          required: true
+          schema:
+            $ref: "#/definitions/ProductPatch"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Product"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: "Update a product associated with a given ID in the eCommerce system. The update API uses the PATCH HTTP verb, so only those fields provided in the product object will be updated, and those fields not provided will be left alone. Updating a product with a specified ID that does not exist will result in an error response. <p><strong>Update supports the following fields: sku, quantity, trackQuantity, quantityDelta, warningLimit, name, price, weight, tangible, enabled, fixedShippingRateOnly, fixedShippingRate, description, wholesalePrices, compareAtPrice, productClassId</strong>"
+      tags:
+        - products
+  "/{objectName}":
+    get:
+      operationId: getByObjectName
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The CEQL search expression.
+          in: query
+          name: where
+          required: false
+          type: string
+        - description: The page size. Defaults to 200 if not provided. Maximum of 5000.
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              $ref: "#/definitions/Object"
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Search for {objectName}
+      tags:
+        - objectName
+    post:
+      operationId: createByObjectName
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The {objectName}
+          in: body
+          name: Body
+          required: true
+          schema:
+            $ref: "#/definitions/Object"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Create an {objectName}
+      tags:
+        - objectName
+  "/{objectName}/{objectId}":
+    delete:
+      operationId: deleteObjectNameByObjectId
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Delete an {objectName}
+      tags:
+        - objectName
+    get:
+      operationId: getObjectNameByObjectId
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+      produces:
+        - application/json
+        - application/pdf
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Object"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve an {objectName}
+      tags:
+        - objectName
+    patch:
+      operationId: updateObjectNameByObjectId
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+        - description: The {objectName}
+          in: body
+          name: Body
+          required: true
+          schema:
+            $ref: "#/definitions/Object"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Object"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Update an {objectName}
+      tags:
+        - objectName
+    put:
+      operationId: replaceObjectNameByObjectId
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+        - description: The {objectName}
+          in: body
+          name: Body
+          required: true
+          schema:
+            $ref: "#/definitions/Object"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Object"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the 'Accept' header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Update an {objectName}
+      tags:
+        - objectName
+  "/{objectName}/{objectId}/{childObjectName}":
+    get:
+      operationId: getObjectNameByChildObjectName
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+        - description: The name of the childObjectName
+          in: path
+          name: childObjectName
+          required: true
+          type: string
+        - description: The CEQL search expression.
+          in: query
+          name: where
+          required: false
+          type: string
+        - description: The page size. Defaults to 200 if not provided. Maximum of 5000.
+          format: int64
+          in: query
+          name: pageSize
+          required: false
+          type: integer
+        - description: "The next page cursor, taken from the response header: `elements-next-page-token`"
+          in: query
+          name: nextPage
+          required: false
+          type: string
+        - description: The fields to return on the response. Can be a single field or a comma-separated list of fields
+          in: query
+          name: fields
+          required: false
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            items:
+              $ref: "#/definitions/Object"
+            type: array
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the &quot;Accept&quot; header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Search for {childObjectName}
+      tags:
+        - objectName
+    post:
+      operationId: createObjectNameByChildObjectName
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: childObjectName
+          required: true
+          type: string
+        - description: The {childObjectName}
+          in: body
+          name: Body
+          required: true
+          schema:
+            $ref: "#/definitions/Object"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the &quot;Accept&quot; header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Create an {objectName}
+      tags:
+        - objectName
+  "/{objectName}/{objectId}/{childObjectName}/{childObjectId}":
+    delete:
+      operationId: deleteObjectNameByChildObjectId
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The name of the childObjectName
+          in: path
+          name: childObjectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+        - description: The {childObjectName} ID
+          in: path
+          name: childObjectId
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the &quot;Accept&quot; header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Delete an {childObjectName}
+      tags:
+        - objectName
+    get:
+      operationId: getObjectNameByChildObjectId
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The name of the childObjectName
+          in: path
+          name: childObjectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+        - description: The {childObjectName} ID
+          in: path
+          name: childObjectId
+          required: true
+          type: string
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Object"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the &quot;Accept&quot; header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Retrieve an {childObjectName}
+      tags:
+        - objectName
+    patch:
+      operationId: updateObjectNameByChildObjectId
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The name of the childObjectName
+          in: path
+          name: childObjectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+        - description: The {childObjectName} ID
+          in: path
+          name: childObjectId
+          required: true
+          type: string
+        - description: The {objectName}
+          in: body
+          name: Body
+          required: true
+          schema:
+            $ref: "#/definitions/Object"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Object"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the &quot;Accept&quot; header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Update an {childObjectName}
+      tags:
+        - objectName
+    put:
+      operationId: replaceObjectNameByChildObjectId
+      parameters:
+        - description: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+          in: header
+          name: Authorization
+          required: true
+          type: string
+        - description: The name of the object
+          in: path
+          name: objectName
+          required: true
+          type: string
+        - description: The name of the childObjectName
+          in: path
+          name: childObjectName
+          required: true
+          type: string
+        - description: The {objectName} ID
+          in: path
+          name: objectId
+          required: true
+          type: string
+        - description: The {childObjectName} ID
+          in: path
+          name: childObjectId
+          required: true
+          type: string
+        - description: The {objectName}
+          in: body
+          name: Body
+          required: true
+          schema:
+            $ref: "#/definitions/Object"
+      responses:
+        "200":
+          description: OK - Everything worked as expected
+          schema:
+            $ref: "#/definitions/Object"
+        "400":
+          description: Bad Request - Often due to a missing request parameter
+        "401":
+          description: Unauthorized - An invalid element token, user secret and/or org secret provided
+        "403":
+          description: Forbidden - Access to the resource by the provider is forbidden
+        "404":
+          description: Not found - The requested resource is not found
+        "405":
+          description: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+        "406":
+          description: Not acceptable - The response content type does not match the &quot;Accept&quot; header value
+        "409":
+          description: Conflict - If a resource being created already exists
+        "415":
+          description: Unsupported media type - The server cannot handle the requested Content-Type
+        "500":
+          description: Server error - Something went wrong on the Cloud Elements server
+        "502":
+          description: Provider server error - Something went wrong on the Provider or Endpoint's server
+      summary: Update an {childObjectName}
+      tags:
+        - objectName
+definitions:
+  AdditionalInfo:
+    properties:
+      google_customer_id:
+        type: string
+    type: object
+  Attribute:
+    properties:
+      id:
+        format: int64
+        type: integer
+      internalName:
+        type: string
+      name:
+        type: string
+      value:
+        type: string
+    type: object
+  BorderInfo:
+    properties:
+      dominatingColor:
+        $ref: "#/definitions/DominatingColor"
+      homogeneity:
+        type: boolean
+    type: object
+  BulkJobList:
+    properties:
+      completion_time:
+        format: int64
+        type: integer
+        x-samplevalue: 1542829827804
+      createdDate:
+        format: int64
+        type: integer
+        x-samplevalue: 1542829826619
+      error_count:
+        format: int32
+        type: integer
+        x-samplevalue: 0
+      fileFormat:
+        type: string
+        x-samplevalue: csv
+      id:
+        format: int32
+        type: integer
+        x-samplevalue: 1722
+      instanceId:
+        format: int32
+        type: integer
+        x-samplevalue: 123453
+      job_direction:
+        type: string
+        x-samplevalue: DOWNLOAD
+      job_query:
+        type: string
+        x-samplevalue: SELECT attributes.organizationid, attributes.systemuserid, organizationid FROM users WHERE organizationid = '3b80f68d-b945-4208-9442-f55bd0e1c5b2'
+      job_reset_attempt:
+        format: int32
+        type: integer
+        x-samplevalue: 0
+      job_state:
+        type: string
+      notification_url:
+        type: string
+      object_name:
+        type: string
+        x-samplevalue: systemuser
+      record_count:
+        format: int32
+        type: integer
+        x-samplevalue: 41
+      status:
+        type: string
+        x-samplevalue: COMPLETED
+    title: BulkJobList
+    type: object
+  BulkQuery:
+    properties:
+      id:
+        type: string
+      instance_id:
+        type: number
+      status:
+        type: string
+    type: object
+  BulkStatus:
+    description: Status of the bulk upload.
+    properties:
+      batchId:
+        description: Contact/Leads loaded
+        type: number
+      message:
+        type: string
+      numOfLeadsProcessed:
+        description: Contact/Leads loaded
+        type: number
+      numOfRowsFailed:
+        description: Failed count
+        type: number
+      numOfRowsWithWarning:
+        description: Contact/Leads that had warnings
+        type: number
+      status:
+        description: Status of the bulk job
+        type: string
+    type: object
+  BulkUploadResponse:
+    description: BulkLoad response of bulk download.
+    properties:
+      id:
+        description: Id of the bulk job
+        type: string
+      instanceId:
+        description: Instance Id of the bulk job
+        format: int64
+        type: integer
+      status:
+        description: Status of the bulk job
+        type: string
+    type: object
+  Category:
+    properties:
+      defaultCategory:
+        description: true/false
+        type: boolean
+      description:
+        type: string
+      enabled:
+        description: true if the category is enabled, false otherwise
+        type: boolean
+      id:
+        format: int64
+        type: integer
+      name:
+        type: string
+      originalImageUrl:
+        type: string
+      productCount:
+        format: int64
+        type: integer
+      thumbnailUrl:
+        type: string
+      url:
+        type: string
+    type: object
+  Choice:
+    properties:
+      priceModifier:
+        format: double
+        type: number
+      priceModifierType:
+        description: PERCENT, ABSOLUTE
+        type: string
+      text:
+        type: string
+    type: object
+  Combination:
+    properties:
+      attributes:
+        items:
+          $ref: "#/definitions/Attribute"
+        type: array
+      combinationNumber:
+        format: double
+        type: number
+      compareToPrice:
+        format: double
+        type: number
+      id:
+        format: double
+        type: number
+      price:
+        format: double
+        type: number
+      quantity:
+        format: double
+        type: number
+      sku:
+        type: string
+      unlimited:
+        type: boolean
+      warningLimit:
+        format: double
+        type: number
+      weight:
+        format: double
+        type: number
+    type: object
+  Customer:
+    properties:
+      billingPerson:
+        $ref: "#/definitions/Person"
+      customerGroupId:
+        format: int64
+        type: integer
+      customerGroupName:
+        type: string
+      email:
+        description: customer email
+        type: string
+      id:
+        description: Unique internal customer ID
+        format: int64
+        type: integer
+      name:
+        description: Customer Name
+        type: string
+        x-name: true
+      registered:
+        description: "Ex: 2015-02-03 15:30:08"
+        type: string
+        x-mask: yyyy-mm-dd hh:mm:ss
+      shippingAddresses:
+        items:
+          $ref: "#/definitions/Person"
+        type: array
+      taxExempt:
+        type: boolean
+      taxId:
+        format: double
+        type: number
+      taxIdValid:
+        type: boolean
+      totalOrderCount:
+        format: double
+        type: number
+      updated:
+        description: "Ex: 2015-02-03 15:30:08"
+        type: string
+        x-mask: yyyy-mm-dd hh:mm:ss
+    type: object
+    x-has-customfields: false
+    x-primary-key:
+      - id
+  CustomerPatch:
+    properties:
+      billingPerson:
+        $ref: "#/definitions/Person"
+      customerGroupId:
+        format: int64
+        type: integer
+      email:
+        description: customer email
+        type: string
+      password:
+        description: customer password
+        type: string
+      shippingAddresses:
+        items:
+          $ref: "#/definitions/Person"
+        type: array
+      taxExempt:
+        type: boolean
+      taxId:
+        format: double
+        type: number
+      taxIdValid:
+        type: boolean
+    type: object
+    x-has-customfields: false
+  CustomerPost:
+    properties:
+      billingPerson:
+        $ref: "#/definitions/Person"
+      customerGroupId:
+        format: int64
+        type: integer
+      email:
+        description: customer email
+        type: string
+      password:
+        description: customer password
+        type: string
+      shippingAddresses:
+        items:
+          $ref: "#/definitions/Person"
+        type: array
+      taxExempt:
+        type: boolean
+      taxId:
+        format: double
+        type: number
+      taxIdValid:
+        type: boolean
+    required:
+      - email
+    type: object
+    x-has-customfields: false
+  DominatingColor:
+    properties:
+      alpha:
+        format: double
+        type: number
+      blue:
+        format: double
+        type: number
+      green:
+        format: double
+        type: number
+      red:
+        format: double
+        type: number
+    type: object
+  Favorite:
+    properties:
+      count:
+        format: int64
+        type: integer
+      displayedCount:
+        type: string
+    type: object
+  File:
+    properties:
+      adminUrl:
+        type: string
+      description:
+        type: string
+      id:
+        format: double
+        type: number
+      name:
+        type: string
+      size:
+        format: double
+        type: number
+    type: object
+  GalleryImage:
+    properties:
+      alt:
+        type: string
+      height:
+        format: int64
+        type: integer
+      thumbnail:
+        type: string
+      url:
+        type: string
+      width:
+        format: int64
+        type: integer
+    type: object
+  HandlingFee:
+    properties:
+      description:
+        type: string
+      name:
+        type: string
+      value:
+        format: double
+        type: number
+    type: object
+  Image:
+    properties:
+      id:
+        type: string
+      image1500pxUrl:
+        type: string
+      image160pxUrl:
+        type: string
+      image400pxUrl:
+        type: string
+      image800pxUrl:
+        type: string
+      imageOriginalUrl:
+        type: string
+      isMain:
+        type: boolean
+      orderBy:
+        format: double
+        type: number
+    type: object
+  Item:
+    properties:
+      categoryId:
+        format: int64
+        type: integer
+      couponApplied:
+        description: true/false. shows whether a discount coupon is applied for this item
+        type: boolean
+      digital:
+        description: true/false. shows whether the item has downloadable files attached
+        type: boolean
+      fixedShippingRate:
+        format: double
+        type: number
+      fixedShippingRateOnly:
+        description: true/false. shows whether the fixed shipping rate is set for the product
+        type: boolean
+      hdThumbnailUrl:
+        type: string
+      id:
+        format: int64
+        type: integer
+      imageUrl:
+        type: string
+      isShippingRequired:
+        description: true/false. shows whether the item requires shipping
+        type: boolean
+      name:
+        type: string
+      price:
+        format: double
+        type: number
+      productAvailable:
+        description: true/false. shows whether product is available or not
+        type: boolean
+      productId:
+        format: int64
+        type: integer
+      productPrice:
+        format: double
+        type: number
+      quantity:
+        format: int64
+        type: integer
+      quantityInStock:
+        format: double
+        type: number
+      shipping:
+        format: double
+        type: number
+      sku:
+        type: string
+      smallThumbnailUrl:
+        type: string
+      tax:
+        format: double
+        type: number
+      taxes:
+        items:
+          $ref: "#/definitions/Tax"
+        type: array
+      trackQuantity:
+        description: true/false. shows whether the store admin set to track the quantity of this product and get low stock notifications
+        type: boolean
+      weight:
+        format: double
+        type: number
+    type: object
+  Media:
+    properties:
+      images:
+        items:
+          $ref: "#/definitions/Image"
+        type: array
+    type: object
+  Object:
+    description: Fields for the object. There will be fields associated with an Object, which are not all described here.
+    properties:
+      objectField:
+        type: string
+    type: object
+  Option:
+    properties:
+      choices:
+        items:
+          $ref: "#/definitions/Choice"
+        type: array
+      defaultChoice:
+        format: int64
+        type: integer
+      name:
+        type: string
+      required:
+        description: true/false
+        type: boolean
+      type:
+        type: string
+    required:
+      - type
+      - name
+      - required
+    type: object
+  Order:
+    properties:
+      additionalInfo:
+        $ref: "#/definitions/AdditionalInfo"
+      billingPerson:
+        $ref: "#/definitions/Person"
+      couponDiscount:
+        format: double
+        type: number
+      createDate:
+        description: "Ex: 2015-02-02 16:11:52 +0000"
+        type: string
+        x-mask: yyyy-mm-dd hh:mm:ss ZZZ
+      createTimestamp:
+        format: double
+        type: number
+      customerId:
+        format: double
+        type: number
+      customerTaxExempt:
+        type: boolean
+      customerTaxId:
+        format: int64
+        type: integer
+      customerTaxIdValid:
+        type: boolean
+      discount:
+        format: double
+        type: number
+      email:
+        type: string
+      fulfillmentStatus:
+        description: AWAITING_PROCESSING, PROCESSING, SHIPPED, DELIVERED, WILL_NOT_DELIVER, RETURNED, READY_FOR_PICKUP
+        type: string
+      globalReferer:
+        type: string
+      handlingFee:
+        $ref: "#/definitions/HandlingFee"
+      hidden:
+        type: boolean
+      ipAddress:
+        type: string
+      items:
+        items:
+          $ref: "#/definitions/Item"
+        type: array
+      lastChangeDate:
+        description: "Ex: 2015-02-03 15:30:08"
+        format: date-time
+        type: string
+        x-mask: yyyy-mm-dd hh:mm:ss
+      membershipBasedDiscount:
+        format: double
+        type: number
+      orderComments:
+        type: string
+      orderNumber:
+        description: Unique order number without prefixes/suffixes
+        format: int64
+        type: integer
+        x-name: true
+      paymentMethod:
+        type: string
+      paymentModule:
+        type: string
+      paymentStatus:
+        description: AWAITING_PAYMENT, PAID, CANCELLED, REFUNDED, PARTIALLY_REFUNDED, INCOMPLETE
+        type: string
+      privateAdminNotes:
+        type: string
+      refererUrl:
+        type: string
+      refundedAmount:
+        format: double
+        type: number
+      refunds:
+        items:
+          $ref: "#/definitions/Refunds"
+        type: array
+      reversedTaxApplied:
+        type: boolean
+      sample:
+        type: boolean
+      shippingMethod:
+        type: string
+      shippingOption:
+        $ref: "#/definitions/ShippingOption"
+      shippingPerson:
+        $ref: "#/definitions/Person"
+      subtotal:
+        format: double
+        type: number
+      tax:
+        format: double
+        type: number
+      taxesOnShipping:
+        items:
+          $ref: "#/definitions/Tax"
+        type: array
+      total:
+        format: double
+        type: number
+      totalAndMembershipBasedDiscount:
+        format: double
+        type: number
+      trackingNumber:
+        type: string
+      updateDate:
+        description: "Ex: 2015-02-03 15:30:08 +0000"
+        type: string
+        x-mask: yyyy-mm-dd hh:mm:ss ZZZ
+      updateTimestamp:
+        format: double
+        type: number
+      usdTotal:
+        format: double
+        type: number
+      vendorNumber:
+        format: double
+        type: number
+      vendorOrderNumber:
+        type: string
+      volumeDiscount:
+        format: double
+        type: number
+    type: object
+    x-has-customfields: false
+    x-primary-key:
+      - orderNumber
+  OrderPatch:
+    properties:
+      billingPerson:
+        $ref: "#/definitions/Person"
+      couponDiscount:
+        format: double
+        type: number
+      customerId:
+        format: double
+        type: number
+      customerTaxExempt:
+        type: boolean
+      customerTaxId:
+        format: int64
+        type: integer
+      customerTaxIdValid:
+        type: boolean
+      discount:
+        format: double
+        type: number
+      email:
+        type: string
+      fulfillmentStatus:
+        description: AWAITING_PROCESSING, PROCESSING, SHIPPED, DELIVERED, WILL_NOT_DELIVER, RETURNED, READY_FOR_PICKUP
+        type: string
+      globalReferer:
+        type: string
+      hidden:
+        type: boolean
+      items:
+        items:
+          $ref: "#/definitions/Item"
+        type: array
+      membershipBasedDiscount:
+        format: double
+        type: number
+      orderComments:
+        type: string
+      paymentModule:
+        type: string
+      paymentStatus:
+        description: AWAITING_PAYMENT, PAID, CANCELLED, REFUNDED, PARTIALLY_REFUNDED, INCOMPLETE
+        type: string
+      privateAdminNotes:
+        type: string
+      refererUrl:
+        type: string
+      reversedTaxApplied:
+        type: boolean
+      sample:
+        type: boolean
+      shippingMethod:
+        type: string
+      shippingOption:
+        $ref: "#/definitions/ShippingOption"
+      shippingPerson:
+        $ref: "#/definitions/Person"
+      subtotal:
+        format: double
+        type: number
+      tax:
+        format: double
+        type: number
+      taxesOnShipping:
+        items:
+          $ref: "#/definitions/Tax"
+        type: array
+      total:
+        format: double
+        type: number
+      totalAndMembershipBasedDiscount:
+        format: double
+        type: number
+      volumeDiscount:
+        format: double
+        type: number
+    type: object
+    x-has-customfields: false
+  OrderPost:
+    properties:
+      billingPerson:
+        $ref: "#/definitions/Person"
+      couponDiscount:
+        format: double
+        type: number
+      customerId:
+        format: double
+        type: number
+      customerTaxExempt:
+        type: boolean
+      customerTaxId:
+        format: int64
+        type: integer
+      customerTaxIdValid:
+        type: boolean
+      discount:
+        format: double
+        type: number
+      email:
+        type: string
+      fulfillmentStatus:
+        description: AWAITING_PROCESSING, PROCESSING, SHIPPED, DELIVERED, WILL_NOT_DELIVER, RETURNED, READY_FOR_PICKUP
+        type: string
+      globalReferer:
+        type: string
+      hidden:
+        type: boolean
+      items:
+        items:
+          $ref: "#/definitions/Item"
+        type: array
+      membershipBasedDiscount:
+        format: double
+        type: number
+      orderComments:
+        type: string
+      paymentMethod:
+        type: string
+      paymentModule:
+        type: string
+      paymentStatus:
+        description: AWAITING_PAYMENT, PAID, CANCELLED, REFUNDED, PARTIALLY_REFUNDED, INCOMPLETE
+        type: string
+      privateAdminNotes:
+        type: string
+      refererUrl:
+        type: string
+      reversedTaxApplied:
+        type: boolean
+      sample:
+        type: boolean
+      shippingMethod:
+        type: string
+      shippingOption:
+        $ref: "#/definitions/ShippingOption"
+      shippingPerson:
+        $ref: "#/definitions/Person"
+      subtotal:
+        format: double
+        type: number
+      tax:
+        format: double
+        type: number
+      total:
+        format: double
+        type: number
+      totalAndMembershipBasedDiscount:
+        format: double
+        type: number
+      volumeDiscount:
+        format: double
+        type: number
+    required:
+      - paymentStatus
+      - fulfillmentStatus
+    type: object
+    x-has-customfields: false
+  Payment:
+    properties:
+      paymentMethod:
+        type: string
+      paymentStatus:
+        description: AWAITING_PAYMENT, PAID, CANCELLED, REFUNDED, PARTIALLY_REFUNDED, INCOMPLETE
+        type: string
+    type: object
+    x-has-customfields: false
+  Person:
+    properties:
+      city:
+        type: string
+      companyName:
+        type: string
+      countryCode:
+        type: string
+      countryName:
+        type: string
+      name:
+        type: string
+      phone:
+        type: string
+      postalCode:
+        type: string
+      stateName:
+        type: string
+      stateOrProvinceCode:
+        type: string
+      stateOrProvinceName:
+        type: string
+      street:
+        type: string
+    type: object
+  Pong:
+    properties:
+      dateTime:
+        format: date-time
+        type: string
+      endpoint:
+        type: string
+      valid:
+        type: boolean
+    type: object
+  Product:
+    properties:
+      attributes:
+        items:
+          $ref: "#/definitions/Attribute"
+        type: array
+      borderInfo:
+        $ref: "#/definitions/BorderInfo"
+      categories:
+        items:
+          $ref: "#/definitions/Category"
+        type: array
+      categoryIds:
+        items:
+          format: int64
+          type: integer
+        type: array
+      combinations:
+        items:
+          $ref: "#/definitions/Combination"
+        type: array
+      compareAtPrice:
+        description: Product’s sale price displayed strike-out in the customer
+        format: double
+        type: number
+      compareToPrice:
+        format: double
+        type: number
+      compareToPriceDiscount:
+        format: double
+        type: number
+      compareToPriceDiscountFormatted:
+        type: string
+      compareToPriceDiscountPercent:
+        format: double
+        type: number
+      compareToPriceDiscountPercentFormatted:
+        type: string
+      compareToPriceFormatted:
+        type: string
+      createTimestamp:
+        format: int64
+        type: integer
+      created:
+        description: "Ex: 2014-09-24 06:43:06"
+        type: string
+        x-mask: yyyy-mm-dd hh:mm:ss
+      defaultCategoryId:
+        format: int64
+        type: integer
+      defaultCombinationId:
+        format: double
+        type: number
+      defaultDisplayedPrice:
+        format: double
+        type: number
+      defaultDisplayedPriceFormatted:
+        type: string
+      description:
+        description: Product description in HTML
+        type: string
+      descriptionTruncated:
+        type: boolean
+      dimensions:
+        $ref: "#/definitions/ProductDimensions"
+      enabled:
+        description: true/false
+        type: boolean
+      favorites:
+        $ref: "#/definitions/Favorite"
+      files:
+        items:
+          $ref: "#/definitions/File"
+        type: array
+      fixedShippingRate:
+        format: double
+        type: number
+      fixedShippingRateOnly:
+        description: true/false
+        type: boolean
+      galleryImages:
+        items:
+          $ref: "#/definitions/GalleryImage"
+        type: array
+      googleItemCondition:
+        description: Google Item Condition Status
+        type: string
+      hdThumbnailUrl:
+        type: string
+      id:
+        format: int64
+        type: integer
+      imageUrl:
+        type: string
+      inStock:
+        description: true/false
+        type: boolean
+      isSampleProduct:
+        type: boolean
+      isShippingRequired:
+        type: boolean
+      media:
+        $ref: "#/definitions/Media"
+      name:
+        description: Product title
+        type: string
+        x-name: true
+      options:
+        items:
+          $ref: "#/definitions/Option"
+        type: array
+      originalImage:
+        $ref: "#/definitions/GalleryImage"
+      originalImageUrl:
+        type: string
+      price:
+        description: Base Product price
+        format: double
+        type: number
+      priceInProductList:
+        format: double
+        type: number
+      productClassId:
+        description: Id of the product type that this product belongs to.
+        format: int64
+        type: integer
+      quantity:
+        description: Amount of product items in stock.
+        format: int64
+        type: integer
+      quantityDelta:
+        format: int64
+        type: integer
+      relatedProducts:
+        $ref: "#/definitions/RelatedProducts"
+      seoDescription:
+        type: string
+      seoTitle:
+        type: string
+      shipping:
+        $ref: "#/definitions/Shipping"
+      showOnFrontpage:
+        format: double
+        type: number
+      sku:
+        description: Product SKU
+        type: string
+      smallThumbnailUrl:
+        type: string
+      tangible:
+        description: true/false
+        type: string
+      tax:
+        $ref: "#/definitions/ProductTax"
+      taxes:
+        items:
+          $ref: "#/definitions/Tax"
+        type: array
+      thumbnailUrl:
+        type: string
+      trackQuantity:
+        description: true/false
+        type: string
+      unlimited:
+        type: boolean
+      updateTimestamp:
+        format: int64
+        type: integer
+      updated:
+        description: "Ex: 2015-02-03 15:30:46"
+        type: string
+        x-mask: yyyy-mm-dd hh:mm:ss
+      url:
+        type: string
+      warningLimit:
+        format: int64
+        type: integer
+      weight:
+        description: Product weight in the units defined in store settings
+        format: double
+        type: number
+      wholesalePrices:
+        $ref: "#/definitions/WholesalePrices"
+    type: object
+    x-has-customfields: false
+    x-primary-key:
+      - id
+  ProductDimensions:
+    properties:
+      height:
+        format: double
+        type: number
+      length:
+        format: double
+        type: number
+      width:
+        format: double
+        type: number
+    type: object
+  ProductPatch:
+    properties:
+      attributes:
+        items:
+          $ref: "#/definitions/Attribute"
+        type: array
+      categoryIds:
+        items:
+          format: int64
+          type: integer
+        type: array
+      compareAtPrice:
+        description: Product’s sale price displayed strike-out in the customer
+        format: double
+        type: number
+      compareToPrice:
+        format: double
+        type: number
+      defaultCategoryId:
+        format: int64
+        type: integer
+      description:
+        description: Product description in HTML
+        type: string
+      dimensions:
+        $ref: "#/definitions/ProductDimensions"
+      enabled:
+        description: true/false
+        type: boolean
+      fixedShippingRate:
+        format: double
+        type: number
+      fixedShippingRateOnly:
+        description: true/false
+        type: boolean
+      galleryImages:
+        items:
+          $ref: "#/definitions/GalleryImage"
+        type: array
+      googleItemCondition:
+        description: Google Item Condition Status
+        type: string
+      isShippingRequired:
+        type: boolean
+      name:
+        description: Product title
+        type: string
+        x-name: true
+      options:
+        items:
+          $ref: "#/definitions/Option"
+        type: array
+      price:
+        description: Base Product price
+        format: double
+        type: number
+      productClassId:
+        description: Id of the product type that this product belongs to.
+        format: int64
+        type: integer
+      quantity:
+        description: Amount of product items in stock.
+        format: int64
+        type: integer
+      relatedProducts:
+        $ref: "#/definitions/RelatedProducts"
+      seoDescription:
+        type: string
+      seoTitle:
+        type: string
+      shipping:
+        $ref: "#/definitions/Shipping"
+      showOnFrontpage:
+        format: double
+        type: number
+      sku:
+        description: Product SKU
+        type: string
+      tax:
+        $ref: "#/definitions/ProductTax"
+      taxes:
+        items:
+          $ref: "#/definitions/Tax"
+        type: array
+      warningLimit:
+        format: int64
+        type: integer
+      weight:
+        description: Product weight in the units defined in store settings
+        format: double
+        type: number
+      wholesalePrices:
+        $ref: "#/definitions/WholesalePrices"
+    type: object
+    x-has-customfields: false
+  ProductPost:
+    properties:
+      attributes:
+        items:
+          $ref: "#/definitions/Attribute"
+        type: array
+      categoryIds:
+        items:
+          format: int64
+          type: integer
+        type: array
+      compareAtPrice:
+        description: Product’s sale price displayed strike-out in the customer
+        format: double
+        type: number
+      compareToPrice:
+        format: double
+        type: number
+      created:
+        format: date-time
+        type: string
+        x-mask: yyyy-mm-dd hh:mm:ss
+      defaultCategoryId:
+        format: int64
+        type: integer
+      description:
+        description: Product description in HTML
+        type: string
+      dimensions:
+        $ref: "#/definitions/ProductDimensions"
+      enabled:
+        description: true/false
+        type: boolean
+      favorites:
+        $ref: "#/definitions/Favorite"
+      fixedShippingRate:
+        format: double
+        type: number
+      fixedShippingRateOnly:
+        description: true/false
+        type: boolean
+      galleryImages:
+        items:
+          $ref: "#/definitions/GalleryImage"
+        type: array
+      googleItemCondition:
+        description: Google Item Condition Status
+        type: string
+      isShippingRequired:
+        type: boolean
+      name:
+        description: Product title
+        type: string
+        x-name: true
+      options:
+        items:
+          $ref: "#/definitions/Option"
+        type: array
+      price:
+        description: Base Product price
+        format: double
+        type: number
+      productClassId:
+        description: Id of the product type that this product belongs to.
+        format: int64
+        type: integer
+      quantity:
+        description: Amount of product items in stock.
+        format: int64
+        type: integer
+      relatedProducts:
+        $ref: "#/definitions/RelatedProducts"
+      seoDescription:
+        type: string
+      seoTitle:
+        type: string
+      shipping:
+        $ref: "#/definitions/Shipping"
+      showOnFrontpage:
+        format: double
+        type: number
+      sku:
+        description: Product SKU
+        type: string
+      tax:
+        $ref: "#/definitions/ProductTax"
+      taxes:
+        items:
+          $ref: "#/definitions/Tax"
+        type: array
+      warningLimit:
+        format: int64
+        type: integer
+      weight:
+        description: Product weight in the units defined in store settings
+        format: double
+        type: number
+      wholesalePrices:
+        $ref: "#/definitions/WholesalePrices"
+    type: object
+    x-has-customfields: false
+  ProductTax:
+    properties:
+      defaultLocationIncludedTaxRate:
+        format: double
+        type: number
+      enabledManualTaxes:
+        items:
+          format: int64
+          type: integer
+        type: array
+    type: object
+  Refunds:
+    properties:
+      amount:
+        format: double
+        type: number
+      date:
+        format: date-time
+        type: string
+        x-mask: yyyy-mm-dd hh:mm:ss
+      reason:
+        type: string
+      source:
+        type: string
+    type: object
+  RelatedCategory:
+    properties:
+      categoryId:
+        format: double
+        type: number
+      enabled:
+        type: boolean
+      productCount:
+        format: double
+        type: number
+    type: object
+  RelatedProducts:
+    properties:
+      productIds:
+        items:
+          format: double
+          type: number
+        type: array
+      relatedCategory:
+        $ref: "#/definitions/RelatedCategory"
+    type: object
+  Shipping:
+    properties:
+      disabledMethods:
+        items:
+          type: string
+        type: array
+      enabledMethods:
+        items:
+          type: string
+        type: array
+      flatRate:
+        format: double
+        type: number
+      methodMarkup:
+        format: double
+        type: number
+      type:
+        type: string
+    type: object
+  ShippingOption:
+    properties:
+      estimatedTransitTime:
+        type: string
+      isPickup:
+        type: boolean
+      shippingCarrierName:
+        type: string
+      shippingMethodName:
+        type: string
+      shippingRate:
+        format: double
+        type: number
+    type: object
+  Tax:
+    properties:
+      name:
+        type: string
+      total:
+        format: double
+        type: number
+      value:
+        format: double
+        type: number
+    type: object
+  WholesalePrices:
+    properties:
+      "{quantity}":
+        format: double
+        type: number
+    type: object
+  bulkDownloadRequest:
+    properties:
+      apiLimit:
+        format: int32
+        type: integer
+        x-samplevalue: 100
+      continueFromJobId:
+        format: int32
+        type: integer
+        x-samplevalue: 1
+      docsHubDetails:
+        $ref: "#/definitions/bulkDownloadRequestDocsHubDetails"
+      filterDateField:
+        type: string
+        x-samplevalue: lastModifiedDate
+      filterNulls:
+        type: boolean
+        x-samplevalue: true
+      format:
+        enum:
+          - application/json
+          - txt/csv
+          - application/jsonl
+        type: string
+        x-samplevalue: application/json
+      from:
+        format: date-time
+        type: string
+        x-mask: yyyy-MM-dd'T'HH:mm:ssZ
+        x-samplevalue: 2014-10-06T13:22:17-08:00
+      limit:
+        format: int32
+        type: integer
+        x-samplevalue: 107
+      notificationUrl:
+        type: string
+        x-samplevalue: https://myreceiver.com/whatever
+      objectName:
+        type: string
+        x-samplevalue: accounts
+      pageSize:
+        format: int32
+        type: integer
+        x-samplevalue: 200
+      query:
+        $ref: "#/definitions/bulkDownloadRequestQuery"
+      selectFields:
+        type: string
+        x-samplevalue: a,b,c
+      to:
+        format: date-time
+        type: string
+        x-mask: yyyy-MM-dd'T'HH:mm:ssZ
+        x-samplevalue: 2014-10-10T13:22:17-08:00
+      where:
+        type: string
+        x-samplevalue: name='Alex' and gender='male'
+    required:
+      - objectName
+      - format
+    title: bulkDownloadRequest
+    type: object
+  bulkDownloadRequestDocsHubDetails:
+    properties:
+      instanceId:
+        type: string
+        x-samplevalue: "1234"
+      path:
+        type: string
+        x-samplevalue: /myfolder/in/googledrive/myfilename.extention
+    title: docsHubDetails
+    type: object
+  bulkDownloadRequestQuery:
+    properties:
+      anyKey:
+        type: string
+        x-samplevalue: anyValue
+    title: query
+    type: object
+  objectsMetadata:
+    properties:
+      fields:
+        items:
+          $ref: "#/definitions/objectsMetadataFields"
+        type: array
+    type: object
+  objectsMetadataFields:
+    properties:
+      mask:
+        type: string
+      type:
+        type: string
+      vendorDisplayName:
+        type: string
+      vendorPath:
+        type: string
+      vendorReadOnly:
+        type: boolean
+      vendorRequired:
+        type: boolean
+    type: object
+  swagger-contacts-path:
+    properties:
+      post:
+        $ref: "#/definitions/swaggerpost"
+    title: /contacts
+    type: object
+    x-has-customfields: false
+  swagger200:
+    properties:
+      description:
+        type: string
+        x-samplevalue: OK - Everything worked as expected
+      schema:
+        $ref: "#/definitions/swaggerschema"
+    title: "200"
+    type: object
+    x-has-customfields: false
+  swagger400:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Bad Request - Often due to a missing request parameter
+    title: "400"
+    type: object
+    x-has-customfields: false
+  swagger401:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Unauthorized - An invalid element token, user secret and/or org secret provided
+    title: "401"
+    type: object
+    x-has-customfields: false
+  swagger403:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Forbidden - Access to the resource by the provider is forbidden
+    title: "403"
+    type: object
+    x-has-customfields: false
+  swagger404:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Not found - The requested resource is not found
+    title: "404"
+    type: object
+    x-has-customfields: false
+  swagger405:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Method not allowed - Incorrect HTTP verb used, e.g., GET used when POST expected
+    title: "405"
+    type: object
+    x-has-customfields: false
+  swagger406:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Not acceptable - The response content type does not match the 'Accept' header value
+    title: "406"
+    type: object
+    x-has-customfields: false
+  swagger409:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Conflict - If a resource being created already exists
+    title: "409"
+    type: object
+    x-has-customfields: false
+  swagger415:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Unsupported media type - The server cannot handle the requested Content-Type
+    title: "415"
+    type: object
+    x-has-customfields: false
+  swagger500:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Server error - Something went wrong on the Cloud Elements server
+    title: "500"
+    type: object
+    x-has-customfields: false
+  swagger502:
+    properties:
+      description:
+        type: string
+        x-samplevalue: Provider server error - Something went wrong on the Provider or Endpoint's server
+    title: "502"
+    type: object
+    x-has-customfields: false
+  swaggerDocs:
+    properties:
+      basePath:
+        type: string
+        x-samplevalue: /elements/api-v2/hubs/crm
+      definitions:
+        $ref: "#/definitions/swaggerdefinitions"
+      host:
+        type: string
+        x-samplevalue: localhost:5050
+      info:
+        $ref: "#/definitions/swaggerinfo"
+      paths:
+        $ref: "#/definitions/swaggerpaths"
+      schemes:
+        items:
+          type: string
+        type: array
+        x-samplevalue:
+          - http
+      swagger:
+        type: string
+        x-samplevalue: "2.0"
+      tags:
+        items:
+          $ref: "#/definitions/swaggertags"
+        type: array
+    title: swaggerDocs
+    type: object
+    x-has-customfields: false
+  swaggercontact:
+    properties:
+      email:
+        type: string
+        x-samplevalue: support@cloud-elements.com
+    title: contact
+    type: object
+    x-has-customfields: false
+  swaggerdefinition-name:
+    properties:
+      properties:
+        $ref: "#/definitions/swaggerproperties"
+    title: definition-name
+    type: object
+    x-has-customfields: false
+  swaggerdefinition-property:
+    properties:
+      type:
+        type: string
+        x-samplevalue: string
+    title: "#/definitions/definition-property"
+    type: object
+    x-has-customfields: false
+  swaggerdefinitions:
+    properties:
+      definition-name:
+        $ref: "#/definitions/swaggerdefinition-name"
+    title: definitions
+    type: object
+    x-has-customfields: false
+  swaggerinfo:
+    properties:
+      contact:
+        $ref: "#/definitions/swaggercontact"
+      title:
+        type: string
+        x-samplevalue: hubspotcrm
+      version:
+        type: string
+        x-samplevalue: api-v2
+    title: info
+    type: object
+    x-has-customfields: false
+  swaggerparameters:
+    properties:
+      description:
+        type: string
+        x-samplevalue: The authorization tokens. The format for the header value is 'Element &lt;token&gt;, User &lt;user secret&gt;'
+      in:
+        type: string
+        x-samplevalue: header
+      name:
+        type: string
+        x-samplevalue: Authorization
+      required:
+        type: boolean
+        x-samplevalue: true
+      schema:
+        $ref: "#/definitions/swaggerparametersschema"
+      type:
+        type: string
+        x-samplevalue: string
+    title: parameters
+    type: object
+    x-has-customfields: false
+  swaggerparametersschema:
+    properties:
+      $ref:
+        type: string
+        x-samplevalue: "#/definitions/Contact"
+    title: schema
+    type: object
+    x-has-customfields: false
+  swaggerpaths:
+    properties:
+      /contacts:
+        $ref: "#/definitions/swagger-contacts-path"
+    title: paths
+    type: object
+    x-has-customfields: false
+  swaggerpost:
+    properties:
+      operationId:
+        type: string
+        x-samplevalue: createContact
+      parameters:
+        items:
+          $ref: "#/definitions/swaggerparameters"
+        type: array
+      responses:
+        $ref: "#/definitions/swaggerresponses"
+      summary:
+        type: string
+        x-samplevalue: Create a new contact in the CRM service. Contact creation will flow through Cloud Elements to your CRM service. With the exception of the 'id' field, the required fields indicated in the 'Contact' model are those required to create a new contact.
+      tags:
+        items:
+          type: string
+        type: array
+        x-samplevalue:
+          - contacts
+    title: post
+    type: object
+    x-has-customfields: false
+  swaggerproperties:
+    properties:
+      definition-property:
+        $ref: "#/definitions/swaggerdefinition-property"
+    title: properties
+    type: object
+    x-has-customfields: false
+  swaggerresponses:
+    properties:
+      "200":
+        $ref: "#/definitions/swagger200"
+      "400":
+        $ref: "#/definitions/swagger400"
+      "401":
+        $ref: "#/definitions/swagger401"
+      "403":
+        $ref: "#/definitions/swagger403"
+      "404":
+        $ref: "#/definitions/swagger404"
+      "405":
+        $ref: "#/definitions/swagger405"
+      "406":
+        $ref: "#/definitions/swagger406"
+      "409":
+        $ref: "#/definitions/swagger409"
+      "415":
+        $ref: "#/definitions/swagger415"
+      "500":
+        $ref: "#/definitions/swagger500"
+      "502":
+        $ref: "#/definitions/swagger502"
+    title: responses
+    type: object
+    x-has-customfields: false
+  swaggerschema:
+    properties:
+      $ref:
+        type: string
+        x-samplevalue: "#/definitions/Contact-POST-Response"
+    title: schema
+    type: object
+    x-has-customfields: false
+  swaggertags:
+    properties:
+      name:
+        type: string
+        x-samplevalue: contacts
+    title: tags
+    type: object
+    x-has-customfields: false

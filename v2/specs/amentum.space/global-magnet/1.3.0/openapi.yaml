@@ -1,0 +1,171 @@
+openapi: 3.0.0
+servers:
+  - url: /wmm
+info:
+  contact:
+    x-twitter: amentumspace
+  description: |
+    
+    The World Magnetic Model calculates the intensity and direction of the Earth's magnetic field on a specific date-time, geodetic altitude, latitude, and longitude. It is relied upon throughout the world for navigation, mineral exploration, atmospheric and space science, and is installed on billions of devices.  <br><br>
+    A comprehensive description of the World Magnetic Model, including its  limitations, can be found <a href='https://www.ngdc.noaa.gov/geomag/WMM/'>here</a>.  <br><br>
+    We provide a RESTful API to access the out-of-cycle  World Magnetic Model (WMM2015v2) valid for years 2015.0 - 2020.0 and WMM2020 valid for years 2020.0 - 2025.0<br><br>
+    API requests must contain a key "API-Key" in the header (see code samples). Obtain a key from  <a href='https://developer.amentum.io'>here</a>. <br><br> 
+    Amentum Pty Ltd is not responsible nor liable for any loss or damage of any sort incurred as a result of using the API. <br><br>
+    Help us improve the quality of our web APIs by completing our 2 minute survey <a href="https://www.surveymonkey.com/r/CTDTRBN">here</a>.<br><br>
+    Copyright <a href='https://amentum.space'>Amentum Pty Ltd</a> 2021.
+  title: Geomag API
+  version: 1.3.0
+  x-apisguru-categories:
+    - location
+  x-logo:
+    altText: Amentum Aerospace
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_twitter.com_amentumspace_profile_image.jpeg
+  x-origin:
+    - format: openapi
+      url: https://globalmagnet.amentum.space/wmm/openapi.json
+      version: "3.0"
+  x-providerName: amentum.space
+  x-serviceName: global-magnet
+paths:
+  /magnetic_field:
+    get:
+      description: |
+        at specified conditions.
+      operationId: app.api_wmm.endpoints.WMM.magnetic_field
+      parameters:
+        - $ref: "#/components/parameters/Altitude"
+        - $ref: "#/components/parameters/Latitude"
+        - $ref: "#/components/parameters/Longitude"
+        - $ref: "#/components/parameters/Year"
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                example:
+                  declination:
+                    units: Deg
+                    value: 34.144142150878906
+                  grid_variation:
+                    units: -65.8558578491211
+                    value: Deg
+                  inclination:
+                    units: Deg
+                    value: 87.98262786865234
+                  total_intensity:
+                    units: nT
+                    value: 58421.87109375
+                properties:
+                  declination:
+                    description: |
+                      The angle in the horizontal plane between magnetic north and true north. Declination is positive when magnetic north is east of true north.
+                    properties:
+                      units:
+                        type: string
+                      value:
+                        type: number
+                    type: object
+                  grid_variation:
+                    description: |
+                      Referenced to grid north, referenced to 0 deg meridian of a polar stereographic projection.  Only defined for latitudes greater than 55 degrees and less than -55 degrees (arctic and antarctic).
+                    properties:
+                      units:
+                        type: string
+                      value:
+                        type: number
+                    type: object
+                  inclination:
+                    description: |
+                      Also known as 'dip', is the angle made between the horizontal plane and the magnetic field vector at some position. Positive inclination corresponds to a downward pointing. 
+                    properties:
+                      units:
+                        type: string
+                      value:
+                        type: number
+                    type: object
+                  total_intensity:
+                    description: |
+                      Total magnetic field intensity in nano Teslas.
+                    properties:
+                      units:
+                        type: string
+                      value:
+                        type: number
+                    type: object
+                type: object
+          description: Successful magnetic field intensity calculation
+      summary: |
+        Calculate magnetic declination, inclination, total field intensity, and grid variation
+      x-codeSamples:
+        - lang: Shell
+          source: |
+            curl -X GET "https://geomag.amentum.io/wmm/magnetic_field?altitude=10&latitude=80&longitude=100&year=2020.5" -H "API-Key: <your_key>" -H  "accept: application/json"
+        - lang: Python
+          source: |
+            import json
+            import requests
+
+            headers = {"API-Key" : "<add_your_key>"}
+
+            hostname = "https://geomag.amentum.io/wmm/magnetic_field"
+
+            params = dict(
+                altitude = 10, # [km]
+                longitude = 100, # [deg]
+                latitude = 80, 
+                year = 2020.5 # decimal year, half-way through 2020
+            )
+
+            try: 
+              response = requests.get(hostname, params=params, headers=headers)
+              # extract JSON payload of response as Python dictionary
+              json_payload = response.json()
+              # raise an Exception if we encoutnered any HTTP error codes like 404 
+              response.raise_for_status()
+            except requests.exceptions.ConnectionError as e: 
+              # handle any typo errors in url or endpoint, or just patchy internet connection
+              print(e)
+            except requests.exceptions.HTTPError as e:  
+              # handle HTTP error codes in the response
+              print(e, json_payload['error'])
+            except requests.exceptions.RequestException as e:  
+              # general error handling
+              print(e, json_payload['error'])
+            else:
+              json_payload = response.json()
+              print(json.dumps(json_payload, indent=4, sort_keys=True))
+components:
+  parameters:
+    Altitude:
+      description: Geodetic Altitude 0 km to 600 km.
+      in: query
+      name: altitude
+      required: true
+      schema:
+        example: 10
+        type: number
+    Latitude:
+      description: Geodetic Latitude. -90 deg (S) to 90 deg (N).
+      in: query
+      name: latitude
+      required: true
+      schema:
+        example: 80
+        type: number
+    Longitude:
+      description: Geodetic Longitude. -180 deg (W) to 180 deg (E).
+      in: query
+      name: longitude
+      required: true
+      schema:
+        example: 100
+        type: number
+    Year:
+      description: Year as a decimal in the range 2015-2025 (2017.5 would be half way through 2017).
+      in: query
+      name: year
+      required: true
+      schema:
+        example: 2020.5
+        type: number

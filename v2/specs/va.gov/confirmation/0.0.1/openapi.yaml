@@ -1,0 +1,206 @@
+openapi: 3.0.0
+servers:
+  - description: VA.gov API sandbox environment
+    url: https://sandbox-api.va.gov/services/veteran_confirmation/{version}
+    variables:
+      version:
+        default: v0
+  - description: VA.gov API production environment
+    url: https://api.va.gov/services/veteran_confirmation/{version}
+    variables:
+      version:
+        default: v0
+info:
+  contact:
+    name: developer.va.gov
+  description: |
+    The Veteran Confirmation API allows you to confirm Veteran status for a given person. This can be useful for offering Veterans discounts or other benefits.
+
+    The API will only return “Confirmed” or “Not Confirmed”.
+
+    ## Quickstart Guide
+    ### 1. Get Access Credentials
+    Get started by filling out the form on the [Apply for VA Lighthouse Developer Access](https://developer.va.gov/apply) page.
+
+    After submitting a request, you will receive your credentials for using the API in the Development environment, which allows you to try it out with mock data before moving to the Production environment.
+
+    ### 2. Test the API
+    In the endpoint documentation below, we've provided a curl command builder for trying out the API before implementation with your app.
+    Use [Test User](https://github.com/department-of-veterans-affairs/vets-api-clients/blob/master/test_accounts.md) attributes to populate the request body.
+
+    ### 3. Build your app
+    The base URI for the Veteran Confirmation API in the Sandbox environment is:
+
+    https://sandbox-api.va.gov/services/veteran_confirmation/v0
+
+    In this environment, use attributes from the list of [Test Users](https://github.com/department-of-veterans-affairs/vets-api-clients/blob/master/test_accounts.md). Only Test Users can return a `"confirmed"` response.
+
+    Check out some of our [sample apps](https://github.com/department-of-veterans-affairs/vets-api-clients). Please visit our VA Lighthouse [Support portal](https://developer.va.gov/support) should you need further assistance.
+
+    ### 4. Show us a demo and get access to the Production environment
+    After building your app, we ask that you give us a demo before we set you up with production credentials. Please see the [Path to Production](https://developer.va.gov/go-live) page for more details.
+
+    ## Authorization
+    This API requires an API key in combination with identifiable information for the person being confirmed listed below. API requests are authorized through a symmetric API token provided in an HTTP header with name `apikey`. Including more information has a better chance of making a match and returning a Confirmed status.
+    ### Required information:
+    * First Name
+    * Last Name
+    * Date of Birth
+    * Social Security Number
+
+    ### Optional information:
+    * Middle Name
+    * Gender
+
+    ## Reference
+    ### Sandbox vs. Production Data
+    APIs accessed via the Sandbox environment are using the same underlying logic as VA’s production APIs; only the underlying data store is different.
+
+    ### Master Veteran Index (MVI)
+    The Master Veteran Index confirms a user's identity. In Production, several factors are considered to confirm identity. These include: a user’s first name, last name, date of birth and Social Security number. The MVI is mocked in the Sandbox environment. In this environment, the only factor used to confirm identity is the Social Security number.
+
+    ### Rate Limiting
+    We implemented basic rate limiting of 60 requests per minute. If you exceed this quota, your request will return a 429 status code. You may petition for increased rate limits by emailing and requests will be decided on a case by case basis.
+
+    ### Raw Open API Spec
+    https://api.va.gov/services/veteran_confirmation/docs/v0/api
+  termsOfService: ""
+  title: Veteran Confirmation
+  version: 0.0.1
+  x-apisguru-categories:
+    - open_data
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_prod-va-gov-assets.s3-us-gov-west-1.amazonaws.com_img_design_icons_apple-touch-icon.png
+  x-origin:
+    - format: openapi
+      url: https://api.va.gov/services/veteran_confirmation/docs/v0/api
+      version: "3.0"
+  x-providerName: va.gov
+  x-serviceName: confirmation
+tags:
+  - description: Veteran Confirmation - Veteran Status
+    name: veteran_confirmation_status
+paths:
+  /status:
+    post:
+      operationId: getVeteranStatus
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/VeteranStatusRequest"
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VeteranStatusConfirmation"
+          description: Confirmation status successfully retrieved
+        "400":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/APIError"
+          description: Bad request - invalid or missing query parameters
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+          description: Missing API token
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthorizationError"
+          description: Invalid API token
+        "503":
+          description: We encountered a temporary error. Check back in the future.
+      security:
+        - apikey: []
+      summary: Get confirmation about an individual's Veteran status according to the VA
+      tags:
+        - veteran_confirmation_status
+components:
+  schemas:
+    APIError:
+      description: API invocation or processing error
+      properties:
+        errors:
+          items:
+            properties:
+              code:
+                example: "103"
+                type: string
+              detail:
+                example: Detailed error message
+                type: string
+              status:
+                example: "400"
+                type: string
+              title:
+                example: Error title
+                type: string
+            type: object
+          type: array
+      type: object
+    AuthorizationError:
+      description: API Platform authorization (API token) error
+      properties:
+        message:
+          example: No API key found in request
+          type: string
+      type: object
+    VeteranStatusConfirmation:
+      description: Veteran status confirmation for an individual
+      properties:
+        veteran_status:
+          description: |
+            Whether the system could confirm the Veteran status of an individual based on traits
+          enum:
+            - confirmed
+            - not confirmed
+          type: string
+      type: object
+    VeteranStatusRequest:
+      description: Attributes required to retrieve a Veteran's status
+      properties:
+        birth_date:
+          description: Birth date for the person of interest in any valid ISO8601 format
+          example: 1965-01-01
+          type: string
+        first_name:
+          description: First name for the person of interest
+          example: John
+          type: string
+        gender:
+          description: Optional gender of M or F for the person of interest
+          enum:
+            - M
+            - F
+          example: M
+          type: string
+        last_name:
+          description: Last name for the person of interest
+          example: Doe
+          type: string
+        middle_name:
+          description: Optional middle name for the person of interest
+          example: Theodore
+          type: string
+        ssn:
+          description: Social Security Number for the person of interest with or without dashes
+          example: 555-55-5555
+          type: string
+      required:
+        - ssn
+        - first_name
+        - last_name
+        - birth_date
+      type: object
+  securitySchemes:
+    apikey:
+      in: header
+      name: apikey
+      type: apiKey

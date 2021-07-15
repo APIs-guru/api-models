@@ -1,0 +1,787 @@
+openapi: 3.0.0
+servers:
+  - url: https://api.nexmo.com/beta/chatapp-accounts
+info:
+  contact:
+    email: devrel@vonage.com
+    name: Vonage DevRel
+    url: https://developer.nexmo.com/
+  description: The External Accounts API is used to manage accounts for Viber Service Messages, Facebook Messenger and Whatsapp for use in the [Messages](https://developer.nexmo.com/messages/overview) and [Dispatch](https://developer.nexmo.com/dispatch/overview) APIs.
+  title: External Accounts API
+  version: 0.1.5
+  x-label: Developer Preview
+  x-origin:
+    - format: openapi
+      url: https://raw.githubusercontent.com/nexmo/api-specification/master/definitions/external-accounts.yml
+      version: "3.0"
+  x-providerName: nexmo.com
+  x-serviceName: external-accounts
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg
+tags:
+  - description: Inbound messages to an external account which is linked to an application will be delivered to the application's inbound URL.
+    name: Application
+  - description: An external-account used as the `from` field in the Messages API and Dispatch API
+    name: Account
+  - description: Managing your [Facebook Messenger](https://developer.nexmo.com/messages/concepts/facebook) account
+    name: Facebook Messenger
+  - description: Managing your [Viber Service Message](https://developer.nexmo.com/messages/concepts/viber) account
+    name: Viber Service Message
+  - description: Managing your [Whatsapp](https://developer.nexmo.com/messages/concepts/whatsapp) account
+    name: Whatsapp
+paths:
+  /:
+    get:
+      operationId: GetAllAccounts
+      parameters:
+        - description: Filter by provider
+          in: query
+          name: provider
+          required: false
+          schema:
+            enum:
+              - messenger
+              - viber_service_msg
+              - whatsapp
+            type: string
+        - description: Page number of the results
+          in: query
+          name: page_number
+          required: false
+          schema:
+            default: 1
+            example: 1
+            type: integer
+        - description: Page size of the results
+          in: query
+          name: page_size
+          required: false
+          schema:
+            default: 20
+            example: 1
+            type: integer
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  _embedded:
+                    items:
+                      $ref: "#/components/schemas/GetAllAccountResponse"
+                    type: array
+                  _links:
+                    properties:
+                      first:
+                        properties:
+                          href:
+                            example: https://api.nexmo.com/beta/chatapp-accounts?page_number=1&page_size=10
+                            type: string
+                        type: object
+                      last:
+                        properties:
+                          href:
+                            example: https://api.nexmo.com/beta/chatapp-accounts?page_number=4&page_size=10
+                            type: string
+                        type: object
+                      next:
+                        properties:
+                          href:
+                            example: https://api.nexmo.com/beta/chatapp-accounts?page_number=3&page_size=10
+                            type: string
+                        type: object
+                      prev:
+                        properties:
+                          href:
+                            example: https://api.nexmo.com/beta/chatapp-accounts?page_number=1&page_size=10
+                            type: string
+                        type: object
+                      self:
+                        properties:
+                          href:
+                            example: https://api.nexmo.com/beta/chatapp-accounts?page_number=1&page_size=10
+                            type: string
+                        type: object
+                    type: object
+                  page_number:
+                    example: 1
+                    type: integer
+                  page_size:
+                    example: 10
+                    type: integer
+                type: object
+          description: OK.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/401Response"
+          description: Unauthorized.
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+      summary: Retrieve all accounts you own
+      tags:
+        - Account
+  /messenger:
+    post:
+      operationId: CreateMessengerAccount
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                access_token:
+                  description: |
+                    This is the Facebook Business Page token. You can obtain the token using one of the following methods:
+
+                    * Linking your Facebook Business Page to your account [with our Dashboard tool](https://dashboard.nexmo.com/messages/social-channels/facebook-connect) 
+                    * Requesting a Page Access Token using the steps in the [Facebook token reference](https://developers.facebook.com/docs/pages/access-tokens/)
+                  example: myAccessToken
+                  type: string
+                applications:
+                  description: Contains a list of application IDs which are linked to the account. <ul> <li>There is just one application allowed per an account.</li> <li>The application type must be type "messages".</li> </ul> For more information see [Application API spec](https://developer.nexmo.com/api/application.v2)
+                  example:
+                    - optionalApplicationId
+                  items:
+                    type: string
+                  maxItems: 1
+                  minItems: 0
+                  type: array
+                external_id:
+                  description: This is the unique identifier within the provider's domain. In this case it is the Page ID for your Facebook Page. Go to your Facebook Page, click "Settings", click "Messenger platform " scroll down to "Messenger link" to find your Page ID.
+                  example: "12345678"
+                  type: string
+                name:
+                  description: Custom account name
+                  example: optionalName
+                  type: string
+              required:
+                - external_id
+                - access_token
+              type: object
+        required: true
+      responses:
+        "201":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessengerAccountResponse"
+          description: Created.
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    example: Found errors validating 1 of your submitted parameters.
+                    type: string
+                  instance:
+                    example: null
+                    type: string
+                  invalid_params:
+                    items:
+                      properties:
+                        name:
+                          example: external_id
+                          type: string
+                        reason:
+                          example: Missing `external_id` field
+                          type: string
+                      type: object
+                    type: array
+                  title:
+                    example: Your request parameters didn't validate.
+                    type: string
+                  type:
+                    example: https://www.nexmo.com/messages/Errors#InvalidParams
+                    type: string
+                type: object
+          description: Bad Request.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/401Response"
+          description: Unauthorized.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/403Response"
+          description: Forbidden.
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+      summary: Create a Messenger account
+      tags:
+        - Facebook Messenger
+  "/messenger/{external_id}":
+    delete:
+      operationId: DeleteMessengerAccount
+      parameters:
+        - description: External id of the account you want to delete. In this case it is the Facebook Page ID.
+          in: path
+          name: external_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/401Response"
+          description: Unauthorized.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/403Response"
+          description: Forbidden.
+        "404":
+          description: Not Found.
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+      summary: Delete a Messenger account
+      tags:
+        - Facebook Messenger
+    get:
+      operationId: GetMessengerAccount
+      parameters:
+        - description: External id of the account you want to retrieve. In this case it is the Facebook Page ID.
+          in: path
+          name: external_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MessengerAccountResponse"
+          description: OK.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/401Response"
+          description: Unauthorized.
+        "404":
+          description: Not Found.
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+      summary: Retrieve a Messenger account
+      tags:
+        - Facebook Messenger
+    patch:
+      operationId: UpdateMessengerAccount
+      parameters:
+        - description: External id of the account you want to update. In this case it is the Facebook Page ID.
+          in: path
+          name: external_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                access_token:
+                  example: updatedAccessToken
+                  type: string
+                applications:
+                  example:
+                    - newApplicationId
+                  items:
+                    type: string
+                  type: array
+                name:
+                  description: The new account name
+                  example: newName
+                  type: string
+              type: object
+        description: Request body can contain any of the following
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                properties:
+                  access_token:
+                    description: The provider access token
+                    example: updatedAccessToken
+                    type: string
+                  api_key:
+                    description: The external api key for this account
+                    example: abcd1234
+                    type: string
+                  applications:
+                    description: The array of associated application ids
+                    example:
+                      - newApplicationId
+                    items:
+                      type: string
+                    type: array
+                  external_id:
+                    description: The external identifier for this account. In this case it is the Facebook Page ID.
+                    example: "12345678"
+                    type: string
+                  name:
+                    description: The account name
+                    example: newName
+                    type: string
+                  provider:
+                    description: The provider (will be `messenger`).
+                    example: messenger
+                    type: string
+                required:
+                  - external_id
+                  - api_key
+                  - provider
+                  - access_token
+                type: object
+          description: OK.
+        "400":
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    example: Found errors validating 1 of your submitted parameters.
+                    type: string
+                  instance:
+                    example: null
+                    type: string
+                  invalid_params:
+                    items:
+                      properties:
+                        name:
+                          example: external_id
+                          type: string
+                        reason:
+                          example: "'external_id' parameter cannot be changed"
+                          type: string
+                      type: object
+                    type: array
+                  title:
+                    example: Your request parameters didn't validate.
+                    type: string
+                  type:
+                    example: https://www.nexmo.com/messages/Errors#InvalidParams
+                    type: string
+                type: object
+          description: Bad Request.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/401Response"
+          description: Unauthorized.
+        "403":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/403Response"
+          description: Forbidden.
+        "404":
+          description: Not Found.
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+      summary: Update a Messenger account
+      tags:
+        - Facebook Messenger
+  "/viber_service_msg/{external_id}":
+    get:
+      operationId: GetVSMAccount
+      parameters:
+        - description: External id of the account you want to retrieve. In this case it will be your Viber Service Message ID.
+          in: path
+          name: external_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/VSMAccountResponse"
+          description: OK.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/401Response"
+          description: Unauthorized.
+        "404":
+          description: Not Found.
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+      summary: Retrieve a Viber Service Message account
+      tags:
+        - Viber Service Message
+  "/whatsapp/{external_id}":
+    get:
+      operationId: GetWAAccount
+      parameters:
+        - description: External id of the account you want to retrieve. In this case it will be the WhatsApp number.
+          in: path
+          name: external_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/WAAccountResponse"
+          description: OK.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/401Response"
+          description: Unauthorized.
+        "404":
+          description: Not Found.
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+      summary: Retrieve a Whatsapp account
+      tags:
+        - WhatsApp
+  "/{provider}/{external_id}/applications":
+    post:
+      operationId: LinkApplication
+      parameters:
+        - description: Provider of the account you want to assign an application to
+          in: path
+          name: provider
+          required: true
+          schema:
+            enum:
+              - messenger
+              - viber_service_msg
+              - whatsapp
+            type: string
+        - description: External id of the account you want to assign an application to. This is channel dependent. For Facebook it will be your Facebook Page ID, for Viber your Viber Service Message ID and for WhatsApp your WhatsApp number.
+          in: path
+          name: external_id
+          required: true
+          schema:
+            type: string
+      requestBody:
+        content:
+          application/json:
+            schema:
+              properties:
+                application:
+                  description: There is just one application allowed per an account. The application type must be type "messages". For more information please see [Application API Spec](https://developer.nexmo.com/api/application.v2)
+                  example: applicationId
+                  type: string
+              required:
+                - application
+              type: object
+        description: Request body can contain any of the following. Please note, the only one application can be linked to the account.
+        required: true
+      responses:
+        "200":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AccountResponse"
+          description: OK.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/401Response"
+          description: Unauthorized.
+        "403":
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    description: The application does not exist or the application type is not "messages"
+                    example: Cannot link application
+                    type: string
+                  title:
+                    example: Forbidden
+                    type: string
+                  type:
+                    example: https://www.nexmo.com/messages/Errors#Forbidden
+                    type: string
+                type: object
+          description: Forbidden.
+        "409":
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    description: The account reached limit of maximum number of linked applications. (The only one application is allowed per an account)
+                    example: Unable to link application
+                    type: string
+                  title:
+                    example: Application conflict
+                    type: string
+                  type:
+                    example: https://www.nexmo.com/messages/Errors#Conflict
+                    type: string
+                type: object
+          description: Conflict.
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+      summary: Link application to an account
+      tags:
+        - Application
+  "/{provider}/{external_id}/applications/{application_id}":
+    delete:
+      operationId: UnliWithoutApplicationnkApplication
+      parameters:
+        - description: Provider of the account you want to unlink an application from
+          in: path
+          name: provider
+          required: true
+          schema:
+            enum:
+              - messenger
+              - viber_service_msg
+              - whatsapp
+            type: string
+        - description: External id of the account you want to unlink an application from
+          in: path
+          name: external_id
+          required: true
+          schema:
+            type: string
+        - description: Id of the application you want to unlink
+          in: path
+          name: application_id
+          required: true
+          schema:
+            type: string
+      responses:
+        "204":
+          description: No Content.
+        "401":
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/401Response"
+          description: Unauthorized.
+        "403":
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    example: Cannot unlink application
+                    type: string
+                  title:
+                    example: Forbidden
+                    type: string
+                  type:
+                    example: https://www.nexmo.com/messages/Errors#Forbidden
+                    type: string
+                type: object
+          description: Forbidden.
+        "409":
+          content:
+            application/json:
+              schema:
+                properties:
+                  detail:
+                    description: The application is not linked or doesn't exist.
+                    example: Unable to unlink application
+                    type: string
+                  title:
+                    example: Application conflict
+                    type: string
+                  type:
+                    example: https://www.nexmo.com/messages/Errors#Conflict
+                    type: string
+                type: object
+          description: Conflict.
+      security:
+        - bearerAuth: []
+        - basicAuth: []
+      summary: Unlink application from an account
+      tags:
+        - Application
+components:
+  schemas:
+    401Response:
+      properties:
+        detail:
+          example: Request header 'Authorization' missing / Invalid Token
+          type: string
+        title:
+          example: Unauthorised
+          type: string
+      type: object
+    403Response:
+      properties:
+        title:
+          example: Wrong authentication - You are not authorised to access this resource
+          type: string
+      type: object
+    AccountResponse:
+      properties:
+        access_token:
+          description: The provider access token (only for `messenger`)
+          example: accessToken
+          type: string
+        api_key:
+          description: The external api key for this account
+          example: abcd1234
+          type: string
+        applications:
+          description: The array of associated application ids
+          example:
+            - applicationId
+          items:
+            type: string
+          type: array
+        external_id:
+          description: The external identifier for this account
+          example: "12345678"
+          type: string
+        name:
+          description: The account name
+          example: name
+          type: string
+        provider:
+          description: The provider (will be one of `messenger, viber_service_msg, whatsapp`).
+          enum:
+            - messenger
+            - viber_service_msg
+            - whatsapp
+          example: messenger
+          type: string
+      required:
+        - external_id
+        - api_key
+        - provider
+      type: object
+    GetAllAccountResponse:
+      allOf:
+        - $ref: "#/components/schemas/MessengerAccountResponse"
+        - $ref: "#/components/schemas/VSMAccountResponse"
+        - $ref: "#/components/schemas/WAAccountResponse"
+    MessengerAccountResponse:
+      properties:
+        access_token:
+          description: The provider access token
+          example: myAccessToken
+          type: string
+        api_key:
+          description: The external api key for this account
+          example: abcd1234
+          type: string
+        applications:
+          description: The array of associated application ids
+          example:
+            - optionalApplicationId
+          items:
+            type: string
+          type: array
+        external_id:
+          description: The external identifier for this account
+          example: "12345678"
+          type: string
+        name:
+          description: The account name
+          example: optionalName
+          type: string
+        provider:
+          description: The provider (will be `messenger`).
+          example: messenger
+          type: string
+      required:
+        - external_id
+        - api_key
+        - provider
+        - access_token
+      type: object
+    VSMAccountResponse:
+      properties:
+        api_key:
+          description: The external api key for this account
+          example: abcd1234
+          type: string
+        applications:
+          description: The array of associated application ids
+          example:
+            - optionalApplicationId
+          items:
+            type: string
+          type: array
+        external_id:
+          description: The external identifier for this account
+          example: "12345678"
+          type: string
+        name:
+          description: The account name
+          example: optionalName
+          type: string
+        provider:
+          description: The provider (will be `viber_service_msg`).
+          example: viber_service_msg
+          type: string
+      required:
+        - external_id
+        - api_key
+        - provider
+      type: object
+    WAAccountResponse:
+      properties:
+        api_key:
+          description: The external api key for this account
+          example: abcd1234
+          type: string
+        applications:
+          description: The array of associated application ids
+          example:
+            - optionalApplicationId
+          items:
+            type: string
+          type: array
+        external_id:
+          description: The external identifier for this account
+          example: "12345678"
+          type: string
+        name:
+          description: The account name
+          example: optionalName
+          type: string
+        provider:
+          description: The provider (will be `whatsapp`).
+          example: whatsapp
+          type: string
+      required:
+        - external_id
+        - api_key
+        - provider
+      type: object
+  securitySchemes:
+    basicAuth:
+      scheme: basic
+      type: http
+    bearerAuth:
+      bearerFormat: JWT
+      scheme: bearer
+      type: http

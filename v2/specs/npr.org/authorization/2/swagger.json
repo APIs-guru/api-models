@@ -1,0 +1,838 @@
+{
+  "swagger": "2.0",
+  "schemes": [
+    "https"
+  ],
+  "host": "authorization.api.npr.org",
+  "info": {
+    "contact": {
+      "email": "NPROneEnterprise@npr.org",
+      "name": "NPR One Enterprise Team",
+      "url": "https://dev.npr.org",
+      "x-twitter": "NPR"
+    },
+    "description": "The interface to our OAuth2 server",
+    "termsOfService": "https://dev.npr.org/guide/prerequisites/terms-of-use",
+    "title": "NPR Authorization Service",
+    "version": "2",
+    "x-apisguru-categories": [
+      "entertainment"
+    ],
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_twitter.com_NPR_profile_image.jpeg"
+    },
+    "x-origin": [
+      {
+        "format": "swagger",
+        "url": "https://authorization.api.npr.org/v2/swagger.json",
+        "version": "2.0"
+      }
+    ],
+    "x-providerName": "npr.org",
+    "x-serviceName": "authorization"
+  },
+  "externalDocs": {
+    "description": "Learn more at the NPR One Developer Center",
+    "url": "https://dev.npr.org/guide/services/authorization"
+  },
+  "consumes": [
+    "application/json"
+  ],
+  "produces": [
+    "application/json"
+  ],
+  "securityDefinitions": {
+    "oauth2": {
+      "authorizationUrl": "https://authorization.api.npr.org/v2/authorize",
+      "flow": "accessCode",
+      "scopes": {
+        "identity.readonly": "See your personal information, such as your first name, last name, and favorite station.",
+        "identity.write": "Update your personal information, such as your favorite station(s) or program(s) you follow, on your behalf.",
+        "listening.readonly": "See your NPR One listening history and get audio recommendations.",
+        "listening.write": "Record that you have heard, marked as interesting, and/or skipped NPR One stories in order to personalize future audio recommendations.",
+        "localactivation": "Connect you with your local NPR member station for communication purposes."
+      },
+      "tokenUrl": "https://authorization.api.npr.org/v2/token",
+      "type": "oauth2"
+    }
+  },
+  "parameters": {
+    "Authorization": {
+      "description": "Your access token from the Authorization Service. Should start with `Bearer`, followed by a space, followed by the token.",
+      "in": "header",
+      "name": "Authorization",
+      "required": true,
+      "type": "string"
+    },
+    "X-Advertising-ID": {
+      "description": "A device-specific advertising identifier, if possible. Apple's IDFA is an example.",
+      "in": "header",
+      "name": "X-Advertising-ID",
+      "required": false,
+      "type": "string"
+    }
+  },
+  "responses": {
+    "400WithDocument": {
+      "description": "A bad request; generally, one or more parameters passed in were incorrect or missing",
+      "headers": {
+        "X-RateLimit-Limit": {
+          "description": "The number of allowed requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Remaining": {
+          "description": "The number of remaining requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Reset": {
+          "description": "The number of seconds left in the current period",
+          "type": "integer"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "401WithDocument": {
+      "description": "The client is not authorized to complete this request. Check to ensure a valid access token was passed in the headers.",
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "404WithDocument": {
+      "description": "The resource with the requested ID could not be found, and the server was unable to complete the request.",
+      "headers": {
+        "X-RateLimit-Limit": {
+          "description": "The number of allowed requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Remaining": {
+          "description": "The number of remaining requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Reset": {
+          "description": "The number of seconds left in the current period",
+          "type": "integer"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "429WithDocument": {
+      "description": "The client has exceeded the number of daily calls as per their rate limit. For now, this only applies to prototype applications and untrusted clients. Trusted clients will never be rate-limited, nor will any production apps.",
+      "headers": {
+        "X-RateLimit-Limit": {
+          "description": "The number of allowed requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Remaining": {
+          "description": "The number of remaining requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Reset": {
+          "description": "The number of seconds left in the current period",
+          "type": "integer"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "500WithDocument": {
+      "description": "A server error",
+      "headers": {
+        "X-RateLimit-Limit": {
+          "description": "The number of allowed requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Remaining": {
+          "description": "The number of remaining requests in the current period",
+          "type": "integer"
+        },
+        "X-RateLimit-Reset": {
+          "description": "The number of seconds left in the current period",
+          "type": "integer"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "503WithDocument": {
+      "description": "The system is undergoing maintenance and we are unable to fulfill this request. Look for a `Retry-After` header to see the predicted time the system will be back up.",
+      "headers": {
+        "Retry-After": {
+          "description": "The predicted time the system will be back up",
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/ErrorDocument"
+      }
+    },
+    "Simple400": {
+      "description": "A bad request; generally, one or more parameters passed in were incorrect or missing",
+      "schema": {
+        "$ref": "#/definitions/SimpleError"
+      }
+    },
+    "Simple401": {
+      "description": "The client credentials were invalid or the authorization server denied the request.",
+      "schema": {
+        "$ref": "#/definitions/SimpleError"
+      }
+    },
+    "Simple500": {
+      "description": "A server error",
+      "schema": {
+        "$ref": "#/definitions/SimpleError"
+      }
+    },
+    "Simple503": {
+      "description": "The system is undergoing maintenance and we are unable to fulfill this request. Look for a `Retry-After` header to see the predicted time the system will be back up.",
+      "headers": {
+        "Retry-After": {
+          "description": "The predicted time the system will be back up",
+          "format": "date-time",
+          "type": "string"
+        }
+      },
+      "schema": {
+        "$ref": "#/definitions/SimpleError"
+      }
+    }
+  },
+  "paths": {
+    "/v2/authorize": {
+      "get": {
+        "description": "If the parameters passed to this endpoint are correct, it will redirect to `npr.org/oauth2/login` for the user to complete the sign-in.\n\nCurrently acceptable values for `scope` are any combination of the following:\n- `identity.readonly` - for read-only access to the Identity Service\n- `identity.write` - for write access to the Identity Service\n- `listening.readonly` - for read-only access to the Listening Service\n- `listening.write` - for write access to the Listening Service\n- `localactivation` - for all access to the Local Activation Service\n\nIt is generally suggested that you assume that you will need all of the current scopes in order to successfully implement an NPR One application.\n\nIf the parameters passed in are NOT correct and the client passed in a valid `redirect_uri` parameter, the request will be redirected to `{{YOUR_REDIRECT_URI}}?error={{ERROR_TYPE}}&message={{ERROR_DESCRIPTION}}`.\nIf the parameters passed are NOT correct and the client did not pass in a valid `redirect_uri` parameter, this endpoint will return the errors encoded as JSON objects (along with the corresponding HTTP status code -- usually 400).\nThe latter is intended for development and debugging purposes -- in a real-world situation, errors returned as JSON objects are irretrievable by the client application, and thus passing in a valid `redirect_uri` is critical even for the purpose of capturing errors.\n\nIf the user successfully logs in and authorizes the application, the request will be redirected to `{{YOUR_REDIRECT_URI}}?code={{AUTHORIZATION_CODE}}&state={{CSRF_TOKEN}}`\n\nIf the user DENIES the application, they will be redirected to `{{YOUR_REDIRECT_URI}}?error=denied&message=The%20user%20has%20denied%20the%20login%20and%20access%20request&state={{CSRF_TOKEN}}`.\nThis means that if your application flow requires a user to log in in order to proceed, it is up to you to give them the proper messaging explaining that the sign-in must be authorized in order to continue.\n\nFinally, please do not confuse an authorization code with an access token. Once your app has completed this flow, you will still need to call `POST /v2/token` in order to swap the code for a valid access token.",
+        "operationId": "getAuthorizationPage",
+        "parameters": [
+          {
+            "description": "The client's ID",
+            "in": "query",
+            "name": "client_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The client's URL to redirect to if the authentication is approved",
+            "in": "query",
+            "name": "redirect_uri",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The type of response; currently, only `code` is supported",
+            "enum": [
+              "code"
+            ],
+            "in": "query",
+            "name": "response_type",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "A space-separated list of scope(s) requested by the application",
+            "in": "query",
+            "name": "scope",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "An email address to prepopulate on the login screen",
+            "in": "query",
+            "name": "email",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "A CSRF token generated by the client, to be roundtripped through the request for added security",
+            "in": "query",
+            "name": "state",
+            "required": true,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "text/html"
+        ],
+        "responses": {
+          "302": {
+            "description": "The correct parameters were passed in and we are redirecting to the authentication page; OR, a valid `redirect_uri` was supplied but there was another error, and the error type and message are embedded in the querystring.",
+            "headers": {
+              "Location": {
+                "description": "The sign-in page to redirect to; most clients will process this redirect automatically.",
+                "format": "url",
+                "type": "string"
+              }
+            }
+          },
+          "400": {
+            "description": "A bad request; generally, one or more parameters passed in were incorrect or missing. This error will only be shown if the client did not pass in a valid `redirect_uri`; otherwise, all errors will be returned as 302s to the supplied `redirect_uri`, with the error type and message embedded in the querystring.",
+            "schema": {
+              "$ref": "#/definitions/SimpleError"
+            }
+          },
+          "401": {
+            "description": "The client credentials were invalid (i.e., the `redirect_uri` does not match what we have stored for this client) or the authorization server denied the request. This error will only be shown if the client did not pass in a valid `redirect_uri`; otherwise, all errors will be returned as 302s to the supplied `redirect_uri`, with the error type and message embedded in the querystring.",
+            "schema": {
+              "$ref": "#/definitions/SimpleError"
+            }
+          },
+          "500": {
+            "description": "There was an unspecified server error. This error will only be shown if the client did not pass in a valid `redirect_uri`; otherwise, all errors will be returned as 302s to the supplied `redirect_uri`, with the error type and message embedded in the querystring.",
+            "schema": {
+              "$ref": "#/definitions/SimpleError"
+            }
+          },
+          "503": {
+            "description": "The system is undergoing maintenance and we are unable to fulfill this request. This error will only be shown if the client did not pass in a valid `redirect_uri`; otherwise, all errors will be returned as 302s to the supplied `redirect_uri`, with the error type and message embedded in the querystring.",
+            "schema": {
+              "$ref": "#/definitions/SimpleError"
+            }
+          }
+        },
+        "summary": "Show a web-based login/signup form to a user",
+        "tags": [
+          "authorization"
+        ]
+      }
+    },
+    "/v2/device": {
+      "post": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "description": "This flow should only be used by clients who cannot show a native webview or do not have advanced input controls. It is an alternative to `GET /v2/authorize`.\n\nThird-party clients will need to use one or the other of these two endpoints, but they will generally not use both.",
+        "operationId": "generateDeviceCode",
+        "parameters": [
+          {
+            "description": "The client's ID",
+            "in": "formData",
+            "name": "client_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The client's secret key",
+            "in": "formData",
+            "name": "client_secret",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "A space-separated list of scope(s) requested by the application. Required for all untrusted clients; will be ignored for trusted clients.",
+            "in": "formData",
+            "name": "scope",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "201": {
+            "description": "We have generated a unique device code and user code. These will only be valid for the amount of time specified in the `expires_in` field; if the user does not complete the login process in that amount of time, the client will need to request a new set of codes.",
+            "schema": {
+              "$ref": "#/definitions/DeviceCodeData"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/Simple400"
+          },
+          "401": {
+            "$ref": "#/responses/Simple401"
+          },
+          "500": {
+            "$ref": "#/responses/Simple500"
+          },
+          "503": {
+            "$ref": "#/responses/Simple503"
+          }
+        },
+        "summary": "Initiate an OAuth2 login flow for limited input devices",
+        "tags": [
+          "authorization"
+        ]
+      }
+    },
+    "/v2/token": {
+      "post": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "description": "Please be aware that the required parameters are contingent on the `grant_type` that you select.\n\nFor the `authorization_code` grant type, you are **required** to pass in the `code` and `redirect_uri` parameters. `service`, `username` and `password` parameters will be ignored.\n\nFor the `client_credentials` grant type, you do not need to pass in any additional parameters beyond the basic requirements. `code`, `redirect_uri`, `service`, `username` and `password` parameters will be ignored.\n\nFor the `device_code` grant type, you are **required** to pass in the `code` parameter. If you are a third-party developer, you are also required to provide the `scope` parameter; see the documentation for `GET /v2/authorize` for possible values. `redirect_uri`, `service`, `username` and `password` parameters will be ignored.\n\nFor the `password` grant type, you are **required** to pass in the `username` and `password` parameters. The `code` and `redirect_uri` parameters are ignored.\nThird-party developers do not have access to this grant type.\n\nFor the `refresh_token` grant type, you are **required** to pass in the `refresh_token` parameter. The `scope` parameter can optionally be used to request a different set of scopes than were used in the original request, but it **cannot** contain any scopes that were not previously requested. If not specified, then `scope` will be set to whichever scopes were used for the original access token request. If trading in an old non-expiring access token for a refresh-enabled token, set the value of `refresh_token` to the access token value and `token_type_hint` must be set to `access_token`. `code`, `redirect_uri`, `service`, `username` and `password` parameters will be ignored.\n\nThe `temporary_user` and `anonymous_user` grant types are custom grant types created by NPR to suit our needs for functionality such as our &quot;try-before-you-buy&quot; experience. If you are a third-party developer, you will not have access to these grant types unless we have explicitly given you permission within our system.\nFor these grant types, if you are a third-party developer, you are required to provide the `scope` parameter; see the documentation for `GET /v2/authorize` for possible values. `code`, `redirect_uri`, `service`, `username` and `password` parameters will be ignored.\n\nThe `third_party` grant type is another custom grant type created by NPR to handle login via third-party providers such as Facebook and Google. If you are a third-party developer, you will not have access to this grant types unless we have explicitly given you permission within our system.\nFor this grant type, you are **required** to pass in the `service` and `token` parameters. If you are a third-party developer, you are also required to provide the `scope` parameter; see the documentation for `GET /v2/authorize` for possible values. The `code` and `redirect_uri` parameters are ignored.\n\nIf you are unsure of which grant type to select, assume that `authorization_code` is the one you want.\n\nNote that at this time, refresh tokens are an opt-in feature; however, in the future, they will gradually transition to being opt-out, and ultimately required for all clients. Our general guidance at this time is that if this endpoint starts returning refresh tokens for you, you are responsible for implementing the code to handle them appropriately in accordance with the OAuth 2.0 spec. For more information about our gradual rollout of this feature, please contact the NPR One API team.",
+        "operationId": "createToken",
+        "parameters": [
+          {
+            "description": "The type of grant the client is requesting",
+            "enum": [
+              "authorization_code",
+              "client_credentials",
+              "device_code",
+              "password",
+              "refresh_token",
+              "temporary_user",
+              "anonymous_user",
+              "third_party"
+            ],
+            "in": "formData",
+            "name": "grant_type",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The client's ID, required for all grant types.",
+            "in": "formData",
+            "name": "client_id",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The client's secret, required for all grant types.",
+            "in": "formData",
+            "name": "client_secret",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "Required for `authorization_code` and `device_code` grant types. The authorization code from a successful call to `/v2/authorize`, or a device code from a successful call to `/v2/device`.",
+            "in": "formData",
+            "name": "code",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Required for `authorization_code` grant type. The requested redirect_uri.",
+            "in": "formData",
+            "name": "redirect_uri",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Required for `password` grant type. The email address of an NPR user.",
+            "format": "email",
+            "in": "formData",
+            "name": "username",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Required for `password` grant type. The password that matches the user specified with the username parameter.",
+            "format": "password",
+            "in": "formData",
+            "name": "password",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Required for `third_party` grant type. The name of the third-party login provider.",
+            "enum": [
+              "facebook",
+              "google",
+              "microsoft",
+              "janrain",
+              "comcast"
+            ],
+            "in": "formData",
+            "name": "service",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Required for `refresh_token` grant type. A valid refresh token from a previous successful call to `POST /v2/token`.",
+            "in": "formData",
+            "name": "refresh_token",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "Required for third-party developers using the `device_code`, `temporary_user`, and `third_party` grant types. Optionally used by the `refresh_token` grant type. A space-separated list of scope(s) requested by the application.",
+            "in": "formData",
+            "name": "scope",
+            "required": false,
+            "type": "string"
+          },
+          {
+            "description": "A hint about the type of the token submitted for a new access and refresh token. If unspecified, the default value is assumed to be `refresh_token`.",
+            "enum": [
+              "access_token",
+              "refresh_token"
+            ],
+            "in": "formData",
+            "name": "token_type_hint",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "A new token was successfully created",
+            "schema": {
+              "$ref": "#/definitions/AccessTokenData"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/Simple400"
+          },
+          "401": {
+            "description": "The client credentials were invalid (any grant type), the user credentials were invalid (`password` grant type), the user has not yet logged in or has purposely denied the request (`device_code` grant type), or the authorization server denied the request.",
+            "schema": {
+              "$ref": "#/definitions/SimpleError"
+            }
+          },
+          "500": {
+            "$ref": "#/responses/Simple500"
+          },
+          "503": {
+            "$ref": "#/responses/Simple503"
+          }
+        },
+        "summary": "Create a new OAuth2 access token",
+        "tags": [
+          "authorization"
+        ]
+      }
+    },
+    "/v2/token/revoke": {
+      "post": {
+        "consumes": [
+          "application/x-www-form-urlencoded"
+        ],
+        "description": "Our implementation follows the proposed IETF specification [RFC-7009](https://tools.ietf.org/html/rfc7009).\n\nIf your client application offers the ability to for a logged-in user to log out, and you have access to a long-lived\n`client_credentials` token (i.e. you have generated one that you are storing securely for the lifetime of the entire app\ninstall), we suggest (but do not require) that you call this endpoint and revoke the access token belonging to the\nlogged-in user as part of your logout process. If you do not already have a long-lived `client_credentials` token,\nplease don't generate one just for the purposes of calling this endpoint.\n\nIf you are building a prototype application, we also recommend that you use this endpoint to clean up access tokens\nthat you generate during the testing of your app and do not intend to reuse.\n\nNote that revoking an access token will automatically revoke any refresh tokens associated with it, and vice-versa.",
+        "operationId": "revokeToken",
+        "parameters": [
+          {
+            "description": "A `client_credentials` access token from the same client application as the token being revoked. Should start with `Bearer`, followed by a space, followed by the token.",
+            "in": "header",
+            "name": "Authorization",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "The access token or refresh token that the client wants to have revoked.",
+            "in": "formData",
+            "name": "token",
+            "required": true,
+            "type": "string"
+          },
+          {
+            "description": "A hint about the type of the token submitted for revocation. If unspecified, the default value is assumed to be `access_token`.",
+            "enum": [
+              "access_token",
+              "refresh_token"
+            ],
+            "in": "formData",
+            "name": "token_type_hint",
+            "required": false,
+            "type": "string"
+          }
+        ],
+        "produces": [
+          "application/json"
+        ],
+        "responses": {
+          "200": {
+            "description": "The old token was successfully revoked",
+            "schema": {
+              "description": "An empty JSON object",
+              "type": "object"
+            }
+          },
+          "400": {
+            "$ref": "#/responses/Simple400"
+          },
+          "401": {
+            "$ref": "#/responses/Simple401"
+          },
+          "403": {
+            "description": "The client associated with the access token in the header does not own the access token that this request is attempting to revoke.",
+            "schema": {
+              "$ref": "#/definitions/SimpleError"
+            }
+          },
+          "500": {
+            "$ref": "#/responses/Simple500"
+          },
+          "503": {
+            "$ref": "#/responses/Simple503"
+          }
+        },
+        "summary": "Revoke an existing OAuth2 access token",
+        "tags": [
+          "authorization"
+        ]
+      }
+    }
+  },
+  "definitions": {
+    "AbstractCDocLink": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/AbstractLink"
+        },
+        {
+          "properties": {
+            "content-type": {
+              "description": "The MIME type of the response of this link",
+              "type": "string"
+            }
+          },
+          "required": [
+            "content-type"
+          ]
+        }
+      ]
+    },
+    "AbstractLink": {
+      "properties": {
+        "href": {
+          "description": "The link to be followed",
+          "format": "uri",
+          "type": "string"
+        }
+      },
+      "required": [
+        "href"
+      ]
+    },
+    "AccessTokenData": {
+      "properties": {
+        "access_token": {
+          "description": "The access token to use for all future calls",
+          "type": "string"
+        },
+        "expires_in": {
+          "description": "The remaining lifetime of the access token (in seconds)",
+          "format": "int32",
+          "type": "integer"
+        },
+        "refresh_token": {
+          "description": "The refresh token that can be used to obtain a new access token if the old one expires; if a refresh token is returned, it is the client's responsibility to securely cache it for future use.",
+          "type": "string"
+        },
+        "token_type": {
+          "description": "Identifies the type of token returned. At this time, this field always has the value `Bearer`.",
+          "enum": [
+            "Bearer",
+            "MAC"
+          ],
+          "type": "string"
+        }
+      },
+      "required": [
+        "access_token",
+        "token_type",
+        "expires_in"
+      ]
+    },
+    "Affiliation": {
+      "description": "A program (aggregation) that a given user has shown an affiliation with",
+      "properties": {
+        "daysSinceLastListen": {
+          "description": "The number of days since a user last listened to a story from this aggregation. Absent if user never listened to the aggregation.",
+          "format": "int32",
+          "type": "integer"
+        },
+        "following": {
+          "default": false,
+          "description": "Whether or not the user is following the aggregation. When changing affiliation status, the client is expected to toggle this value and then send the entire object back.",
+          "type": "boolean"
+        },
+        "href": {
+          "description": "A link to more details about the program from the NPR Story API",
+          "type": "string"
+        },
+        "id": {
+          "description": "A unique identifier for the aggregation (program)",
+          "type": "string"
+        },
+        "notif_following": {
+          "description": "The topic in Firebase Cloud Messaging to which the device should subscribe if it supports notifications and the user wants notifications about the podcasts they follow.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "notif_rated": {
+          "description": "The topic in Firebase Cloud Messaging to which the device should subscribe if it supports notifications and the user wants notifications about the podcasts they have highly rated.",
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        "rating": {
+          "description": "The user's average rating for this affiliation on a scale of 0-1. Absent if user never listened to the aggregation.",
+          "format": "float",
+          "type": "number"
+        },
+        "title": {
+          "description": "The title for the aggregation (program)",
+          "type": "string"
+        }
+      },
+      "required": [
+        "id",
+        "href",
+        "following"
+      ]
+    },
+    "CollectionDocument": {
+      "description": "Base Collection.Doc+JSON output",
+      "properties": {
+        "attributes": {
+          "type": "object"
+        },
+        "errors": {
+          "description": "A list of encountered errors, ignored on POST, PUT",
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "href": {
+          "description": "A URL representation of the resource; should generally be ignored by clients unless noted otherwise",
+          "type": "string"
+        },
+        "items": {
+          "items": {
+            "type": "object"
+          },
+          "type": "array"
+        },
+        "links": {
+          "type": "object"
+        },
+        "version": {
+          "default": "1.0",
+          "description": "The version of the Collection.Doc+JSON spec being used",
+          "type": "string"
+        }
+      },
+      "required": [
+        "version",
+        "href",
+        "attributes",
+        "items",
+        "links",
+        "errors"
+      ]
+    },
+    "DeviceCodeData": {
+      "properties": {
+        "device_code": {
+          "description": "40-character code for the device to input into the /token endpoint, not for display to the user",
+          "type": "string"
+        },
+        "expires_in": {
+          "default": 1800,
+          "description": "The number of seconds for which this set of codes will be valid, after which they will be purged",
+          "format": "int32",
+          "type": "integer"
+        },
+        "interval": {
+          "default": 5,
+          "description": "The number of seconds the client application should maintain between requests to the /token endpoint",
+          "format": "int32",
+          "type": "integer"
+        },
+        "user_code": {
+          "description": "6-character alphanumeric code for the user to enter at http://npr.org/device, to be displayed by the client application",
+          "type": "string"
+        },
+        "verification_uri": {
+          "default": "http://npr.org/device",
+          "description": "The URL where the user should input their code, to be displayed by the client application",
+          "type": "string"
+        }
+      },
+      "required": [
+        "device_code",
+        "user_code",
+        "verification_uri",
+        "expires_in",
+        "interval"
+      ]
+    },
+    "Error": {
+      "description": "A serialized version of any error encountered when processing this request",
+      "properties": {
+        "code": {
+          "description": "The error code",
+          "format": "int32",
+          "type": "integer"
+        },
+        "debug": {
+          "description": "Additional debug information if debug mode is turned on",
+          "type": "string"
+        },
+        "text": {
+          "description": "The error description",
+          "type": "string"
+        }
+      },
+      "required": [
+        "code"
+      ]
+    },
+    "ErrorDocument": {
+      "allOf": [
+        {
+          "$ref": "#/definitions/CollectionDocument"
+        },
+        {
+          "properties": {
+            "attributes": {
+              "description": "Ignore; will be empty for errors",
+              "type": "object"
+            },
+            "errors": {
+              "description": "A list of encountered errors, ignored on POST, PUT",
+              "items": {
+                "$ref": "#/definitions/Error"
+              },
+              "type": "array"
+            },
+            "items": {
+              "description": "Ignore; will be empty for errors",
+              "items": {
+                "type": "object"
+              },
+              "type": "array"
+            },
+            "links": {
+              "description": "Ignore; will be empty for errors",
+              "type": "object"
+            }
+          }
+        }
+      ],
+      "description": "A Collection.doc+JSON representation of an error result from an API call"
+    },
+    "SimpleError": {
+      "description": "A simple representation of an error result from an API call, rarely used; in most cases we still return a Collection.doc+JSON document for errors",
+      "properties": {
+        "message": {
+          "description": "A message describing the error that occurred",
+          "type": "string"
+        },
+        "type": {
+          "default": "error",
+          "description": "A short string representing the type of error that occurred",
+          "type": "string"
+        }
+      },
+      "required": [
+        "message",
+        "type"
+      ]
+    }
+  }
+}

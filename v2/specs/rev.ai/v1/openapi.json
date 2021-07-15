@@ -1,0 +1,1853 @@
+{
+  "openapi": "3.0.1",
+  "servers": [
+    {
+      "description": "Rev.ai API",
+      "url": "https://api.rev.ai/speechtotext/v1"
+    }
+  ],
+  "info": {
+    "description": "Rev.ai provides quality speech-text recognition via a RESTful API. All public methods and objects are documented here for developer reference.\nFor a real-time speech to text solution, use Rev.ai's [Streaming API](/docs/streaming).\n\n# Base Endpoint\n\nThe base url for this version of the API is\n\n> `https://api.rev.ai/speechtotext/v1`\n\nAll endpoints described in this documentation are relative to this base url.\n\n# Quick Start\n\nFollow the [getting started checklist](https://www.rev.ai/getting_started)\n\n## Get your Access Token\n\nYou can generate your [access token](#section/Authentication/Access-Token) on the [settings page](https://www.rev.ai/access_token) of your account. This access token only needs to be generated once and never expires. You can re-generate your token, however this will invalidate the previous token.\n\n## Submit a File\n\nTo submit an audio file for transcription to Rev.ai:\n\n```\ncurl -X POST \"https://api.rev.ai/speechtotext/v1/jobs\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d \"{\\\"media_url\\\":\\\"https://www.rev.ai/FTC_Sample_1.mp3\\\",\\\"metadata\\\":\\\"This is a sample submit jobs option\\\"}\"\n```\n\nYou’ll receive a response like this:\n\n~~~\n{\n  \"id\": \"Umx5c6F7pH7r\",\n  \"created_on\": \"2018-09-15T05:14:38.13\",\n  \"name\": \"sample.mp3\",\n  \"metadata\": \"This is a sample submit jobs option for multipart\",\n  \"status\": \"in_progress\"\n}\n~~~\n\nThe `id` (in this case `Umx5c6F7pH7r`) will allow you to retrieve your transcript.\n\n## Get Your Transcript\n\nOnce a transcription job's `status` becomes `transcribed`, you can retrieve the transcript in JSON format by running:\n\n```\ncurl -X GET \"https://api.rev.ai/speechtotext/v1/jobs/{id}/transcript\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\" -H \"Accept: application/vnd.rev.transcript.v1.0+json\"\n```\n\nAlternatively you can get the plain text version by running:\n\n```\ncurl -X GET \"https://api.rev.ai/speechtotext/v1/jobs/{id}/transcript\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\" -H \"Accept: text/plain\"\n```\n\nYou can poll for the `status` of your job by querying for the job periodically:\n\n```\ncurl -X GET https://api.rev.ai/speechtotext/v1/jobs/{id} -H \"Authorization: Bearer $REV_ACCESS_TOKEN\"\n```\n\n**Note:** Polling is NOT recommended in a production server. Rather, use [webhooks](#section/Webhooks) to asynchronously receive notifications once the transcription job completes\n\nIf you have any further questions, contact us at <support@rev.ai>\n\n# Submitting Files\n\nTwo `POST` request formats can be used to submit a file: `application/json` or `multipart/form-data`.\n\n## JSON\n\nThis is the preferred method of file submission. Uses the `media_url` property to provide a direct download URL to the Rev.ai server.\nThis method supports the use of pre-signed URLs. Links to videos hosted on platforms like Youtube are not valid because they are not direct download links.\n\n**Important note on presigned URLs:**\nSigned URLs usually have an expiration time which is configurable. To ensure the Rev.ai server can access the link, make sure the expiration time is set to 2 hours or more.\nIn the event you plan on resending the same file, make sure to generate a new presigned URL.\n\n## FormData\n\nUsed to send a local file to the Rev.ai server. This allows the customer to send the file directly from the host machine.\nCertain limits apply to this format, see the [Async API Limits section](#section/Async-API-Limits) for more detals.\n\n# Turnaround Time and Chunking\n\nOften, especially for shorter files, your transcript will be ready in 5 minutes or less. It generally takes no longer than 15 minutes to return longer audios. If you require faster turn around time please contact <support@rev.ai>\n\nChunking is the act of breaking audio files into smaller segments. Rev.ai uses this method to decrease turnaround time of audios greater than 3 minutes in length.\n\n# Webhooks\n\nIf the optional `callback_url` is provided, the API will make an HTTP POST request to the `callback_url` with the\nfollowing request body when the job either completes successfully or fails.\n\n## Sample Webhook\n\n**On Successful Transcription Job**\n\n```\n{\n  \"job\": {\n    \"id\": \"Umx5c6F7pH7r\",\n    \"status\": \"transcribed\",\n    \"created_on\": \"2018-05-05T23:23:22.29Z\",\n    \"callback_url\": \"https://www.example.com/callback\",\n    \"duration_seconds\": 356.24,\n    \"media_url\": \"https://www.rev.ai/FTC_Sample_1.mp3\"\n  }\n}\n```\n\n**On Failed Transcription Job**\n\n```\n{\n  \"job\": {\n    \"id\": \"Umx5c6F7pH7r\",\n    \"status\": \"failed\",\n    \"created_on\": \"2018-05-05T23:23:22.29Z\",\n    \"callback_url\": \"https://www.example.com/callback\",\n    \"failure\": \"download_failure\",\n    \"failure_detail\": \"Failed to download media file. Please check your url and file type\"\n  }\n}\n```\n\n**Important notes for using webhooks:**\nThe API will make a POST request, not a GET request, to the `callback_url`. The request body is the job details.\nYou can unsubscribe from a webhook by responding to the webhook request with a 200 response.\nIf a webhook invocation does not receive a 200 Rev.ai will retry the `callback_url` every 30 minutes until either 24 hours have passed or we receive a 200 response.\n\nFor initial webhook testing, you can try using a third party webhook testing tool such as [https://webhook.site/](https://webhook.site/).\n\n# Async API Limits\n\nThe following default limits apply per user, per endpoint and are configurable by Rev.ai support. If you have any further questions, contact us at <support@rev.ai>\n\n- 10,000 transcription requests submitted every 10 minutes\n- 500 transcriptions processed every 10 minutes\n- Multi-part/form-data requests to the /jobs endpoint have a concurrency limit of 10 and a file size limit of 2GB\n- POST requests to the /jobs endpoint that use the media_url property do not have a concurrency limit or file restriction. They are only limited by the first two bullet points\n\n# Error Handling\n\nThe API indicates failure with 4xx and 5xx HTTP status codes. 4xx status codes indicate an error due to the request provided (e.g., a required parameter was omitted). 5xx error indicate an error with Rev.ai's servers.\n\nWhen an 4xx error occurs during invocation of a request, the API responds with a [problem details](https://tools.ietf.org/html/rfc7807) as HTTP response payload.\n\nThe problem details information is represented as a JSON object with the following optional properties:\n\n| Property   | Description                                   |\n|------------|-----------------------------------------------|\n| type       | a URI representing the type for the error     |\n| title      | a short human readable description of type    |\n| details    | additional details of the error               |\n| status     | HTTP status code of the error                 |\n\nIn addition to the properties listed above, the problem details object may list additional properties that help to troubleshoot the problem.\n\n## Example Errors\n\n```\n// Bad Submit Job Request\n{\n  \"parameter\": {\n    \"media_url\": [\n      \"The media_url field is required\"\n    ]\n  },\n  \"type\": \"https://www.rev.ai/api/v1/errors/invalid-parameters\",\n  \"title\": \"Your request parameters didn't validate\",\n  \"status\": 400\n}\n\n// Invalid Transcript State\n{\n  \"allowed_values\": [\n    \"transcribed\"\n  ],\n  \"current_value\": \"in_progress\",\n  \"type\": \"https://rev.ai/api/v1/errors/invalid-job-state\",\n  \"title\": \"Job is in invalid state\",\n  \"detail\": \"Job is in invalid state to obtain the transcript\",\n  \"status\": 409\n}\n```\n\n## Retrying Failed Requests\n\nSome errors can be resolved simply by retrying the request. The following error codes are likely to be resolved with successive retries.\n\n| Status Code | Error |\n|---|:---|\n| 429 | Too Many Requests |\n| 502 | Bad Gateway |\n| 503 | Service Unavailable |\n| 504 | Gateway Timeout |\n\nNote: With the exception of the 429 status code, it is recommended that the maximum number of retries be limited to 5 attempts per request. The number of retries can be higher\nfor 429 errors but if you notice consistent throttling please contact us at <support@rev.ai>.\n",
+    "title": "Asynchronous Speech-To-Text API Documentation",
+    "version": "v1",
+    "x-apisguru-categories": [
+      "text"
+    ],
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_rev.ai_content_curve_img_revai_favicon.png"
+    },
+    "x-origin": [
+      {
+        "format": "openapi",
+        "url": "http://api.rev.ai/openapi/v1/documentation.yaml",
+        "version": "3.0"
+      }
+    ],
+    "x-providerName": "rev.ai"
+  },
+  "security": [
+    {
+      "Access-Token": []
+    }
+  ],
+  "paths": {
+    "/account": {
+      "get": {
+        "description": "Get the developer's account information",
+        "operationId": "GetAccount",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Account"
+                }
+              }
+            },
+            "description": "Rev.ai Account"
+          },
+          "401": {
+            "$ref": "#/paths/~1jobs~1%7Bid%7D/get/responses/401"
+          }
+        },
+        "summary": "Get Account",
+        "tags": [
+          "Account"
+        ],
+        "x-code-samples": [
+          {
+            "label": "curl",
+            "lang": "Shell",
+            "source": "curl -X GET \"https://api.rev.ai/speechtotext/v1/account\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\"\n"
+          },
+          {
+            "lang": "Python",
+            "source": "from rev_ai import apiclient\naccess_token = 'your_access_token'\n\n# Create client with your access token\nclient = apiclient.RevAiAPIClient(access_token)\n\n# Get account info\naccount = client.get_account()\nprint(account.email)\nprint(account.balance_seconds)\n"
+          },
+          {
+            "label": "Node",
+            "lang": "JavaScript",
+            "source": "import { RevAiApiClient } from 'revai-node-sdk';\nvar accessToken = \"yourAccessToken\";\n\n// Initialize your client with your access token\nvar client = new RevAiApiClient(accessToken);\n\n// Get account info\nvar account = await client.getAccount();\n"
+          },
+          {
+            "lang": "Java",
+            "source": "String accessToken = \"Your Access Token\";\n\n// Initialize your client with your access token\nApiClient apiClient = new ApiClient(accessToken);\n\n// Get account info\nRevAiAccount account = apiClient.getAccount();\n"
+          }
+        ]
+      }
+    },
+    "/jobs": {
+      "get": {
+        "description": "Gets a list of transcription jobs submitted within the last 30 days in reverse chronological order up to the provided `limit` number of jobs per call. **Note:** Jobs older than 30 days will not be listed. Pagination is supported via passing the last job `id` from a previous call into `starting_after`.",
+        "operationId": "GetListOfJobs",
+        "parameters": [
+          {
+            "description": "Limits the number of jobs returned, default is 100, max is 1000",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "If specified, returns transcription jobs submitted before the job with this id, exclusive (job with this id is not included)",
+            "in": "query",
+            "name": "starting_after",
+            "required": false,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/Job"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "List of Rev.ai Transcription Jobs"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "parameter": {
+                    "limit": [
+                      "The max value for limit is 1000"
+                    ]
+                  },
+                  "status": 400,
+                  "title": "Your request parameters didn't validate",
+                  "type": "https://www.rev.ai/api/v1/errors/invalid-parameters"
+                },
+                "schema": {
+                  "allOf": [
+                    {
+                      "description": "Problem details object returned on errors",
+                      "properties": {
+                        "status": {
+                          "description": "HTTP status code of the error",
+                          "type": "integer"
+                        },
+                        "title": {
+                          "description": "Short, human-readable summary of the problem type",
+                          "type": "string"
+                        },
+                        "type": {
+                          "description": "URI that identifies the problem",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    {
+                      "properties": {
+                        "parameters": {
+                          "description": "Invalid properties object where each property is the key, mapped to a list of reasons why the property is invalid",
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "$ref": "#/paths/~1jobs~1%7Bid%7D/get/responses/401"
+          }
+        },
+        "summary": "Get List of Jobs",
+        "tags": [
+          "Jobs"
+        ],
+        "x-code-samples": [
+          {
+            "label": "curl",
+            "lang": "Shell",
+            "source": "# Get list of jobs with a limit of 10 jobs\ncurl -X GET \"https://api.rev.ai/speechtotext/v1/jobs?limit=10\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\"\n\n# Get list of jobs starting after (submitted before) job with id Umx5c6F7pH7r\ncurl -X GET \"https://api.rev.ai/speechtotext/v1/jobs?starting_after=Umx5c6F7pH7r\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\"\n"
+          },
+          {
+            "lang": "Python",
+            "source": "from rev_ai import apiclient\naccess_token = 'your_access_token'\n\n# Create client with your access token\nclient = apiclient.RevAiAPIClient(access_token)\n\n# Get list of jobs with a limit of 10 jobs\njobs = client.get_list_of_jobs(limit=10)\n\n# Get list of jobs starting after (submitted before) job with id Umx5c6F7pH7r\njobs = client.get_list_of_jobs(starting_after='Umx5c6F7pH7r')\n"
+          },
+          {
+            "label": "Node",
+            "lang": "JavaScript",
+            "source": "import { RevAiApiClient } from 'revai-node-sdk';\nvar accessToken = \"yourAccessToken\";\n\n// Initialize your client with your access token\nvar client = new RevAiApiClient(accessToken);\n\n// Get list of jobs with a limit of 10 jobs\nvar jobs = await client.getListOfJobs(10);\n\n// Get list of jobs starting after (submitted before) job with id Umx5c6F7pH7r\nvar jobs = await client.getListOfJobs(undefined, 'Umx5c6F7pH7r');\n"
+          },
+          {
+            "lang": "Java",
+            "source": "String accessToken = \"Your Access Token\";\n\n// Initialize your client with your access token\nApiClient apiClient = new ApiClient(accessToken);\n\n// Get list of jobs with a limit of 10 jobs\nint numberOfJobsToReturn = 10;\nList<RevAiJob> tenJobs = apiClient.getListOfJobs(numberOfJobsToReturn);\n\n// Get list of jobs starting after (submitted before) job with id Umx5c6F7pH7r\nString jobId = \"Umx5c6F7pH7r\";\nList<RevAiJob> jobsStartingAfter = apiClient.getListOfJobs(jobId);\n"
+          }
+        ]
+      },
+      "post": {
+        "description": "Starts an asynchronous job to transcribe speech-to-text for a media file. Media files can be specified in two ways, either by including a public url to the media in the transcription job `options` or by uploading a local file as part of a multipart/form request.",
+        "operationId": "SubmitTranscriptionJob",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/SubmitJobMediaUrlOptions"
+              }
+            },
+            "multipart/form-data": {
+              "schema": {
+                "properties": {
+                  "media": {
+                    "description": "Limited to files less than 2GB in size. If the file is larger than 2GB, submit a transcription job using `media_url`. **Note:** Media files longer than 17 hours are not supported for English transcription, and media files longer than 12 hours are not supported for non-English transcription. For non-English jobs, expected turnaround time can be up to 6 hours.",
+                    "format": "binary",
+                    "type": "string"
+                  },
+                  "options": {
+                    "$ref": "#/components/schemas/SubmitJobOptions"
+                  }
+                },
+                "type": "object"
+              }
+            }
+          },
+          "description": "Transcription Job Options",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Transcription Job Details"
+          },
+          "400": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "parameter": {
+                    "media_url": [
+                      "The media_url field is required"
+                    ]
+                  },
+                  "status": 400,
+                  "title": "Your request parameters didn't validate",
+                  "type": "https://www.rev.ai/api/v1/errors/invalid-parameters"
+                },
+                "schema": {
+                  "allOf": [
+                    {
+                      "description": "Problem details object returned on errors",
+                      "properties": {
+                        "status": {
+                          "description": "HTTP status code of the error",
+                          "type": "integer"
+                        },
+                        "title": {
+                          "description": "Short, human-readable summary of the problem type",
+                          "type": "string"
+                        },
+                        "type": {
+                          "description": "URI that identifies the problem",
+                          "type": "string"
+                        }
+                      },
+                      "type": "object"
+                    },
+                    {
+                      "properties": {
+                        "parameters": {
+                          "description": "Invalid properties object where each property is the key, mapped to a list of reasons why the property is invalid",
+                          "type": "object"
+                        }
+                      },
+                      "type": "object"
+                    }
+                  ]
+                }
+              }
+            },
+            "description": "Bad Request"
+          },
+          "401": {
+            "$ref": "#/paths/~1jobs~1%7Bid%7D/get/responses/401"
+          },
+          "413": {
+            "$ref": "#/components/responses/PayloadTooLarge"
+          }
+        },
+        "summary": "Submit Transcription Job",
+        "tags": [
+          "Jobs"
+        ],
+        "x-code-samples": [
+          {
+            "label": "curl",
+            "lang": "Shell",
+            "source": "# Submit via media URL. URL must be publicly accessible and a direct link to media, note that custom_vocabularies parameter is optional\ncurl -X POST \"https://api.rev.ai/speechtotext/v1/jobs\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\" -H \"Content-Type: application/json\" -d \"{\\\"media_url\\\":\\\"https://www.rev.ai/FTC_Sample_1.mp3\\\",\\\"metadata\\\":\\\"This is a sample submit jobs option\\\", \\\"custom_vocabularies\\\":[{\\\"phrases\\\": [\\\"Amelia Earhart\\\", \\\"Paul McCartney\\\"]}]}\"\n\n# Submit for local uploads. Must include the audio type, note that custom_vocabularies parameter is optional\ncurl -X POST \"https://api.rev.ai/speechtotext/v1/jobs\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\" -H \"Content-Type: multipart/form-data\" -F \"media=@/path/to/media_file.mp3;type=audio/mp3\" -F \"options={\\\"metadata\\\":\\\"This is a sample submit jobs option for multipart\\\", \\\"custom_vocabularies\\\":[{\\\"phrases\\\": [\\\"Amelia Earhart\\\", \\\"Paul McCartney\\\"]}]}\"\n"
+          },
+          {
+            "lang": "Python",
+            "source": "from rev_ai import apiclient\nfrom rev_ai.models import CustomVocabulary\naccess_token = 'your_access_token'\n\n# (optional) Create custom_vocabularies to submit with job\ncustom_vocabularies = [CustomVocabulary([\"Amelia Earhart\", \"Paul McCartney\"])]\n\n# Create client with your access token\nclient = apiclient.RevAiAPIClient(access_token)\n\n# Submit job from media url\nurl_job = client.submit_job_url(media_url=\"https://www.rev.ai/FTC_Sample_1.mp3\", metadata=\"My_metadata\", callback_url=\"https://example.com/callback\", skip_diarization=False, custom_vocabularies=custom_vocabularies)\n\n# Submit from local file\nfile_job = client.submit_job_local_file(filename=\"/path/to/media/file.mp3\", metadata=\"This_is_some_job_metadata\", callback_url=\"https://example.com/callback\", skip_diarization=False, custom_vocabularies=custom_vocabularies)\n"
+          },
+          {
+            "label": "Node",
+            "lang": "JavaScript",
+            "source": "const revai = require('revai-node-sdk');\n// ES6 compliant alternative import method also available below.\n// Note however that this is not as widely supported as the require syntax.\n// import {RevAiApiClient} from 'revai-node-sdk';\n\nvar accessToken = \"yourAccessToken\";\n\n// Initialize your client with your access token\nvar client = new revai.RevAiApiClient(accessToken);\n\n// (optional) Create a job options object to include additional optional parameters\nvar jobOptions = {\n    metadata: \"Sample submit job\",\n    callback_url: \"https://example.com/callback\",\n    skip_diarization: false,\n    custom_vocabularies: [{\n        phrases: [\n            \"Amelia Earhart\",\n            \"Paul McCartney\"\n        ]\n    }]\n};\n\n// Submit job from media url\nvar urlJob = client.submitJobUrl(\"https://www.rev.ai/FTC_Sample_1.mp3\", jobOptions);\n\n// Submit from local file\nvar fileJob = client.submitJobLocalFile(\"/path/to/file.mp4\", jobOptions);\n"
+          },
+          {
+            "lang": "Java",
+            "source": "String accessToken = \"Your Access Token\";\n\n// Initialize your client with your access token\nApiClient apiClient = new ApiClient(accessToken);\n\n// (optional) Create a job options object to include additional optional parameters\nRevAiJobOptions revAiJobOptions = new RevAiJobOptions();\nrevAiJobOptions.setMetadata(\"Sample submit job\");\nrevAiJobOptions.setCallbackUrl(\"https://example.com/callback\");\nrevAiJobOptions.setSkipDiarization(false);\nrevAiJobOptions.setSkipPunctuation(false);\n\n// Submit job from media url\nString urlLinkToFile = \"https://www.rev.ai/FTC_Sample_1.mp3\";\nRevAiJob urlJob apiClient.submitJobUrl(urlLinkToFile, revAiJobOptions);\n\n// Submit from local file\nString pathToLocalFile = \"/path/to/file.mp4\"\nRevAiJob fileJob = apiClient.submitJobLocalFile(pathToLocalFile, revAiJobOptions);\n"
+          }
+        ]
+      }
+    },
+    "/jobs/{id}": {
+      "delete": {
+        "description": "Deletes a transcription job. All data related to the job, such as input media and transcript, will be permanently deleted. A job can only be deleted once it's completed (either with success or failure).",
+        "operationId": "DeleteJobById",
+        "responses": {
+          "204": {
+            "description": "Job was successfully deleted"
+          },
+          "401": {
+            "$ref": "#/paths/~1jobs~1%7Bid%7D/get/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/JobNotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/InvalidDeletionState"
+          }
+        },
+        "summary": "Delete Job by Id",
+        "tags": [
+          "Jobs"
+        ],
+        "x-code-samples": [
+          {
+            "label": "curl",
+            "lang": "Shell",
+            "source": "curl -X DELETE \"https://api.rev.ai/speechtotext/v1/jobs/{id}\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\"\n"
+          },
+          {
+            "lang": "Python",
+            "source": "from rev_ai import apiclient\naccess_token = 'your_access_token'\njob_id = 'your_job_id'\n\n# Create client with your access token\nclient = apiclient.RevAiAPIClient(access_token)\n\n# Delete job\nclient.delete_job(job_id)\n"
+          },
+          {
+            "label": "Node",
+            "lang": "JavaScript",
+            "source": "import { RevAiApiClient } from 'revai-node-sdk';\nvar accessToken = \"yourAccessToken\";\nvar jobId = \"yourJobId\";\n\n// Initialize your client with your access token\nvar client = new RevAiApiClient(accessToken);\n\n// Delete job\nawait client.deleteJob(jobId);\n"
+          },
+          {
+            "lang": "Java",
+            "source": "String accessToken = \"Your Access Token\";\nString jobId = \"yourJobId\";\n\n// Initialize your client with your access token\nApiClient apiClient = new ApiClient(accessToken);\n\n// Delete job\napiClient.deleteJob(jobId);\n"
+          }
+        ]
+      },
+      "get": {
+        "description": "Returns information about a transcription job",
+        "operationId": "GetJobById",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "Failed Job": {
+                    "value": {
+                      "completed_on": "2018-05-05T23:23:24.11Z",
+                      "created_on": "2018-05-05T23:23:22.29Z",
+                      "failure": "download_failure",
+                      "failure_detail": "Failed to download media file. Please check your url and file type",
+                      "id": "Umx5c6F7pH7r",
+                      "status": "failed"
+                    }
+                  },
+                  "New Job": {
+                    "value": {
+                      "created_on": "2018-05-05T23:23:22.29Z",
+                      "id": "Umx5c6F7pH7r",
+                      "status": "in_progress"
+                    }
+                  },
+                  "Transcribed Job": {
+                    "value": {
+                      "callback_url": "https://www.example.com/callback",
+                      "completed_on": "2018-05-05T23:45:13.41Z",
+                      "created_on": "2018-05-05T23:23:22.29Z",
+                      "duration_seconds": 356.24,
+                      "id": "Umx5c6F7pH7r",
+                      "media_url": "https://www.rev.ai/FTC_Sample_1.mp3",
+                      "status": "transcribed"
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Job"
+                }
+              }
+            },
+            "description": "Transcription Job Details"
+          },
+          "401": {
+            "content": {
+              "application/problem+json": {
+                "example": {
+                  "status": 401,
+                  "title": "Authorization has been denied for this request"
+                },
+                "schema": {
+                  "properties": {
+                    "status": {
+                      "description": "HTTP status code of the error",
+                      "type": "integer"
+                    },
+                    "title": {
+                      "description": "Short, human-readable summary of the problem type",
+                      "type": "string"
+                    }
+                  }
+                }
+              }
+            },
+            "description": "Request Unauthorized\n***\nCaused by an old or invalid [access token](#section/Authentication/Access-Token), try regenerating your token on your [access token page](https://rev.ai/access_token).\n"
+          },
+          "404": {
+            "$ref": "#/components/responses/JobNotFound"
+          }
+        },
+        "summary": "Get Job By Id",
+        "tags": [
+          "Jobs"
+        ],
+        "x-code-samples": [
+          {
+            "label": "curl",
+            "lang": "Shell",
+            "source": "curl -X GET \"https://api.rev.ai/speechtotext/v1/jobs/{id}\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\"\n"
+          },
+          {
+            "lang": "Python",
+            "source": "from rev_ai import apiclient\naccess_token = 'your_access_token'\njob_id = 'your_job_id'\n\n# Create client with your access token\nclient = apiclient.RevAiAPIClient(access_token)\n\n# Get job details\njob_details = client.get_job_details(job_id)\n"
+          },
+          {
+            "label": "Node",
+            "lang": "JavaScript",
+            "source": "import { RevAiApiClient } from 'revai-node-sdk';\nvar accessToken = \"yourAccessToken\";\nvar jobId = \"yourJobId\";\n\n// Initialize your client with your access token\nvar client = new RevAiApiClient(accessToken);\n\n// Get job details\nvar jobDetails = await client.getJobDetails(jobId);\n"
+          },
+          {
+            "lang": "Java",
+            "source": "String accessToken = \"Your Access Token\";\nString jobId = \"yourJobId\";\n\n// Initialize your client with your access token\nApiClient apiClient = new ApiClient(accessToken);\n\n// Get job details\nRevAiJob jobDetails = apiClient.getJobDetails(jobId);\n"
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/jobId"
+        }
+      ]
+    },
+    "/jobs/{id}/captions": {
+      "get": {
+        "description": "Returns the caption output for a transcription job. We currently support SubRip (SRT) and Web Video Text Tracks (VTT) output.\nCaption output format can be specified in the `Accept` header. Returns SRT by default.\n***\nNote: For streaming jobs, transient failure of our storage during a live session may prevent the final hypothesis elements from saving properly, resulting in an incomplete caption file. This is rare, but not impossible.\n",
+        "operationId": "GetCaptions",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/acceptCaption"
+          },
+          {
+            "description": "Identifies which channel of the job output to caption. Default is `null` which works only for jobs with no `speaker_channels_count` provided during job submission.",
+            "in": "query",
+            "name": "speaker_channel",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/x-subrip": {
+                "examples": {
+                  "SubRip Text (SRT)": {
+                    "value": "1\n00:00:01,210 --> 00:00:04,840\nHello there, this is a example captions output\n\n2\n00:00:07,350 --> 00:00:10,970\nEach caption group is in the SubRip Text\nfile format\n"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/responses/CaptionSrt"
+                }
+              },
+              "text/vtt": {
+                "examples": {
+                  "WebVTT (VTT)": {
+                    "value": "WebVTT\n\n1\n00:00:01,210 ==> 00:00:04,840\nHello there,\nthis is an example captions output\n\n2\n00:00:07,350 --> 00:00:10,970\nEach caption group is in the vtt\nfile format\n"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/responses/CaptionVtt"
+                }
+              }
+            },
+            "description": "Rev.ai API Captions\n***\nNote: Caption output format is required in the Accept header. The supported headers are `application/x-subrip` and `text/vtt`.\n([SRT](https://en.wikipedia.org/wiki/SubRip))\n"
+          },
+          "401": {
+            "$ref": "#/paths/~1jobs~1%7Bid%7D/get/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/JobNotFound"
+          },
+          "405": {
+            "$ref": "#/components/responses/InvalidJobPropertyCaptions"
+          },
+          "406": {
+            "$ref": "#/components/responses/InvalidCaptionFormat"
+          },
+          "409": {
+            "$ref": "#/components/responses/InvalidJobState"
+          }
+        },
+        "summary": "Get Captions",
+        "tags": [
+          "Captions"
+        ],
+        "x-code-samples": [
+          {
+            "label": "curl",
+            "lang": "Shell",
+            "source": "curl -X GET \"https://api.rev.ai/speechtotext/v1/jobs/{id}/captions\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\" -H \"Accept: application/x-subrip\"\n"
+          },
+          {
+            "lang": "Python",
+            "source": "import json\nfrom rev_ai import apiclient\naccess_token = 'your_access_token'\njob_id = 'your_job_id'\n\n# Create client with your access token\nclient = apiclient.RevAiAPIClient(access_token)\n\n# Get captions\ncaptions = client.get_captions(job_id)\nprint(captions)\n"
+          },
+          {
+            "label": "Node",
+            "lang": "JavaScript",
+            "source": "import { RevAiApiClient } from 'revai-node-sdk';\nvar accessToken = \"yourAccessToken\";\nvar jobId = \"yourJobId\";\n\n// Initialize your client with your access token\nvar client = new RevAiApiClient(accessToken);\n\n// Get captions\nvar captions = await client.getCaptions(jobId);\n"
+          },
+          {
+            "lang": "Java",
+            "source": "String accessToken = \"Your Access Token\";\nString jobId = \"yourJobId\";\n\n// Initialize your client with your access token\nApiClient apiClient = new ApiClient(accessToken);\n\n// Get captions\nInputStream captions = apiClient.getCaptions(jobId);\n"
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/jobId"
+        }
+      ]
+    },
+    "/jobs/{id}/transcript": {
+      "get": {
+        "description": "Returns the transcript for a completed transcription job. Transcript can be returned as either JSON or plaintext format. Transcript output format can be specified in the `Accept` header. Returns JSON by default.\n***\nNote: For streaming jobs, transient failure of our storage during a live session may prevent the final hypothesis elements from saving properly, resulting in an incomplete transcript. This is rare, but not impossible. To guarantee 100% completeness, we recommend capturing all final hypothesis when you receive them on the client.\n",
+        "operationId": "GetTranscriptById",
+        "parameters": [
+          {
+            "$ref": "#/components/parameters/acceptTranscript"
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/vnd.rev.transcript.v1.0+json": {
+                "examples": {
+                  "skip_diarization false && skip_punctuation false": {
+                    "value": {
+                      "monologues": [
+                        {
+                          "elements": [
+                            {
+                              "confidence": 1,
+                              "end_ts": 1.5,
+                              "ts": 0.5,
+                              "type": "text",
+                              "value": "Hello"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 0.8,
+                              "end_ts": 2.85,
+                              "ts": 1.75,
+                              "type": "text",
+                              "value": "World"
+                            },
+                            {
+                              "type": "punct",
+                              "value": "."
+                            }
+                          ],
+                          "speaker": 1
+                        },
+                        {
+                          "elements": [
+                            {
+                              "confidence": 1,
+                              "end_ts": 3.5,
+                              "ts": 3,
+                              "type": "text",
+                              "value": "monologues"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 3.9,
+                              "ts": 3.6,
+                              "type": "text",
+                              "value": "are"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 4.3,
+                              "ts": 4,
+                              "type": "text",
+                              "value": "a"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 5.5,
+                              "ts": 4.5,
+                              "type": "text",
+                              "value": "block"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 6.14,
+                              "ts": 5.75,
+                              "type": "text",
+                              "value": "of"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "type": "unknown",
+                              "value": "<inaudible>"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 7.78,
+                              "ts": 6.5,
+                              "type": "text",
+                              "value": "text"
+                            },
+                            {
+                              "type": "punct",
+                              "value": "."
+                            }
+                          ],
+                          "speaker": 2
+                        }
+                      ]
+                    }
+                  },
+                  "skip_diarization false && skip_punctuation true": {
+                    "value": {
+                      "monologues": [
+                        {
+                          "elements": [
+                            {
+                              "confidence": 1,
+                              "end_ts": 1.5,
+                              "ts": 0.5,
+                              "type": "text",
+                              "value": "Hello"
+                            },
+                            {
+                              "confidence": 0.8,
+                              "end_ts": 2.85,
+                              "ts": 1.75,
+                              "type": "text",
+                              "value": "World"
+                            }
+                          ],
+                          "speaker": 1
+                        },
+                        {
+                          "elements": [
+                            {
+                              "confidence": 1,
+                              "end_ts": 3.5,
+                              "ts": 3,
+                              "type": "text",
+                              "value": "monologues"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 3.9,
+                              "ts": 3.6,
+                              "type": "text",
+                              "value": "are"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 4.3,
+                              "ts": 4,
+                              "type": "text",
+                              "value": "a"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 5.5,
+                              "ts": 4.5,
+                              "type": "text",
+                              "value": "block"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 6.14,
+                              "ts": 5.75,
+                              "type": "text",
+                              "value": "of"
+                            },
+                            {
+                              "type": "unknown",
+                              "value": "<inaudible>"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 7.78,
+                              "ts": 6.5,
+                              "type": "text",
+                              "value": "text"
+                            }
+                          ],
+                          "speaker": 2
+                        }
+                      ]
+                    }
+                  },
+                  "skip_diarization true && skip_punctuation false": {
+                    "value": {
+                      "monologues": [
+                        {
+                          "elements": [
+                            {
+                              "confidence": 1,
+                              "end_ts": 1.5,
+                              "ts": 0.5,
+                              "type": "text",
+                              "value": "Hello"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 0.8,
+                              "end_ts": 2.85,
+                              "ts": 1.75,
+                              "type": "text",
+                              "value": "World"
+                            },
+                            {
+                              "type": "punct",
+                              "value": "."
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 3.5,
+                              "ts": 3,
+                              "type": "text",
+                              "value": "monologues"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 3.9,
+                              "ts": 3.6,
+                              "type": "text",
+                              "value": "are"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 4.3,
+                              "ts": 4,
+                              "type": "text",
+                              "value": "a"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 5.5,
+                              "ts": 4.5,
+                              "type": "text",
+                              "value": "block"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 6.14,
+                              "ts": 5.75,
+                              "type": "text",
+                              "value": "of"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "type": "unknown",
+                              "value": "<inaudible>"
+                            },
+                            {
+                              "type": "punct",
+                              "value": " "
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 7.78,
+                              "ts": 6.5,
+                              "type": "text",
+                              "value": "text"
+                            },
+                            {
+                              "type": "punct",
+                              "value": "."
+                            }
+                          ],
+                          "speaker": 1
+                        }
+                      ]
+                    }
+                  },
+                  "skip_diarization true && skip_punctuation true": {
+                    "value": {
+                      "monologues": [
+                        {
+                          "elements": [
+                            {
+                              "confidence": 1,
+                              "end_ts": 1.5,
+                              "ts": 0.5,
+                              "type": "text",
+                              "value": "Hello"
+                            },
+                            {
+                              "confidence": 0.8,
+                              "end_ts": 2.85,
+                              "ts": 1.75,
+                              "type": "text",
+                              "value": "World"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 3.5,
+                              "ts": 3,
+                              "type": "text",
+                              "value": "monologues"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 3.9,
+                              "ts": 3.6,
+                              "type": "text",
+                              "value": "are"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 4.3,
+                              "ts": 4,
+                              "type": "text",
+                              "value": "a"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 5.5,
+                              "ts": 4.5,
+                              "type": "text",
+                              "value": "block"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 6.14,
+                              "ts": 5.75,
+                              "type": "text",
+                              "value": "of"
+                            },
+                            {
+                              "type": "unknown",
+                              "value": "<inaudible>"
+                            },
+                            {
+                              "confidence": 1,
+                              "end_ts": 7.78,
+                              "ts": 6.5,
+                              "type": "text",
+                              "value": "text"
+                            }
+                          ],
+                          "speaker": 1
+                        }
+                      ]
+                    }
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/Transcript"
+                }
+              },
+              "text/plain": {
+                "examples": {
+                  "skip_diarization false && skip_punctuation false": {
+                    "value": "Speaker 0:    00:00:00    Hello there, this is a sample transcript in plain text.\nSpeaker 1:    00:00:43    Words are returned with spaces between them.\n"
+                  },
+                  "skip_diarization false && skip_punctuation true": {
+                    "value": "Speaker 0:    00:00:00    Hello there this is a sample transcript in plain text\nSpeaker 1:    00:00:43    Words are returned with spaces between them\n"
+                  },
+                  "skip_diarization true && skip_punctuation false": {
+                    "value": "Speaker 0:    00:00:01    Hello there, this is a sample transcript in plain text. Words are returned with spaces between them.\n"
+                  },
+                  "skip_diarization true && skip_punctuation true": {
+                    "value": "Speaker 0:    00:00:01    Hello there this is a sample transcript in plain text Words are returned with spaces between them\n"
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/responses/TranscriptText"
+                }
+              }
+            },
+            "description": "Rev.ai API Transcript\n***\nNote: Transcript output format is required in the Accept header. Output can either be in Rev's JSON format or plaintext.\n"
+          },
+          "401": {
+            "$ref": "#/paths/~1jobs~1%7Bid%7D/get/responses/401"
+          },
+          "404": {
+            "$ref": "#/components/responses/JobNotFound"
+          },
+          "406": {
+            "$ref": "#/components/responses/InvalidTranscriptFormat"
+          },
+          "409": {
+            "$ref": "#/components/responses/InvalidJobState"
+          }
+        },
+        "summary": "Get Transcript By Id",
+        "tags": [
+          "Transcript"
+        ],
+        "x-code-samples": [
+          {
+            "label": "curl",
+            "lang": "Shell",
+            "source": "curl -X GET \"https://api.rev.ai/speechtotext/v1/jobs/{id}/transcript\" -H \"Authorization: Bearer $REV_ACCESS_TOKEN\" -H \"Accept: application/vnd.rev.transcript.v1.0+json\"\n"
+          },
+          {
+            "lang": "Python",
+            "source": "import json\nfrom rev_ai import apiclient\naccess_token = 'your_access_token'\njob_id = 'your_job_id'\n\n# Create client with your access token\nclient = apiclient.RevAiAPIClient(access_token)\n\n# Get transcript as text\ntranscript_text = client.get_transcript_text(job_id)\nprint(transcript_text)\n\n# Get transcript as json\ntranscript_json = client.get_transcript_json(job_id)\nprint(json.dumps(transcript_json))\n\n# Get transcript as object\ntranscript_obj = client.get_transcript_object(job_id)\nprint(transcript_obj)\n"
+          },
+          {
+            "label": "Node",
+            "lang": "JavaScript",
+            "source": "import { RevAiApiClient } from 'revai-node-sdk';\nvar accessToken = \"yourAccessToken\";\nvar jobId = \"yourJobId\";\n\n// Initialize your client with your access token\nvar client = new RevAiApiClient(accessToken);\n\n// Get transcript as text\nvar transcriptText = await client.getTranscriptText(jobId);\n\n// Get transcript as object\nvar transcriptObj = await client.getTranscriptObject(jobId);\n"
+          },
+          {
+            "lang": "Java",
+            "source": "String accessToken = \"Your Access Token\";\nString jobId = \"yourJobId\";\n\n// Initialize your client with your access token\nApiClient apiClient = new ApiClient(accessToken);\n\n// Get transcript as text\nString transcriptText = apiClient.getTranscriptText(jobId);\n\n// Get transcript as object\nRevAiTranscript transcriptObj = apiClient.getTranscriptObject(jobId);\n"
+          }
+        ]
+      },
+      "parameters": [
+        {
+          "$ref": "#/components/parameters/jobId"
+        }
+      ]
+    }
+  },
+  "components": {
+    "parameters": {
+      "acceptCaption": {
+        "description": "MIME type specifying the caption output format",
+        "in": "header",
+        "name": "Accept",
+        "required": false,
+        "schema": {
+          "enum": [
+            "application/x-subrip",
+            "text/vtt"
+          ],
+          "type": "string"
+        }
+      },
+      "acceptTranscript": {
+        "description": "MIME type specifying the transcription output format",
+        "in": "header",
+        "name": "Accept",
+        "required": false,
+        "schema": {
+          "enum": [
+            "application/vnd.rev.transcript.v1.0+json",
+            "text/plain"
+          ],
+          "type": "string"
+        }
+      },
+      "jobId": {
+        "description": "Rev.ai API Job Id",
+        "in": "path",
+        "name": "id",
+        "required": true,
+        "schema": {
+          "type": "string"
+        }
+      }
+    },
+    "responses": {
+      "CaptionSrt": {
+        "description": "Caption in SubRip Text format",
+        "x-content": {
+          "application/x-subrip": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "CaptionVtt": {
+        "description": "Caption in Web Video Text Tracks format",
+        "x-content": {
+          "text/vtt": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      },
+      "InvalidCaptionFormat": {
+        "content": {
+          "application/problem+json": {
+            "example": {
+              "allowed_values": [
+                "application/x-subrip",
+                "text/vtt"
+              ],
+              "current_value": "*/*",
+              "detail": "Unsupported value */*",
+              "status": 406,
+              "title": "Output format is not supported",
+              "type": "https://www.rev.ai/api/v1/errors/unsupported-output-format"
+            },
+            "schema": {
+              "allOf": [
+                {
+                  "description": "Problem details object returned on errors",
+                  "properties": {
+                    "status": {
+                      "description": "HTTP status code of the error",
+                      "type": "integer"
+                    },
+                    "title": {
+                      "description": "Short, human-readable summary of the problem type",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "URI that identifies the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "properties": {
+                    "allowed_values": {
+                      "description": "Allowed values for this request",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "current_value": {
+                      "description": "Value passed in given request",
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human-readable explanation specific to this occurrence of the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          }
+        },
+        "description": "Invalid Caption Format"
+      },
+      "InvalidDeletionState": {
+        "content": {
+          "application/problem+json": {
+            "example": {
+              "allowed_values": [
+                "transcribed",
+                "failed"
+              ],
+              "current_value": "in_progress",
+              "detail": "Job is in invalid state to be deleted",
+              "status": 409,
+              "title": "Job is in invalid state",
+              "type": "https://rev.ai/api/v1/errors/invalid-job-state"
+            },
+            "schema": {
+              "allOf": [
+                {
+                  "description": "Problem details object returned on errors",
+                  "properties": {
+                    "status": {
+                      "description": "HTTP status code of the error",
+                      "type": "integer"
+                    },
+                    "title": {
+                      "description": "Short, human-readable summary of the problem type",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "URI that identifies the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "properties": {
+                    "allowed_values": {
+                      "description": "Allowed values for this request",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "current_value": {
+                      "description": "Value passed in given request",
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human-readable explanation specific to this occurrence of the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          }
+        },
+        "description": "Invalid Deletion State\n"
+      },
+      "InvalidJobPropertyCaptions": {
+        "content": {
+          "application/problem+json": {
+            "example": {
+              "detail": "Job with speaker channels provided are not supported for retrieving captions",
+              "status": 405,
+              "title": "Job contains unsupported properties",
+              "type": "https://rev.ai/api/v1/errors/invalid-job-properties"
+            },
+            "schema": {
+              "allOf": [
+                {
+                  "description": "Problem details object returned on errors",
+                  "properties": {
+                    "status": {
+                      "description": "HTTP status code of the error",
+                      "type": "integer"
+                    },
+                    "title": {
+                      "description": "Short, human-readable summary of the problem type",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "URI that identifies the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "properties": {
+                    "detail": {
+                      "description": "Human-readable explanation specific to this occurrence of the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          }
+        },
+        "description": "Invalid Job Property"
+      },
+      "InvalidJobState": {
+        "content": {
+          "application/problem+json": {
+            "example": {
+              "allowed_values": [
+                "transcribed"
+              ],
+              "current_value": "in_progress",
+              "detail": "Job is in progress or failed",
+              "status": 409,
+              "title": "Job is in invalid state",
+              "type": "https://rev.ai/api/v1/errors/invalid-job-state"
+            },
+            "schema": {
+              "allOf": [
+                {
+                  "description": "Problem details object returned on errors",
+                  "properties": {
+                    "status": {
+                      "description": "HTTP status code of the error",
+                      "type": "integer"
+                    },
+                    "title": {
+                      "description": "Short, human-readable summary of the problem type",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "URI that identifies the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "properties": {
+                    "allowed_values": {
+                      "description": "Allowed values for this request",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "current_value": {
+                      "description": "Value passed in given request",
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human-readable explanation specific to this occurrence of the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          }
+        },
+        "description": "Invalid Job State\n***\nIn case of failure, more details can be found at [`GET /jobs/{id}`](#operation/GetJobById)\n"
+      },
+      "InvalidTranscriptFormat": {
+        "content": {
+          "application/problem+json": {
+            "example": {
+              "allowed_values": [
+                "text/plain",
+                "application/vnd.rev.transcript.v1.0+json"
+              ],
+              "current_value": "*/*",
+              "detail": "Unsupported value */*",
+              "status": 406,
+              "title": "Output format is not supported",
+              "type": "https://www.rev.ai/api/v1/errors/unsupported-output-format"
+            },
+            "schema": {
+              "allOf": [
+                {
+                  "description": "Problem details object returned on errors",
+                  "properties": {
+                    "status": {
+                      "description": "HTTP status code of the error",
+                      "type": "integer"
+                    },
+                    "title": {
+                      "description": "Short, human-readable summary of the problem type",
+                      "type": "string"
+                    },
+                    "type": {
+                      "description": "URI that identifies the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                },
+                {
+                  "properties": {
+                    "allowed_values": {
+                      "description": "Allowed values for this request",
+                      "items": {
+                        "type": "string"
+                      },
+                      "type": "array"
+                    },
+                    "current_value": {
+                      "description": "Value passed in given request",
+                      "type": "string"
+                    },
+                    "detail": {
+                      "description": "Human-readable explanation specific to this occurrence of the problem",
+                      "type": "string"
+                    }
+                  },
+                  "type": "object"
+                }
+              ]
+            }
+          }
+        },
+        "description": "Invalid Transcript Format"
+      },
+      "JobNotFound": {
+        "content": {
+          "application/problem+json": {
+            "example": {
+              "status": 404,
+              "title": "could not find job",
+              "type": "https://www.rev.ai/api/v1/errors/job-not-found"
+            },
+            "schema": {
+              "description": "Problem details object returned on errors",
+              "properties": {
+                "status": {
+                  "description": "HTTP status code of the error",
+                  "type": "integer"
+                },
+                "title": {
+                  "description": "Short, human-readable summary of the problem type",
+                  "type": "string"
+                },
+                "type": {
+                  "description": "URI that identifies the problem",
+                  "type": "string"
+                }
+              },
+              "type": "object"
+            }
+          }
+        },
+        "description": "Job Not Found"
+      },
+      "PayloadTooLarge": {
+        "content": {
+          "application/problem+json": {
+            "example": {
+              "detail": "Submitted payload exceeds maximum allowed file size",
+              "status": 413,
+              "title": "Payload Too Large"
+            },
+            "schema": {
+              "properties": {
+                "detail": {
+                  "description": "Human-readable explanation specific to this occurrence of the problem",
+                  "type": "string"
+                },
+                "status": {
+                  "description": "HTTP status code of the error",
+                  "type": "integer"
+                },
+                "title": {
+                  "description": "Short, human-readable summary of the problem type",
+                  "type": "string"
+                }
+              }
+            }
+          }
+        },
+        "description": "Payload Too Large\n***\nOnly returned when job is submitted using a local file as part of `multipart/form-data`. Use a `media_url`\nfor files larger than 2GBs\n"
+      },
+      "TranscriptText": {
+        "description": "Transcript in plain text format",
+        "x-content": {
+          "text/plain": {
+            "schema": {
+              "type": "string"
+            }
+          }
+        }
+      }
+    },
+    "schemas": {
+      "Account": {
+        "description": "Rev.ai Account Model",
+        "properties": {
+          "balance_seconds": {
+            "description": "Amount of Rev.ai API credits remaining in seconds",
+            "example": 150,
+            "type": "integer"
+          },
+          "email": {
+            "description": "Email of developer account",
+            "example": "jay@rev.ai",
+            "type": "string"
+          }
+        },
+        "type": "object"
+      },
+      "DescriptionlessJobOptions": {
+        "allOf": [
+          {
+            "properties": {
+              "metadata": {
+                "example": "sample metadata",
+                "maxLength": 512,
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          {
+            "properties": {
+              "callback_url": {
+                "example": "https://www.example.com/callback",
+                "nullable": true,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          {
+            "properties": {
+              "custom_vocabulary_id": {
+                "example": "cvgnDwmB6iXevn",
+                "nullable": true,
+                "type": "string"
+              },
+              "delete_after_seconds": {
+                "example": 50,
+                "maximum": 2592000,
+                "minimum": 0,
+                "nullable": true,
+                "type": "integer"
+              },
+              "filter_profanity": {
+                "default": false,
+                "example": true,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "language": {
+                "default": "en",
+                "enum": [
+                  "en",
+                  "ar",
+                  "bg",
+                  "ca",
+                  "cmn",
+                  "cs",
+                  "da",
+                  "de",
+                  "el",
+                  "es",
+                  "fi",
+                  "fr",
+                  "hi",
+                  "hr",
+                  "hu",
+                  "it",
+                  "ja",
+                  "ko",
+                  "lt",
+                  "lv",
+                  "ms",
+                  "nl",
+                  "no",
+                  "pl",
+                  "pt",
+                  "ro",
+                  "ru",
+                  "sk",
+                  "sl",
+                  "sv",
+                  "tr"
+                ],
+                "example": "en",
+                "nullable": true,
+                "type": "string"
+              },
+              "media_url": {
+                "example": "https://www.rev.ai/FTC_Sample_1.mp3",
+                "maxLength": 2048,
+                "nullable": true,
+                "type": "string"
+              },
+              "remove_disfluencies": {
+                "default": false,
+                "example": true,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "skip_diarization": {
+                "default": false,
+                "example": true,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "skip_punctuation": {
+                "default": false,
+                "example": true,
+                "nullable": true,
+                "type": "boolean"
+              },
+              "speaker_channels_count": {
+                "example": 2,
+                "maximum": 8,
+                "minimum": 1,
+                "nullable": true,
+                "type": "integer"
+              }
+            },
+            "type": "object"
+          }
+        ]
+      },
+      "Job": {
+        "allOf": [
+          {
+            "description": "Rev.ai Transcription Job\n***\nNote: properties are not displayed in the returned object if they are null\n",
+            "properties": {
+              "callback_url": {
+                "description": "Callback url provided by the user."
+              },
+              "completed_on": {
+                "description": "The date and time the job was completed, whether successfully or failing, in ISO-8601 UTC form",
+                "example": "2018-05-05T23:28:22.29Z",
+                "format": "dateTime",
+                "nullable": true,
+                "type": "string"
+              },
+              "created_on": {
+                "description": "The date and time the job was created in ISO-8601 UTC form",
+                "example": "2018-05-05T23:23:22.29Z",
+                "format": "dateTime",
+                "type": "string"
+              },
+              "custom_vocabulary_id": {
+                "description": "User-supplied custom vocabulary ID to be used with job for transcription."
+              },
+              "delete_after_seconds": {
+                "description": "Amount of time after job completion when job is auto-deleted. Present only when preference set in job request."
+              },
+              "duration_seconds": {
+                "description": "Duration of the file in seconds. Null if the file could not be retrieved or there was not a valid media file",
+                "example": 324.36,
+                "format": "double",
+                "nullable": true,
+                "type": "number"
+              },
+              "failure": {
+                "description": "Simple reason of why the transcription job failed. Check `failure_detail` for specific details and solutions",
+                "enum": [
+                  "internal_processing",
+                  "download_failure",
+                  "duration_exceeded",
+                  "duration_too_short",
+                  "invalid_media",
+                  "empty_media",
+                  "transcription",
+                  "insufficient_balance",
+                  "invoicing_limit_exceeded"
+                ],
+                "example": "download_failure",
+                "nullable": true,
+                "type": "string"
+              },
+              "failure_detail": {
+                "description": "Human-readable reason why the job failed",
+                "example": "Failed to download media file. Please check your url and file type",
+                "nullable": true,
+                "type": "string"
+              },
+              "filter_profanity": {
+                "description": "User-supplied preference on whether to remove explicit words."
+              },
+              "id": {
+                "description": "Id of the job",
+                "example": "Umx5c6F7pH7r",
+                "type": "string"
+              },
+              "language": {
+                "description": "User-supplied language to transcribe the audio into."
+              },
+              "media_url": {
+                "description": "Media url provided by the job submission. Null if the job was provided using a local file."
+              },
+              "metadata": {
+                "description": "Optional metadata that was provided during job submission"
+              },
+              "name": {
+                "description": "Name of the file provided. Present when the file name is available",
+                "example": "sample_audio.mp3",
+                "nullable": true,
+                "type": "string"
+              },
+              "remove_disfluencies": {
+                "description": "User-supplied preference on whether to remove disfluencies."
+              },
+              "skip_diarization": {
+                "description": "User-supplied preference on whether to skip diarization."
+              },
+              "skip_punctuation": {
+                "description": "User-supplied preference on whether to skip punctuation."
+              },
+              "speaker_channels_count": {
+                "description": "User-supplied number of speaker channels in the audio."
+              },
+              "status": {
+                "description": "Current status of the job",
+                "enum": [
+                  "in_progress",
+                  "transcribed",
+                  "failed"
+                ],
+                "example": "transcribed",
+                "type": "string"
+              },
+              "type": {
+                "description": "Type of speech recognition performed. Currently the only supported values are 'async' for asynchronous jobs and `stream` for streaming jobs",
+                "enum": [
+                  "async"
+                ],
+                "example": "async",
+                "nullable": false,
+                "type": "string"
+              }
+            },
+            "type": "object"
+          },
+          {
+            "$ref": "#/components/schemas/DescriptionlessJobOptions"
+          }
+        ],
+        "example": {
+          "created_on": "2018-05-05T23:23:22.29Z",
+          "delete_after_seconds": 50,
+          "id": "Umx5c6F7pH7r",
+          "status": "in_progress",
+          "type": "async"
+        }
+      },
+      "SubmitJobMediaUrlOptions": {
+        "allOf": [
+          {
+            "properties": {
+              "media_url": {
+                "description": "Direct download media url. Ignored if submitting job from file. **Note:** Media files longer than 17 hours are not supported for English transcription, and media files longer than 12 hours are not supported for non-English transcription. For non-English jobs, expected turnaround time can be up to 6 hours.",
+                "example": "https://www.rev.ai/FTC_Sample_1.mp3",
+                "maxLength": 2048,
+                "type": "string"
+              }
+            },
+            "required": [
+              "media_url"
+            ],
+            "type": "object"
+          },
+          {
+            "$ref": "#/components/schemas/SubmitJobOptions"
+          }
+        ]
+      },
+      "SubmitJobOptions": {
+        "allOf": [
+          {
+            "description": "Rev.ai Job Options Object Model",
+            "properties": {
+              "callback_url": {
+                "description": "Optional callback url to invoke when processing is complete"
+              },
+              "custom_vocabulary_id": {
+                "description": "**This feature is in beta.** You can supply the id of a pre-completed custom vocabulary that you submitted through the [Custom Vocabularies API](https://rev.ai/docs/streaming#operation/SubmitCustomVocabulary) instead of uploading the list of phrases using the `custom_vocabularies` parameter. Using `custom_vocabulary_id` or `custom_vocabularies` with the same list of phrases yields the same transcription result, but `custom_vocabulary_id` allows your submission to finish processing faster by 6 seconds on average. \n\nYou cannot use both `custom_vocabulary_id` and `custom_vocabularies` at the same time, and doing so will result in a 400 response. If the supplied id represents an incomplete, deleted, or non-existent custom vocabulary then you will receive a 404 response.\n"
+              },
+              "delete_after_seconds": {
+                "description": "Specify the number of seconds after job completion when job is auto-deleted. It may take up to 2 minutes after the scheduled time for the job to be deleted.\nThe number of seconds provided must range from `0` seconds to `2592000` seconds (30 days).\n"
+              },
+              "filter_profanity": {
+                "description": "Enabling this option will filter for approx. 600 profanities, which cover most use cases. If a transcribed word matches a word on this list, then all the characters of that word will be replaced by asterisks except for the first and last character.\n"
+              },
+              "language": {
+                "description": "You can provide a language parameter for transcribing audio in one of the following languages:\n\n| Language   | ISO 639 Language Code                                |\n|------------|-----------------------------------------------|\n| Arabic | ar |\n| Bulgarian  | bg |\n| Catalan    | ca |\n| Croatian   | hr |\n| Czech  | cs |\n| Danish | da |\n| Dutch  | nl |\n| English    | en |\n| Finnish    | fi |\n| French | fr |\n| German | de |\n| Greek  | el |\n| Hindi  | hi |\n| Hungarian  | hu |\n| Italian    | it |\n| Japanese   | ja |\n| Korean | ko |\n| Lithuanian | lt |\n| Latvian    | lv |\n| Malay  | ms |\n| Mandarin   | cmn |\n| Norwegian  | no |\n| Polish | pl |\n| Portuguese | pt |\n| Romanian   | ro |\n| Russian    | ru |\n| Slovak | sk |\n| Slovenian  | sl |\n| Spanish    | es |\n| Swedish    | sv |\n| Turkish    | tr |\nLanguage parameter is provided as a [ISO 639-1 language code](https://en.wikipedia.org/wiki/List_of_ISO_639-1_codes), with the exception of Mandarin (cmn) which is supplied as an [ISO 639-3 language code](https://en.wikipedia.org/wiki/ISO_639-3).\n\nOnly 1 language can be selected per audio, i.e. no multiple languages in one transcription job. Additionally, the following parameters may **not** be used with non-English languages: `skip_punctuation`, `remove_disfluencies`, `filter_profanity`, `speaker_channels_count`, `custom_vocabulary_id`.\n"
+              },
+              "metadata": {
+                "description": "Optional metadata that was provided during submission"
+              },
+              "remove_disfluencies": {
+                "description": "Currently we only define disfluencies as 'ums' and 'uhs'. When set to true, disfluencies will be not appear in the transcript.\n"
+              },
+              "skip_diarization": {
+                "description": "Specify if speaker diarization will be skipped by the speech engine"
+              },
+              "skip_punctuation": {
+                "description": "Specify if \"punct\" type elements will be skipped by the speech engine. For JSON outputs, this includes removing spaces. For text outputs,\nwords will still be delimited by a space\n"
+              },
+              "speaker_channels_count": {
+                "description": "Use to specify the total number of unique speaker channels in the audio.\n\nGiven the number of audio channels provided, each channel will be transcribed\nseparately and the channel id assigned to the `speaker` label. The final output will be a combination of all individual channel outputs. Overlapping `monologues` will have ordering broken\nby the order in which the first spoken `element` of each `monologue` occurs. If `speaker_channels_count` is greater than the actual channels in the audio,\nthe job will fail with `invalid_media`.\n\n**Note:**\n  - The amount charged will be the duration of the file multiplied by the number of channels specified.\n  - When using `speaker_channels_count` each channel will be diarized as one speaker, and the value of `skip_diarization` will be ignored if provided\n"
+              }
+            },
+            "type": "object"
+          },
+          {
+            "properties": {
+              "custom_vocabularies": {
+                "items": {
+                  "description": "Contains a collection of phrases. Custom vocabulary informs and biases the speech recognition to find those phrases (at the cost of slightly slower transcription).",
+                  "properties": {
+                    "phrases": {
+                      "description": "Array of phrases not found in normal dictionary. Add technical jargon, proper nouns and uncommon phrases as strings in this array to add them to the lexicon for this job. \n\nA phrase must contain at least 1 alpha character but may contain any non-numeric character from the Basic Latin set. A phrase can contain up to 12 words. Each word can contain up to 34 characters.\n\n**Note**: Only 6000 phrases can be used per transcription job. For more details, check [Custom Vocabularies](https://www.rev.ai/docs/overview#section/Features/Custom-Vocabularies).\n",
+                      "example": [
+                        "Paul McCartney",
+                        "Amelia Earhart",
+                        "Weiss-Bergman",
+                        "BLM"
+                      ],
+                      "items": {
+                        "title": "phrase",
+                        "type": "string"
+                      },
+                      "maxItems": 6000,
+                      "minItems": 1,
+                      "type": "array"
+                    }
+                  },
+                  "required": [
+                    "phrases"
+                  ],
+                  "type": "object"
+                },
+                "maxItems": 50,
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "type": "object"
+          },
+          {
+            "$ref": "#/components/schemas/DescriptionlessJobOptions"
+          }
+        ]
+      },
+      "Transcript": {
+        "description": "Rev.ai Transcript Model\n***\nNote: properties are not displayed in the returned object if they are null\n\nJobs with skip_diarization set to true will only show a single speaker for the entire duration of the transcript.\n",
+        "properties": {
+          "monologues": {
+            "items": {
+              "properties": {
+                "elements": {
+                  "description": "Array of transcript elements",
+                  "items": {
+                    "properties": {
+                      "confidence": {
+                        "description": "Confidence score of the provided value. If the element `type` is `punct` or `unknown`, confidence will be `null`",
+                        "example": 0.85,
+                        "format": "double",
+                        "maximum": 1,
+                        "minimum": 0,
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "ts": {
+                        "description": "The timestamp of the beginning of the element relative to the beginning of the audio in seconds (centisecond precision)",
+                        "example": 0.75,
+                        "format": "double",
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "ts_end": {
+                        "description": "The timestamp of the end of the element relative to the beginning of the audio in seconds (centisecond precision)",
+                        "example": 1.25,
+                        "format": "double",
+                        "nullable": true,
+                        "type": "number"
+                      },
+                      "type": {
+                        "description": "Type of transcript element. If Rev.ai was unable to determine the spoken word, the `type` will be `unknown`.",
+                        "enum": [
+                          "text",
+                          "punct",
+                          "unknown"
+                        ],
+                        "example": "text",
+                        "type": "string"
+                      },
+                      "value": {
+                        "description": "Value of the transcript element.",
+                        "example": "Hello",
+                        "type": "string"
+                      }
+                    },
+                    "type": "object"
+                  },
+                  "type": "array"
+                },
+                "speaker": {
+                  "description": "Id of the speaker of the monologue",
+                  "example": 1,
+                  "type": "integer"
+                }
+              },
+              "type": "object"
+            },
+            "type": "array"
+          }
+        },
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "Access-Token": {
+        "description": "All API requests must be authorized with an `Authorization: Bearer` header\n\n> `-H \"Authorization: Bearer $REV_ACCESS_TOKEN\"`\n\nDevelopers can obtain their access token from their [settings page](https://rev.ai/access_token). This token need only be generated once and never expires.\n",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  }
+}

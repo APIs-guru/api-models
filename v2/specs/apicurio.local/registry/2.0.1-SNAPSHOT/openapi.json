@@ -1,0 +1,2921 @@
+{
+  "openapi": "3.0.2",
+  "servers": [
+    {
+      "url": "http://apicurio.local"
+    }
+  ],
+  "info": {
+    "contact": {
+      "email": "apicurio@lists.jboss.org",
+      "name": "Apicurio",
+      "url": "https://github.com/apicurio/apicurio-registry"
+    },
+    "description": "Apicurio Registry is a datastore for standard event schemas and API designs. Apicurio Registry enables developers to manage and share the structure of their data using a REST interface. For example, client applications can dynamically push or pull the latest updates to or from the registry without needing to redeploy. Apicurio Registry also enables developers to create rules that govern how registry content can evolve over time. For example, this includes rules for content validation and version compatibility.\n\nThe Apicurio Registry REST API enables client applications to manage the artifacts in the registry. This API provides create, read, update, and delete operations for schema and API artifacts, rules, versions, and metadata. \n\nThe supported artifact types include:\n- Apache Avro schema\n- AsyncAPI specification\n- Google protocol buffers\n- GraphQL schema\n- JSON Schema\n- Kafka Connect schema\n- OpenAPI specification\n- Web Services Description Language\n- XML Schema Definition\n\n\n**Important**: The Apicurio Registry REST API is available from `http://MY-REGISTRY-URL/apis/registry/v2` by default. Therefore you must prefix all API operation paths with `../apis/registry/v2` in this case. For example: `../apis/registry/v2/ids/globalIds/{globalId}`.\n",
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "title": "Apicurio Registry API [v2]",
+    "version": "2.0.1-SNAPSHOT",
+    "x-apisguru-categories": [
+      "developer_tools"
+    ],
+    "x-origin": [
+      {
+        "format": "openapi",
+        "url": "https://raw.githubusercontent.com/Apicurio/apicurio-registry/master/common/src/main/resources/META-INF/openapi.json",
+        "version": "3.0"
+      }
+    ],
+    "x-preferred": true,
+    "x-providerName": "apicurio.local",
+    "x-serviceName": "registry",
+    "x-logo": {
+      "url": "https://api.apis.guru/v2/cache/logo/https_apis.guru_assets_images_no-logo.svg"
+    }
+  },
+  "tags": [
+    {
+      "description": "The primary way to interact with the Apicurio Registry API is to add, update, \nor delete artifacts. This section includes all of these primary operations.",
+      "name": "Artifacts"
+    },
+    {
+      "description": "Sometimes the metadata for an artifact is important. For example, metadata includes \nwhen the artifact was created, last updated, and so on. This section contains \noperations to access (and in some cases change) an artifact's metadata.",
+      "name": "Metadata"
+    },
+    {
+      "description": "Whenever an artifact's content is updated, the old versions of the artifact's content\nare not lost.  All versions can be listed and accessed if necessary.  This section \ndescribes the operations used to list and access all versions of an artifact's content\nand metadata.",
+      "name": "Versions"
+    },
+    {
+      "description": "Rules can be configured on a per-artifact basis, allowing for different approaches\nto content evolution for each artifact.  These rules override any global rules\nthat have been configured. This section contains the operations used to manage a\nsingle artifact's rules.",
+      "name": "Artifact rules"
+    },
+    {
+      "description": "Global rules can be configured in the registry to govern how artifact content can \nevolve over time (as artifact content is **updated**). Global rules are applied \nwhenever an artifact is added to the registry, and also whenever an artifact's \ncontent is updated (only if that artifact does not have its own specific rules \nconfigured). This section describes the operations used to manage the global rules.",
+      "name": "Global rules"
+    },
+    {
+      "description": "The search API is used to browse or find artifacts in the registry. This section describes the operations for searching for artifacts and versions. ",
+      "name": "Search"
+    },
+    {
+      "description": "Application functionality that is only accessible to admin users.  Includes logging, global rules, and export/import of registry data.",
+      "name": "Admin"
+    },
+    {
+      "description": "System level functionality, including versioning and status information.",
+      "name": "System"
+    }
+  ],
+  "paths": {
+    "/admin/export": {
+      "get": {
+        "description": "Exports registry data as a ZIP archive.",
+        "operationId": "exportData",
+        "responses": {
+          "200": {
+            "content": {
+              "application/zip": {
+                "schema": {
+                  "$ref": "#/components/schemas/FileContent"
+                }
+              }
+            },
+            "description": "Response when the export is successful."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Export registry data",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "summary": "Provides a way to export registry data."
+    },
+    "/admin/import": {
+      "post": {
+        "description": "Imports registry data that was previously exported using the `/admin/export` operation.",
+        "operationId": "importData",
+        "requestBody": {
+          "content": {
+            "application/zip": {
+              "schema": {
+                "$ref": "#/components/schemas/FileContent"
+              }
+            }
+          },
+          "description": "The ZIP file representing the previously exported registry data.",
+          "required": true
+        },
+        "responses": {
+          "201": {
+            "description": "Indicates that the import was successful."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Import registry data",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "summary": "Provides a way to import data into the registry."
+    },
+    "/admin/loggers": {
+      "get": {
+        "description": "List all of the configured logging levels.  These override the default\nlogging configuration.",
+        "operationId": "listLogConfigurations",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/NamedLogConfiguration"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "The list of logging configurations."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "List logging configurations",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "summary": "Manage logger settings/configurations."
+    },
+    "/admin/loggers/{logger}": {
+      "delete": {
+        "description": "Removes the configured logger configuration (if any) for the given logger.",
+        "operationId": "removeLogConfiguration",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NamedLogConfiguration"
+                }
+              }
+            },
+            "description": "The default logger configuration (now that the configuration for this logger has been removed, the \ndefault configuration is applied)."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Removes logger configuration",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "get": {
+        "description": "Returns the configured logger configuration for the provided logger name, if no logger configuration is persisted it will return the current default log configuration in the system.",
+        "operationId": "getLogConfiguration",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NamedLogConfiguration"
+                }
+              }
+            },
+            "description": "The logger configuration for the named logger."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get a single logger configuration",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The name of a single logger.",
+          "in": "path",
+          "name": "logger",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "description": "Configures the logger referenced by the provided logger name with the given configuration.",
+        "operationId": "setLogConfiguration",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/LogConfiguration"
+              }
+            }
+          },
+          "description": "The new logger configuration.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NamedLogConfiguration"
+                }
+              }
+            },
+            "description": "The new configuration for the given logger."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Set a logger's configuration",
+        "tags": [
+          "Admin"
+        ]
+      },
+      "summary": "Manage logger settings/configurations."
+    },
+    "/admin/rules": {
+      "delete": {
+        "description": "Deletes all globally configured rules.\n\nThis operation can fail for the following reasons:\n\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "deleteAllGlobalRules",
+        "responses": {
+          "204": {
+            "description": "All global rules have been removed successfully."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Delete all global rules",
+        "tags": [
+          "Global rules",
+          "Admin"
+        ]
+      },
+      "get": {
+        "description": "Gets a list of all the currently configured global rules (if any).\n\nThis operation can fail for the following reasons:\n\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "listGlobalRules",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RuleType"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "The list of names of the globally configured rules."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "List global rules",
+        "tags": [
+          "Global rules",
+          "Admin"
+        ]
+      },
+      "post": {
+        "description": "Adds a rule to the list of globally configured rules.\n\nThis operation can fail for the following reasons:\n\n* The rule type is unknown (HTTP error `400`)\n* The rule already exists (HTTP error `409`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "createGlobalRule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Rule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The global rule was added."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Create global rule",
+        "tags": [
+          "Global rules",
+          "Admin"
+        ]
+      },
+      "summary": "Manage the global rules that apply to all artifacts if not otherwise configured."
+    },
+    "/admin/rules/{rule}": {
+      "delete": {
+        "description": "Deletes a single global rule.  If this is the only rule configured, this is the same\nas deleting **all** rules.\n\nThis operation can fail for the following reasons:\n\n* Invalid rule name/type (HTTP error `400`)\n* No rule with name/type `rule` exists (HTTP error `404`)\n* Rule cannot be deleted (HTTP error `409`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "deleteGlobalRule",
+        "responses": {
+          "204": {
+            "description": "The global rule was successfully deleted."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Delete global rule",
+        "tags": [
+          "Global rules",
+          "Admin"
+        ]
+      },
+      "get": {
+        "description": "Returns information about the named globally configured rule.\n\nThis operation can fail for the following reasons:\n\n* Invalid rule name/type (HTTP error `400`)\n* No rule with name/type `rule` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "getGlobalRuleConfig",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Rule"
+                }
+              }
+            },
+            "description": "The global rule's configuration."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get global rule configuration",
+        "tags": [
+          "Global rules",
+          "Admin"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The unique name/type of a rule.",
+          "in": "path",
+          "name": "rule",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/RuleType"
+          }
+        }
+      ],
+      "put": {
+        "description": "Updates the configuration for a globally configured rule.\n\nThis operation can fail for the following reasons:\n\n* Invalid rule name/type (HTTP error `400`)\n* No rule with name/type `rule` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "updateGlobalRuleConfig",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Rule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Rule"
+                }
+              }
+            },
+            "description": "The global rule's configuration was successfully updated."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Update global rule configuration",
+        "tags": [
+          "Global rules",
+          "Admin"
+        ]
+      },
+      "summary": "Manage the configuration of a single global artifact rule."
+    },
+    "/groups/{groupId}/artifacts": {
+      "delete": {
+        "description": "Deletes all of the artifacts that exist in a given group.",
+        "operationId": "deleteArtifactsInGroup",
+        "responses": {
+          "204": {
+            "description": "When the delete operation is successful, a simple 204 is returned."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Deletes all artifacts in a group",
+        "tags": [
+          "Artifacts"
+        ]
+      },
+      "get": {
+        "description": "Returns a list of all artifacts in the group.  This list is paged.",
+        "operationId": "listArtifactsInGroup",
+        "parameters": [
+          {
+            "description": "The number of artifacts to return.  Defaults to 20.",
+            "in": "query",
+            "name": "limit",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The number of artifacts to skip before starting the result set.  Defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sort order, ascending (`asc`) or descending (`desc`).",
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "$ref": "#/components/schemas/SortOrder"
+            }
+          },
+          {
+            "description": "The field to sort by.  Can be one of:\n\n* `name`\n* `createdOn`\n",
+            "in": "query",
+            "name": "orderby",
+            "schema": {
+              "$ref": "#/components/schemas/SortBy"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactSearchResults"
+                }
+              }
+            },
+            "description": "On a successful response, returns a bounded set of artifacts."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "List artifacts in group",
+        "tags": [
+          "Artifacts"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "Unique ID of an artifact group.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        }
+      ],
+      "post": {
+        "description": "Creates a new artifact by posting the artifact content.  The body of the request should\nbe the raw content of the artifact.  This is typically in JSON format for *most* of the \nsupported types, but may be in another format for a few (for example, `PROTOBUF`).\n\nThe registry attempts to figure out what kind of artifact is being added from the\nfollowing supported list:\n\n* Avro (`AVRO`)\n* Protobuf (`PROTOBUF`)\n* JSON Schema (`JSON`)\n* Kafka Connect (`KCONNECT`)\n* OpenAPI (`OPENAPI`)\n* AsyncAPI (`ASYNCAPI`)\n* GraphQL (`GRAPHQL`)\n* Web Services Description Language (`WSDL`)\n* XML Schema (`XSD`)\n\nAlternatively, you can specify the artifact type using the `X-Registry-ArtifactType` \nHTTP request header, or include a hint in the request's `Content-Type`.  For example:\n\n```\nContent-Type: application/json; artifactType=AVRO\n```\n\nAn artifact is created using the content provided in the body of the request.  This\ncontent is created under a unique artifact ID that can be provided in the request\nusing the `X-Registry-ArtifactId` request header.  If not provided in the request,\nthe server generates a unique ID for the artifact.  It is typically recommended\nthat callers provide the ID, because this is typically a meaningful identifier, \nand for most use cases should be supplied by the caller.\n\nIf an artifact with the provided artifact ID already exists, the default behavior\nis for the server to reject the content with a 409 error.  However, the caller can\nsupply the `ifExists` query parameter to alter this default behavior. The `ifExists`\nquery parameter can have one of the following values:\n\n* `FAIL` (*default*) - server rejects the content with a 409 error\n* `UPDATE` - server updates the existing artifact and returns the new metadata\n* `RETURN` - server does not create or add content to the server, but instead \nreturns the metadata for the existing artifact\n* `RETURN_OR_UPDATE` - server returns an existing **version** that matches the \nprovided content if such a version exists, otherwise a new version is created\n\nThis operation may fail for one of the following reasons:\n\n* An invalid `ArtifactType` was indicated (HTTP error `400`)\n* No `ArtifactType` was indicated and the server could not determine one from the content (HTTP error `400`)\n* Provided content (request body) was empty (HTTP error `400`)\n* An artifact with the provided ID already exists (HTTP error `409`)\n* The content violates one of the configured global rules (HTTP error `409`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "createArtifact",
+        "parameters": [
+          {
+            "description": "Specifies the type of the artifact being added. Possible values include:\n\n* Avro (`AVRO`)\n* Protobuf (`PROTOBUF`)\n* JSON Schema (`JSON`)\n* Kafka Connect (`KCONNECT`)\n* OpenAPI (`OPENAPI`)\n* AsyncAPI (`ASYNCAPI`)\n* GraphQL (`GRAPHQL`)\n* Web Services Description Language (`WSDL`)\n* XML Schema (`XSD`)",
+            "in": "header",
+            "name": "X-Registry-ArtifactType",
+            "schema": {
+              "$ref": "#/components/schemas/ArtifactType"
+            }
+          },
+          {
+            "description": "A client-provided, globally unique identifier for the new artifact.",
+            "in": "header",
+            "name": "X-Registry-ArtifactId",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Specifies the version number of this initial version of the artifact content.  This would typically\nbe a simple integer or a SemVer value.  If not provided, the server will assign a version number\nautomatically (starting with version `1`).",
+            "in": "header",
+            "name": "X-Registry-Version",
+            "schema": {
+              "$ref": "#/components/schemas/Version"
+            }
+          },
+          {
+            "description": "Set this option to instruct the server on what to do if the artifact already exists.",
+            "in": "query",
+            "name": "ifExists",
+            "schema": {
+              "$ref": "#/components/schemas/IfExists"
+            }
+          },
+          {
+            "description": "Used only when the `ifExists` query parameter is set to `RETURN_OR_UPDATE`, this parameter can be set to `true` to indicate that the server should \"canonicalize\" the content when searching for a matching version.  The canonicalization algorithm is unique to each artifact type, but typically involves removing extra whitespace and formatting the content in a consistent manner.",
+            "in": "query",
+            "name": "canonical",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "examples": {
+                "OpenAPI Example": {
+                  "value": {
+                    "components": {
+                      "schemas": {
+                        "Widget": {
+                          "description": "A sample data type.",
+                          "example": {
+                            "property-1": "value1",
+                            "property-2": true
+                          },
+                          "properties": {
+                            "property-1": {
+                              "type": "string"
+                            },
+                            "property-2": {
+                              "type": "boolean"
+                            }
+                          },
+                          "title": "Root Type for Widget",
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "info": {
+                      "description": "An example API design using OpenAPI.",
+                      "title": "Empty API",
+                      "version": "1.0.7"
+                    },
+                    "openapi": "3.0.2",
+                    "paths": {
+                      "/widgets": {
+                        "get": {
+                          "responses": {
+                            "200": {
+                              "content": {
+                                "application/json": {
+                                  "schema": {
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  }
+                                }
+                              },
+                              "description": "All widgets"
+                            }
+                          },
+                          "summary": "Get widgets"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/FileContent"
+              }
+            }
+          },
+          "description": "The content of the artifact being created. This is often, but not always, JSON data\nrepresenting one of the supported artifact types:\n\n* Avro (`AVRO`)\n* Protobuf (`PROTOBUF`)\n* JSON Schema (`JSON`)\n* Kafka Connect (`KCONNECT`)\n* OpenAPI (`OPENAPI`)\n* AsyncAPI (`ASYNCAPI`)\n* GraphQL (`GRAPHQL`)\n* Web Services Description Language (`WSDL`)\n* XML Schema (`XSD`)\n",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactMetaData"
+                }
+              }
+            },
+            "description": "Artifact was successfully created."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "409": {
+            "$ref": "#/components/responses/RuleViolationConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Create artifact",
+        "tags": [
+          "Artifacts"
+        ],
+        "x-codegen-async": true
+      },
+      "summary": "Manage the collection of artifacts within a single group in the registry."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}": {
+      "delete": {
+        "description": "Deletes an artifact completely, resulting in all versions of the artifact also being\ndeleted.  This may fail for one of the following reasons:\n\n* No artifact with the `artifactId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)",
+        "operationId": "deleteArtifact",
+        "responses": {
+          "204": {
+            "description": "Returned when the artifact was successfully deleted."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Delete artifact",
+        "tags": [
+          "Artifacts"
+        ]
+      },
+      "get": {
+        "description": "Returns the latest version of the artifact in its raw form.  The `Content-Type` of the\nresponse depends on the artifact type.  In most cases, this is `application/json`, but \nfor some types it may be different (for example, `PROTOBUF`).\n\nThis operation may fail for one of the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "getLatestArtifact",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ArtifactContent"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get latest artifact",
+        "tags": [
+          "Artifacts"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        }
+      ],
+      "put": {
+        "description": "Updates an artifact by uploading new content.  The body of the request should\nbe the raw content of the artifact.  This is typically in JSON format for *most*\nof the supported types, but may be in another format for a few (for example, `PROTOBUF`).\nThe type of the content should be compatible with the artifact's type (it would be\nan error to update an `AVRO` artifact with new `OPENAPI` content, for example).\n\nThe update could fail for a number of reasons including:\n\n* Provided content (request body) was empty (HTTP error `400`)\n* No artifact with the `artifactId` exists (HTTP error `404`)\n* The new content violates one of the rules configured for the artifact (HTTP error `409`)\n* A server error occurred (HTTP error `500`)\n\nWhen successful, this creates a new version of the artifact, making it the most recent\n(and therefore official) version of the artifact.",
+        "operationId": "updateArtifact",
+        "parameters": [
+          {
+            "description": "Specifies the version number of this new version of the artifact content.  This would typically\nbe a simple integer or a SemVer value.  If not provided, the server will assign a version number\nautomatically.",
+            "in": "header",
+            "name": "X-Registry-Version",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "examples": {
+                "OpenAPI Example": {
+                  "value": {
+                    "components": {
+                      "schemas": {
+                        "Widget": {
+                          "description": "A sample data type.",
+                          "example": {
+                            "property-1": "value1",
+                            "property-2": true
+                          },
+                          "properties": {
+                            "property-1": {
+                              "type": "string"
+                            },
+                            "property-2": {
+                              "type": "boolean"
+                            }
+                          },
+                          "title": "Root Type for Widget",
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "info": {
+                      "description": "An example API design using OpenAPI.",
+                      "title": "Empty API",
+                      "version": "1.0.7"
+                    },
+                    "openapi": "3.0.2",
+                    "paths": {
+                      "/widgets": {
+                        "get": {
+                          "responses": {
+                            "200": {
+                              "content": {
+                                "application/json": {
+                                  "schema": {
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  }
+                                }
+                              },
+                              "description": "All widgets"
+                            }
+                          },
+                          "summary": "Get widgets"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/FileContent"
+              }
+            }
+          },
+          "description": "The new content of the artifact being updated. This is often, but not always, JSON data\nrepresenting one of the supported artifact types:\n\n* Avro (`AVRO`)\n* Protobuf (`PROTOBUF`)\n* JSON Schema (`JSON`)\n* Kafka Connect (`KCONNECT`)\n* OpenAPI (`OPENAPI`)\n* AsyncAPI (`ASYNCAPI`)\n* GraphQL (`GRAPHQL`)\n* Web Services Description Language (`WSDL`)\n* XML Schema (`XSD`)\n",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactMetaData"
+                }
+              }
+            },
+            "description": "When successful, returns the updated artifact metadata."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/Conflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Update artifact",
+        "tags": [
+          "Artifacts"
+        ],
+        "x-codegen-async": true
+      },
+      "summary": "Manage a single artifact."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}/meta": {
+      "get": {
+        "description": "Gets the metadata for an artifact in the registry.  The returned metadata includes\nboth generated (read-only) and editable metadata (such as name and description).\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)",
+        "operationId": "getArtifactMetaData",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactMetaData"
+                }
+              }
+            },
+            "description": "The artifact's metadata."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get artifact metadata",
+        "tags": [
+          "Metadata"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        }
+      ],
+      "post": {
+        "description": "Gets the metadata for an artifact that matches the raw content.  Searches the registry\nfor a version of the given artifact matching the content provided in the body of the\nPOST.\n\nThis operation can fail for the following reasons:\n\n* Provided content (request body) was empty (HTTP error `400`)\n* No artifact with the `artifactId` exists (HTTP error `404`)\n* No artifact version matching the provided content exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "getArtifactVersionMetaDataByContent",
+        "parameters": [
+          {
+            "description": "Parameter that can be set to `true` to indicate that the server should \"canonicalize\" the content when searching for a matching version.  Canonicalization is unique to each artifact type, but typically involves removing any extra whitespace and formatting the content in a consistent manner.",
+            "in": "query",
+            "name": "canonical",
+            "schema": {
+              "type": "boolean"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "examples": {
+                "OpenAPI": {
+                  "value": {
+                    "components": {
+                      "schemas": {
+                        "Widget": {
+                          "description": "A sample data type.",
+                          "example": {
+                            "property-1": "value1",
+                            "property-2": true
+                          },
+                          "properties": {
+                            "property-1": {
+                              "type": "string"
+                            },
+                            "property-2": {
+                              "type": "boolean"
+                            }
+                          },
+                          "title": "Root Type for Widget",
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "info": {
+                      "description": "An example API design using OpenAPI.",
+                      "title": "Empty API",
+                      "version": "1.0.7"
+                    },
+                    "openapi": "3.0.2",
+                    "paths": {
+                      "/widgets": {
+                        "get": {
+                          "responses": {
+                            "200": {
+                              "content": {
+                                "application/json": {
+                                  "schema": {
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  }
+                                }
+                              },
+                              "description": "All widgets"
+                            }
+                          },
+                          "summary": "Get widgets"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/FileContent"
+              }
+            }
+          },
+          "description": "The content of an artifact version.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionMetaData"
+                }
+              }
+            },
+            "description": "The metadata of the artifact version matching the provided content."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get artifact version metadata by content",
+        "tags": [
+          "Metadata"
+        ]
+      },
+      "put": {
+        "description": "Updates the editable parts of the artifact's metadata.  Not all metadata fields can\nbe updated.  For example, `createdOn` and `createdBy` are both read-only properties.\n\nThis operation can fail for the following reasons:\n\n* No artifact with the `artifactId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)",
+        "operationId": "updateArtifactMetaData",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditableMetaData"
+              }
+            }
+          },
+          "description": "Updated artifact metadata.",
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The artifact's metadata was updated."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Update artifact metadata",
+        "tags": [
+          "Metadata"
+        ]
+      },
+      "summary": "Manage the metadata of a single artifact."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}/rules": {
+      "delete": {
+        "description": "Deletes all of the rules configured for the artifact.  After this is done, the global\nrules apply to the artifact again.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)",
+        "operationId": "deleteArtifactRules",
+        "responses": {
+          "204": {
+            "description": "The rules were successfully deleted."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Delete artifact rules",
+        "tags": [
+          "Artifact rules"
+        ]
+      },
+      "get": {
+        "description": "Returns a list of all rules configured for the artifact.  The set of rules determines\nhow the content of an artifact can evolve over time.  If no rules are configured for\nan artifact, the set of globally configured rules are used.  If no global rules \nare defined, there are no restrictions on content evolution.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)",
+        "operationId": "listArtifactRules",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "items": {
+                    "$ref": "#/components/schemas/RuleType"
+                  },
+                  "type": "array"
+                }
+              }
+            },
+            "description": "Returns the names of the rules configured for the artifact."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "List artifact rules",
+        "tags": [
+          "Artifact rules"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        }
+      ],
+      "post": {
+        "description": "Adds a rule to the list of rules that get applied to the artifact when adding new\nversions.  All configured rules must pass to successfully add a new artifact version.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* Rule (named in the request body) is unknown (HTTP error `400`)\n* A server error occurred (HTTP error `500`)",
+        "operationId": "createArtifactRule",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Rule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The rule was added."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Create artifact rule",
+        "tags": [
+          "Artifact rules"
+        ]
+      },
+      "summary": "Manage the rules for a single artifact."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}/rules/{rule}": {
+      "delete": {
+        "description": "Deletes a rule from the artifact.  This results in the rule no longer applying for\nthis artifact.  If this is the only rule configured for the artifact, this is the \nsame as deleting **all** rules, and the globally configured rules now apply to\nthis artifact.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* No rule with this name/type is configured for this artifact (HTTP error `404`)\n* Invalid rule type (HTTP error `400`)\n* A server error occurred (HTTP error `500`)",
+        "operationId": "deleteArtifactRule",
+        "responses": {
+          "204": {
+            "description": "The rule was successfully deleted."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Delete artifact rule",
+        "tags": [
+          "Artifact rules"
+        ]
+      },
+      "get": {
+        "description": "Returns information about a single rule configured for an artifact.  This is useful\nwhen you want to know what the current configuration settings are for a specific rule.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* No rule with this name/type is configured for this artifact (HTTP error `404`)\n* Invalid rule type (HTTP error `400`)\n* A server error occurred (HTTP error `500`)",
+        "operationId": "getArtifactRuleConfig",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Rule"
+                }
+              }
+            },
+            "description": "Information about a rule."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get artifact rule configuration",
+        "tags": [
+          "Artifact rules"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        },
+        {
+          "description": "The unique name/type of a rule.",
+          "in": "path",
+          "name": "rule",
+          "required": true,
+          "schema": {
+            "enum": [
+              "VALIDITY",
+              "COMPATIBILITY"
+            ],
+            "type": "string"
+          }
+        }
+      ],
+      "put": {
+        "description": "Updates the configuration of a single rule for the artifact.  The configuration data\nis specific to each rule type, so the configuration of the `COMPATIBILITY` rule \nis in a different format from the configuration of the `VALIDITY` rule.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* No rule with this name/type is configured for this artifact (HTTP error `404`)\n* Invalid rule type (HTTP error `400`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "updateArtifactRuleConfig",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/Rule"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Rule"
+                }
+              }
+            },
+            "description": "Rule configuration was updated."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Update artifact rule configuration",
+        "tags": [
+          "Artifact rules"
+        ]
+      },
+      "summary": "Manage the configuration of a single artifact rule."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}/state": {
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        }
+      ],
+      "put": {
+        "description": "Updates the state of the artifact.  For example, you can use this to mark the latest\nversion of an artifact as `DEPRECATED`.  The operation changes the state of the latest \nversion of the artifact.  If multiple versions exist, only the most recent is changed.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "updateArtifactState",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateState"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Returned when the operation was successful."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Update artifact state",
+        "tags": [
+          "Artifacts"
+        ]
+      },
+      "summary": "Manage the state of an artifact."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}/test": {
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        }
+      ],
+      "put": {
+        "description": "Tests whether an update to the artifact's content *would* succeed for the provided content.\nUltimately, this applies any rules configured for the artifact against the given content\nto determine whether the rules would pass or fail, but without actually updating the artifact\ncontent.\n\nThe body of the request should be the raw content of the artifact.  This is typically in \nJSON format for *most* of the supported types, but may be in another format for a few \n(for example, `PROTOBUF`).\n\nThe update could fail for a number of reasons including:\n\n* Provided content (request body) was empty (HTTP error `400`)\n* No artifact with the `artifactId` exists (HTTP error `404`)\n* The new content violates one of the rules configured for the artifact (HTTP error `409`)\n* The provided artifact type is not recognized (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n\nWhen successful, this operation simply returns a *No Content* response.  This response\nindicates that the content is valid against the configured content rules for the \nartifact (or the global rules if no artifact rules are enabled).",
+        "operationId": "testUpdateArtifact",
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "$ref": "#/components/schemas/FileContent"
+              }
+            }
+          },
+          "description": "The content of the artifact being tested. This is often, but not always, JSON data\nrepresenting one of the supported artifact types:\n\n* Avro (`AVRO`)\n* Protobuf (`PROTOBUF`)\n* JSON Schema (`JSON`)\n* Kafka Connect (`KCONNECT`)\n* OpenAPI (`OPENAPI`)\n* AsyncAPI (`ASYNCAPI`)\n* GraphQL (`GRAPHQL`)\n* Web Services Description Language (`WSDL`)\n* XML Schema (`XSD`)\n",
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "When successful, returns \"No Content\" to indicate that the rules passed, and the\ncontent was not updated."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/RuleViolationConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Test update artifact",
+        "tags": [
+          "Artifact rules"
+        ]
+      },
+      "summary": "Test whether content would pass update rules."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}/versions": {
+      "get": {
+        "description": "Returns a list of all versions of the artifact.  The result set is paged.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "listArtifactVersions",
+        "parameters": [
+          {
+            "description": "The number of versions to skip before starting to collect the result set.  Defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The number of versions to return.  Defaults to 20.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "type": "integer"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "examples": {
+                  "All Versions": {
+                    "value": [
+                      5,
+                      6,
+                      10,
+                      103
+                    ]
+                  }
+                },
+                "schema": {
+                  "$ref": "#/components/schemas/VersionSearchResults"
+                }
+              }
+            },
+            "description": "List of all artifact versions."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "List artifact versions",
+        "tags": [
+          "Versions"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        }
+      ],
+      "post": {
+        "description": "Creates a new version of the artifact by uploading new content.  The configured rules for\nthe artifact are applied, and if they all pass, the new content is added as the most recent \nversion of the artifact.  If any of the rules fail, an error is returned.\n\nThe body of the request should be the raw content of the new artifact version, and the type\nof that content should match the artifact's type (for example if the artifact type is `AVRO`\nthen the content of the request should be an Apache Avro document).\n\nThis operation can fail for the following reasons:\n\n* Provided content (request body) was empty (HTTP error `400`)\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* The new content violates one of the rules configured for the artifact (HTTP error `409`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "createArtifactVersion",
+        "parameters": [
+          {
+            "description": "Specifies the version number of this new version of the artifact content.  This would typically\nbe a simple integer or a SemVer value.  It must be unique within the artifact.  If this is not\nprovided, the server will generate a new, unique version number for this new updated content.",
+            "in": "header",
+            "name": "X-Registry-Version",
+            "schema": {
+              "$ref": "#/components/schemas/Version"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "examples": {
+                "OpenAPI Example": {
+                  "value": {
+                    "components": {
+                      "schemas": {
+                        "Widget": {
+                          "description": "A sample data type.",
+                          "example": {
+                            "property-1": "value1",
+                            "property-2": true
+                          },
+                          "properties": {
+                            "property-1": {
+                              "type": "string"
+                            },
+                            "property-2": {
+                              "type": "boolean"
+                            }
+                          },
+                          "title": "Root Type for Widget",
+                          "type": "object"
+                        }
+                      }
+                    },
+                    "info": {
+                      "description": "An example API design using OpenAPI.",
+                      "title": "Empty API",
+                      "version": "1.0.7"
+                    },
+                    "openapi": "3.0.2",
+                    "paths": {
+                      "/widgets": {
+                        "get": {
+                          "responses": {
+                            "200": {
+                              "content": {
+                                "application/json": {
+                                  "schema": {
+                                    "items": {
+                                      "type": "string"
+                                    },
+                                    "type": "array"
+                                  }
+                                }
+                              },
+                              "description": "All widgets"
+                            }
+                          },
+                          "summary": "Get widgets"
+                        }
+                      }
+                    }
+                  }
+                }
+              },
+              "schema": {
+                "$ref": "#/components/schemas/FileContent"
+              }
+            }
+          },
+          "description": "The content of the artifact version being created. This is often, but not always, JSON data\nrepresenting one of the supported artifact types:\n\n* Avro (`AVRO`)\n* Protobuf (`PROTOBUF`)\n* JSON Schema (`JSON`)\n* Kafka Connect (`KCONNECT`)\n* OpenAPI (`OPENAPI`)\n* AsyncAPI (`ASYNCAPI`)\n* GraphQL (`GRAPHQL`)\n* Web Services Description Language (`WSDL`)\n* XML Schema (`XSD`)\n",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionMetaData"
+                }
+              }
+            },
+            "description": "The artifact version was successfully created."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "409": {
+            "$ref": "#/components/responses/RuleViolationConflict"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Create artifact version",
+        "tags": [
+          "Versions"
+        ],
+        "x-codegen-async": true
+      },
+      "summary": "Manage all the versions of an artifact in the registry."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}/versions/{version}": {
+      "get": {
+        "description": "Retrieves a single version of the artifact content.  Both the `artifactId` and the\nunique `version` number must be provided.  The `Content-Type` of the response depends \non the artifact type.  In most cases, this is `application/json`, but for some types \nit may be different (for example, `PROTOBUF`).\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* No version with this `version` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "getArtifactVersion",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ArtifactContent"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get artifact version",
+        "tags": [
+          "Versions"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        },
+        {
+          "description": "The unique identifier of a specific version of the artifact content.",
+          "in": "path",
+          "name": "version",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      ],
+      "summary": "Manage a single version of a single artifact in the registry."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}/versions/{version}/meta": {
+      "delete": {
+        "description": "Deletes the user-editable metadata properties of the artifact version.  Any properties\nthat are not user-editable are preserved.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* No version with this `version` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "deleteArtifactVersionMetaData",
+        "responses": {
+          "204": {
+            "description": "The artifact version's user-editable metadata was successfully deleted."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Delete artifact version metadata",
+        "tags": [
+          "Metadata"
+        ]
+      },
+      "get": {
+        "description": "Retrieves the metadata for a single version of the artifact.  The version metadata is \na subset of the artifact metadata and only includes the metadata that is specific to\nthe version (for example, this doesn't include `modifiedOn`).\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* No version with this `version` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "getArtifactVersionMetaData",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/VersionMetaData"
+                }
+              }
+            },
+            "description": "The artifact version's metadata."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get artifact version metadata",
+        "tags": [
+          "Metadata"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        },
+        {
+          "description": "The unique identifier of a specific version of the artifact content.",
+          "in": "path",
+          "name": "version",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      ],
+      "put": {
+        "description": "Updates the user-editable portion of the artifact version's metadata.  Only some of \nthe metadata fields are editable by the user.  For example, `description` is editable, \nbut `createdOn` is not.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* No version with this `version` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "updateArtifactVersionMetaData",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/EditableMetaData"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "The artifact version's metadata was successfully updated."
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Update artifact version metadata",
+        "tags": [
+          "Metadata"
+        ]
+      },
+      "summary": "Manage the metadata for a single version of an artifact in the registry."
+    },
+    "/groups/{groupId}/artifacts/{artifactId}/versions/{version}/state": {
+      "parameters": [
+        {
+          "description": "The artifact group ID.  Must be a string provided by the client, representing the name of the grouping of artifacts.",
+          "in": "path",
+          "name": "groupId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/GroupId"
+          }
+        },
+        {
+          "description": "The artifact ID.  Can be a string (client-provided) or UUID (server-generated), representing the unique artifact identifier.",
+          "in": "path",
+          "name": "artifactId",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/ArtifactId"
+          }
+        },
+        {
+          "description": "The unique identifier of a specific version of the artifact content.",
+          "in": "path",
+          "name": "version",
+          "required": true,
+          "schema": {
+            "$ref": "#/components/schemas/Version"
+          }
+        }
+      ],
+      "put": {
+        "description": "Updates the state of a specific version of an artifact.  For example, you can use \nthis operation to disable a specific version.\n\nThis operation can fail for the following reasons:\n\n* No artifact with this `artifactId` exists (HTTP error `404`)\n* No version with this `version` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "updateArtifactVersionState",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UpdateState"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Returned when the update was successful."
+          },
+          "400": {
+            "$ref": "#/components/responses/BadRequest"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Update artifact version state",
+        "tags": [
+          "Versions"
+        ]
+      },
+      "summary": "Manage the state of a specific artifact version."
+    },
+    "/ids/contentHashes/{contentHash}/": {
+      "get": {
+        "description": "Gets the content for an artifact version in the registry using the \nSHA-256 hash of the content.  This content hash may be shared by multiple artifact\nversions in the case where the artifact versions have identical content.\n\nThis operation may fail for one of the following reasons:\n\n* No content with this `contentHash` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "getContentByHash",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ArtifactContent"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get artifact content by SHA-256 hash",
+        "tags": [
+          "Artifacts"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "SHA-256 content hash for a single artifact content.",
+          "in": "path",
+          "name": "contentHash",
+          "required": true,
+          "schema": {
+            "type": "string"
+          }
+        }
+      ],
+      "summary": "Access artifact content utilizing the SHA-256 hash of the content."
+    },
+    "/ids/contentIds/{contentId}/": {
+      "get": {
+        "description": "Gets the content for an artifact version in the registry using the unique content\nidentifier for that content.  This content ID may be shared by multiple artifact\nversions in the case where the artifact versions are identical.\n\nThis operation may fail for one of the following reasons:\n\n* No content with this `contentId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "getContentById",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ArtifactContent"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get artifact content by ID",
+        "tags": [
+          "Artifacts"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "Global identifier for a single artifact content.",
+          "in": "path",
+          "name": "contentId",
+          "required": true,
+          "schema": {
+            "format": "int64",
+            "type": "integer"
+          }
+        }
+      ],
+      "summary": "Access artifact content utilizing the unique content identifier for that content."
+    },
+    "/ids/globalIds/{globalId}": {
+      "get": {
+        "description": "Gets the content for an artifact version in the registry using its globally unique\nidentifier.\n\nThis operation may fail for one of the following reasons:\n\n* No artifact version with this `globalId` exists (HTTP error `404`)\n* A server error occurred (HTTP error `500`)\n",
+        "operationId": "getContentByGlobalId",
+        "responses": {
+          "200": {
+            "$ref": "#/components/responses/ArtifactContent"
+          },
+          "404": {
+            "$ref": "#/components/responses/NotFound"
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get artifact by global ID",
+        "tags": [
+          "Artifacts"
+        ]
+      },
+      "parameters": [
+        {
+          "description": "Global identifier for an artifact version.",
+          "in": "path",
+          "name": "globalId",
+          "required": true,
+          "schema": {
+            "format": "int64",
+            "type": "integer"
+          }
+        }
+      ],
+      "summary": "Access artifact content utilizing an artifact version's globally unique identifier."
+    },
+    "/search/artifacts": {
+      "get": {
+        "description": "Returns a paginated list of all artifacts that match the provided filter criteria.\n",
+        "operationId": "searchArtifacts",
+        "parameters": [
+          {
+            "description": "Filter by artifact name.",
+            "in": "query",
+            "name": "name",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "The number of artifacts to skip before starting to collect the result set.  Defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The number of artifacts to return.  Defaults to 20.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sort order, ascending (`asc`) or descending (`desc`).",
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "$ref": "#/components/schemas/SortOrder"
+            }
+          },
+          {
+            "description": "The field to sort by.  Can be one of:\n\n* `name`\n* `createdOn`\n",
+            "in": "query",
+            "name": "orderby",
+            "schema": {
+              "$ref": "#/components/schemas/SortBy"
+            }
+          },
+          {
+            "description": "Filter by label.  Include one or more label to only return artifacts containing all of the\nspecified labels.",
+            "in": "query",
+            "name": "labels",
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter by one or more name/value property.  Separate each name/value pair using a colon.  For\nexample `properties=foo:bar` will return only artifacts with a custom property named `foo`\nand value `bar`.",
+            "in": "query",
+            "name": "properties",
+            "schema": {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            }
+          },
+          {
+            "description": "Filter by description.",
+            "in": "query",
+            "name": "description",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "description": "Filter by artifact group.",
+            "in": "query",
+            "name": "group",
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactSearchResults"
+                }
+              }
+            },
+            "description": "On a successful response, returns a result set of artifacts - one for each artifact\nin the registry that matches the criteria."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Search for artifacts",
+        "tags": [
+          "Search",
+          "Artifacts"
+        ]
+      },
+      "post": {
+        "description": "Returns a paginated list of all artifacts with at least one version that matches the\nposted content.\n",
+        "operationId": "searchArtifactsByContent",
+        "parameters": [
+          {
+            "description": "Parameter that can be set to `true` to indicate that the server should \"canonicalize\" the content when searching for matching artifacts.  Canonicalization is unique to each artifact type, but typically involves removing any extra whitespace and formatting the content in a consistent manner.  Must be used along with the `artifactType` query parameter.",
+            "in": "query",
+            "name": "canonical",
+            "schema": {
+              "type": "boolean"
+            }
+          },
+          {
+            "description": "Indicates the type of artifact represented by the content being used for the search.  This is only needed when using the `canonical` query parameter, so that the server knows how to canonicalize the content prior to searching for matching artifacts.",
+            "in": "query",
+            "name": "artifactType",
+            "schema": {
+              "$ref": "#/components/schemas/ArtifactType"
+            }
+          },
+          {
+            "description": "The number of artifacts to skip before starting to collect the result set.  Defaults to 0.",
+            "in": "query",
+            "name": "offset",
+            "required": false,
+            "schema": {
+              "default": 0,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "The number of artifacts to return.  Defaults to 20.",
+            "in": "query",
+            "name": "limit",
+            "required": false,
+            "schema": {
+              "default": 20,
+              "type": "integer"
+            }
+          },
+          {
+            "description": "Sort order, ascending (`asc`) or descending (`desc`).",
+            "in": "query",
+            "name": "order",
+            "schema": {
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "type": "string"
+            }
+          },
+          {
+            "description": "The field to sort by.  Can be one of:\n\n* `name`\n* `createdOn`\n",
+            "in": "query",
+            "name": "orderby",
+            "schema": {
+              "enum": [
+                "name",
+                "createdOn"
+              ],
+              "type": "string"
+            }
+          }
+        ],
+        "requestBody": {
+          "content": {
+            "*/*": {
+              "schema": {
+                "$ref": "#/components/schemas/FileContent"
+              }
+            }
+          },
+          "description": "The content to search for.",
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ArtifactSearchResults"
+                }
+              }
+            },
+            "description": "On a successful response, returns a result set of artifacts - one for each artifact\nin the registry that matches the criteria."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Search for artifacts by content",
+        "tags": [
+          "Search",
+          "Artifacts"
+        ]
+      },
+      "summary": "Search for artifacts in the registry."
+    },
+    "/system/info": {
+      "get": {
+        "description": "This operation retrieves information about the running registry system, such as the version\nof the software and when it was built.",
+        "operationId": "getSystemInfo",
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SystemInfo"
+                }
+              }
+            },
+            "description": "On success, returns the system information."
+          },
+          "500": {
+            "$ref": "#/components/responses/ServerError"
+          }
+        },
+        "summary": "Get system information",
+        "tags": [
+          "System"
+        ]
+      },
+      "summary": "Retrieve system information"
+    },
+    "x-codegen-contextRoot": "/apis/registry/v2"
+  },
+  "components": {
+    "responses": {
+      "ArtifactContent": {
+        "content": {
+          "*/*": {
+            "examples": {
+              "OpenAPI": {
+                "value": {
+                  "info": {
+                    "description": "An example API design using OpenAPI.",
+                    "title": "Empty API",
+                    "version": "1.0.0"
+                  },
+                  "openapi": "3.0.2"
+                }
+              }
+            },
+            "schema": {
+              "$ref": "#/components/schemas/FileContent"
+            }
+          }
+        },
+        "description": "The content of one version of one artifact."
+      },
+      "BadRequest": {
+        "content": {
+          "application/json": {
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "description": "Common response for all operations that can return a `400` error."
+      },
+      "Conflict": {
+        "content": {
+          "application/json": {
+            "examples": {
+              "ConflictExample": {
+                "value": {
+                  "error_code": 409,
+                  "message": "The artifact content was invalid."
+                }
+              }
+            },
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "description": "Common response used when an input conflicts with existing data."
+      },
+      "NotFound": {
+        "content": {
+          "application/json": {
+            "examples": {
+              "NotFoundExample": {
+                "value": {
+                  "error_code": 404,
+                  "message": "No artifact with id 'Topic-1/Inbound' could be found."
+                }
+              }
+            },
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "description": "Common response for all operations that can return a `404` error."
+      },
+      "RuleViolationConflict": {
+        "content": {
+          "application/json": {
+            "examples": {
+              "RuleViolationConflictExample": {
+                "value": {
+                  "causes": [
+                    {
+                      "context": "/info[title]",
+                      "description": "API is missing a title"
+                    },
+                    {
+                      "context": "/paths[/invoices]/put[operationId]",
+                      "description": "Operation IDs must be unique"
+                    }
+                  ],
+                  "error_code": 409,
+                  "message": "The artifact content was invalid"
+                }
+              }
+            },
+            "schema": {
+              "$ref": "#/components/schemas/RuleViolationError"
+            }
+          }
+        },
+        "description": "Common response used when an input conflicts with existing data."
+      },
+      "ServerError": {
+        "content": {
+          "application/json": {
+            "examples": {
+              "ErrorExample": {
+                "value": {
+                  "error_code": 500,
+                  "message": "Lost connection to the database."
+                }
+              }
+            },
+            "schema": {
+              "$ref": "#/components/schemas/Error"
+            }
+          }
+        },
+        "description": "Common response for all operations that can fail with an unexpected server error."
+      }
+    },
+    "schemas": {
+      "ArtifactId": {
+        "description": "The ID of a single artifact.",
+        "example": "\"example-artifact\"",
+        "type": "string"
+      },
+      "ArtifactMetaData": {
+        "description": "",
+        "example": {
+          "contentId": 82736,
+          "createdBy": "user1",
+          "createdOn": "2019-03-22T12:51:19Z",
+          "description": "Description of the artifact",
+          "globalId": 12984719247,
+          "groupId": "My-Group",
+          "id": "Procurement-Invoice",
+          "labels": [
+            "label-1",
+            "label-2"
+          ],
+          "modifiedBy": "user2",
+          "modifiedOn": "2019-07-19T15:09:00Z",
+          "name": "Artifact Name",
+          "properties": {
+            "custom-1": "foo",
+            "custom-2": "bar"
+          },
+          "type": "AVRO",
+          "version": 18
+        },
+        "properties": {
+          "contentId": {
+            "description": "",
+            "format": "int64",
+            "type": "integer"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "globalId": {
+            "description": "",
+            "format": "int64",
+            "type": "integer"
+          },
+          "groupId": {
+            "$ref": "#/components/schemas/GroupId",
+            "description": ""
+          },
+          "id": {
+            "$ref": "#/components/schemas/ArtifactId",
+            "description": ""
+          },
+          "labels": {
+            "description": "",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "modifiedBy": {
+            "type": "string"
+          },
+          "modifiedOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/Properties",
+            "description": ""
+          },
+          "state": {
+            "$ref": "#/components/schemas/ArtifactState",
+            "description": ""
+          },
+          "type": {
+            "$ref": "#/components/schemas/ArtifactType",
+            "description": ""
+          },
+          "version": {
+            "description": "",
+            "type": "string"
+          }
+        },
+        "required": [
+          "id",
+          "createdBy",
+          "createdOn",
+          "modifiedBy",
+          "modifiedOn",
+          "version",
+          "type",
+          "globalId",
+          "state",
+          "group",
+          "contentId"
+        ],
+        "title": "Root Type for ArtifactMetaData",
+        "type": "object"
+      },
+      "ArtifactSearchResults": {
+        "description": "Describes the response received when searching for artifacts.",
+        "properties": {
+          "artifacts": {
+            "description": "The artifacts returned in the result set.",
+            "items": {
+              "$ref": "#/components/schemas/SearchedArtifact"
+            },
+            "type": "array"
+          },
+          "count": {
+            "description": "The total number of artifacts that matched the query that produced the result set (may be \nmore than the number of artifacts in the result set).",
+            "type": "integer"
+          }
+        },
+        "required": [
+          "count",
+          "artifacts"
+        ],
+        "type": "object"
+      },
+      "ArtifactState": {
+        "description": "Describes the state of an artifact or artifact version.  The following states\nare possible:\n\n* ENABLED\n* DISABLED\n* DEPRECATED\n",
+        "enum": [
+          "ENABLED",
+          "DISABLED",
+          "DEPRECATED"
+        ],
+        "type": "string",
+        "x-codegen-package": "io.apicurio.registry.types"
+      },
+      "ArtifactType": {
+        "description": "",
+        "enum": [
+          "AVRO",
+          "PROTOBUF",
+          "JSON",
+          "OPENAPI",
+          "ASYNCAPI",
+          "GRAPHQL",
+          "KCONNECT",
+          "WSDL",
+          "XSD",
+          "XML"
+        ],
+        "example": "AVRO",
+        "type": "string",
+        "x-codegen-package": "io.apicurio.registry.types"
+      },
+      "EditableMetaData": {
+        "description": "",
+        "example": {
+          "description": "The description of the artifact.",
+          "labels": [
+            "regional",
+            "global"
+          ],
+          "name": "Artifact Name",
+          "properties": {
+            "custom-1": "foo",
+            "custom-2": "bar"
+          }
+        },
+        "properties": {
+          "description": {
+            "type": "string"
+          },
+          "labels": {
+            "description": "",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/Properties",
+            "description": ""
+          }
+        },
+        "title": "Root Type for EditableArtifactMetaData",
+        "type": "object"
+      },
+      "Error": {
+        "description": "All error responses, whether `4xx` or `5xx` will include one of these as the response\nbody.",
+        "example": {
+          "error_code": 500,
+          "message": "An error occurred somewhere."
+        },
+        "properties": {
+          "detail": {
+            "description": "Full details about the error.  This might contain a server stack trace, for example.",
+            "type": "string"
+          },
+          "error_code": {
+            "description": "The server-side error code.",
+            "format": "int32",
+            "type": "integer"
+          },
+          "message": {
+            "description": "The short error message.",
+            "type": "string"
+          },
+          "name": {
+            "description": "The error name - typically the classname of the exception thrown by the server.",
+            "type": "string"
+          }
+        },
+        "title": "Root Type for Error",
+        "type": "object"
+      },
+      "FileContent": {
+        "format": "binary",
+        "type": "string",
+        "x-codegen-inline": true
+      },
+      "GroupId": {
+        "description": "An ID of a single artifact group.",
+        "example": "\"my-group\"",
+        "type": "string"
+      },
+      "IfExists": {
+        "description": "",
+        "enum": [
+          "FAIL",
+          "UPDATE",
+          "RETURN",
+          "RETURN_OR_UPDATE"
+        ],
+        "type": "string"
+      },
+      "LogConfiguration": {
+        "description": "",
+        "properties": {
+          "level": {
+            "$ref": "#/components/schemas/LogLevel",
+            "description": ""
+          }
+        },
+        "required": [
+          "level"
+        ],
+        "type": "object"
+      },
+      "LogLevel": {
+        "description": "",
+        "enum": [
+          "DEBUG",
+          "TRACE",
+          "WARN",
+          "ERROR",
+          "SEVERE",
+          "WARNING",
+          "INFO",
+          "CONFIG",
+          "FINE",
+          "FINER",
+          "FINEST"
+        ],
+        "type": "string",
+        "x-codegen-package": "io.apicurio.registry.types"
+      },
+      "NamedLogConfiguration": {
+        "allOf": [
+          {
+            "properties": {
+              "name": {
+                "description": "",
+                "type": "string"
+              }
+            },
+            "required": [
+              "name"
+            ],
+            "type": "object"
+          },
+          {
+            "$ref": "#/components/schemas/LogConfiguration"
+          }
+        ],
+        "description": "",
+        "type": "object"
+      },
+      "Properties": {
+        "additionalProperties": {
+          "type": "string"
+        },
+        "description": "User-defined name-value pairs. Name and value must be strings.",
+        "type": "object",
+        "x-codegen-inline": true,
+        "x-codegen-type": "StringMap"
+      },
+      "Rule": {
+        "description": "",
+        "example": {
+          "config": "FULL",
+          "type": "VALIDITY"
+        },
+        "properties": {
+          "config": {
+            "type": "string"
+          },
+          "type": {
+            "$ref": "#/components/schemas/RuleType"
+          }
+        },
+        "required": [
+          "config"
+        ],
+        "title": "Root Type for Rule",
+        "type": "object"
+      },
+      "RuleType": {
+        "description": "",
+        "enum": [
+          "VALIDITY",
+          "COMPATIBILITY"
+        ],
+        "example": "VALIDITY",
+        "type": "string",
+        "x-codegen-package": "io.apicurio.registry.types"
+      },
+      "RuleViolationCause": {
+        "description": "",
+        "example": {
+          "context": "/info/externalDocs[url]",
+          "description": "External documentation URL is not valid (it must be formatted as a URL)."
+        },
+        "properties": {
+          "context": {
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          }
+        },
+        "title": "Root Type for RuleViolationCause",
+        "type": "object"
+      },
+      "RuleViolationError": {
+        "allOf": [
+          {
+            "properties": {
+              "causes": {
+                "description": "List of rule violation causes.",
+                "items": {
+                  "$ref": "#/components/schemas/RuleViolationCause"
+                },
+                "type": "array"
+              }
+            },
+            "required": [
+              "causes"
+            ],
+            "type": "object"
+          },
+          {
+            "$ref": "#/components/schemas/Error"
+          }
+        ],
+        "description": "All error responses, whether `4xx` or `5xx` will include one of these as the response\nbody.",
+        "example": {
+          "causes": [
+            {
+              "context": "/info[title]",
+              "description": "API is missing a title"
+            },
+            {
+              "context": "/paths[/invoices]/put[operationId]",
+              "description": "Operation IDs must be unique"
+            }
+          ],
+          "error_code": 409,
+          "message": "Artifact failed validation"
+        },
+        "title": "Root Type for Error",
+        "type": "object"
+      },
+      "SearchedArtifact": {
+        "description": "Models a single artifact from the result set returned when searching for artifacts.",
+        "example": {
+          "createdBy": "user1",
+          "createdOn": "2019-03-22T12:51:19Z",
+          "description": "Description of the artifact",
+          "groupId": "My-Group",
+          "id": "Procurement-Invoice",
+          "labels": [
+            "current",
+            "internal"
+          ],
+          "name": "Artifact Name",
+          "state": "ENABLED",
+          "type": "AVRO"
+        },
+        "properties": {
+          "createdBy": {
+            "description": "",
+            "type": "string"
+          },
+          "createdOn": {
+            "description": "",
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "description": "",
+            "type": "string"
+          },
+          "groupId": {
+            "$ref": "#/components/schemas/GroupId",
+            "description": ""
+          },
+          "id": {
+            "$ref": "#/components/schemas/ArtifactId",
+            "description": ""
+          },
+          "labels": {
+            "description": "",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "modifiedBy": {
+            "description": "",
+            "type": "string"
+          },
+          "modifiedOn": {
+            "description": "",
+            "format": "date-time",
+            "type": "string"
+          },
+          "name": {
+            "description": "",
+            "type": "string"
+          },
+          "state": {
+            "$ref": "#/components/schemas/ArtifactState",
+            "description": ""
+          },
+          "type": {
+            "$ref": "#/components/schemas/ArtifactType",
+            "description": ""
+          }
+        },
+        "required": [
+          "createdBy",
+          "createdOn",
+          "id",
+          "type",
+          "state",
+          "group"
+        ],
+        "type": "object"
+      },
+      "SearchedVersion": {
+        "description": "Models a single artifact from the result set returned when searching for artifacts.",
+        "example": {
+          "contentId": 62,
+          "createdBy": "some text",
+          "createdOn": "2018-02-10T09:30Z",
+          "description": "Description of the artifact version",
+          "globalId": 37,
+          "labels": [
+            "current",
+            "internal"
+          ],
+          "name": "Artifact Version Name",
+          "properties": {},
+          "state": "ENABLED",
+          "type": "AVRO",
+          "version": 85
+        },
+        "properties": {
+          "contentId": {
+            "description": "",
+            "format": "int64",
+            "type": "integer"
+          },
+          "createdBy": {
+            "description": "",
+            "type": "string"
+          },
+          "createdOn": {
+            "description": "",
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "description": "",
+            "type": "string"
+          },
+          "globalId": {
+            "description": "",
+            "format": "int64",
+            "type": "integer"
+          },
+          "labels": {
+            "description": "",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "description": "",
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/Properties",
+            "description": ""
+          },
+          "state": {
+            "$ref": "#/components/schemas/ArtifactState",
+            "description": ""
+          },
+          "type": {
+            "$ref": "#/components/schemas/ArtifactType",
+            "description": ""
+          },
+          "version": {
+            "description": "",
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdBy",
+          "createdOn",
+          "type",
+          "state",
+          "globalId",
+          "version",
+          "contentId"
+        ],
+        "type": "object"
+      },
+      "SortBy": {
+        "description": "",
+        "enum": [
+          "name",
+          "createdOn"
+        ],
+        "type": "string"
+      },
+      "SortOrder": {
+        "description": "",
+        "enum": [
+          "asc",
+          "desc"
+        ],
+        "type": "string"
+      },
+      "SystemInfo": {
+        "description": "",
+        "example": {
+          "builtOn": "2021-03-19T12:55:00Z",
+          "description": "The Apicurio Registry application.",
+          "name": "Apicurio Registry (SQL)",
+          "version": "2.0.0.Final"
+        },
+        "properties": {
+          "builtOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "title": "Root Type for SystemInfo",
+        "type": "object"
+      },
+      "UpdateState": {
+        "description": "",
+        "example": {
+          "state": "DISABLED"
+        },
+        "properties": {
+          "state": {
+            "$ref": "#/components/schemas/ArtifactState"
+          }
+        },
+        "required": [
+          "state"
+        ],
+        "title": "Root Type for UpdateState",
+        "type": "object"
+      },
+      "Version": {
+        "description": "A single version of an artifact.  Can be provided by the client when creating a new version,\nor it can be server-generated.  The value can be any string unique to the artifact, but it is\nrecommended to use a simple integer or a semver value.",
+        "example": "\"3.1.6\"",
+        "type": "string"
+      },
+      "VersionMetaData": {
+        "description": "",
+        "example": {
+          "contentId": 12347,
+          "createdBy": "user1",
+          "createdOn": "2019-05-17T12:00:00Z",
+          "description": "The description of the artifact",
+          "globalId": 183282932983,
+          "groupId": "My-Group",
+          "id": "my-artifact-id",
+          "labels": [
+            "label-1",
+            "label-2"
+          ],
+          "name": "Artifact Name",
+          "properties": {
+            "custom-1": "foo",
+            "custom-2": "bar"
+          },
+          "type": "PROTOBUF",
+          "version": 1221432
+        },
+        "properties": {
+          "contentId": {
+            "description": "",
+            "format": "int64",
+            "type": "integer"
+          },
+          "createdBy": {
+            "type": "string"
+          },
+          "createdOn": {
+            "format": "date-time",
+            "type": "string"
+          },
+          "description": {
+            "type": "string"
+          },
+          "globalId": {
+            "description": "",
+            "format": "int64",
+            "type": "integer"
+          },
+          "groupId": {
+            "$ref": "#/components/schemas/GroupId",
+            "description": ""
+          },
+          "id": {
+            "$ref": "#/components/schemas/ArtifactId",
+            "description": ""
+          },
+          "labels": {
+            "description": "",
+            "items": {
+              "type": "string"
+            },
+            "type": "array"
+          },
+          "name": {
+            "type": "string"
+          },
+          "properties": {
+            "$ref": "#/components/schemas/Properties",
+            "description": ""
+          },
+          "state": {
+            "$ref": "#/components/schemas/ArtifactState",
+            "description": ""
+          },
+          "type": {
+            "$ref": "#/components/schemas/ArtifactType",
+            "description": ""
+          },
+          "version": {
+            "type": "string"
+          }
+        },
+        "required": [
+          "createdOn",
+          "createdBy",
+          "version",
+          "type",
+          "globalId",
+          "id",
+          "contentId"
+        ],
+        "title": "Root Type for ArtifactVersionMetaData",
+        "type": "object"
+      },
+      "VersionSearchResults": {
+        "description": "Describes the response received when searching for artifacts.",
+        "properties": {
+          "count": {
+            "description": "The total number of versions that matched the query (may be more than the number of versions\nreturned in the result set).",
+            "type": "integer"
+          },
+          "versions": {
+            "description": "The collection of artifact versions returned in the result set.",
+            "items": {
+              "$ref": "#/components/schemas/SearchedVersion"
+            },
+            "type": "array"
+          }
+        },
+        "required": [
+          "count",
+          "versions"
+        ],
+        "type": "object"
+      }
+    }
+  },
+  "x-codegen": {
+    "bean-annotations": [
+      "io.quarkus.runtime.annotations.RegisterForReflection"
+    ]
+  }
+}

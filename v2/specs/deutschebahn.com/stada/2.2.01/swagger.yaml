@@ -1,0 +1,568 @@
+swagger: "2.0"
+schemes:
+  - https
+  - http
+host: api.deutschebahn.com
+basePath: /stada/v2
+info:
+  description: An API providing master data for German railway stations by DB Station&Service AG.
+  title: Stationsdatenbereitstellung
+  version: 2.2.01
+  x-apisguru-categories:
+    - transport
+    - open_data
+  x-logo:
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_pbs.twimg.com_profile_images_591140150413025280_Cjcqjl2J.png
+  x-origin:
+    - format: swagger
+      url: https://developer.deutschebahn.com/store/api-docs/DBOpenData/StaDa-Station_Data/v2
+      version: "2.0"
+  x-providerName: deutschebahn.com
+  x-serviceName: stada
+paths:
+  /stations:
+    get:
+      description: |
+        Get a QueryResult object containing station objects from the database applying to the parameters described below. 
+
+        QueryResult is a container providing the following information about the query result.
+          1. the total number of hits
+          2. the maximum number of hits to be returned in that QueryResult object
+          3. the offset of the first hit returned in that QueryResult object with respect to all hits returned by the query
+          4. the result objects
+          
+        The parameters described below work as filters to reduce the number of hits returned. Some of these parameters must be used only once, others are allowed to be used multiple times. Valid parameters that are allowed to be used only once are _offset_, _limit_ and _logicaloperator_. 
+
+        All other parameters described below may be used multiple times.
+
+        If a parameter is given more than once, the result will contain all hits that match all given parameter values.
+
+        E.g. _federalstate=berlin&federalstate=saarland_ returns all stations in Berlin and Saarland.
+
+        If more than one filter criterion is used at the same time, the different filter criteria are interpreted as if they are combined by a logical AND operator, unless the parameter _logicaloperator_ is set to _or_.
+
+        E.g. _category=1-2&federalstate=hamburg_ returns all stations in Hamburg having category 1 or 2.
+
+        _category=1-2&federalstate=hamburg&federalsate=hessen_ returns all stations in Hamburg and Hessen having category 1 or 2, while
+
+        _searchstring=berlin*&federalstate=hamburg&federalsate=hessen&logicaloperator=or_ will return all stations with a name starting with 'berlin' as well as all stations in Hamburg and Hessen.
+
+        If no 'limit' parameter is given, the number of hits (stations) is set to its maximum value of 10000.
+
+        To specify parameter values containing German umlauts, the following encoding has to be used
+          * ä  => %C3%A4
+          * ö  => %C3%B6
+          * ü  => %C3%BC
+          * Ä  => %C3%84
+          * Ö  => %C3%96
+          * Ü  => %C3%9C
+          * ß  => %C3%9F
+      parameters:
+        - description: Offset of the first hit returned in the QueryResult object with respect to all hits returned by the query. If this parameter is omitted, it will be set to 0 internally.
+          format: int64
+          in: query
+          name: offset
+          required: false
+          type: integer
+        - description: The maximum number of hits to be returned by that query. If 'limit' is set greater than 10000, it will be reset to 10000 internally and only 10000 hits will be returned.
+          format: int64
+          in: query
+          name: limit
+          required: false
+          type: integer
+        - description: String to search for a station name. The wildcards * (indicating an arbitrary number of characters) and ? (indicating one single character) can be used in the search pattern. A comma separated list of station names is also supported (e.g. searchstring=hamburg*,berlin*).
+          format: string
+          in: query
+          name: searchstring
+          required: false
+          type: string
+        - description: Filter by station category. Category ranges are supported as well as lists of categories (e.g. category=2-4 or category=1,3-5). The category must be between 1 and 7 otherwise a parameter exception is returned.
+          format: string
+          in: query
+          name: category
+          required: false
+          type: string
+        - description: Filter by German federal state. Lists of federal states are also supported (e.g. federalstate=bayern,hamburg). Wildcards are not allowed here.
+          format: string
+          in: query
+          name: federalstate
+          required: false
+          type: string
+        - description: Filter by EVA number. Wildcards are not allowed here.
+          format: int64
+          in: query
+          name: eva
+          required: false
+          type: integer
+        - description: Filter by Ril100-identifier. Wildcards are not allowed here.
+          format: string
+          in: query
+          name: ril
+          required: false
+          type: string
+        - description: "Logical operator to combine query parameters (default=AND). See above for further details.  Allowed values: or, and"
+          format: string
+          in: query
+          name: logicaloperator
+          required: false
+          type: string
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: station data
+          schema:
+            $ref: "#/definitions/StationQuery"
+        "400":
+          description: bad request (illegal parameter or illegal parameter value)
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: internal server error
+          schema:
+            $ref: "#/definitions/Error"
+      summary: This operation provides the master data for german railway stations.
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+  "/stations/{id}":
+    get:
+      description: Get a QueryResult object containing one station object specified by its id.
+      parameters:
+        - description: Station ID (Bahnhofsnummer)
+          format: int32
+          in: path
+          name: id
+          required: true
+          type: integer
+      produces:
+        - application/json
+      responses:
+        "200":
+          description: station data
+          schema:
+            $ref: "#/definitions/StationQuery"
+        "400":
+          description: bad request (illegal parameter or illegal parameter value)
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: internal server error
+          schema:
+            $ref: "#/definitions/Error"
+      summary: This operation provides the master data for a german railway station selected by its station-id.
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+  /szentralen:
+    get:
+      description: |
+        Get a QueryResult object containing SZentralen objects from the database applying to the parameters described below. 
+        QueryResult is a container providing the following information about the query result.
+          1. the total number of hits
+          2. the maximum number of hits to be returned in that QueryResult object
+          3. the offset of the first hit returned in that QueryResult object with respect to all hits returned by the query
+          4. the result objects
+      parameters:
+        - description: Offset of the first hit returned in the QueryResult object with respect to all hits returned by the query. If this parameter is omitted, it will be set to 0 internally.
+          format: int64
+          in: query
+          name: offset
+          required: false
+          type: integer
+        - description: The maximum number of hits to be returned by that query. If 'limit' is set greater than 10000, it will be reset to 10000 internally and only 100 hits will be returned.
+          format: int64
+          in: query
+          name: limit
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: 3-S-Zentralen data
+          schema:
+            $ref: "#/definitions/SZentraleQuery"
+        "400":
+          description: bad request (illegal parameter or illegal parameter value)
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: internal server error
+          schema:
+            $ref: "#/definitions/Error"
+      summary: This operation provides the master data for 3-S-Zentralen.
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+  "/szentralen/{id}":
+    get:
+      description: "Get a QueryResult object containing one SZentralen object specified by its id. "
+      parameters:
+        - description: id of the 3-S-Zentrale.
+          format: int32
+          in: path
+          name: id
+          required: true
+          type: integer
+      responses:
+        "200":
+          description: 3-S-Zentralen data
+          schema:
+            $ref: "#/definitions/SZentraleQuery"
+        "400":
+          description: bad request (illegal parameter or illegal parameter value)
+          schema:
+            $ref: "#/definitions/Error"
+        "404":
+          description: not found
+          schema:
+            $ref: "#/definitions/Error"
+        "500":
+          description: internal server error
+          schema:
+            $ref: "#/definitions/Error"
+      summary: This operation provides the master data for 3-S-Zentralen select by its id.
+      x-auth-type: Application & Application User
+      x-throttling-tier: Unlimited
+definitions:
+  Address:
+    properties:
+      city:
+        type: string
+      houseNumber:
+        type: string
+      street:
+        type: string
+      zipcode:
+        type: integer
+    type: object
+  Aufgabentraeger:
+    description: local public sector entity, responsible for short distance public transport in a specific area
+    properties:
+      name:
+        description: full name of Aufgabentraeger
+        type: string
+      shortname:
+        description: unique identifier
+        type: string
+    type: object
+  EVANumber:
+    properties:
+      geographicCoordinate:
+        $ref: "#/definitions/GeographicPoint"
+      isMain:
+        description: station related EVA-Numbers
+        type: boolean
+      number:
+        description: EVA identifier
+        type: integer
+    type: object
+  Error:
+    properties:
+      errMsg:
+        description: error message
+        type: string
+      errNo:
+        description: error number
+        format: int32
+        type: integer
+    type: object
+  GeographicPoint:
+    description: GEOJSON object of type point. By default WGS84 is the coordinate system in GEOJSON.
+    properties:
+      coordinates:
+        description: first value is longitude, second latitude third altitude (currently not provided)
+        items:
+          format: double
+          type: number
+        type: array
+      type:
+        description: the type of the GEOJSON Object e.g. point. Currently only point coordinates without altitude are provided.
+        type: string
+    type: object
+  OpeningHours:
+    description: period of time from/to
+    properties:
+      fromTime:
+        format: date
+        type: string
+      toTime:
+        format: date
+        type: string
+    type: object
+  Partial:
+    enum:
+      - yes
+      - no
+      - partial
+    type: string
+  RegionalBereichRef:
+    description: reference object. an internal organization type of Station&Service, regional department.
+    properties:
+      name:
+        description: name of the regional department
+        type: string
+      number:
+        description: unique identifier of the regional department
+        format: int32
+        type: integer
+      shortName:
+        type: string
+    type: object
+  Regionalbereich:
+    description: reference object. an internal organization type of Station&Service, regional department.
+    properties:
+      name:
+        description: name of the regional department
+        type: string
+      number:
+        description: unique identifier of the regional department
+        format: int32
+        type: integer
+      shortName:
+        type: string
+    type: object
+  RiL100Identifier:
+    properties:
+      geographicCoordinate:
+        $ref: "#/definitions/GeographicPoint"
+      hasSteamPermission:
+        description: permission for steam engines y/n
+        type: boolean
+      isMain:
+        description: is stations main Ril100. Determination of Station&Service AG
+        type: boolean
+      rilIdentifier:
+        description: Unique identifier of 'Betriebsstelle' according to Ril100
+        type: string
+    type: object
+  SZentrale:
+    description: 3-S-Zentralen are 7/24 hours operating centers for german railway stations
+    properties:
+      address:
+        $ref: "#/definitions/Address"
+      email:
+        description: email adress of the 3-S-Zentrale (no longer supported!)
+        type: string
+      internalFaxNumber:
+        description: internal fax number
+        type: string
+      internalPhoneNumber:
+        description: internal phone number
+        type: string
+      mobilePhoneNumber:
+        description: mobile phone number (no longer supported!)
+        type: string
+      name:
+        description: unique identifier of 3SZentrale
+        type: string
+      number:
+        description: unique identifier for SZentrale
+        format: int32
+        type: integer
+      publicFaxNumber:
+        description: public fax number
+        type: string
+      publicPhoneNumber:
+        type: string
+    type: object
+  SZentraleQuery:
+    properties:
+      limit:
+        description: maximum number of result objects to be returned
+        format: int64
+        type: integer
+      offset:
+        description: offset of the first result object with respect to the total number of  hits produced by the query
+        format: int64
+        type: integer
+      result:
+        description: result objects produced by that query
+        items:
+          $ref: "#/definitions/SZentrale"
+        type: array
+      total:
+        description: total number of hits produced by that query
+        format: int64
+        type: integer
+    type: object
+  SZentraleRef:
+    description: reference object contained in station
+    properties:
+      name:
+        description: unique identifier of 3SZentrale
+        type: string
+      number:
+        description: unique identifier for SZentrale
+        format: int32
+        type: integer
+      publicPhoneNumber:
+        type: string
+    type: object
+  Schedule:
+    description: a weekly schedule
+    properties:
+      friday:
+        $ref: "#/definitions/OpeningHours"
+      holiday:
+        $ref: "#/definitions/OpeningHours"
+      monday:
+        $ref: "#/definitions/OpeningHours"
+      saturday:
+        $ref: "#/definitions/OpeningHours"
+      sunday:
+        $ref: "#/definitions/OpeningHours"
+      thursday:
+        $ref: "#/definitions/OpeningHours"
+      tuesday:
+        $ref: "#/definitions/OpeningHours"
+      wednesday:
+        $ref: "#/definitions/OpeningHours"
+    type: object
+  Station:
+    properties:
+      DBinformation:
+        $ref: "#/definitions/Schedule"
+      aufgabentraeger:
+        $ref: "#/definitions/Aufgabentraeger"
+      category:
+        description: the stations category (-1...7). Stations with category -1 or 0 are not in production, e.g. planned, saled, without train stops.
+        format: int32
+        type: integer
+      evaNumbers:
+        description: station related EVA-Numbers
+        items:
+          $ref: "#/definitions/EVANumber"
+        type: array
+      federalState:
+        description: german federal state
+        type: string
+      hasBicycleParking:
+        description: public bicycle parking y/n
+        type: boolean
+      hasCarRental:
+        description: car sharing or car rental y/n
+        type: boolean
+      hasDBLounge:
+        description: DB lounge y/n
+        type: boolean
+      hasLocalPublicTransport:
+        description: local public transport y/n
+        type: boolean
+      hasLockerSystem:
+        description: public facilities y/n
+        type: boolean
+      hasLostAndFound:
+        description: lost and found y/n
+        type: boolean
+      hasMobilityService:
+        description: values are 'no', 'yes, advance notification is requested...' or 'yes, advance notification is required...'
+        type: string
+      hasParking:
+        description: public parking y/n
+        type: boolean
+      hasPublicFacilities:
+        description: public facilities y/n
+        type: boolean
+      hasRailwayMission:
+        description: railway mission y/n
+        type: boolean
+      hasSteplessAccess:
+        $ref: "#/definitions/Partial"
+        description: stepless access is availiable yes, no or partial
+      hasTaxiRank:
+        description: taxi rank in front of the station y/n
+        type: boolean
+      hasTravelCenter:
+        description: local travel center y/n
+        type: boolean
+      hasTravelNecessities:
+        description: a shop for travel necessities y/n
+        type: boolean
+      hasWiFi:
+        description: public Wi-Fi is available y/n
+        type: boolean
+      localServiceStaff:
+        $ref: "#/definitions/Schedule"
+      mailingAdress:
+        $ref: "#/definitions/Address"
+        description: mailing address of the railway station
+      name:
+        description: the stations name
+        type: string
+      number:
+        description: unique identifier representing a specific railway station
+        format: int32
+        type: integer
+      priceCategory:
+        description: determines in some respect the price for train stops at a specific station (1..7)
+        format: int32
+        type: integer
+      regionalbereich:
+        $ref: "#/definitions/RegionalBereichRef"
+      riL100Identifiers:
+        description: station related Ril100s
+        items:
+          $ref: "#/definitions/RiL100Identifier"
+        type: array
+      stationManagement:
+        $ref: "#/definitions/StationManagementRef"
+      szentrale:
+        $ref: "#/definitions/SZentraleRef"
+      timetableOffice:
+        $ref: "#/definitions/TimetableOffice"
+    type: object
+  StationManagement:
+    properties:
+      name:
+        type: string
+      number:
+        description: identifier
+        type: integer
+    type: object
+  StationManagementRef:
+    properties:
+      name:
+        type: string
+      number:
+        description: identifier
+        type: integer
+    type: object
+  StationQuery:
+    properties:
+      limit:
+        description: maximum number of result objects to be returned
+        format: int64
+        type: integer
+      offset:
+        description: offset of the first result object with respect to the total number  of hits produced by the query
+        format: int64
+        type: integer
+      result:
+        description: result objects produced by that query
+        items:
+          $ref: "#/definitions/Station"
+        type: array
+      total:
+        description: total number of hits produced by that query
+        format: int64
+        type: integer
+    type: object
+  TimetableOffice:
+    properties:
+      email:
+        description: email
+        type: string
+      name:
+        description: identifier
+        type: string
+    type: object

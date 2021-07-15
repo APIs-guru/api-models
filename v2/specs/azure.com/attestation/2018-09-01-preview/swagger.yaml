@@ -1,0 +1,395 @@
+swagger: "2.0"
+schemes:
+  - https
+host: azure.local
+info:
+  description: Describes the interface for the per-tenant enclave service.
+  title: AttestationClient
+  version: 2018-09-01-preview
+  x-apisguru-categories:
+    - cloud
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_assets.onestore.ms_cdnfiles_onestorerolling-1606-01000_shell_v3_images_logo_microsoft.png
+  x-origin:
+    - format: swagger
+      url: https://raw.githubusercontent.com/Azure/azure-rest-api-specs/master/specification/attestation/data-plane/Microsoft.Attestation/preview/2018-09-01-preview/attestation.json
+      version: "2.0"
+  x-providerName: azure.com
+  x-serviceName: attestation
+  x-tags:
+    - Azure
+    - Microsoft
+consumes:
+  - application/json
+produces:
+  - application/json
+securityDefinitions:
+  azure_auth:
+    authorizationUrl: https://login.microsoftonline.com/common/oauth2/authorize
+    description: Azure Active Directory OAuth2 Flow
+    flow: implicit
+    scopes:
+      user_impersonation: impersonate your user account
+    type: oauth2
+parameters:
+  ApiVersionParameter:
+    description: Client API version.
+    enum:
+      - 2018-09-01-preview
+    in: query
+    name: api-version
+    required: true
+    type: string
+  TeeKind:
+    description: Specifies the trusted execution environment to be used to validate the evidence
+    enum:
+      - SgxEnclave
+      - OpenEnclave
+      - CyResComponent
+      - AzureGuest
+    in: query
+    name: tee
+    required: true
+    type: string
+    x-ms-enum:
+      modelAsString: true
+      name: TeeKind
+      values:
+        - description: Intel Software Guard eXtensions
+          value: SgxEnclave
+        - description: OpenEnclave extensions to SGX
+          value: OpenEnclave
+        - description: IoT Edge validation
+          value: CyResComponent
+        - description: Azure Guest Attestation
+          value: AzureGuest
+    x-ms-parameter-location: method
+paths:
+  /.well-known/openid-configuration:
+    get:
+      description: Retrieves metadata about the attestation signing keys in use by the  attestation service
+      operationId: MetadataConfiguration_Get
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: object
+        "400":
+          description: Error processing the request
+          schema:
+            $ref: "#/definitions/CloudError"
+        default:
+          description: Error response describing why the operation failed
+          schema:
+            $ref: "#/definitions/CloudError"
+      summary: Retrieves the OpenID Configuration data for the Azure Attestation Service
+      tags:
+        - attestation
+      x-ms-examples:
+        Reset Policy:
+          parameters:
+            api-version: 2018-09-01-preview
+            tenantBaseUrl: "'https://mytest.attest.azure.net'"
+          responses:
+            "200":
+              body:
+                claims_supported:
+                  - is-debuggable
+                  - sgx-mrsigner
+                  - sgx-mrenclave
+                  - product-id
+                  - svn
+                  - tee
+                  - device_id
+                  - component_0_id
+                  - expected_components
+                id_token_signing_alg_values_supported:
+                  - RS256
+                jwks_uri: https://mytest.attest.azure.net/certs
+                response_types_supported:
+                  - token
+                  - none
+                revocation_endpoint: https://mytest.attest.azure.net/revoke
+            "400":
+              body:
+                error:
+                  code: "400"
+                  message: error message
+  /certs:
+    get:
+      description: Retrieves attestation signing keys in use by the attestation service
+      operationId: Certs_Get
+      responses:
+        "200":
+          description: Success
+          schema:
+            type: object
+        "400":
+          description: Error processing the request
+          schema:
+            $ref: "#/definitions/CloudError"
+        default:
+          description: Error response describing why the operation failed
+          schema:
+            $ref: "#/definitions/CloudError"
+      summary: Retrieves the OpenID Configuration data for the Azure Attestation Service
+      tags:
+        - attestation
+      x-ms-examples:
+        Reset Policy:
+          parameters:
+            api-version: 2018-09-01-preview
+            tenantBaseUrl: "'https://mytest.attest.azure.net'"
+          responses:
+            "200":
+              body:
+                keys:
+                  - kid: fAFUDjo0GcezSay/DP2z+LcPe4g/yjCUUAg88BXbDGw=
+                    kty: RSA
+                    x5c:
+                      - MIIDazCCAlOgAwIBAgIQR8q7RtYeX6RHhpcFE6HNGDANBgkqhkiG9w0BAQsFADA/MT0wOwYDVQQDEzRodHRwczovL3Rlc3RhdHRlc3RhdGlvbjk5MzQudXMudGVzdC5hdHRlc3QuYXp1cmUubmV0MB4XDTE5MTIxMDAwNDY0OFoXDTIwMTIxMDAwNDY0OFowPzE9MDsGA1UEAxM0aHR0cHM6Ly90ZXN0YXR0ZXN0YXRpb245OTM0LnVzLnRlc3QuYXR0ZXN0LmF6dXJlLm5ldDCCASIwDQYJKoZIhvcNAQEBBQADggEPADCCAQoCggEBAK2v9qLRt313zyzvF3dbPK6AcVO61RhTpRpnlnttwsGIK9A03Rb2bhJLrNsEOHvAPLgSPQWYNrNoeO/X9f9N2w18oZ9ReUIFOj0L0V/trOTYhJJ42f4zsCFz6iX8klqY1vE29y8YL+beqvjXg/8aLaTgs48I+R0coEuJECNADqIL8TCn+UzP1o2tTiH7EKGEG8qpiWRyC25Yl59EITpKrn78v/VMDF6RWkx5uetYDWBXeHi0l48k1lo38BOVOXhJPJvuCKeTSF1Oew7yTsR1QrVviOsnexOTAPtvINYXkLnDzbguNbTfs5FS3RzV017M7kcL3XC+x4B7HkrpvYKUuzsCAwEAAaNjMGEwDgYDVR0PAQH/BAQDAgIEMA8GA1UdEwEB/wQFMAMBAf8wHQYDVR0OBBYEFIvByEw07sUvWMMQwiVoU5kDb09eMB8GA1UdIwQYMBaAFIvByEw07sUvWMMQwiVoU5kDb09eMA0GCSqGSIb3DQEBCwUAA4IBAQBM+itN5ZPTA7aRzzfnRNVIoixVrege/jPd5r9caHAQdhdOYy/TOxtpTkxYuP+pvlh/8e3F1zV/72iLjZCUYVQQLTRJ9BenF/AA4YJA2y/48UNHm9c+RauUB/KaxfMUolMQ9rkhGYxMBYhq1N3BitJ0m4WlPVzA0eVf1+UMARocasDUDkfmzAj4MAnee9oIBYOLaHe4La5DrLR7MV5v85rkP5Ed/oqznkyKcDT/OPSE3zwVy18BW6GskeLQ+kaTK/7MZM7nnsHO86Wpvjr4EkZZViupIlj/yQED6vWWnR41mCEN/P3MSoKYK1OQtdyhr0sow+CNSjZxz0ndWj7U6Rq1
+                  - kid: 81dsh2B8UUKHZ2JXSOQn-VwfQMU
+                    kty: RSA
+                    x5c:
+                      - MIIDcDCCAligAwIBAgIQAMxeVti2SRWf2t71dDYmaTANBgkqhkiG9w0BAQsFADA1MTMwMQYDVQQDEypBdHRlc3RhdGlvblNlcnZpY2UtTG9jYWxUZXN0LVJlcG9ydFNpZ25pbmcwHhcNMTkwNDI0MTYwMjUwWhcNMjEwNDI0MTYxMjUwWjA1MTMwMQYDVQQDEypBdHRlc3RhdGlvblNlcnZpY2UtTG9jYWxUZXN0LVJlcG9ydFNpZ25pbmcwggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQCww8VBqpnKDXo6W+DJbYOXP3BPIFFQi8XnHC59fIco08l7XLwr6mCY+Zzh9qInAENV7fzRJPt4hluCLoUb1vmTY9VdrvSgR5fX4nALJ4FuCFOeLzsxD+5+jP6L0KOT+Lz/3K5s26QaWv4SCNhEz2vI2ffO31AC5w4qfvV+QTK0pI8t9NoW0Afldd7F0E2UowFLHtwVV4lVBtGszvFiIo4X/NpRkj/8e4/0cQdmFlQFFtP/xKg9XP25EZTHrvsmLHSl3tG1F31Om9qsakkL4plTxaOosn71GzyU6BWIh8ZQgSszyTrY8qw0h8KNAot2v3RQrNVYWAxugYVnHhPspofXAgMBAAGjfDB6MA4GA1UdDwEB/wQEAwIFoDAJBgNVHRMEAjAAMB0GA1UdJQQWMBQGCCsGAQUFBwMBBggrBgEFBQcDAjAfBgNVHSMEGDAWgBRQCw4UHmsEwWMJKvERNt2nUVnaIDAdBgNVHQ4EFgQUUAsOFB5rBMFjCSrxETbdp1FZ2iAwDQYJKoZIhvcNAQELBQADggEBAJogTjVhZvG85eig5Qkqt72Hpm4YR9d06UYrwo8nQKoRLsOWW01ySOn7phGvb3dxEyXQmTe10U2x1X1gsGFqnXETXGX11oHnDCWtPk4hK+uVI3Uv2qlX1134nUGoicZb2nRicyUSh8+VHY0ZuOmUs95v+HEMIsEM12AbwWZRKB0+MTAW+4cXSR9LTxRm1pwLS+wKd4A2PYi4TLuO6erZBhZ4BbvmsQtdOaulsUJYWvF72fX+jGQF4WS3qiuN4QaI6Tm/ga3Dcgdfd2oBHePTkxLE252zxlKGZ8kx/WdOuVm/1F24e0fC5M67vlFJvq9VB9I+ElMcGponp8REzQamAIU=
+            "400":
+              body:
+                error:
+                  code: "400"
+                  message: error message
+  /operations/policy/current:
+    get:
+      operationId: Policy_Get
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/TeeKind"
+      responses:
+        "200":
+          description: Success
+          schema:
+            $ref: "#/definitions/AttestationPolicy"
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/CloudError"
+        "401":
+          description: Request is unauthorized
+          schema:
+            type: string
+        default:
+          description: Error response describing why the operation failed
+          schema:
+            $ref: "#/definitions/CloudError"
+      summary: Retrieves the current policy for a given kind of TEE.
+      tags:
+        - policy
+      x-ms-examples:
+        Get Policy:
+          parameters:
+            api-version: 2018-09-01-preview
+            tee: SgxEnclave
+            tenantBaseUrl: "'https://mytest.attest.azure.net'"
+          responses:
+            "200":
+              body:
+                policy: testpolicy
+            "400":
+              body:
+                error:
+                  code: "400"
+                  message: error message
+            "401":
+              body: ""
+              description: Request is unauthorized
+    post:
+      consumes:
+        - text/plain
+      operationId: Policy_Reset
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/TeeKind"
+        - description: JSON Web Signature with an empty policy document
+          in: body
+          name: PolicyJws
+          required: true
+          schema:
+            type: string
+          x-ms-client-flatten: true
+      responses:
+        "200":
+          description: Success - Returns a JWT signed by the metadata signing key that contains the hash of the supplied policy to be set.
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/CloudError"
+        "401":
+          description: Request is unauthorized
+          schema:
+            type: string
+        default:
+          description: Error response describing why the operation failed
+          schema:
+            $ref: "#/definitions/CloudError"
+      summary: Resets the attestation policy for the specified tenant and reverts to the default policy.
+      tags:
+        - policy
+      x-ms-examples:
+        Reset Policy:
+          parameters:
+            PolicyJws: eyJhbGciOiJub25lIn0..
+            api-version: 2018-09-01-preview
+            tee: SgxEnclave
+            tenantBaseUrl: "'https://mytest.attest.azure.net'"
+          responses:
+            "200":
+              body: eyJhbGciOiAiUlMyNTYiLCAiamt1IjogImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9jZXJ0cyIsICJraWQiOiAieWtJd00rcnRNcnhFZkZJVHY2TGZjVG03eWszUkxXRXBkN1lsZmJyTk1JST0iLCAidHlwIjogIkpXVCJ9.eyJhYXMtcG9saWN5SGFzaCI6ICJ2MG9QNG9KWkVKWnh4SXhFNmJiVVAxa1JSbWVfZXgtUHV4NlF0c1U4STdNIiwgImV4cCI6IDE1NzM4NjI5NzQsICJpYXQiOiAxNTczODU5Mzc0LCAiaXNzIjogImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsICJuYmYiOiAxNTczODU5Mzc0fQ.FTMpKwZHJa5l9_Mdxl60FtSDOr9kLRDYw3UAofMXJ-eOEvm4FdNM69YHR6Oy_i1uUEnVDAnMHhR0APTXgKqoR7gDxxfJG_RgiQqsTmQ-ucmXNL2Ck--sH3bz9OfIocPYSN0FBWiq6fgG6iX_oMX1hs-ENsF7B3jSp1nVL8NWtWk
+            "400":
+              body:
+                error:
+                  code: "400"
+                  message: error message
+            "401":
+              body: ""
+              description: Request is unauthorized
+    put:
+      consumes:
+        - text/plain
+      operationId: Policy_Set
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/TeeKind"
+        - description: JWT Expressing the new policy
+          in: body
+          name: newAttestationPolicy
+          required: true
+          schema:
+            type: string
+          x-ms-client-flatten: true
+      responses:
+        "200":
+          description: Success
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/CloudError"
+        "401":
+          description: Request is unauthorized
+          schema:
+            type: string
+        default:
+          description: Error response describing why the operation failed
+          schema:
+            $ref: "#/definitions/CloudError"
+      summary: Sets the policy for a given kind of TEE.
+      tags:
+        - policy
+      x-ms-examples:
+        Set Policy:
+          parameters:
+            api-version: 2018-09-01-preview
+            newAttestationPolicy: newAttestationPolicyname
+            tee: SgxEnclave
+            tenantBaseUrl: "'https://mytest.attest.azure.net'"
+          responses:
+            "200":
+              description: Success
+            "400":
+              body:
+                error:
+                  code: "400"
+                  message: error message
+            "401":
+              body: ""
+              description: Request is unauthorized
+  /operations/policy/updatepolicy:
+    post:
+      consumes:
+        - text/plain
+      operationId: Policy_PrepareToSet
+      parameters:
+        - $ref: "#/parameters/ApiVersionParameter"
+        - $ref: "#/parameters/TeeKind"
+        - description: JSON Web Signature (See RFC7515) expressing the new policy
+          in: body
+          name: PolicyJws
+          required: true
+          schema:
+            type: string
+          x-ms-client-flatten: true
+      produces:
+        - text/plain
+        - application/json
+      responses:
+        "200":
+          description: Success - Returns a JWT signed by the metadata signing key that contains the hash of the supplied policy to be set.
+          schema:
+            type: string
+        "400":
+          description: Bad request
+          schema:
+            $ref: "#/definitions/CloudError"
+        "401":
+          description: Request is unauthorized
+          schema:
+            type: string
+        default:
+          description: Error response describing why the operation failed
+          schema:
+            $ref: "#/definitions/CloudError"
+      summary: Accepts a new policy document and returns a JWT which expresses  used in preparation to set attestation policy.
+      tags:
+        - policy
+      x-ms-examples:
+        UpdatePolicy:
+          parameters:
+            PolicyJws: eyJhbGciOiJub25lIn0.eyJBdHRlc3RhdGlvblBvbGljeSI6ICJ7XHJcbiAgICBcIiR2ZXJzaW9uXCI6IDEsXHJcbiAgICBcIiRhbGxvdy1kZWJ1Z2dhYmxlXCIgOiB0cnVlLFxyXG4gICAgXCIkY2xhaW1zXCI6W1xyXG4gICAgICAgIFwiaXMtZGVidWdnYWJsZVwiICxcclxuICAgICAgICBcInNneC1tcnNpZ25lclwiLFxyXG4gICAgICAgIFwic2d4LW1yZW5jbGF2ZVwiLFxyXG4gICAgICAgIFwicHJvZHVjdC1pZFwiLFxyXG4gICAgICAgIFwic3ZuXCIsXHJcbiAgICAgICAgXCJ0ZWVcIixcclxuICAgICAgICBcIk5vdERlYnVnZ2FibGVcIlxyXG4gICAgXSxcclxuICAgIFwiTm90RGVidWdnYWJsZVwiOiB7XCJ5ZXNcIjp7XCIkaXMtZGVidWdnYWJsZVwiOnRydWUsIFwiJG1hbmRhdG9yeVwiOnRydWUsIFwiJHZpc2libGVcIjpmYWxzZX19LFxyXG4gICAgXCJpcy1kZWJ1Z2dhYmxlXCIgOiBcIiRpcy1kZWJ1Z2dhYmxlXCIsXHJcbiAgICBcInNneC1tcnNpZ25lclwiIDogXCIkc2d4LW1yc2lnbmVyXCIsXHJcbiAgICBcInNneC1tcmVuY2xhdmVcIiA6IFwiJHNneC1tcmVuY2xhdmVcIixcclxuICAgIFwicHJvZHVjdC1pZFwiIDogXCIkcHJvZHVjdC1pZFwiLFxyXG4gICAgXCJzdm5cIiA6IFwiJHN2blwiLFxyXG4gICAgXCJ0ZWVcIiA6IFwiJHRlZVwiXHJcbn0ifQ.
+            api-version: 2018-09-01-preview
+            tee: SgxEnclave
+            tenantBaseUrl: "'https://mytest.attest.azure.net'"
+          responses:
+            "200":
+              body: eyJhbGciOiAiUlMyNTYiLCAiamt1IjogImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MC9jZXJ0cyIsICJraWQiOiAieWtJd00rcnRNcnhFZkZJVHY2TGZjVG03eWszUkxXRXBkN1lsZmJyTk1JST0iLCAidHlwIjogIkpXVCJ9.eyJhYXMtcG9saWN5SGFzaCI6ICJ2MG9QNG9KWkVKWnh4SXhFNmJiVVAxa1JSbWVfZXgtUHV4NlF0c1U4STdNIiwgImV4cCI6IDE1NzM4NjI5NzQsICJpYXQiOiAxNTczODU5Mzc0LCAiaXNzIjogImh0dHA6Ly9sb2NhbGhvc3Q6ODA4MCIsICJuYmYiOiAxNTczODU5Mzc0fQ.FTMpKwZHJa5l9_Mdxl60FtSDOr9kLRDYw3UAofMXJ-eOEvm4FdNM69YHR6Oy_i1uUEnVDAnMHhR0APTXgKqoR7gDxxfJG_RgiQqsTmQ-ucmXNL2Ck--sH3bz9OfIocPYSN0FBWiq6fgG6iX_oMX1hs-ENsF7B3jSp1nVL8NWtWk
+            "400":
+              body:
+                error:
+                  code: "400"
+                  message: error message
+            "401":
+              body: ""
+              description: Request is unauthorized
+definitions:
+  AttestationPolicy:
+    properties:
+      policy:
+        description: String-encoded attestation policy document.
+        type: string
+    type: object
+  CloudError:
+    description: An error response from Attestation.
+    properties:
+      error:
+        $ref: "#/definitions/CloudErrorBody"
+    x-ms-external: true
+  CloudErrorBody:
+    description: An error response from Attestation.
+    properties:
+      code:
+        description: An identifier for the error. Codes are invariant and are intended to be consumed programmatically.
+        type: string
+      message:
+        description: A message describing the error, intended to be suitable for displaying in a user interface.
+        type: string
+    x-ms-external: true
+x-ms-parameterized-host:
+  hostTemplate: "{tenantBaseUrl}"
+  parameters:
+    - description: The tenant name, for example https://mytenant.attest.azure.net.
+      in: path
+      name: tenantBaseUrl
+      required: true
+      type: string
+      x-ms-parameter-location: client
+      x-ms-skip-url-encoding: true
+  useSchemePrefix: false

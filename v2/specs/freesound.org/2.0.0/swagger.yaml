@@ -1,0 +1,190 @@
+swagger: "2.0"
+schemes:
+  - http
+host: www.freesound.org
+basePath: /apiv2
+info:
+  contact:
+    url: http://groups.google.com/group/freesound-api
+  description: With the Freesound APIv2 you can browse, search, and retrieve information about Freesound users, packs, and the sounds themselves of course. You can find similar sounds to a given target (based on content analysis) and retrieve automatically extracted features from audio files, as well as perform advanced queries combining content analysis features and other metadata (tags, etc...). With the Freesound APIv2, you can also upload, comment, rate and bookmark sounds!
+  license:
+    name: GNU Affero General Public License v3.0
+    url: https://www.gnu.org/licenses/agpl-3.0.html
+  termsOfService: http://freesound.org/help/tos_api/
+  title: Freesound
+  version: 2.0.0
+  x-apisguru-categories:
+    - media
+  x-logo:
+    backgroundColor: "#FFFFFF"
+    url: https://api.apis.guru/v2/cache/logo/https_freesound.org_media_images_logo.png
+  x-origin:
+    - format: swagger
+      url: http://miguel76.github.io/freesound-openapi/swagger.json
+      version: "2.0"
+  x-providerName: freesound.org
+  x-unofficialSpec: true
+externalDocs:
+  description: Find out more about Freesound
+  url: https://freesound.org/docs/api/index.html
+tags:
+  - description: Search resources
+    name: search
+  - description: Sound resources
+    name: sound
+  - description: User resources
+    name: user
+  - description: Pack resources
+    name: pack
+  - description: Other resources
+    name: other
+paths:
+  /search/text:
+    get:
+      description: This resource allows searching sounds in Freesound by matching their tags and other kinds of metadata.
+      operationId: searchText
+      parameters:
+        - description: The query! The query is the main parameter used to define a query. You can type several terms separated by spaces or phrases wrapped inside quote ‘”’ characters. For every term, you can also use ‘+’ and ‘-‘ modifier characters to indicate that a term is “mandatory” or “prohibited” (by default, terms are considered to be “mandatory”). For example, in a query such as query=term_a -term_b, sounds including term_b will not match the search criteria. The query does a weighted search over some sound properties including sound tags, the sound name, its description, pack name and the sound id. Therefore, searching for query=123 will find you sounds with id 1234, sounds that have 1234 in the description, in the tags, etc. You’ll find some examples below. Using an empty query (query= or query="") will return all Freeosund sounds.
+          in: query
+          name: query
+          required: false
+          type: string
+        - description: Allows filtering query results. See below for more information.
+          in: query
+          name: filter
+          required: false
+          type: string
+        - description: |-
+            Indicates how query results should be sorted. See below for a list of the sorting options. By default `sort=score`. <p> <table>
+              <tr>
+                <th>Option</th>
+                <th>Explanation</th>
+              </tr>
+              <tr>
+                <td>score</td>
+                <td>Sort by a relevance score returned by our search engine (default).</td>
+              </tr>
+              <tr>
+                <td>duration_desc
+                <td>Sort by the duration of the sounds, longest sounds first.
+              </tr>
+              <tr>
+                <td>duration_asc
+                <td>Same as above, but shortest sounds first.
+              </tr>
+              <tr>
+                <td>created_desc
+                <td>Sort by the date of when the sound was added. newest sounds first.
+              </tr>
+              <tr>
+                <td>created_asc
+                <td>Same as above, but oldest sounds first.
+              </tr>
+              <tr>
+                <td>downloads_desc
+                <td>Sort by the number of downloads, most downloaded sounds first.
+              </tr>
+              <tr>
+                <td>downloads_asc
+                <td>Same as above, but least downloaded sounds first.
+              </tr>
+              <tr>
+                <td>rating_desc
+                <td>Sort by the average rating given to the sounds, highest rated first.
+              </tr>
+              <tr>
+                <td>rating_asc
+                <td>Same as above, but lowest rated sounds first.
+              </tr>
+            </table> </p>
+          enum:
+            - score
+            - duration_desc
+            - duration_asc
+            - created_desc
+            - created_asc
+            - downloads_desc
+            - downloads_asc
+            - rating_desc
+            - rating_asc
+          in: query
+          name: sort
+          required: false
+          type: string
+        - description: "This parameter represents a boolean option to indicate whether to collapse results belonging to sounds of the same pack into single entries in the results list. If `group_by_pack=1` and search results contain more than one sound that belongs to the same pack, only one sound for each distinct pack is returned (sounds with no packs are returned as well). However, the returned sound will feature two extra properties to access these other sounds omitted from the results list: `n_from_same_pack`: indicates how many other results belong to the same pack (and have not been returned) `more_from_same_pack`: uri pointing to the list of omitted sound results of the same pack (also including the result which has already been returned). See examples below. By default `group_by_pack=0`."
+          in: query
+          maximum: 1
+          minimum: 0
+          name: group_by_pack
+          required: false
+          type: integer
+        - default: 1
+          description: Query results are paginated, this parameter indicates what page should be returned. By default `page=1`.
+          in: query
+          minimum: 1
+          name: page
+          required: false
+          type: integer
+        - default: 15
+          description: Indicates the number of sounds per page to include in the result. By default `page_size=15`, and the maximum is `page_size=150`. Not that with bigger `page_size`, more data will need to be transferred.
+          in: query
+          maximum: 150
+          minimum: 0
+          name: page_size
+          required: false
+          type: integer
+      produces:
+        - application/xml
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            items:
+              $ref: "#/definitions/Sound"
+            type: array
+        "400":
+          description: Invalid status value
+      summary: Search sounds
+      tags:
+        - search
+  "/sounds/{soundId}":
+    get:
+      description: This resource allows the retrieval of detailed information about a sound.
+      operationId: getSoundById
+      parameters:
+        - description: ID of the sound that needs to be fetched
+          format: int64
+          in: path
+          name: soundId
+          required: true
+          type: integer
+      produces:
+        - application/xml
+        - application/json
+      responses:
+        "200":
+          description: successful operation
+          schema:
+            $ref: "#/definitions/Sound"
+        "400":
+          description: Invalid ID supplied
+        "404":
+          description: Order not found
+      summary: Details of a sound
+      tags:
+        - sound
+definitions:
+  Sound:
+    properties:
+      id:
+        description: The sound’s unique identifier.
+        format: int64
+        type: integer
+      name:
+        description: The name user gave to the sound.
+        type: string
+      url:
+        description: The URI for this sound on the Freesound website.
+        type: string
+    type: object

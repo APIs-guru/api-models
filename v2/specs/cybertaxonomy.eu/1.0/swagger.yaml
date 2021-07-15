@@ -1,0 +1,313 @@
+swagger: "2.0"
+schemes:
+  - http
+host: cybertaxonomy.eu
+basePath: /eu-bon/utis/1.0
+info:
+  contact:
+    email: EditSupport@bgbm.org
+  description: The Unified Taxonomic Information Service (UTIS) is the taxonomic backbone for the EU-BON project
+  license:
+    name: Mozilla Public License 2.0
+    url: http://www.mozilla.org/MPL/2.0/
+  termsOfService: https://www.biodiversitycatalogue.org/services/79
+  title: EU BON UTIS
+  version: "1.0"
+  x-apisguru-categories:
+    - open_data
+  x-logo:
+    url: https://api.apis.guru/v2/cache/logo/https_cybertaxonomy.eu_themes_cybertaxonomy_images_cdm-platform-header.jpg
+  x-origin:
+    - converter:
+        url: https://github.com/lucybot/api-spec-converter
+        version: 2.7.31
+      format: swagger
+      url: http://cybertaxonomy.eu/eubon-utis/api-docs
+      version: "1.2"
+  x-providerName: cybertaxonomy.eu
+produces:
+  - application/json
+  - application/xml
+tags:
+  - description: Utis Controller
+    name: utis-controller
+paths:
+  /capabilities:
+    get:
+      deprecated: false
+      description: capabilities
+      operationId: capabilities
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: "#/definitions/ServiceProviderInfo"
+            type: array
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: capabilities
+      tags:
+        - utis-controller
+  /search:
+    get:
+      deprecated: false
+      description: search
+      operationId: search
+      parameters:
+        - description: 'The scientific name to search for. For example: "Bellis perennis", "Prionus" or "Bolinus brandaris". This is an exact search so wildcard characters are not supported.'
+          in: query
+          name: query
+          required: true
+          type: string
+        - default: pesi,eunis,bgbm-cdm-server[col]
+          description: "A list of provider id strings concatenated by comma characters. The default : \"pesi,bgbm-cdm-server[col]\" will be used if this parameter is not set. A list of all available provider ids can be obtained from the '/capabilities' service end point. Providers can be nested, that is a parent provider can have sub providers. If the id of the parent provider is supplied all subproviders will be queried. The query can also be restriced to one or more subproviders by using the following syntax: parent-id[sub-id-1,sub-id2,...]"
+          in: query
+          name: providers
+          required: false
+          type: string
+        - default: scientificNameExact
+          description: "Specifies the searchMode. Possible search modes are: scientificNameExact, scientificNameLike (begins with), vernacularNameExact, vernacularNameLike (contains), findByIdentifier. If the a provider does not support the chosen searchMode it will be skipped and the status message in the tnrClientStatus will be set to 'unsupported search mode' in this case."
+          enum:
+            - scientificNameExact
+            - scientificNameLike
+            - vernacularNameExact
+            - vernacularNameLike
+            - findByIdentifier
+          in: query
+          name: searchMode
+          required: false
+          type: string
+        - default: false
+          description: Indicates whether the synonymy of the accepted taxon should be included into the response. Turning this option on may cause an increased response time.
+          in: query
+          name: addSynonymy
+          required: false
+          type: boolean
+        - default: 0
+          description: The maximum of milliseconds to wait for responses from any of the providers. If the timeout is exceeded the service will jut return the resonses that have been received so far. The default timeout is 0 ms (wait for ever)
+          format: int64
+          in: query
+          name: timeout
+          required: false
+          type: integer
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: "#/definitions/TnrMsg"
+        "401":
+          description: Unauthorized
+        "403":
+          description: Forbidden
+        "404":
+          description: Not Found
+      summary: search
+      tags:
+        - utis-controller
+definitions:
+  AtomisedName:
+    properties:
+      genusOrUninomial:
+        type: string
+      infragenericEpithet:
+        type: string
+      infraspecificEpithet:
+        type: string
+      specificEpithet:
+        type: string
+  ClientStatus:
+    properties:
+      checklistId:
+        type: string
+      duration:
+        description: Duration of the request processing in the specific checklist client in milliseconds.
+        format: double
+        type: number
+      statusMessage:
+        description: Status of the request, possible values are 'ok', 'timeout', 'interrupted', 'unsupported search mode'.
+        type: string
+  HigherClassificationElement:
+    properties:
+      rank:
+        type: string
+      scientificName:
+        type: string
+      taxonID:
+        type: string
+  OtherNames:
+    properties:
+      sources:
+        items:
+          $ref: "#/definitions/Source"
+        type: array
+      taxonName:
+        $ref: "#/definitions/TaxonName"
+      url:
+        description: The URL pointing to the original name record of the checklist provider.
+        type: string
+  Query:
+    properties:
+      clientStatus:
+        items:
+          $ref: "#/definitions/ClientStatus"
+        type: array
+      request:
+        $ref: "#/definitions/Request"
+      response:
+        items:
+          $ref: "#/definitions/Response"
+        type: array
+  Request:
+    properties:
+      addSynonymy:
+        description: Indicates whether the synonymy of the accepted taxon should be included into the response. Turning this option on may lead to an increased response time.
+        type: boolean
+      queryString:
+        description: The query string to match a scientific name, vernacular name or identifier depending on the searchMode
+        type: string
+      searchMode:
+        description: "Specified the search mode to be usedPossible search modes are: scientificNameExact, scientificNameLike (begins with), vernacularNameExact, vernacularNameLike (contains)."
+        type: string
+  Response:
+    properties:
+      checklist:
+        type: string
+      checklistCitation:
+        type: string
+      checklistId:
+        type: string
+      checklistUrl:
+        type: string
+      checklistVersion:
+        type: string
+      matchingNameString:
+        description: Refers to the name string of the accepted taxon, synonym or otherName which was matching the query string
+        type: string
+      matchingNameType:
+        description: "Reports which of the names was matching the query string:  'taxon', 'synonym', 'vernacularName', or 'otherName'"
+        enum:
+          - TAXON
+          - SYNONYM
+          - VERNACULAR_NAME
+          - OTHER_NAME
+        type: string
+      otherNames:
+        items:
+          $ref: "#/definitions/OtherNames"
+        type: array
+      synonyms:
+        description: The list synonyms related to the accepted taxon
+        items:
+          $ref: "#/definitions/Synonym"
+        type: array
+      taxon:
+        $ref: "#/definitions/Taxon"
+        description: The accepted taxon
+      vernacularNames:
+        description: A common or vernacular name.
+        items:
+          type: string
+        type: array
+  ServiceProviderInfo:
+    properties:
+      copyrightUrl:
+        type: string
+      documentationUrl:
+        type: string
+      id:
+        type: string
+      label:
+        type: string
+      searchModes:
+        description: "Set of the different SearchModes supported by the service provider and client implementation.Possible search modes are: scientificNameExact, scientificNameLike, vernacularName"
+        items:
+          type: string
+        type: array
+        uniqueItems: true
+      subChecklists:
+        items:
+          $ref: "#/definitions/ServiceProviderInfo"
+        type: array
+      version:
+        type: string
+  Source:
+    properties:
+      datasetName:
+        type: string
+      identifier:
+        type: string
+      name:
+        type: string
+      title:
+        description: The full not atomized source string.
+        type: string
+      url:
+        type: string
+  Synonym:
+    properties:
+      accordingTo:
+        description: The reference to the source in which the specific taxon concept circumscription is defined or implied - traditionally signified by the Latin 'sensu' or 'sec.' (from secundum, meaning 'according to').
+        type: string
+      sources:
+        items:
+          $ref: "#/definitions/Source"
+        type: array
+      taxonName:
+        $ref: "#/definitions/TaxonName"
+      taxonomicStatus:
+        description: The taxonomic status string like 'invalid', 'misapplied', 'homotypic synonym', 'accepted', 'synonym'. Corresponds to http://rs.tdwg.org/dwc/terms/taxonomicStatus
+        type: string
+      url:
+        description: The URL pointing to the original record of the checklist provider.
+        type: string
+  Taxon:
+    properties:
+      accordingTo:
+        description: The reference to the source in which the specific taxon concept circumscription is defined or implied - traditionally signified by the Latin 'sensu' or 'sec.' (from secundum, meaning 'according to').
+        type: string
+      higherClassification:
+        items:
+          $ref: "#/definitions/HigherClassificationElement"
+        type: array
+      identifier:
+        type: string
+      sources:
+        items:
+          $ref: "#/definitions/Source"
+        type: array
+      taxonName:
+        $ref: "#/definitions/TaxonName"
+      taxonomicStatus:
+        description: The taxonomic status string like 'invalid', 'misapplied', 'homotypic synonym', 'accepted', 'synonym'. Corresponds to http://rs.tdwg.org/dwc/terms/taxonomicStatus
+        type: string
+      url:
+        description: The URL pointing to the original record of the checklist provider.
+        type: string
+  TaxonName:
+    properties:
+      atomisedName:
+        $ref: "#/definitions/AtomisedName"
+      authorship:
+        type: string
+      canonicalName:
+        description: Canonical name string consisting of only nomenclatural information, i.e. no authorship or taxonomic hierarchy information with the exception of the necessary placements within Genus or Species.
+        type: string
+      nomenclaturalReference:
+        description: A reference for the publication in which the scientificName was originally established under the rules of the associated nomenclaturalCode.
+        type: string
+      rank:
+        type: string
+      scientificName:
+        description: The full scientific name, with authorship, publication date information and potentially further taxonomic information.
+        type: string
+  TnrMsg:
+    properties:
+      query:
+        items:
+          $ref: "#/definitions/Query"
+        type: array
